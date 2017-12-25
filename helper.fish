@@ -20,7 +20,12 @@ function rocksdb ; set -g STORAGEENGINE rocksdb ; end
 rocksdb
 
 set -g WORKDIR (pwd)
-set -g NAME "oskar_"(random)
+if test -f oskar_name
+  set -g NAME (cat oskar_name)
+else
+  set -g NAME "oskar_"(random)
+  echo $NAME >oskar_name
+end
 set -g CONTAINERRUNNING no
 set -g PARALLELISM 64
 
@@ -47,12 +52,12 @@ function buildBuildImage ; cd $WORKDIR ; docker build -t neunhoef/oskar . ; end
 function pushBuildImage ; docker push neunhoef/oskar ; end
 function pullBuildImage ; docker pull neunhoef/oskar ; end
 
-function startDockerContainer
+function startContainer
   docker run -d --rm -v $WORKDIR:/ArangoDB -name $NAME neunhoef/oskar
   set -g CONTAINERRUNNING yes
 end
 
-function stopDockerContainer
+function stopContainer
   docker stop $NAME
   set -g CONTAINERRUNNING no
 end
@@ -72,7 +77,7 @@ end
 function showAndCheck
   showConfig
   if test $CONTAINERRUNNING == no
-    echo You have to start the container first using startDockerContainer
+    echo You have to start the container first using startContainer
     exit 1
   end
 end
@@ -99,3 +104,4 @@ function oskar
   docker exec -it $NAME /scripts/runTests.fish
 end
 
+showConfig
