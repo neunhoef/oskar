@@ -5,5 +5,4 @@ apt-get install build-essential g++ cmake make bison flex libssl-dev python ccac
 
 cd /ArangoDB
 mkdir build
-cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=/usr/lib/ccache/bin/g++ -DCMAKE_C_COMPILER=/usr/lib/ccache/bin/gcc -DUSE_MAINTAINER_MODE=O
-n -DUSE_JEMALLOC=On ..
+cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=/usr/lib/ccache/g++ -DCMAKE_C_COMPILER=/usr/lib/ccache/gcc -DUSE_MAINTAINER_MODE=On ..

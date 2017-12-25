@@ -1,20 +1,51 @@
 # Design
 
-## Components:
+## Components
 
  1. bash and fish functions for user
  2. Dockerfile for testing container image
  3. Scripts in container image to run tests
 
-## Functions:
+## Functions
 
 doTests
 single
 cluster
 resilience
 
-## Schalter:
+## Schalter
 
 mmfiles/rocksdb
 maintainer/not
 
+## Usage
+
+ 1. Checkout repository
+
+        git clone https://github.com/neunhoef/oskar
+        cd oskar
+
+ 2. `source helpers.sh` or `source helpers.fish` for `fish` users.
+
+ 3. `checkoutArangoDB`
+
+ 4. `checkoutEnterprise`
+
+ 5. `buildBuildImage`
+
+ 6. `startDockerContainer`
+
+ 7. `maintainerOn`, `maintainerOff`, `debugMode`, `releaseMode`, `community`,
+    `enterprise`
+
+ 8. `buildArangoDB`
+
+ 9. `single`, `cluster`, `resilience` for test suite
+
+10. `mmfiles`, `rocksdb` for choice of storage engine
+
+11. `oskar` to start tests, a report will be filed and a summary displayed
+
+12. `stopDockerContainer`
+
+Erase everything to get rid of it.
