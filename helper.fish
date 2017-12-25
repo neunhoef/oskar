@@ -53,7 +53,7 @@ function pushBuildImage ; docker push neunhoef/oskar ; end
 function pullBuildImage ; docker pull neunhoef/oskar ; end
 
 function startContainer
-  docker run -d --rm -v $WORKDIR:/ArangoDB --name $NAME neunhoef/oskar
+  docker run -d --rm -v $WORKDIR/ArangoDB:/ArangoDB --name $NAME neunhoef/oskar
   set -g CONTAINERRUNNING yes
 end
 
