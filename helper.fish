@@ -58,15 +58,15 @@ function stopDockerContainer
 end
 
 function showConfig
-  echo Workdir           : $WORKDIR
-  echo Name              : $NAME
-  echo Container running : $CONTAINERRUNNING
-  echo Maintainer        : $MAINTAINER
-  echo Buildmode         : $BUILDMODE
-  echo Parallelism       : $PARALLELISM
-  echo Enterpriseedition : $ENTERPRISEEDITION
-  echo Storage engine    : $STORAGEENGINE
-  echo Test suite        : $TESTSUITE
+  echo "Workdir           : $WORKDIR"
+  echo "Name              : $NAME"
+  echo "Container running : $CONTAINERRUNNING"
+  echo "Maintainer        : $MAINTAINER"
+  echo "Buildmode         : $BUILDMODE"
+  echo "Parallelism       : $PARALLELISM"
+  echo "Enterpriseedition : $ENTERPRISEEDITION"
+  echo "Storage engine    : $STORAGEENGINE"
+  echo "Test suite        : $TESTSUITE"
 end
 
 function showAndCheck
