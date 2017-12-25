@@ -84,23 +84,13 @@ end
 function buildArangoDB
   showAndCheck
   cd $WORKDIR
-  set -x MAINTAINER $MAINTAINER
-  set -x BUILDMODE $BUILDMODE
-  set -x PARALLELISM $PARALLELISM
-  set -x STORAGEENGINE $STORAGEENGINE
-  set -x TESTSUITE $TESTSUITE
-  docker exec -it $NAME /scripts/buildArangoDB.fish
+  docker exec -it -e MAINTAINER=$MAINTAINER -e BUILDMODE=$BUILDMODE -e PARALLELISM=$PARALLELISM -e STORAGEENGINE=$STORAGEENGINE -e TESTSUITE=$TESTSUITE $NAME /scripts/buildArangoDB.fish
 end
 
 function oskar
   showAndCheck
   cd $WORKDIR
-  set -x MAINTAINER $MAINTAINER
-  set -x BUILDMODE $BUILDMODE
-  set -x PARALLELISM $PARALLELISM
-  set -x STORAGEENGINE $STORAGEENGINE
-  set -x TESTSUITE $TESTSUITE
-  docker exec -it $NAME /scripts/runTests.fish
+  docker exec -it -e MAINTAINER=$MAINTAINER -e BUILDMODE=$BUILDMODE -e PARALLELISM=$PARALLELISM -e STORAGEENGINE=$STORAGEENGINE -e TESTSUITE=$TESTSUITE $NAME /scripts/runTests.fish
 end
 
 showConfig
