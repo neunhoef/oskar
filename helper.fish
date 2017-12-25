@@ -76,7 +76,7 @@ end
 
 function showAndCheck
   showConfig
-  if test $CONTAINERRUNNING == no
+  if test $CONTAINERRUNNING = no
     echo You have to start the container first using startContainer
     exit 1
   end
