@@ -20,7 +20,7 @@ function rocksdb ; set -g STORAGEENGINE rocksdb ; end
 rocksdb
 
 set -g WORKDIR (pwd)
-set -g NAME "oskar_"(pwgen -1)
+set -g NAME "oskar_"(random)
 set -g CONTAINERRUNNING no
 set -g PARALLELISM 64
 
