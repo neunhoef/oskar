@@ -30,9 +30,9 @@ if test ! -d work ; mkdir work ; end
 set -g CONTAINERRUNNING no
 set -g PARALLELISM 64
 
-function buildBuildImage ; cd $WORKDIR ; docker build -t neunhoef/oskar . ; end
-function pushBuildImage ; docker push neunhoef/oskar ; end
-function pullBuildImage ; docker pull neunhoef/oskar ; end
+function buildImage ; cd $WORKDIR ; docker build -t neunhoef/oskar . ; end
+function pushImage ; docker push neunhoef/oskar ; end
+function pullImage ; docker pull neunhoef/oskar ; end
 
 function startContainer
   docker run -d --rm -v $WORKDIR/work:/work -v $SSH_AUTH_SOCK:/ssh-agent -e SSH_AUTH_SOCK=/ssh-agent --name $NAME neunhoef/oskar
