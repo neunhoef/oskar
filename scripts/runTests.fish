@@ -34,7 +34,7 @@ function launchSingleTests
   set -g portBase 10000
 
   function test1
-    echo test1 $argv
+    echo Launching $argv
     set -l t $argv[1]
     set -l tt $argv[2]
     set -e argv[1..2]
@@ -66,7 +66,7 @@ function launchClusterTests
   set -g portBase 10000
 
   function test1
-    echo test1 $argv
+    echo Launching $argv
     set -l t $argv[1]
     set -l tt $argv[2]
     set -e argv[1..2]
@@ -78,7 +78,7 @@ function launchClusterTests
   end
 
   function test3
-    echo test3 $argv
+    echo Launching $argv
     scripts/unittest $argv[1] --test $argv[3] \
       --storageEngine $STORAGEENGINE --cluster true \
       --minPort $portBase --maxPort (math $portBase + 99) \
