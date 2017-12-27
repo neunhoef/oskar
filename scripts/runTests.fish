@@ -144,9 +144,15 @@ function createReport
     end
   end
   echo $result >> testsEnded
-  echo Overall result: $result
   set -l cores core*
   tar czf "/work/testreport-$d.tar.gz" *.log testsStarted testsEnded $cores
+  echo Overall result: $result
+  git branch
+  if test $ENTERPRISEEDITION = On
+    cd enterprise
+    git branch
+    cd ..
+  end
 end
 
 function cleanUp
