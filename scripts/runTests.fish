@@ -90,7 +90,6 @@ function waitForProcesses
   while true
     # Check subprocesses:
     set pids (jobs -p)
-    echo PIDS: $pids
     if test (count $pids) = 0
       return 1
     end
