@@ -74,7 +74,7 @@ function launchClusterTests
   end
 
   function test3
-    echo scripts/unittest $argv[1] --test $argv[2] \
+    scripts/unittest $argv[1] --test $argv[2] \
       --storageEngine $STORAGEENGINE --cluster true \
       --minPort $portBase --maxPort (math $portBase + 99) \
       >$argv[1]_$argv[3].log ^&1 &
