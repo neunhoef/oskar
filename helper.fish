@@ -13,23 +13,26 @@ end
 function single ; set -g TESTSUITE single ; showConfig ; end
 function cluster ; set -g TESTSUITE cluster ; showConfig ; end
 function resilience ; set -g TESTSUITE resilience ; showConfig ; end
-set -g TESTSUITE cluster
+if test -z "$TESTSUITE" ; set -g TESTSUITE cluster ; end
 
 function maintainerOn ; set -g MAINTAINER On ; showConfig ; end
 function maintainerOff ; set -g MAINTAINER Off ; showConfig ; end
-set -g MAINTAINER On
+if test -z "$MAINTAINER" ; set -g MAINTAINER On ; end
 
 function debugMode ; set -g BUILDMODE Debug ; showConfig ; end
 function releaseMode ; set -g BUILDMODE RelWithDebInfo ; showConfig ; end
-set -g BUILDMODE RelWithDebInfo
+if test -z "$BUILDMODE" ; set -g BUILDMODE RelWithDebInfo ; end
 
 function community ; set -g ENTERPRISEEDITION Off ; showConfig ; end
 function enterprise ; set -g ENTERPRISEEDITION On ; showConfig ; end
-set -g ENTERPRISEEDITION On
+if test -z "$ENTERPRISEEDITION" ; set -g ENTERPRISEEDITION On ; end
 
 function mmfiles ; set -g STORAGEENGINE mmfiles ; showConfig ; end
 function rocksdb ; set -g STORAGEENGINE rocksdb ; showConfig ; end
-set -g STORAGEENGINE rocksdb
+if test -z "$STORAGEENGINE" ; set -g STORAGEENGINE rocksdb ; end
+
+function parallelism ; set -g PARALLELISM $argv[1] ; showConfig ; end
+if test -z "$PARALLELISM" ; set -g PARALLELISM 64 ; end
 
 set -g WORKDIR (pwd)
 if test -f oskar_name
@@ -39,46 +42,55 @@ else
   echo $NAME >oskar_name
 end
 if test ! -d work ; mkdir work ; end
-set -g CONTAINERRUNNING no
-set -g PARALLELISM 64
+if docker exec -it $NAME true ^/dev/null
+  set -g CONTAINERRUNNING yes
+else
+  set -g CONTAINERRUNNING no
+end
 
 function buildImage ; cd $WORKDIR ; docker build -t neunhoef/oskar . ; end
 function pushImage ; docker push neunhoef/oskar ; end
 function pullImage ; docker pull neunhoef/oskar ; end
 
 function startContainer
-  docker run -d --rm -v $WORKDIR/work:/work -v $SSH_AUTH_SOCK:/ssh-agent -e SSH_AUTH_SOCK=/ssh-agent --name $NAME neunhoef/oskar
-  set -g CONTAINERRUNNING yes
+  if test $CONTAINERRUNNING = no
+    docker run -d --rm -v $WORKDIR/work:/work -v $SSH_AUTH_SOCK:/ssh-agent -e SSH_AUTH_SOCK=/ssh-agent --name $NAME neunhoef/oskar
+    set -g CONTAINERRUNNING yes
+  end
 end
 
 function stopContainer
-  docker stop $NAME
-  set -g CONTAINERRUNNING no
+  if test $CONTAINERRUNNING = yes
+    docker stop $NAME
+    set -g CONTAINERRUNNING no
+  end
 end
 
 function checkoutArangoDB
+  startContainer
   docker exec -it -e MAINTAINER=$MAINTAINER -e BUILDMODE=$BUILDMODE -e PARALLELISM=$PARALLELISM -e STORAGEENGINE=$STORAGEENGINE -e TESTSUITE=$TESTSUITE -e ENTERPRISEEDITION=$ENTERPRISEEDITION $NAME /scripts/checkoutArangoDB.fish
   community
 end
 
 function checkoutEnterprise
+  startContainer
   docker exec -it -e MAINTAINER=$MAINTAINER -e BUILDMODE=$BUILDMODE -e PARALLELISM=$PARALLELISM -e STORAGEENGINE=$STORAGEENGINE -e ENTERPRISEEDITION=$ENTERPRISEEDITION -e TESTSUITE=$TESTSUITE $NAME /scripts/checkoutEnterprise.fish
   enterprise
 end
 
 function switchBranches
+  startContainer
   docker exec -it -e MAINTAINER=$MAINTAINER -e BUILDMODE=$BUILDMODE -e PARALLELISM=$PARALLELISM -e STORAGEENGINE=$STORAGEENGINE -e ENTERPRISEEDITION=$ENTERPRISEEDITION -e TESTSUITE=$TESTSUITE $NAME /scripts/switchBranches.fish $argv
 end
 
 function clearWorkdir
+  startContainer
   docker exec -it -e MAINTAINER=$MAINTAINER -e BUILDMODE=$BUILDMODE -e PARALLELISM=$PARALLELISM -e STORAGEENGINE=$STORAGEENGINE -e ENTERPRISEEDITION=$ENTERPRISEEDITION -e TESTSUITE=$TESTSUITE $NAME /scripts/clearWorkdir.fish
 end
 
 function showAndCheck
+  startContainer
   showConfig
-  if test $CONTAINERRUNNING = no
-    echo You have to start the container first using startContainer
-  end
 end
 
 function buildArangoDB
