@@ -113,7 +113,7 @@ function waitForProcesses
       return 1
     end
 
-    echo -n (count $pids) jobs still running, remaining $i "seconds...\r"
+    echo -n (count $pids) jobs still running, remaining $i "seconds..."\r
 
     set i (math $i - 5)
     if test $i -lt 0
