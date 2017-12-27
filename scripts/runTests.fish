@@ -118,12 +118,12 @@ end
 function createReport
   touch testsEnded
   set d (date -u +%F_%H.%M.%SZ)
-  tar czvf "testreport-$d.tar.gz" *.log testsStarted testsEnded
+  tar czvf "testreport-$d.tar.gz" *.log testsStarted testsEnded core*
 end
 
 function cleanUp
   killall -9 arangod arangosh
-  rm testsStarted testsEnded *.log
+  rm testsStarted testsEnded *.log core*
 end
 
 cd /work/ArangoDB
