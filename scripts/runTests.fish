@@ -3,25 +3,25 @@
 function noteStartAndRepoState
   echo "Status of main repository:" >testsStarted
   echo >>testsStarted
-  echo "git branch:"
+  echo "git branch:" >> testsStarted
   git branch >> testsStarted
-  echo "git describe:"
+  echo "git describe:" >> testsStarted
   git describe >> testsStarted
-  echo "git status:"
+  echo "git status:" >> testsStarted
   git status >> testsStarted
-  echo "git diff:"
+  echo "git diff:" >> testsStarted
   git diff >> testsStarted
 
   if test $ENTERPRISEEDITION = On
     echo "Status of enterprise repository:" >> testsStarted
     cd enterprise
-    echo "git branch:"
+    echo "git branch:" >> ../testsStarted
     git branch >> ../testsStarted
-    echo "git describe:"
+    echo "git describe:" >> ../testsStarted
     git describe >> ../testsStarted
-    echo "git status:"
+    echo "git status:" >> ../testsStarted
     git status >> ../testsStarted
-    echo "git diff:"
+    echo "git diff:" >> ../testsStarted
     git diff >> ../testsStarted
     cd ..
   end
@@ -109,7 +109,7 @@ function waitForProcesses
 
     echo (count $pids) jobs still running, remaining $i seconds...
 
-    set i (math $i - 1)
+    set i (math $i - 5)
     if test $i -lt 0
       return 0
     end
@@ -128,14 +128,24 @@ function waitOrKill
 end
 
 function createReport
-  touch testsEnded
   set d (date -u +%F_%H.%M.%SZ)
-  tar czvf "testreport-$d.tar.gz" *.log testsStarted testsEnded core*
+  rm -f testsEnded
+  touch testsEnded
+  set -l result GOOD
+  for f in *.log
+    if ! tail -1 $f | grep Success > /dev/null
+      set -l result BAD
+      echo Bad result in $f
+      echo Bad result in $f >> testsEnded
+    end
+  end
+  echo $result >> testsEnded
+  tar czf "testreport-$d.tar.gz" *.log testsStarted testsEnded core*
 end
 
 function cleanUp
   killall -9 arangod arangosh
-  rm testsStarted testsEnded *.log core*
+  rm -rf testsStarted testsEnded *.log core*
 end
 
 cd /work/ArangoDB
