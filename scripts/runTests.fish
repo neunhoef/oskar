@@ -1,6 +1,6 @@
 #!/usr/bin/fish
 
-function launchClusterTests
+function noteStartAndRepoState
   echo "Status of main repository:" >testsStarted
   git branch >> testsStarted
   git describe >> testsStarted
@@ -12,6 +12,10 @@ function launchClusterTests
   git status >> ../testsStarted
   git diff >> ../testsStarted
   cd ..
+end
+
+function launchSingleTests
+  noteStartAndRepoState
 
   set -g portBase 10000
 
@@ -19,7 +23,37 @@ function launchClusterTests
     set -l t $argv[1]
     set -l tt $argv[2]
     set -e argv[1..2]
-    scripts/unittest $t --cluster true \
+    scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE \
+      --minPort $portBase --maxPort (math $portBase + 99) $argv \
+      >"$t""$tt".log ^&1 &
+    set -g portBase (math $portBase + 100)
+    sleep 5
+  end
+
+  test1 shell_server ""
+  test1 shell_client ""
+  test1 http_server ""
+  test1 ssl_server ""
+  test1 shell_server_aql 0 --testBuckets 5/0
+  test1 shell_server_aql 1 --testBuckets 5/1
+  test1 shell_server_aql 2 --testBuckets 5/2
+  test1 shell_server_aql 3 --testBuckets 5/3
+  test1 shell_server_aql 4 --testBuckets 5/4
+  test1 dump ""
+  test1 server_http ""
+  test1 agency ""
+end
+
+function launchClusterTests
+  noteStartAndRepoState
+
+  set -g portBase 10000
+
+  function test1
+    set -l t $argv[1]
+    set -l tt $argv[2]
+    set -e argv[1..2]
+    scripts/unittest $t --cluster true --storageEngine $STORAGEENGINE \
       --minPort $portBase --maxPort (math $portBase + 99) $argv \
       >"$t""$tt".log ^&1 &
     set -g portBase (math $portBase + 100)
@@ -28,6 +62,7 @@ function launchClusterTests
 
   function test3
     echo scripts/unittest $argv[1] --test $argv[2] \
+      --storageEngine $STORAGEENGINE --cluster true \
       --minPort $portBase --maxPort (math $portBase + 99) \
       >$argv[1]_$argv[3].log ^&1 &
     set -g portBase (math $portBase + 100)
