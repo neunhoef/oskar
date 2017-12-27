@@ -23,43 +23,39 @@ set -g WORKDIR (pwd)
 if test -f oskar_name
   set -g NAME (cat oskar_name)
 else
-  set -g NAME "oskar_"(random)
+  set -g NAME "oskar_"(random)_(random)
   echo $NAME >oskar_name
 end
+if test ! -d work ; mkdir work ; end
 set -g CONTAINERRUNNING no
 set -g PARALLELISM 64
-
-function checkoutArangoDB
-  cd $WORKDIR
-  rm -rf ArangoDB
-  git clone ssh://git@github.com/arangodb/ArangoDB
-  community
-end
-
-function checkoutEnterprise
-  cd $WORKDIR
-  if test ! -d ArangoDB
-    checkoutArangoDB
-  end
-  cd ArangoDB
-  if test ! -d enterprise
-    git clone ssh://git@github.com/arangodb/enterprise
-    enterprise
-  end
-end
 
 function buildBuildImage ; cd $WORKDIR ; docker build -t neunhoef/oskar . ; end
 function pushBuildImage ; docker push neunhoef/oskar ; end
 function pullBuildImage ; docker pull neunhoef/oskar ; end
 
 function startContainer
-  docker run -d --rm -v $WORKDIR/ArangoDB:/ArangoDB --name $NAME neunhoef/oskar
+  docker run -d --rm -v $WORKDIR/work:/work -v $SSH_AUTH_SOCK:/ssh-agent -e SSH_AUTH_SOCK=/ssh-agent --name $NAME neunhoef/oskar
   set -g CONTAINERRUNNING yes
 end
 
 function stopContainer
   docker stop $NAME
   set -g CONTAINERRUNNING no
+end
+
+function checkoutArangoDB
+  docker exec -it -e MAINTAINER=$MAINTAINER -e BUILDMODE=$BUILDMODE -e PARALLELISM=$PARALLELISM -e STORAGEENGINE=$STORAGEENGINE -e TESTSUITE=$TESTSUITE $NAME /scripts/checkoutArangoDB.fish
+  community
+end
+
+function checkoutEnterprise
+  docker exec -it -e MAINTAINER=$MAINTAINER -e BUILDMODE=$BUILDMODE -e PARALLELISM=$PARALLELISM -e STORAGEENGINE=$STORAGEENGINE -e TESTSUITE=$TESTSUITE $NAME /scripts/checkoutEnterprise.fish
+  enterprise
+end
+
+function clearWorkdir
+  docker exec -it -e MAINTAINER=$MAINTAINER -e BUILDMODE=$BUILDMODE -e PARALLELISM=$PARALLELISM -e STORAGEENGINE=$STORAGEENGINE -e TESTSUITE=$TESTSUITE $NAME /scripts/clearWorkdir.fish
 end
 
 function showConfig

@@ -79,6 +79,8 @@ function cleanUp
   rm testsStarted testsEnded *.log
 end
 
+cd /work/ArangoDB
+
 switch $TESTSUITE
   case "cluster"
     launchClusterTests
