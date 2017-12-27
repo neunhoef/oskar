@@ -5,8 +5,6 @@ function noteStartAndRepoState
   echo >>testsStarted
   echo "git branch:" >> testsStarted
   git branch >> testsStarted
-  echo "git describe:" >> testsStarted
-  git describe >> testsStarted
   echo "git status:" >> testsStarted
   git status >> testsStarted
   echo "git diff:" >> testsStarted
@@ -17,8 +15,6 @@ function noteStartAndRepoState
     cd enterprise
     echo "git branch:" >> ../testsStarted
     git branch >> ../testsStarted
-    echo "git describe:" >> ../testsStarted
-    git describe >> ../testsStarted
     echo "git status:" >> ../testsStarted
     git status >> ../testsStarted
     echo "git diff:" >> ../testsStarted
