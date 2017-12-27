@@ -2,16 +2,29 @@
 
 function noteStartAndRepoState
   echo "Status of main repository:" >testsStarted
+  echo >>testsStarted
+  echo "git branch:"
   git branch >> testsStarted
+  echo "git describe:"
   git describe >> testsStarted
+  echo "git status:"
   git status >> testsStarted
+  echo "git diff:"
   git diff >> testsStarted
-  cd enterprise
-  git branch >> ../testsStarted
-  git describe >> ../testsStarted
-  git status >> ../testsStarted
-  git diff >> ../testsStarted
-  cd ..
+
+  if test $ENTERPRISEEDITION = On
+    echo "Status of enterprise repository:" >> testsStarted
+    cd enterprise
+    echo "git branch:"
+    git branch >> ../testsStarted
+    echo "git describe:"
+    git describe >> ../testsStarted
+    echo "git status:"
+    git status >> ../testsStarted
+    echo "git diff:"
+    git diff >> ../testsStarted
+    cd ..
+  end
 end
 
 function launchSingleTests
