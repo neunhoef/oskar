@@ -1,18 +1,29 @@
 #!/usr/bin/fish
 
 function launchClusterTests
-  touch testsStarted
+  echo "Status of main repository:" >testsStarted
+  git branch >> testsStarted
+  git describe >> testsStarted
+  git status >> testsStarted
+  git diff >> testsStarted
+  cd enterprise
+  git branch >> ../testsStarted
+  git describe >> ../testsStarted
+  git status >> ../testsStarted
+  git diff >> ../testsStarted
+  cd ..
+
   set -g portBase 10000
 
   function test1
     set -l t $argv[1]
     set -l tt $argv[2]
     set -e argv[1..2]
-    echo scripts/unittest $t --cluster true \
+    scripts/unittest $t --cluster true \
       --minPort $portBase --maxPort (math $portBase + 99) $argv \
       >"$t""$tt".log ^&1 &
     set -g portBase (math $portBase + 100)
-    sleep (math (random)%10+1) &
+    sleep 5
   end
 
   function test3
@@ -20,7 +31,7 @@ function launchClusterTests
       --minPort $portBase --maxPort (math $portBase + 99) \
       >$argv[1]_$argv[3].log ^&1 &
     set -g portBase (math $portBase + 100)
-    sleep (math (random)%10+1) &
+    sleep 5
   end
 
   test3 resilience js/server/tests/resilience/moving-shards-cluster.js move
@@ -49,14 +60,14 @@ function waitForProcesses
       return 1
     end
 
-    echo Still (count $pids) jobs running, remaining $i seconds...
+    echo (count $pids) jobs still running, remaining $i seconds...
 
     set i (math $i - 1)
     if test $i -lt 0
       return 0
     end
 
-    sleep 1
+    sleep 5
   end
 end
 
@@ -76,6 +87,7 @@ function createReport
 end
 
 function cleanUp
+  killall -9 arangod arangosh
   rm testsStarted testsEnded *.log
 end
 
