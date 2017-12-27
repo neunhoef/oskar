@@ -15,9 +15,9 @@ function cluster ; set -g TESTSUITE cluster ; showConfig ; end
 function resilience ; set -g TESTSUITE resilience ; showConfig ; end
 set -g TESTSUITE cluster
 
-function maintainerOn ; set -g MAINTAINER on ; showConfig ; end
-function maintainerOff ; set -g MAINTAINER off ; showConfig ; end
-set -g MAINTAINER on
+function maintainerOn ; set -g MAINTAINER On ; showConfig ; end
+function maintainerOff ; set -g MAINTAINER Off ; showConfig ; end
+set -g MAINTAINER On
 
 function debugMode ; set -g BUILDMODE Debug ; showConfig ; end
 function releaseMode ; set -g BUILDMODE RelWithDebInfo ; showConfig ; end
