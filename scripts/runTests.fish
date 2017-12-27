@@ -150,7 +150,7 @@ function createReport
   echo $result >> testsEnded
   echo Overall result: $result
   set -l cores core*
-  tar czf "testreport-$d.tar.gz" *.log testsStarted testsEnded $cores
+  tar czf "/work/testreport-$d.tar.gz" *.log testsStarted testsEnded $cores
 end
 
 function cleanUp
