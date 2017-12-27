@@ -74,16 +74,16 @@ function launchClusterTests
   end
 
   function test3
-    scripts/unittest $argv[1] --test $argv[2] \
+    scripts/unittest $argv[1] --test $argv[3] \
       --storageEngine $STORAGEENGINE --cluster true \
       --minPort $portBase --maxPort (math $portBase + 99) \
-      >$argv[1]_$argv[3].log ^&1 &
+      >$argv[1]_$argv[2].log ^&1 &
     set -g portBase (math $portBase + 100)
     sleep 5
   end
 
-  test3 resilience js/server/tests/resilience/moving-shards-cluster.js move
-  test3 resilience js/server/tests/resilience/resilience-synchronous-repl-cluster.js failover
+  test3 resilience move js/server/tests/resilience/moving-shards-cluster.js
+  test3 resilience failover js/server/tests/resilience/resilience-synchronous-repl-cluster.js
   test1 shell_client ""
   test1 shell_server ""
   test1 http_server ""
@@ -133,19 +133,21 @@ function createReport
   touch testsEnded
   set -l result GOOD
   for f in *.log
-    if ! tail -1 $f | grep Success > /dev/null
+    if not tail -1 $f | grep Success > /dev/null
       set -l result BAD
       echo Bad result in $f
       echo Bad result in $f >> testsEnded
     end
   end
   echo $result >> testsEnded
-  tar czf "testreport-$d.tar.gz" *.log testsStarted testsEnded core*
+  set -l cores core*
+  tar czf "testreport-$d.tar.gz" *.log testsStarted testsEnded $cores
 end
 
 function cleanUp
   killall -9 arangod arangosh
-  rm -rf testsStarted testsEnded *.log core*
+  set -l cores core*
+  rm -rf testsStarted testsEnded *.log $cores
 end
 
 cd /work/ArangoDB
