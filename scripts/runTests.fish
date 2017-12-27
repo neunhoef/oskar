@@ -104,13 +104,15 @@ function waitForProcesses
     # Check subprocesses:
     set pids (jobs -p)
     if test (count $pids) -eq 0
+      echo
       return 1
     end
 
-    echo (count $pids) jobs still running, remaining $i seconds...
+    echo -n (count $pids) jobs still running, remaining $i "seconds...\r"
 
     set i (math $i - 5)
     if test $i -lt 0
+      echo
       return 0
     end
 
