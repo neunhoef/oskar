@@ -1,23 +1,35 @@
-function single ; set -g TESTSUITE single ; end
-function cluster ; set -g TESTSUITE cluster ; end
-function resilience ; set -g TESTSUITE resilience ; end
-cluster
+function showConfig
+  echo "Workdir           : $WORKDIR"
+  echo "Name              : $NAME"
+  echo "Container running : $CONTAINERRUNNING"
+  echo "Maintainer        : $MAINTAINER"
+  echo "Buildmode         : $BUILDMODE"
+  echo "Parallelism       : $PARALLELISM"
+  echo "Enterpriseedition : $ENTERPRISEEDITION"
+  echo "Storage engine    : $STORAGEENGINE"
+  echo "Test suite        : $TESTSUITE"
+end
 
-function maintainerOn ; set -g MAINTAINER on ; end
-function maintainerOff ; set -g MAINTAINER off ; end
-maintainerOn
+function single ; set -g TESTSUITE single ; showConfig ; end
+function cluster ; set -g TESTSUITE cluster ; showConfig ; end
+function resilience ; set -g TESTSUITE resilience ; showConfig ; end
+set -g TESTSUITE cluster
 
-function debugMode ; set -g BUILDMODE Debug ; end
-function releaseMode ; set -g BUILDMODE RelWithDebInfo ; end
-releaseMode
+function maintainerOn ; set -g MAINTAINER on ; showConfig ; end
+function maintainerOff ; set -g MAINTAINER off ; showConfig ; end
+set -g MAINTAINER on
 
-function community ; set -g ENTERPRISEEDITION Off ; end
-function enterprise ; set -g ENTERPRISEEDITION On ; end
-enterprise
+function debugMode ; set -g BUILDMODE Debug ; showConfig ; end
+function releaseMode ; set -g BUILDMODE RelWithDebInfo ; showConfig ; end
+set -g BUILDMODE RelWithDebInfo
 
-function mmfiles ; set -g STORAGEENGINE mmfiles ; end
-function rocksdb ; set -g STORAGEENGINE rocksdb ; end
-rocksdb
+function community ; set -g ENTERPRISEEDITION Off ; showConfig ; end
+function enterprise ; set -g ENTERPRISEEDITION On ; showConfig ; end
+set -g ENTERPRISEEDITION On
+
+function mmfiles ; set -g STORAGEENGINE mmfiles ; showConfig ; end
+function rocksdb ; set -g STORAGEENGINE rocksdb ; showConfig ; end
+set -g STORAGEENGINE rocksdb
 
 set -g WORKDIR (pwd)
 if test -f oskar_name
@@ -56,18 +68,6 @@ end
 
 function clearWorkdir
   docker exec -it -e MAINTAINER=$MAINTAINER -e BUILDMODE=$BUILDMODE -e PARALLELISM=$PARALLELISM -e STORAGEENGINE=$STORAGEENGINE -e ENTERPRISEEDITION=$ENTERPRISEEDITION -e TESTSUITE=$TESTSUITE $NAME /scripts/clearWorkdir.fish
-end
-
-function showConfig
-  echo "Workdir           : $WORKDIR"
-  echo "Name              : $NAME"
-  echo "Container running : $CONTAINERRUNNING"
-  echo "Maintainer        : $MAINTAINER"
-  echo "Buildmode         : $BUILDMODE"
-  echo "Parallelism       : $PARALLELISM"
-  echo "Enterpriseedition : $ENTERPRISEEDITION"
-  echo "Storage engine    : $STORAGEENGINE"
-  echo "Test suite        : $TESTSUITE"
 end
 
 function showAndCheck
