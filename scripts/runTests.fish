@@ -154,7 +154,7 @@ function createReport
 end
 
 function cleanUp
-  killall -9 arangod arangosh > /dev/null
+  killall -9 arangod arangosh ^/dev/null
   set -l cores core*
   rm -rf testsStarted testsEnded *.log $cores
 end
