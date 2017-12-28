@@ -54,7 +54,7 @@ function pullImage ; docker pull neunhoef/oskar ; end
 
 function startContainer
   if test $CONTAINERRUNNING = no
-    docker run -d --rm -v /etc/passwd:/etc/passwd -v /etc/group:/etc/group -v $WORKDIR/work:/work --user (id -u):(id -g) -v $SSH_AUTH_SOCK:/ssh-agent -e SSH_AUTH_SOCK=/ssh-agent --name $NAME neunhoef/oskar
+    docker run -d --rm -v $WORKDIR/work:/work -v $SSH_AUTH_SOCK:/ssh-agent -e SSH_AUTH_SOCK=/ssh-agent --name $NAME neunhoef/oskar
     set -g CONTAINERRUNNING yes
   end
 end
