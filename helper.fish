@@ -136,6 +136,12 @@ function oskar8
   rocksdb
 end
 
-
+function updateOskar
+  stopContainer
+  pullImage
+  git pull
+  source helper.fish
+  startContainer
+end
 
 showConfig
