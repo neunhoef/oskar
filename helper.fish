@@ -103,7 +103,7 @@ function oskar
   docker exec -it -e INNERWORKDIR=$INNERWORKDIR -e MAINTAINER=$MAINTAINER -e BUILDMODE=$BUILDMODE -e PARALLELISM=$PARALLELISM -e STORAGEENGINE=$STORAGEENGINE -e ENTERPRISEEDITION=$ENTERPRISEEDITION -e TESTSUITE=$TESTSUITE $NAME /scripts/runTests.fish
 end
 
-function oskar1 ; buildArangoDB ; showAndCheck ; oskar ; end
+function oskar1 ; showAndCheck ; buildArangoDB ; oskar ; end
 
 function oskar2
   showAndCheck
