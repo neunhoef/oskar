@@ -160,7 +160,7 @@ function createReport
   echo $result >> testProtocol.txt
   set -l cores core*
   tar czf "$INNERWORKDIR/testreport-$d.tar.gz" *.log testProtocol.txt $cores
-  log "$d $TESTSUITE $result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE" "  $repoState $repoStateEnterprise"
+  log "$d $TESTSUITE $result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE" $repoState $repoStateEnterprise ""
 end
 
 function cleanUp
