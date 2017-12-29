@@ -1,15 +1,17 @@
 #!/usr/bin/fish
 
 set -g repoState ""
+set -g repoStateEnterprise ""
 
 function getRepoState
-  set -l l "Status of main repository:"
-  set -l l $l (git status -b -s | grep -v "^[?]")
-  set -l l $l "" "Status of enterprise repository:"
-  cd enterprise
-  set -l l $l (git status -b -s | grep -v "^[?]") ""
-  cd ..
-  set -g repoState $l
+  set -g repoState (git status -b -s | grep -v "^[?]")
+  if test $ENTERPRISEEDITION = On 
+    cd enterprise
+    set -g repoStateEnterprise (git status -b -s | grep -v "^[?]")
+    cd ..
+  else
+    set -g repoStateEnterprise ""
+  end
 end
 
 function noteStartAndRepoState
@@ -17,7 +19,14 @@ function noteStartAndRepoState
   rm -f testProtocol.txt
   set -l d (date -u +%F_%H.%M.%SZ)
   echo $d >> testProtocol.txt
-  for l in $repoState ; echo $l >> testProtocol.txt ; echo $l ; end
+  echo "Status of main repository:" >> testProtocol.txt
+  for l in $repoState ; echo "  $l" >> testProtocol.txt ; echo $l ; end
+  if test $ENTERPRISEEDITION = On
+    echo "Status of enterprise repository:" >> testProtocol.txt
+    for l in $repoStateEnterprise
+      echo "  $l" >> testProtocol.txt ; echo "  $l"
+    end
+  end
 end
 
 function launchSingleTests
@@ -149,7 +158,7 @@ function createReport
   echo $result >> testProtocol.txt
   set -l cores core*
   tar czf "$INNERWORKDIR/testreport-$d.tar.gz" *.log testProtocol.txt $cores
-  log "$d $TESTSUITE $result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE $repoState"
+  log "$d $TESTSUITE $result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE" "  $repoState $repoStateEnterprise"
 end
 
 function cleanUp
