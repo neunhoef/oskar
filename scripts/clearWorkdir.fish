@@ -1,3 +1,3 @@
 #!/usr/bin/fish
-cd /work
+cd $INNERWORKDIR
 rm -rf ArangoDB testreport*

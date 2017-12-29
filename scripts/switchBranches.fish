@@ -1,5 +1,5 @@
 #!/usr/bin/fish
-cd /work/ArangoDB
+cd $INNERWORKDIR/ArangoDB
 git checkout -- .
 git checkout $argv[1]
 git pull

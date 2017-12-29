@@ -1,26 +1,23 @@
 #!/usr/bin/fish
 
-function noteStartAndRepoState
-  echo "Status of main repository:" >testsStarted
-  echo >>testsStarted
-  echo "git branch:" >> testsStarted
-  git branch >> testsStarted
-  echo "git status:" >> testsStarted
-  git status >> testsStarted
-  echo "git diff:" >> testsStarted
-  git diff >> testsStarted
+set -g repoState ""
 
-  if test $ENTERPRISEEDITION = On
-    echo "Status of enterprise repository:" >> testsStarted
-    cd enterprise
-    echo "git branch:" >> ../testsStarted
-    git branch >> ../testsStarted
-    echo "git status:" >> ../testsStarted
-    git status >> ../testsStarted
-    echo "git diff:" >> ../testsStarted
-    git diff >> ../testsStarted
-    cd ..
-  end
+function getRepoState
+  set -l l "Status of main repository:"
+  set -l l $l (git status -b -s | grep -v "^[?]")
+  set -l l $l "" "Status of enterprise repository:"
+  cd enterprise
+  set -l l $l (git status -b -s | grep -v "^[?]") ""
+  cd ..
+  set -g repoState $l
+end
+
+function noteStartAndRepoState
+  getRepoState
+  rm -f testProtocol.txt
+  set -l d (date -u +%F_%H.%M.%SZ)
+  echo $d >> testProtocol.txt
+  for l in $repoState ; echo $l >> testProtocol.txt ; echo $l ; end
 end
 
 function launchSingleTests
@@ -131,37 +128,37 @@ function waitOrKill
   end
 end
 
+function log
+  for l in $argv
+    echo $l
+    echo $l >> $INNERWORKDIR/test.log
+  end
+end
+
 function createReport
   set d (date -u +%F_%H.%M.%SZ)
-  rm -f testsEnded
-  touch testsEnded
+  echo $d >> testProtocol.txt
   set -l result GOOD
   for f in *.log
     if not tail -1 $f | grep Success > /dev/null
       set -l result BAD
       echo Bad result in $f
-      echo Bad result in $f >> testsEnded
+      echo Bad result in $f >> testProtocol.txt
     end
   end
-  echo $result >> testsEnded
+  echo $result >> testProtocol.txt
   set -l cores core*
-  tar czf "/work/testreport-$d.tar.gz" *.log testsStarted testsEnded $cores
-  echo Overall result: $result
-  git branch
-  if test $ENTERPRISEEDITION = On
-    cd enterprise
-    git branch
-    cd ..
-  end
+  tar czf "$INNERWORKDIR/testreport-$d.tar.gz" *.log testProtocol.txt $cores
+  log "$d $TESTSUITE $result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE $repoState"
 end
 
 function cleanUp
   killall -9 arangod arangosh ^/dev/null
   set -l cores core*
-  rm -rf testsStarted testsEnded *.log $cores
+  rm -rf testProtocol.txt *.log $cores
 end
 
-cd /work/ArangoDB
+cd $INNERWORKDIR/ArangoDB
 
 switch $TESTSUITE
   case "cluster"

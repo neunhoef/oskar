@@ -1,5 +1,5 @@
 #!/usr/bin/fish
-cd /work/ArangoDB
+cd $INNERWORKDIR/ArangoDB
 if test ! -d build
   mkdir build
 end

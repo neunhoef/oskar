@@ -1,5 +1,6 @@
 function showConfig
   echo "Workdir           : $WORKDIR"
+  echo "Inner workdir     : $INNERWORKDIR"
   echo "Name              : $NAME"
   echo "Container running : $CONTAINERRUNNING"
   echo "Maintainer        : $MAINTAINER"
@@ -35,6 +36,7 @@ function parallelism ; set -g PARALLELISM $argv[1] ; showConfig ; end
 if test -z "$PARALLELISM" ; set -g PARALLELISM 64 ; end
 
 set -g WORKDIR (pwd)
+set -g INNERWORKDIR /work
 if test -f oskar_name
   set -g NAME (cat oskar_name)
 else
@@ -68,24 +70,24 @@ end
 
 function checkoutArangoDB
   startContainer
-  docker exec -it -e MAINTAINER=$MAINTAINER -e BUILDMODE=$BUILDMODE -e PARALLELISM=$PARALLELISM -e STORAGEENGINE=$STORAGEENGINE -e TESTSUITE=$TESTSUITE -e ENTERPRISEEDITION=$ENTERPRISEEDITION $NAME /scripts/checkoutArangoDB.fish
+  docker exec -it -e INNERWORKDIR=$INNERWORKDIR -e MAINTAINER=$MAINTAINER -e BUILDMODE=$BUILDMODE -e PARALLELISM=$PARALLELISM -e STORAGEENGINE=$STORAGEENGINE -e TESTSUITE=$TESTSUITE -e ENTERPRISEEDITION=$ENTERPRISEEDITION $NAME /scripts/checkoutArangoDB.fish
   community
 end
 
 function checkoutEnterprise
   startContainer
-  docker exec -it -e MAINTAINER=$MAINTAINER -e BUILDMODE=$BUILDMODE -e PARALLELISM=$PARALLELISM -e STORAGEENGINE=$STORAGEENGINE -e ENTERPRISEEDITION=$ENTERPRISEEDITION -e TESTSUITE=$TESTSUITE $NAME /scripts/checkoutEnterprise.fish
+  docker exec -it -e INNERWORKDIR=$INNERWORKDIR -e MAINTAINER=$MAINTAINER -e BUILDMODE=$BUILDMODE -e PARALLELISM=$PARALLELISM -e STORAGEENGINE=$STORAGEENGINE -e ENTERPRISEEDITION=$ENTERPRISEEDITION -e TESTSUITE=$TESTSUITE $NAME /scripts/checkoutEnterprise.fish
   enterprise
 end
 
 function switchBranches
   startContainer
-  docker exec -it -e MAINTAINER=$MAINTAINER -e BUILDMODE=$BUILDMODE -e PARALLELISM=$PARALLELISM -e STORAGEENGINE=$STORAGEENGINE -e ENTERPRISEEDITION=$ENTERPRISEEDITION -e TESTSUITE=$TESTSUITE $NAME /scripts/switchBranches.fish $argv
+  docker exec -it -e INNERWORKDIR=$INNERWORKDIR -e MAINTAINER=$MAINTAINER -e BUILDMODE=$BUILDMODE -e PARALLELISM=$PARALLELISM -e STORAGEENGINE=$STORAGEENGINE -e ENTERPRISEEDITION=$ENTERPRISEEDITION -e TESTSUITE=$TESTSUITE $NAME /scripts/switchBranches.fish $argv
 end
 
 function clearWorkdir
   startContainer
-  docker exec -it -e MAINTAINER=$MAINTAINER -e BUILDMODE=$BUILDMODE -e PARALLELISM=$PARALLELISM -e STORAGEENGINE=$STORAGEENGINE -e ENTERPRISEEDITION=$ENTERPRISEEDITION -e TESTSUITE=$TESTSUITE $NAME /scripts/clearWorkdir.fish
+  docker exec -it -e INNERWORKDIR=$INNERWORKDIR -e MAINTAINER=$MAINTAINER -e BUILDMODE=$BUILDMODE -e PARALLELISM=$PARALLELISM -e STORAGEENGINE=$STORAGEENGINE -e ENTERPRISEEDITION=$ENTERPRISEEDITION -e TESTSUITE=$TESTSUITE $NAME /scripts/clearWorkdir.fish
 end
 
 function showAndCheck
@@ -94,15 +96,46 @@ function showAndCheck
 end
 
 function buildArangoDB
-  showAndCheck
-  cd $WORKDIR
-  docker exec -it -e MAINTAINER=$MAINTAINER -e BUILDMODE=$BUILDMODE -e PARALLELISM=$PARALLELISM -e STORAGEENGINE=$STORAGEENGINE -e ENTERPRISEEDITION=$ENTERPRISEEDITION -e TESTSUITE=$TESTSUITE $NAME /scripts/buildArangoDB.fish
+  docker exec -it -e INNERWORKDIR=$INNERWORKDIR -e MAINTAINER=$MAINTAINER -e BUILDMODE=$BUILDMODE -e PARALLELISM=$PARALLELISM -e STORAGEENGINE=$STORAGEENGINE -e ENTERPRISEEDITION=$ENTERPRISEEDITION -e TESTSUITE=$TESTSUITE $NAME /scripts/buildArangoDB.fish
 end
 
 function oskar
-  showAndCheck
-  cd $WORKDIR
-  docker exec -it -e MAINTAINER=$MAINTAINER -e BUILDMODE=$BUILDMODE -e PARALLELISM=$PARALLELISM -e STORAGEENGINE=$STORAGEENGINE -e ENTERPRISEEDITION=$ENTERPRISEEDITION -e TESTSUITE=$TESTSUITE $NAME /scripts/runTests.fish
+  docker exec -it -e INNERWORKDIR=$INNERWORKDIR -e MAINTAINER=$MAINTAINER -e BUILDMODE=$BUILDMODE -e PARALLELISM=$PARALLELISM -e STORAGEENGINE=$STORAGEENGINE -e ENTERPRISEEDITION=$ENTERPRISEEDITION -e TESTSUITE=$TESTSUITE $NAME /scripts/runTests.fish
 end
+
+function oskar1 ; buildArangoDB ; showAndCheck ; oskar ; end
+
+function oskar2
+  showAndCheck
+  buildArangoDB
+  cluster ; oskar ; single ; oskar ; cluster
+end
+
+function oskar4
+  showAndCheck
+  buildArangoDB
+  rocksdb
+  cluster ; oskar ; single ; oskar ; cluster
+  mmfiles
+  cluster ; oskar ; single ; oskar ; cluster
+  rocksdb
+end
+
+function oskar8
+  showAndCheck
+  enterprise ; buildArangoDB
+  rocksdb
+  cluster ; oskar ; single ; oskar ; cluster
+  mmfiles
+  cluster ; oskar ; single ; oskar ; cluster
+  community ; buildArangoDB
+  rocksdb
+  cluster ; oskar ; single ; oskar ; cluster
+  mmfiles
+  cluster ; oskar ; single ; oskar ; cluster
+  rocksdb
+end
+
+
 
 showConfig
