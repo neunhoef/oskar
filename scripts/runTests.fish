@@ -152,7 +152,7 @@ function createReport
   set -l result GOOD
   for f in *.log
     if not tail -1 $f | grep Success > /dev/null
-      set -l result BAD
+      set result BAD
       echo Bad result in $f
       echo Bad result in $f >> testProtocol.txt
     end
