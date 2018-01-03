@@ -144,4 +144,8 @@ function updateOskar
   startContainer
 end
 
+function showLog
+  less +G work/test.log
+end
+
 showConfig
