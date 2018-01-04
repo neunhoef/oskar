@@ -12,5 +12,7 @@ cmake -DCMAKE_BUILD_TYPE=$BUILDTYPE \
       -DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=gold \
       -DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=gold \
       -DUSE_JEMALLOC=On \
+      -DUSE_FAILURE_TESTS=On \
+      -DDEBUG_SYNC_REPLICATION=On \
       ..
 nice make -j$PARALLELISM

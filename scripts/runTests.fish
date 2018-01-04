@@ -50,6 +50,10 @@ function launchSingleTests
 
   test1 shell_server ""
   test1 shell_client ""
+  test1 recovery ""
+  test1 replication_sync ""
+  test1 replication_static ""
+  test1 replication_ongoing ""
   test1 http_server ""
   test1 ssl_server ""
   test1 shell_server_aql 0 --testBuckets 5/0
@@ -60,6 +64,8 @@ function launchSingleTests
   test1 dump ""
   test1 server_http ""
   test1 agency ""
+  test1 shell_replication ""
+  test1 http_replication ""
 end
 
 function launchClusterTests
