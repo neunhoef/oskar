@@ -11,28 +11,28 @@ function showConfig
   echo "Test suite        : $TESTSUITE"
 end
 
-function single ; set -g TESTSUITE single ; showConfig ; end
-function cluster ; set -g TESTSUITE cluster ; showConfig ; end
-function resilience ; set -g TESTSUITE resilience ; showConfig ; end
+function single ; set -g TESTSUITE single ; end
+function cluster ; set -g TESTSUITE cluster ; end
+function resilience ; set -g TESTSUITE resilience ; end
 if test -z "$TESTSUITE" ; set -g TESTSUITE cluster ; end
 
-function maintainerOn ; set -g MAINTAINER On ; showConfig ; end
-function maintainerOff ; set -g MAINTAINER Off ; showConfig ; end
+function maintainerOn ; set -g MAINTAINER On ; end
+function maintainerOff ; set -g MAINTAINER Off ; end
 if test -z "$MAINTAINER" ; set -g MAINTAINER On ; end
 
-function debugMode ; set -g BUILDMODE Debug ; showConfig ; end
-function releaseMode ; set -g BUILDMODE RelWithDebInfo ; showConfig ; end
+function debugMode ; set -g BUILDMODE Debug ; end
+function releaseMode ; set -g BUILDMODE RelWithDebInfo ; end
 if test -z "$BUILDMODE" ; set -g BUILDMODE RelWithDebInfo ; end
 
-function community ; set -g ENTERPRISEEDITION Off ; showConfig ; end
-function enterprise ; set -g ENTERPRISEEDITION On ; showConfig ; end
+function community ; set -g ENTERPRISEEDITION Off ; end
+function enterprise ; set -g ENTERPRISEEDITION On ; end
 if test -z "$ENTERPRISEEDITION" ; set -g ENTERPRISEEDITION On ; end
 
-function mmfiles ; set -g STORAGEENGINE mmfiles ; showConfig ; end
-function rocksdb ; set -g STORAGEENGINE rocksdb ; showConfig ; end
+function mmfiles ; set -g STORAGEENGINE mmfiles ; end
+function rocksdb ; set -g STORAGEENGINE rocksdb ; end
 if test -z "$STORAGEENGINE" ; set -g STORAGEENGINE rocksdb ; end
 
-function parallelism ; set -g PARALLELISM $argv[1] ; showConfig ; end
+function parallelism ; set -g PARALLELISM $argv[1] ; end
 if test -z "$PARALLELISM" ; set -g PARALLELISM 64 ; end
 
 set -g WORKDIR (pwd)
