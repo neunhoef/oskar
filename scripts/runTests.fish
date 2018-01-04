@@ -32,8 +32,8 @@ function noteStartAndRepoState
 end
 
 function launchSingleTests
-  echo Launching tests...
   noteStartAndRepoState
+  echo Launching tests...
 
   set -g portBase 10000
 
@@ -63,8 +63,8 @@ function launchSingleTests
 end
 
 function launchClusterTests
-  echo Launching tests...
   noteStartAndRepoState
+  echo Launching tests...
 
   set -g portBase 10000
 
