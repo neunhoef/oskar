@@ -38,6 +38,8 @@ function launchSingleTests
   set -g portBase 10000
 
   function test1
+    if test $VERBOSE = On ; echo Launching $argv ; end
+
     set -l t $argv[1]
     set -l tt $argv[2]
     set -e argv[1..2]
@@ -50,7 +52,9 @@ function launchSingleTests
 
   test1 shell_server ""
   test1 shell_client ""
-  test1 recovery ""
+  test1 recovery --testBuckets 3/0
+  test1 recovery --testBuckets 3/1
+  test1 recovery --testBuckets 3/2
   test1 replication_sync ""
   test1 replication_static ""
   test1 replication_ongoing ""
@@ -75,6 +79,7 @@ function launchClusterTests
   set -g portBase 10000
 
   function test1
+    if test $VERBOSE = On ; echo Launching $argv ; end
     set -l t $argv[1]
     set -l tt $argv[2]
     set -e argv[1..2]
@@ -86,6 +91,7 @@ function launchClusterTests
   end
 
   function test3
+    if test $VERBOSE = On ; echo Launching $argv ; end
     scripts/unittest $argv[1] --test $argv[3] \
       --storageEngine $STORAGEENGINE --cluster true \
       --minPort $portBase --maxPort (math $portBase + 99) \
