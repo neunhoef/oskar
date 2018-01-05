@@ -52,9 +52,10 @@ function launchSingleTests
 
   test1 shell_server ""
   test1 shell_client ""
-  test1 recovery --testBuckets 3/0
-  test1 recovery --testBuckets 3/1
-  test1 recovery --testBuckets 3/2
+  test1 recovery 0 --testBuckets 4/0
+  test1 recovery 1 --testBuckets 4/1
+  test1 recovery 2 --testBuckets 4/2
+  test1 recovery 3 --testBuckets 4/3
   test1 replication_sync ""
   test1 replication_static ""
   test1 replication_ongoing ""
