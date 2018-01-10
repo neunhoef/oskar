@@ -108,6 +108,7 @@ function launchClusterTests
   test1 shell_server ""
   test1 http_server ""
   test1 ssl_server ""
+  test3 resilience sharddist js/server/tests/resilience/shard-distribution-spec.js
   test1 shell_server_aql 0 --testBuckets 5/0
   test1 shell_server_aql 1 --testBuckets 5/1
   test1 shell_server_aql 2 --testBuckets 5/2
