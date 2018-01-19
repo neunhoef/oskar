@@ -14,5 +14,6 @@ cmake -DCMAKE_BUILD_TYPE=$BUILDTYPE \
       -DUSE_JEMALLOC=On \
       -DUSE_FAILURE_TESTS=On \
       -DDEBUG_SYNC_REPLICATION=On \
+      -DUSE_IRESEARCH=On \
       ..
 nice make -j$PARALLELISM
