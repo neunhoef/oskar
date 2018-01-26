@@ -1,9 +1,16 @@
 #!/usr/bin/fish
 cd $INNERWORKDIR/ArangoDB
+if test ! -d .ccache
+  mkdir .ccache
+end
+set -x CCACHE_DIR /ArangoDB/.ccache
+ccache -M 30G
+
 if test ! -d build
   mkdir build
 end
 cd build
+
 cmake -DCMAKE_BUILD_TYPE=$BUILDTYPE \
       -DCMAKE_CXX_COMPILER=/usr/lib/ccache/g++ \
       -DCMAKE_C_COMPILER=/usr/lib/ccache/gcc \
