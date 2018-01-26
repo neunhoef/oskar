@@ -55,7 +55,11 @@ else
 end
 set -g VERBOSEOSKAR Off
 
-function buildImage ; cd $WORKDIR ; docker build -t neunhoef/oskar . ; end
+function buildImage
+  cd $WORKDIR/buildUbuntu.docker
+  docker build -t neunhoef/oskar .
+  cd $WORKDIR
+end
 function pushImage ; docker push neunhoef/oskar ; end
 function pullImage ; docker pull neunhoef/oskar ; end
 
@@ -102,23 +106,31 @@ end
 
 function buildArangoDB
   docker exec -it -e INNERWORKDIR=$INNERWORKDIR -e MAINTAINER=$MAINTAINER -e BUILDMODE=$BUILDMODE -e PARALLELISM=$PARALLELISM -e STORAGEENGINE=$STORAGEENGINE -e VERBOSEOSKAR=$VERBOSEOSKAR -e ENTERPRISEEDITION=$ENTERPRISEEDITION -e TESTSUITE=$TESTSUITE $NAME /scripts/buildArangoDB.fish
+  if test $status != 0
+    echo Build error!
+    return $status
+  end
 end
 
 function oskar
   docker exec -it -e INNERWORKDIR=$INNERWORKDIR -e MAINTAINER=$MAINTAINER -e BUILDMODE=$BUILDMODE -e PARALLELISM=$PARALLELISM -e STORAGEENGINE=$STORAGEENGINE -e VERBOSEOSKAR=$VERBOSEOSKAR -e ENTERPRISEEDITION=$ENTERPRISEEDITION -e TESTSUITE=$TESTSUITE $NAME /scripts/runTests.fish
 end
 
-function oskar1 ; showAndCheck ; buildArangoDB ; oskar ; end
+function oskar1
+  showAndCheck
+  buildArangoDB ; if test $status != 0 ; return $status ; end
+  oskar
+end
 
 function oskar2
   showAndCheck
-  buildArangoDB
+  buildArangoDB ; if test $status != 0 ; return $status ; end
   cluster ; oskar ; single ; oskar ; cluster
 end
 
 function oskar4
   showAndCheck
-  buildArangoDB
+  buildArangoDB ; if test $status != 0 ; return $status ; end
   rocksdb
   cluster ; oskar ; single ; oskar ; cluster
   mmfiles
@@ -128,12 +140,14 @@ end
 
 function oskar8
   showAndCheck
-  enterprise ; buildArangoDB
+  enterprise
+  buildArangoDB ; if test $status != 0 ; return $status ; end
   rocksdb
   cluster ; oskar ; single ; oskar ; cluster
   mmfiles
   cluster ; oskar ; single ; oskar ; cluster
-  community ; buildArangoDB
+  community
+  buildArangoDB ; if test $status != 0 ; return $status ; end
   rocksdb
   cluster ; oskar ; single ; oskar ; cluster
   mmfiles
