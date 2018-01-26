@@ -1,10 +1,12 @@
 #!/usr/bin/fish
-cd $INNERWORKDIR/ArangoDB
+cd $INNERWORKDIR
 if test ! -d .ccache
   mkdir .ccache
 end
-set -x CCACHE_DIR /ArangoDB/.ccache
+set -x CCACHE_DIR $INNERWORKDIR/.ccache
 ccache -M 30G
+
+cd $INNERWORKDIR/ArangoDB
 
 if test ! -d build
   mkdir build
