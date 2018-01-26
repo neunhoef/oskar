@@ -1,5 +1,5 @@
 set -x OSKARBUILDIMAGE neunhoef/oskar
-set -x ALPINEBUILDIMAGE neunhoef/alpineBuildArangoDB
+set -x ALPINEBUILDIMAGE neunhoef/alpinebuildarangodb
 
 function showConfig
   echo "Workdir           : $WORKDIR"
