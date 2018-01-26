@@ -1,8 +1,6 @@
 #!/usr/bin/fish
 cd $INNERWORKDIR
-if test ! -d .ccache
-  mkdir .ccache
-end
+mkdir -p .ccache
 set -x CCACHE_DIR $INNERWORKDIR/.ccache
 ccache -M 30G
 
@@ -22,7 +20,6 @@ cmake -DCMAKE_BUILD_TYPE=$BUILDTYPE \
       -DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=gold \
       -DUSE_JEMALLOC=On \
       -DUSE_FAILURE_TESTS=On \
-      -DDEBUG_SYNC_REPLICATION=On \
-      -DUSE_IRESEARCH=On \
+      -DDEBUG_SYNC_REPLICATION=On
       ..
 nice make -j$PARALLELISM
