@@ -5,4 +5,4 @@ RUN apt-get update && apt-get install -y build-essential g++ cmake make bison fl
 
 COPY ./scripts /scripts
 
-COMMAND [ "/usr/bin/fish" ]
+CMD [ "/usr/bin/fish" ]
