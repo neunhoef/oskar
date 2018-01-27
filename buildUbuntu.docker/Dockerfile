@@ -5,4 +5,4 @@ RUN apt-get update && apt-get install -y build-essential g++ cmake make bison fl
 
 COPY ./scripts /scripts
 
-ENTRYPOINT [ "/scripts/wait.fish" ]
+COMMAND [ "/usr/bin/fish" ]
