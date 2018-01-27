@@ -202,3 +202,4 @@ end
 
 cleanUp
 
+chown -R $UID:$GID $INNERWORKDIR
