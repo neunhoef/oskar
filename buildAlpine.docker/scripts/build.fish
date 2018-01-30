@@ -24,15 +24,16 @@ cmake $argv \
       -DSTATIC_EXECUTABLES=On \
       -DLIBMUSL_BUILD=On \
       ..
-nice make -j$PARALLELISM
+mkdir install
+rm -rf install.tar.gz
+set -x DESTDIR (pwd)/install
+nice make -j$PARALLELISM install
 if test $status != 0
   set -l s $status 
+  rm -rf install
   chown -R $UID:$GID $INNERWORKDIR
   exit $s
 end
-mkdir install
-set -x DESTDIR (pwd)/install
-make install
 cd install
 tar czvf ../install.tar.gz *
 cd $INNERWORKDIR/ArangoDB/build
