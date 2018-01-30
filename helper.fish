@@ -75,26 +75,48 @@ function remakeImages
   pushAlpineBuildImage
 end
 
+function runInContainer
+  docker run -it -v $WORKDIR/work:$INNERWORKDIR \
+                 -v $SSH_AUTH_SOCK:/ssh-agent \
+                 -e SSH_AUTH_SOCK=/ssh-agent \
+                 -v /etc/passwd:/etc/passwd \
+                 -v /etc/group:/etc/group \
+                 -v $HOME:$HOME \
+                 --user (id -u):(id -g) \
+                 --rm \
+                 -e INNERWORKDIR=$INNERWORKDIR \
+                 -e MAINTAINER=$MAINTAINER \
+                 -e BUILDMODE=$BUILDMODE \
+                 -e PARALLELISM=$PARALLELISM \
+                 -e STORAGEENGINE=$STORAGEENGINE \
+                 -e TESTSUITE=$TESTSUITE \
+                 -e VERBOSEOSKAR=$VERBOSEOSKAR \
+                 -e ENTERPRISEEDITION=$ENTERPRISEEDITION \
+                 $OSKARBUILDIMAGE $argv
+end
+
 function checkoutArangoDB
-  docker run -it -v $WORKDIR/work:$INNERWORKDIR -v $SSH_AUTH_SOCK:/ssh-agent -e UID=(id -u) -e GID=(id -g) -e SSH_AUTH_SOCK=/ssh-agent --rm -e INNERWORKDIR=$INNERWORKDIR -e MAINTAINER=$MAINTAINER -e BUILDMODE=$BUILDMODE -e PARALLELISM=$PARALLELISM -e STORAGEENGINE=$STORAGEENGINE -e TESTSUITE=$TESTSUITE -e VERBOSEOSKAR=$VERBOSEOSKAR -e ENTERPRISEEDITION=$ENTERPRISEEDITION $OSKARBUILDIMAGE /scripts/checkoutArangoDB.fish
+  runInContainer $OSKARBUILDIMAGE /scripts/checkoutArangoDB.fish
+  if test $status != 0 ; return $status ; end
   community
 end
 
 function checkoutEnterprise
-  docker run -it -v $WORKDIR/work:$INNERWORKDIR -v $SSH_AUTH_SOCK:/ssh-agent -e UID=(id -u) -e GID=(id -g) -e SSH_AUTH_SOCK=/ssh-agent --rm -e INNERWORKDIR=$INNERWORKDIR -e MAINTAINER=$MAINTAINER -e BUILDMODE=$BUILDMODE -e PARALLELISM=$PARALLELISM -e STORAGEENGINE=$STORAGEENGINE -e VERBOSEOSKAR=$VERBOSEOSKAR -e ENTERPRISEEDITION=$ENTERPRISEEDITION -e TESTSUITE=$TESTSUITE $OSKARBUILDIMAGE /scripts/checkoutEnterprise.fish
+  runInContainer $OSKARBUILDIMAGE /scripts/checkoutEnterprise.fish
+  if test $status != 0 ; return $status ; end
   enterprise
 end
 
 function switchBranches
-  docker run -it -v $WORKDIR/work:$INNERWORKDIR -v $SSH_AUTH_SOCK:/ssh-agent -e UID=(id -u) -e GID=(id -g) -e SSH_AUTH_SOCK=/ssh-agent --rm -e INNERWORKDIR=$INNERWORKDIR -e MAINTAINER=$MAINTAINER -e BUILDMODE=$BUILDMODE -e PARALLELISM=$PARALLELISM -e STORAGEENGINE=$STORAGEENGINE -e VERBOSEOSKAR=$VERBOSEOSKAR -e ENTERPRISEEDITION=$ENTERPRISEEDITION -e TESTSUITE=$TESTSUITE $OSKARBUILDIMAGE /scripts/switchBranches.fish $argv
+  runInContainer $OSKARBUILDIMAGE /scripts/switchBranches.fish $argv
 end
 
 function clearWorkdir
-  docker run -it -v $WORKDIR/work:$INNERWORKDIR -v $SSH_AUTH_SOCK:/ssh-agent -e UID=(id -u) -e GID=(id -g) -e SSH_AUTH_SOCK=/ssh-agent --rm -e INNERWORKDIR=$INNERWORKDIR -e MAINTAINER=$MAINTAINER -e BUILDMODE=$BUILDMODE -e PARALLELISM=$PARALLELISM -e STORAGEENGINE=$STORAGEENGINE -e VERBOSEOSKAR=$VERBOSEOSKAR -e ENTERPRISEEDITION=$ENTERPRISEEDITION -e TESTSUITE=$TESTSUITE $OSKARBUILDIMAGE /scripts/clearWorkdir.fish
+  runInContainer $OSKARBUILDIMAGE /scripts/clearWorkdir.fish
 end
 
 function buildArangoDB
-  docker run -it -v $WORKDIR/work:$INNERWORKDIR -v $SSH_AUTH_SOCK:/ssh-agent -e UID=(id -u) -e GID=(id -g) -e SSH_AUTH_SOCK=/ssh-agent --rm -e INNERWORKDIR=$INNERWORKDIR -e MAINTAINER=$MAINTAINER -e BUILDMODE=$BUILDMODE -e PARALLELISM=$PARALLELISM -e STORAGEENGINE=$STORAGEENGINE -e VERBOSEOSKAR=$VERBOSEOSKAR -e ENTERPRISEEDITION=$ENTERPRISEEDITION -e TESTSUITE=$TESTSUITE $OSKARBUILDIMAGE /scripts/buildArangoDB.fish
+  runInContainer $OSKARBUILDIMAGE /scripts/buildArangoDB.fish
   if test $status != 0
     echo Build error!
     return $status
@@ -102,7 +124,7 @@ function buildArangoDB
 end
 
 function buildStaticArangoDB
-  docker run -it -v $WORKDIR/work:$INNERWORKDIR -v $SSH_AUTH_SOCK:/ssh-agent -e UID=(id -u) -e GID=(id -g) -e SSH_AUTH_SOCK=/ssh-agent --rm -e INNERWORKDIR=$INNERWORKDIR -e MAINTAINER=$MAINTAINER -e BUILDMODE=$BUILDMODE -e PARALLELISM=$PARALLELISM -e STORAGEENGINE=$STORAGEENGINE -e VERBOSEOSKAR=$VERBOSEOSKAR -e ENTERPRISEEDITION=$ENTERPRISEEDITION -e TESTSUITE=$TESTSUITE $ALPINEBUILDIMAGE /scripts/build.fish
+  runInContainer $ALPINEBUILDIMAGE /scripts/build.fish
   if test $status != 0
     echo Build error!
     return $status
@@ -110,7 +132,7 @@ function buildStaticArangoDB
 end
 
 function oskar
-  docker run -it -v $WORKDIR/work:$INNERWORKDIR -v $SSH_AUTH_SOCK:/ssh-agent -e UID=(id -u) -e GID=(id -g) -e SSH_AUTH_SOCK=/ssh-agent --rm -e INNERWORKDIR=$INNERWORKDIR -e MAINTAINER=$MAINTAINER -e BUILDMODE=$BUILDMODE -e PARALLELISM=$PARALLELISM -e STORAGEENGINE=$STORAGEENGINE -e VERBOSEOSKAR=$VERBOSEOSKAR -e ENTERPRISEEDITION=$ENTERPRISEEDITION -e TESTSUITE=$TESTSUITE $OSKARBUILDIMAGE /scripts/runTests.fish
+  runInContainer $OSKARBUILDIMAGE /scripts/runTests.fish
 end
 
 function oskar1
