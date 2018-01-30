@@ -23,7 +23,7 @@ if [ "$1" = 'arangod' ]; then
     touch "$DATADIR"/_rwcheck_$HOSTNAME || rwfail $DATADIR
     rm "$DATADIR"/_rwcheck_"$HOSTNAME"
     touch /var/lib/arangodb3-apps/_rwcheck_"$HOSTNAME" || rwfail /var/lib/arangodb3-apps/
-    rm /var/lib/arangodb-apps3/_rwcheck_"$HOSTNAME"
+    rm /var/lib/arangodb3-apps/_rwcheck_"$HOSTNAME"
     if [ ! -f "$DATADIR"/SERVER ]; then
 	if [ -f "$ARANGO_ROOT_PASSWORD_FILE" ]; then
 	    ARANGO_ROOT_PASSWORD="$(cat $ARANGO_ROOT_PASSWORD_FILE)"
