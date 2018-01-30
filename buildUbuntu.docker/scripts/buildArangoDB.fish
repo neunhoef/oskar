@@ -1,14 +1,14 @@
 #!/usr/bin/fish
 cd $INNERWORKDIR
-mkdir -p .ccache
-set -x CCACHE_DIR $INNERWORKDIR/.ccache
+mkdir -p .ccache.ubuntu
+set -x CCACHE_DIR $INNERWORKDIR/.ccache.ubuntu
 ccache -M 30G
 
 cd $INNERWORKDIR/ArangoDB
 
-if test ! -d build
-  mkdir build
-end
+rm -rf
+rm -rf build
+mkdir -p build
 cd build
 
 cmake -DCMAKE_BUILD_TYPE=$BUILDTYPE \

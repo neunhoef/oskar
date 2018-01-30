@@ -5,8 +5,8 @@ if test $PARALLELISM = ""
 end
 
 cd $INNERWORKDIR
-mkdir -p .ccache
-set -x CCACHE_DIR $INNERWORKDIR/.ccache
+mkdir -p .ccache.alpine
+set -x CCACHE_DIR $INNERWORKDIR/.ccache.alpine
 ccache -M 30G
 
 cd $INNERWORKDIR/ArangoDB
