@@ -36,6 +36,9 @@ if test $status != 0
   exit $s
 end
 cd install
+if test -z "$NOSTRIP"
+  strip usr/sbin/arangod usr/bin/arangoimport usr/bin/arangosh usr/bin/arangovpack usr/bin/arangoexport usr/bin/arangobench usr/bin/arangodump usr/bin/arangorestore
+end
 tar czvf ../install.tar.gz *
 cd $INNERWORKDIR/ArangoDB/build
 rm -rf install
