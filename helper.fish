@@ -172,6 +172,15 @@ function oskar8
   rocksdb
 end
 
+function pushOskar
+  source helper.fish
+  git push
+  buildUbuntuBuildImage
+  pushUbuntuBuildImage
+  buildAlpineBuildImage
+  pushAlpineBuildImage
+end
+
 function updateOskar
   pullUbuntuBuildImage
   pullAlpineBuildImage
