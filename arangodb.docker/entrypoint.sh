@@ -16,14 +16,14 @@ esac
 
 
 if [ "$1" = 'arangod' ]; then
-    DATADIR=/var/lib/arangodb
+    DATADIR=/var/lib/arangodb3
     
     # ensure proper uid and gid (for example when volume is mounted from the outside)
     # do NOT chown or stuff like that. when using shared folders on the mac chown is VERY likely to fail due to docker => vm => host issues
     touch "$DATADIR"/_rwcheck_$HOSTNAME || rwfail $DATADIR
     rm "$DATADIR"/_rwcheck_"$HOSTNAME"
-    touch /var/lib/arangodb-apps/_rwcheck_"$HOSTNAME" || rwfail /var/lib/arangodb-apps/
-    rm /var/lib/arangodb-apps/_rwcheck_"$HOSTNAME"
+    touch /var/lib/arangodb3-apps/_rwcheck_"$HOSTNAME" || rwfail /var/lib/arangodb3-apps/
+    rm /var/lib/arangodb-apps3/_rwcheck_"$HOSTNAME"
     if [ ! -f "$DATADIR"/SERVER ]; then
 	if [ -f "$ARANGO_ROOT_PASSWORD_FILE" ]; then
 	    ARANGO_ROOT_PASSWORD="$(cat $ARANGO_ROOT_PASSWORD_FILE)"
