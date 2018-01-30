@@ -24,4 +24,4 @@ cmake $argv \
       -DSTATIC_EXECUTABLES=On \
       ..
 nice make -j$PARALLELISM
-chown -R $UID:$GID $INNERWORKDIR
+#chown -R $UID:$GID $INNERWORKDIR
