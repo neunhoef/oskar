@@ -90,7 +90,7 @@ function runInContainer
                  -e TESTSUITE=$TESTSUITE \
                  -e VERBOSEOSKAR=$VERBOSEOSKAR \
                  -e ENTERPRISEEDITION=$ENTERPRISEEDITION \
-                 $OSKARBUILDIMAGE $argv
+                 $argv
 end
 
 function checkoutArangoDB
