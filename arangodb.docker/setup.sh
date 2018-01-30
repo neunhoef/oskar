@@ -6,3 +6,4 @@ install -o arangodb -g arangodb -m 755 -d /var/lib/arangodb3
 install -o arangodb -g arangodb -m 755 -d /var/lib/arangodb3-apps
 install -o arangodb -g arangodb -m 755 -d /var/log/arangodb3
 
+mkdir /docker-entrypoint-initdb.d/
