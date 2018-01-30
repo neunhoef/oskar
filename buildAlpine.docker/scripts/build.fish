@@ -27,4 +27,8 @@ nice make -j$PARALLELISM
 mkdir install
 set -x DESTDIR (pwd)/install
 make install
+cd install
+tar czvf ../install.tar.gz *
+cd $INNERWORKDIR/ArangoDB/build
+rm -rf install
 chown -R $UID:$GID $INNERWORKDIR
