@@ -1,2 +1,12 @@
  - other error checking
  - use alpine build
+ - routines to download arangodb starter and arangosync
+ - routines to create universal deb package
+ - routines to create universal rpm package
+ - routines to create .tar.gz distribution
+ - run tests with alpine static build
+ - merge alpine static fixes into devel
+ - port all alpine static fixes to 3.3 and 3.2
+ - make tests green
+ - look into compiler architecture optimizations
+ - compare performance
