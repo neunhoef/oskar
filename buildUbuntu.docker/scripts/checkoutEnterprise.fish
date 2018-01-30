@@ -4,4 +4,4 @@ cd $INNERWORKDIR/ArangoDB
 if test ! -d enterprise
   git clone ssh://git@github.com/arangodb/enterprise
 end
-#chown -R $UID:$GID $INNERWORKDIR
+chown -R $UID:$GID $INNERWORKDIR

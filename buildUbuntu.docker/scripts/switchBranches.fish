@@ -11,4 +11,4 @@ if test $ENTERPRISEEDITION = On
   git checkout $argv[2]
   git pull
 end
-#chown -R $UID:$GID $INNERWORKDIR
+chown -R $UID:$GID $INNERWORKDIR

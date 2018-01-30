@@ -79,10 +79,8 @@ function runInContainer
   docker run -it -v $WORKDIR/work:$INNERWORKDIR \
                  -v $SSH_AUTH_SOCK:/ssh-agent \
                  -e SSH_AUTH_SOCK=/ssh-agent \
-                 -v /etc/passwd:/etc/passwd \
-                 -v /etc/group:/etc/group \
-                 -v $HOME:$HOME \
-                 --user (id -u):(id -g) \
+                 -e UID=(id -u) \
+                 -e GID=(id -g) \
                  --rm \
                  -e INNERWORKDIR=$INNERWORKDIR \
                  -e MAINTAINER=$MAINTAINER \
