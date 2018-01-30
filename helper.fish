@@ -129,6 +129,14 @@ function buildStaticArangoDB
   end
 end
 
+function shellInUbuntuContainer
+  runInContainer $OSKARBUILDIMAGE fish
+end
+
+function shellInAlpineContainer
+  runInContainer $ALPINEBUILDIMAGE fish
+end
+
 function oskar
   runInContainer $OSKARBUILDIMAGE /scripts/runTests.fish
 end

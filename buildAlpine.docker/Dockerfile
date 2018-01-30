@@ -5,4 +5,4 @@ RUN apk update && apk add groff g++ bison flex make cmake ccache python libldap 
 
 COPY ./scripts /scripts
 
-ENTRYPOINT [ "/scripts/build.fish" ]
+CMD [ "/usr/bin/fish" ]
