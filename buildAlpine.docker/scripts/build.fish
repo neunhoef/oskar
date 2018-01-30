@@ -24,4 +24,7 @@ cmake $argv \
       -DSTATIC_EXECUTABLES=On \
       ..
 nice make -j$PARALLELISM
+mkdir install
+set -x DESTDIR (pwd)/install
+make install
 chown -R $UID:$GID $INNERWORKDIR
