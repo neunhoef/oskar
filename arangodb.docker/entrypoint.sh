@@ -1,17 +1,18 @@
-#!/bin/bash
-set -eo pipefail
+#!/bin/sh
+set -e
 
 DISABLE_AUTHENTICATION="true"
 
-function rwfail {
+rwfail {
     echo "We seem to not have proper rw access to $1. Please make sure that every mounted volume has full rw access for user arangodb ($(id arangodb))"
     exit 55
 }
 
 # if command starts with an option, prepend arangod
-if [ "${1:0:1}" = '-' ]; then
-    set -- arangod "$@"
-fi
+case "$1" in
+  -*) set -- arangod "$@" ;;
+  *) ;;
+esac
 
 
 if [ "$1" = 'arangod' ]; then
