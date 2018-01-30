@@ -4,7 +4,6 @@ set -x ALPINEBUILDIMAGE neunhoef/alpinebuildarangodb
 function showConfig
   echo "Workdir           : $WORKDIR"
   echo "Inner workdir     : $INNERWORKDIR"
-  echo "Name              : $NAME"
   echo "Maintainer        : $MAINTAINER"
   echo "Buildmode         : $BUILDMODE"
   echo "Parallelism       : $PARALLELISM"
@@ -43,12 +42,6 @@ function silent ; set -g VERBOSEOSKAR Off ; end
 
 set -g WORKDIR (pwd)
 set -g INNERWORKDIR /work
-if test -f oskar_name
-  set -g NAME (cat oskar_name)
-else
-  set -g NAME "oskar_"(random)_(random)
-  echo $NAME >oskar_name
-end
 if test ! -d work ; mkdir work ; end
 set -g VERBOSEOSKAR Off
 
