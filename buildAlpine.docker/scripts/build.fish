@@ -22,8 +22,14 @@ cmake $argv \
       -DUSE_ENTERPRISE=$ENTERPRISEEDITION \
       -DUSE_JEMALLOC=Off \
       -DSTATIC_EXECUTABLES=On \
+      -DLIBMUSL_BUILD=On \
       ..
 nice make -j$PARALLELISM
+if test $status != 0
+  set -l s $status 
+  chown -R $UID:$GID $INNERWORKDIR
+  exit $s
+end
 mkdir install
 set -x DESTDIR (pwd)/install
 make install
