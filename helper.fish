@@ -1,6 +1,18 @@
 set -x OSKARBUILDIMAGE neunhoef/oskar
 set -x ALPINEBUILDIMAGE neunhoef/alpinebuildarangodb
 
+if test -z "$SSH_AUTH_SOCK"
+  echo Missing ssh-agent, exiting.
+  sleep 5
+  exit 47
+end
+
+if ssh-add -l > /dev/null ; else
+  echo No keys in ssh-agent, exiting.
+  sleep 5
+  exit 48
+end
+
 function lockDirectory
   set -l pid (echo %self)
   if test ! -f LOCK.$pid
@@ -129,6 +141,13 @@ function clearWorkdir
 end
 
 function buildArangoDB
+  if test ! -d $WORKDIR/ArangoDB
+    if test "$ENTERPRISEEDITION" = "On"
+      checkoutEnterprise
+    else
+      checkoutArangoDB
+    end
+  end
   runInContainer $OSKARBUILDIMAGE /scripts/buildArangoDB.fish
   if test $status != 0
     echo Build error!
@@ -137,6 +156,13 @@ function buildArangoDB
 end
 
 function buildStaticArangoDB
+  if test ! -d $WORKDIR/ArangoDB
+    if test "$ENTERPRISEEDITION" = "On"
+      checkoutEnterprise
+    else
+      checkoutArangoDB
+    end
+  end
   runInContainer $ALPINEBUILDIMAGE /scripts/build.fish
   if test $status != 0
     echo Build error!
