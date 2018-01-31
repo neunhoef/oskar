@@ -45,7 +45,7 @@ function launchSingleTests
     set -e argv[1..2]
     scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE \
       --minPort $portBase --maxPort (math $portBase + 99) $argv \
-      >"$t""$tt".log ^&1 &
+      --skipNonDeterministic true >"$t""$tt".log ^&1 &
     set -g portBase (math $portBase + 100)
     sleep 5
   end
@@ -87,7 +87,7 @@ function launchClusterTests
     set -e argv[1..2]
     scripts/unittest $t --cluster true --storageEngine $STORAGEENGINE \
       --minPort $portBase --maxPort (math $portBase + 99) $argv \
-      >"$t""$tt".log ^&1 &
+      --skipNonDeterministic true >"$t""$tt".log ^&1 &
     set -g portBase (math $portBase + 100)
     sleep 5
   end
@@ -97,7 +97,7 @@ function launchClusterTests
     scripts/unittest $argv[1] --test $argv[3] \
       --storageEngine $STORAGEENGINE --cluster true \
       --minPort $portBase --maxPort (math $portBase + 99) \
-      >$argv[1]_$argv[2].log ^&1 &
+      --skipNonDeterministic true >$argv[1]_$argv[2].log ^&1 &
     set -g portBase (math $portBase + 100)
     sleep 5
   end
