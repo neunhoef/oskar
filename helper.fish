@@ -17,8 +17,8 @@ function lockDirectory
 end
 
 function unlockDirectory
-  if test -f LOCK
-    set -l pid (echo %self)
+  set -l pid (echo %self)
+  if test -f LOCK.$pid
     rm -rf LOCK LOCK.$pid
   end
 end
