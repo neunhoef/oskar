@@ -103,21 +103,21 @@ function remakeImages
 end
 
 function runInContainer
-  docker run -it -v $WORKDIR/work:$INNERWORKDIR \
-                 -v $SSH_AUTH_SOCK:/ssh-agent \
-                 -e SSH_AUTH_SOCK=/ssh-agent \
-                 -e UID=(id -u) \
-                 -e GID=(id -g) \
-                 --rm \
-                 -e INNERWORKDIR=$INNERWORKDIR \
-                 -e MAINTAINER=$MAINTAINER \
-                 -e BUILDMODE=$BUILDMODE \
-                 -e PARALLELISM=$PARALLELISM \
-                 -e STORAGEENGINE=$STORAGEENGINE \
-                 -e TESTSUITE=$TESTSUITE \
-                 -e VERBOSEOSKAR=$VERBOSEOSKAR \
-                 -e ENTERPRISEEDITION=$ENTERPRISEEDITION \
-                 $argv
+  docker run -v $WORKDIR/work:$INNERWORKDIR \
+             -v $SSH_AUTH_SOCK:/ssh-agent \
+             -e SSH_AUTH_SOCK=/ssh-agent \
+             -e UID=(id -u) \
+             -e GID=(id -g) \
+             --rm \
+             -e INNERWORKDIR=$INNERWORKDIR \
+             -e MAINTAINER=$MAINTAINER \
+             -e BUILDMODE=$BUILDMODE \
+             -e PARALLELISM=$PARALLELISM \
+             -e STORAGEENGINE=$STORAGEENGINE \
+             -e TESTSUITE=$TESTSUITE \
+             -e VERBOSEOSKAR=$VERBOSEOSKAR \
+             -e ENTERPRISEEDITION=$ENTERPRISEEDITION \
+             $argv
 end
 
 function checkoutArangoDB
