@@ -1,6 +1,28 @@
 set -x OSKARBUILDIMAGE neunhoef/oskar
 set -x ALPINEBUILDIMAGE neunhoef/alpinebuildarangodb
 
+function lockDirectory
+  set -l pid (echo %self)
+  if test ! -f LOCK.$pid
+    touch LOCK.$pid
+    while true
+      if ln LOCK.$pid LOCK ^/dev/null
+        break
+      end
+      echo -n Directory is locked, waiting...
+      date
+      sleep 15
+    end
+  end
+end
+
+function unlockDirectory
+  if test -f LOCK
+    set -l pid (echo %self)
+    rm -rf LOCK LOCK.$pid
+  end
+end
+
 function showConfig
   echo "Workdir           : $WORKDIR"
   echo "Inner workdir     : $INNERWORKDIR"
