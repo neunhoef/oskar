@@ -12,6 +12,8 @@ lockDirectory
 community
 rocksdb
 single
+echo Hallo1
 switchBranches bug-fix/static-build devel
+echo Hallo2 $status
 oskar1
 unlockDirectory
