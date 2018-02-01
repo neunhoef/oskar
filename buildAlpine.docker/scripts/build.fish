@@ -30,8 +30,8 @@ if test $status != 0
   exit $s
 end
 
+rm -rf install install.tar.gz
 mkdir install
-rm -rf install.tar.gz
 set -x DESTDIR (pwd)/install
 nice make -j$PARALLELISM install
 and cd install
@@ -42,7 +42,6 @@ and tar czvf ../install.tar.gz *
 
 set -l s $status
 cd $INNERWORKDIR/ArangoDB/build
-rm -rf install
 chown -R $UID:$GID $INNERWORKDIR
 exit $s
 
