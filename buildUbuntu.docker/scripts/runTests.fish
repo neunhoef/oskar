@@ -206,7 +206,7 @@ cleanUp
 
 chown -R $UID:$GID $INNERWORKDIR
 
-if test $result == GOOD
+if test $result = GOOD
   exit 0
 else
   exit 1
