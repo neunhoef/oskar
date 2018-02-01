@@ -36,7 +36,7 @@ set -x DESTDIR (pwd)/install
 nice make -j$PARALLELISM install
 and cd install
 and if test -z "$NOSTRIP"
-  strip usr/sbin/arangod usr/bin/arangoimport usr/bin/arangosh usr/bin/arangovpack usr/bin/arangoexport usr/bin/arangobench usr/bin/arangodump usr/bin/arangorestore
+  strip usr/sbin/arangod usr/bin/arangoimp usr/bin/arangosh usr/bin/arangovpack usr/bin/arangoexport usr/bin/arangobench usr/bin/arangodump usr/bin/arangorestore
 end
 and tar czvf ../install.tar.gz *
 
