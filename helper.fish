@@ -1,18 +1,6 @@
 set -x OSKARBUILDIMAGE neunhoef/oskar
 set -x ALPINEBUILDIMAGE neunhoef/alpinebuildarangodb
 
-if test -z "$SSH_AUTH_SOCK"
-  echo Missing ssh-agent, exiting.
-  sleep 5
-  exit 47
-end
-
-if ssh-add -l > /dev/null ; else
-  echo No keys in ssh-agent, exiting.
-  sleep 5
-  exit 48
-end
-
 function lockDirectory
   set -l pid (echo %self)
   if test ! -f LOCK.$pid
@@ -103,6 +91,11 @@ function remakeImages
 end
 
 function runInContainer
+  if test -z "$SSH_AUTH_SOCK"
+    eval (ssh-agent -c) > /dev/null
+    ssh-add ~/.ssh/id_rsa
+    set -l agentstarted 1
+  end
   docker run -v $WORKDIR/work:$INNERWORKDIR \
              -v $SSH_AUTH_SOCK:/ssh-agent \
              -e SSH_AUTH_SOCK=/ssh-agent \
@@ -119,6 +112,11 @@ function runInContainer
              -e VERBOSEOSKAR=$VERBOSEOSKAR \
              -e ENTERPRISEEDITION=$ENTERPRISEEDITION \
              $argv
+  if test -n agentstarted
+    ssh-agent -k > /dev/null
+    set -e SSH_AUTH_SOCK
+    set -e SSH_AGENT_PID
+  end
 end
 
 function checkoutArangoDB
