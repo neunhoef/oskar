@@ -95,6 +95,8 @@ function runInContainer
     eval (ssh-agent -c) > /dev/null
     ssh-add ~/.ssh/id_rsa
     set -l agentstarted 1
+  else
+    set -l agentstarted ""
   end
   docker run -v $WORKDIR/work:$INNERWORKDIR \
              -v $SSH_AUTH_SOCK:/ssh-agent \
@@ -112,7 +114,7 @@ function runInContainer
              -e VERBOSEOSKAR=$VERBOSEOSKAR \
              -e ENTERPRISEEDITION=$ENTERPRISEEDITION \
              $argv
-  if test -n agentstarted
+  if test -n $agentstarted
     ssh-agent -k > /dev/null
     set -e SSH_AUTH_SOCK
     set -e SSH_AGENT_PID
