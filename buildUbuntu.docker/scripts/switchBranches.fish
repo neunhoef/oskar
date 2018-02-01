@@ -1,6 +1,4 @@
 #!/usr/bin/fish
-echo $SSH_AUTH_SOCK
-ssh-add -l
 cd $INNERWORKDIR/ArangoDB
 git checkout -- .
 git pull
