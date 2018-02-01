@@ -8,10 +8,16 @@ if test $status != 0
   exit 1
 end
 
+pullUbuntuBuildImage
+
 lockDirectory
+
 community
 rocksdb
-single
-switchBranches bug-fix/static-build devel
-oskar1
+cluster
+switchBranches devel devel
+and oskar1
+
+set -l s $status
 unlockDirectory
+exit $s
