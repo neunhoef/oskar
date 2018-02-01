@@ -161,6 +161,7 @@ end
 function createReport
   set d (date -u +%F_%H.%M.%SZ)
   echo $d >> testProtocol.txt
+  echo
   set -l result GOOD
   for f in *.log
     if not tail -1 $f | grep Success > /dev/null
@@ -172,7 +173,7 @@ function createReport
   echo $result >> testProtocol.txt
   set -l cores core*
   tar czf "$INNERWORKDIR/testreport-$d.tar.gz" *.log testProtocol.txt $cores
-  log "$d $TESTSUITE $result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE" $repoState $repoStateEnterprise ""
+  log "$d $TESTSUITE $result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE" "" $repoState $repoStateEnterprise ""
 end
 
 function cleanUp
