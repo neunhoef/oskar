@@ -21,7 +21,9 @@ switchBranches devel devel
 and oskar1
 
 set -l s $status
+echo Status is $s
 if test $s != 0
+  echo Moving reports and logs to $WORKSPACE ...
   for f in work/testreport* ; mv $f $WORKSPACE ; end
   if test -f work/test.log ; mv work/test.log $WORKSPACE ; end
 end
