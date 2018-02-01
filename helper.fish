@@ -114,7 +114,7 @@ function runInContainer
              -e VERBOSEOSKAR=$VERBOSEOSKAR \
              -e ENTERPRISEEDITION=$ENTERPRISEEDITION \
              $argv
-  if test -n $agentstarted
+  if test -n "$agentstarted"
     ssh-agent -k > /dev/null
     set -e SSH_AUTH_SOCK
     set -e SSH_AGENT_PID
