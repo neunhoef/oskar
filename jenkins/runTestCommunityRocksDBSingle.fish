@@ -22,7 +22,7 @@ and oskar1
 
 set -l s $status
 if test $s != 0
-  for f in work/testresult* ; mv $f $WORKSPACE ; end
+  for f in work/testreport* ; mv $f $WORKSPACE ; end
   if test -f work/test.log ; mv work/test.log $WORKSPACE ; end
 end
 
