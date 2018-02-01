@@ -152,6 +152,12 @@ function clearWorkdir
   runInContainer $OSKARBUILDIMAGE /scripts/clearWorkdir.fish
 end
 
+function clearResults
+  cd $WORKDIR
+  for f in testreport* ; rm -f $f ; end
+  rm -f test.log
+end
+
 function buildArangoDB
   checkoutIfNeeded
   runInContainer $OSKARBUILDIMAGE /scripts/buildArangoDB.fish
