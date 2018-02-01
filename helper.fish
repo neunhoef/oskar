@@ -133,7 +133,18 @@ function checkoutEnterprise
   enterprise
 end
 
+function checkoutIfNeeded
+  if test ! -d $WORKDIR/ArangoDB
+    if test "$ENTERPRISEEDITION" = "On"
+      checkoutEnterprise
+    else
+      checkoutArangoDB
+    end
+  end
+end
+
 function switchBranches
+  checkoutIfNeeded
   runInContainer $OSKARBUILDIMAGE /scripts/switchBranches.fish $argv
 end
 
@@ -142,13 +153,7 @@ function clearWorkdir
 end
 
 function buildArangoDB
-  if test ! -d $WORKDIR/ArangoDB
-    if test "$ENTERPRISEEDITION" = "On"
-      checkoutEnterprise
-    else
-      checkoutArangoDB
-    end
-  end
+  checkoutIfNeeded
   runInContainer $OSKARBUILDIMAGE /scripts/buildArangoDB.fish
   if test $status != 0
     echo Build error!
@@ -157,6 +162,7 @@ function buildArangoDB
 end
 
 function buildStaticArangoDB
+  checkoutIfNeeded
   if test ! -d $WORKDIR/ArangoDB
     if test "$ENTERPRISEEDITION" = "On"
       checkoutEnterprise
@@ -180,6 +186,7 @@ function shellInAlpineContainer
 end
 
 function oskar
+  checkoutIfNeeded
   runInContainer $OSKARBUILDIMAGE /scripts/runTests.fish
 end
 
