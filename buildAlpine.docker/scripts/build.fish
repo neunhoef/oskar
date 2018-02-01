@@ -23,7 +23,6 @@ cmake $argv \
       -DUSE_JEMALLOC=Off \
       -DCMAKE_INSTALL_PREFIX=/ \
       -DSTATIC_EXECUTABLES=On \
-      -DLIBMUSL_BUILD=On \
       ..
 mkdir install
 rm -rf install.tar.gz
