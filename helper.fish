@@ -109,7 +109,7 @@ function runInContainer
              -e UID=(id -u) \
              -e GID=(id -g) \
              --rm \
-             -e GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" \
+             -e GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no" \
              -e INNERWORKDIR=$INNERWORKDIR \
              -e MAINTAINER=$MAINTAINER \
              -e BUILDMODE=$BUILDMODE \
