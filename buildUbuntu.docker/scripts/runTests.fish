@@ -19,8 +19,8 @@ function noteStartAndRepoState
   rm -f testProtocol.txt
   set -l d (date -u +%F_%H.%M.%SZ)
   echo $d >> testProtocol.txt
-  echo "Status of main repository:" >> testProtocol.txt
-  echo "Status of main repository:"
+  echo "========== Status of main repository:" >> testProtocol.txt
+  echo "========== Status of main repository:"
   for l in $repoState ; echo "  $l" >> testProtocol.txt ; echo "  $l" ; end
   if test $ENTERPRISEEDITION = On
     echo "Status of enterprise repository:" >> testProtocol.txt
