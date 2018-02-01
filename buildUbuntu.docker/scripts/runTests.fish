@@ -162,10 +162,10 @@ function createReport
   set d (date -u +%F_%H.%M.%SZ)
   echo $d >> testProtocol.txt
   echo
-  set -l result GOOD
+  set -g result GOOD
   for f in *.log
     if not tail -1 $f | grep Success > /dev/null
-      set result BAD
+      set -g result BAD
       echo Bad result in $f
       echo Bad result in $f >> testProtocol.txt
     end
@@ -199,8 +199,15 @@ switch $TESTSUITE
     createReport
   case "*"
     echo Unknown test suite $TESTSUITE
+    set -g result BAD
 end
 
 cleanUp
 
 chown -R $UID:$GID $INNERWORKDIR
+
+if test $result == GOOD
+  exit 0
+else
+  exit 1
+end

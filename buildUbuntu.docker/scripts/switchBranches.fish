@@ -1,14 +1,16 @@
 #!/usr/bin/fish
 cd $INNERWORKDIR/ArangoDB
-git checkout -- .
-git pull
-git checkout $argv[1]
-git pull
-if test $ENTERPRISEEDITION = On
+and git checkout -- .
+and git pull
+and git checkout $argv[1]
+and git pull
+and if test $ENTERPRISEEDITION = On
   cd enterprise
   git checkout -- .
-  git pull
-  git checkout $argv[2]
-  git pull
+  and git pull
+  and git checkout $argv[2]
+  and git pull
 end
+set -l s $status
 chown -R $UID:$GID $INNERWORKDIR
+exit $s

@@ -24,21 +24,25 @@ cmake $argv \
       -DCMAKE_INSTALL_PREFIX=/ \
       -DSTATIC_EXECUTABLES=On \
       ..
+set -l s $status
+if test $status != 0
+  chown -R $UID:$GID $INNERWORKDIR
+  exit $s
+end
+
 mkdir install
 rm -rf install.tar.gz
 set -x DESTDIR (pwd)/install
 nice make -j$PARALLELISM install
-if test $status != 0
-  set -l s $status 
-  rm -rf install
-  chown -R $UID:$GID $INNERWORKDIR
-  exit $s
-end
-cd install
-if test -z "$NOSTRIP"
+and cd install
+and if test -z "$NOSTRIP"
   strip usr/sbin/arangod usr/bin/arangoimport usr/bin/arangosh usr/bin/arangovpack usr/bin/arangoexport usr/bin/arangobench usr/bin/arangodump usr/bin/arangorestore
 end
-tar czvf ../install.tar.gz *
+and tar czvf ../install.tar.gz *
+
+set -l s $status
 cd $INNERWORKDIR/ArangoDB/build
 rm -rf install
 chown -R $UID:$GID $INNERWORKDIR
+exit $s
+

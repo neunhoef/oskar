@@ -22,5 +22,8 @@ cmake -DCMAKE_BUILD_TYPE=$BUILDTYPE \
       -DUSE_FAILURE_TESTS=On \
       -DDEBUG_SYNC_REPLICATION=On \
       ..
-nice make -j$PARALLELISM
+and nice make -j$PARALLELISM
+
+set -l s $status
 chown -R $UID:$GID $INNERWORKDIR
+exit $s

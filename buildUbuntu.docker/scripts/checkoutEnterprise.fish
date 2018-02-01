@@ -1,7 +1,9 @@
 #!/usr/bin/fish
 /scripts/checkoutArangoDB.fish
-cd $INNERWORKDIR/ArangoDB
-if test ! -d enterprise
+and cd $INNERWORKDIR/ArangoDB
+and if test ! -d enterprise
   git clone ssh://git@github.com/arangodb/enterprise
 end
+set -l s $status
 chown -R $UID:$GID $INNERWORKDIR
+exit $s

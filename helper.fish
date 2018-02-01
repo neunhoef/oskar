@@ -121,13 +121,13 @@ end
 
 function checkoutArangoDB
   runInContainer $OSKARBUILDIMAGE /scripts/checkoutArangoDB.fish
-  if test $status != 0 ; return $status ; end
+  or return $status
   community
 end
 
 function checkoutEnterprise
   runInContainer $OSKARBUILDIMAGE /scripts/checkoutEnterprise.fish
-  if test $status != 0 ; return $status ; end
+  or return $status
   enterprise
 end
 
@@ -153,9 +153,10 @@ end
 function buildArangoDB
   checkoutIfNeeded
   runInContainer $OSKARBUILDIMAGE /scripts/buildArangoDB.fish
-  if test $status != 0
+  set -l s $status
+  if test $s != 0
     echo Build error!
-    return $status
+    return $s
   end
 end
 
@@ -169,9 +170,10 @@ function buildStaticArangoDB
     end
   end
   runInContainer $ALPINEBUILDIMAGE /scripts/build.fish
-  if test $status != 0
+  set -l s $status
+  if test $s != 0
     echo Build error!
-    return $status
+    return $s
   end
 end
 
@@ -190,41 +192,49 @@ end
 
 function oskar1
   showConfig
-  buildArangoDB ; if test $status != 0 ; return $status ; end
+  buildArangoDB ; or return $status
   oskar
 end
 
 function oskar2
   showConfig
-  buildArangoDB ; if test $status != 0 ; return $status ; end
-  cluster ; oskar ; single ; oskar ; cluster
+  buildArangoDB ; or return $status
+  cluster ; oskar ; or return $status
+  single ; oskar ; or return $status
+  cluster
 end
 
 function oskar4
   showConfig
-  buildArangoDB ; if test $status != 0 ; return $status ; end
+  buildArangoDB ; or return $status
   rocksdb
-  cluster ; oskar ; single ; oskar ; cluster
+  cluster ; oskar ; or return $status
+  single ; oskar ; or return $status
   mmfiles
-  cluster ; oskar ; single ; oskar ; cluster
-  rocksdb
+  cluster ; oskar ; or return $status
+  single ; oskar ; or return $status
+  cluster ; rocksdb
 end
 
 function oskar8
   showConfig
   enterprise
-  buildArangoDB ; if test $status != 0 ; return $status ; end
+  buildArangoDB ; or return $status
   rocksdb
-  cluster ; oskar ; single ; oskar ; cluster
+  cluster ; oskar ; or return $status
+  single ; oskar ; or return $status
   mmfiles
-  cluster ; oskar ; single ; oskar ; cluster
+  cluster ; oskar ; or return $status
+  single ; oskar ; or return $status
   community
-  buildArangoDB ; if test $status != 0 ; return $status ; end
+  buildArangoDB ; or return $status
   rocksdb
-  cluster ; oskar ; single ; oskar ; cluster
+  cluster ; oskar ; or return $status
+  single ; oskar ; or return $status
   mmfiles
-  cluster ; oskar ; single ; oskar ; cluster
-  rocksdb
+  cluster ; oskar ; or return $status
+  single ; oskar ; or return $status
+  cluster ; rocksdb
 end
 
 function pushOskar
