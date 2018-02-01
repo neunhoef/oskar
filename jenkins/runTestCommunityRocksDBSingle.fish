@@ -22,7 +22,8 @@ and oskar1
 
 set -l s $status
 if test $s != 0
-  cp -a work/testresult\* work/test.log $WORKSPACE
+  for f in work/testresult* ; mv $f $WORKSPACE ; end
+  if test -f work/test.log ; mv work/test.log $WORKSPACE ; end
 end
 
 unlockDirectory
