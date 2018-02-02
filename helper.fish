@@ -104,6 +104,7 @@ function runInContainer
              -e UID=(id -u) \
              -e GID=(id -g) \
              --rm \
+             -e NOSTRIP=$NOSTRIP \
              -e GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no" \
              -e INNERWORKDIR=$INNERWORKDIR \
              -e MAINTAINER=$MAINTAINER \
