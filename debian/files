@@ -1,0 +1,6 @@
+arangodb-client_3.3.devel-1_amd64.deb database optional
+arangodb-dbg_3.3.devel-1_amd64.deb debug extra
+arangodb3-client_3.3.4-1_amd64.deb database optional
+arangodb3-dbg_3.3.4-1_amd64.deb debug extra
+arangodb3_3.3.4-1_amd64.deb database optional
+arangodb_3.3.devel-1_amd64.deb database optional
