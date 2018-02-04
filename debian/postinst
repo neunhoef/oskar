@@ -22,7 +22,7 @@ fi
 #fill in correct storage engine into arangod.conf
 sed -i /etc/arangodb3/arangod.conf -e "s;storage-engine = auto;storage-engine = $STORAGE_ENGINE;"
 
-if pidof systemd > /dev/null; then
+if which systemd > /dev/null; then
     if deb-systemd-invoke is-active arangodb3.service 2>&1 >/dev/null ; then
         deb-systemd-invoke stop arangodb3.service >/dev/null \
             || ar_err "failed to stop arangodb3 service" $?
@@ -100,7 +100,7 @@ fi
 
 db_stop
 
-if pidof systemd > /dev/null ; then
+if which systemd > /dev/null ; then
     # This will only remove masks created by d-s-h on package removal.
     deb-systemd-helper unmask arangodb.service >/dev/null || true
     # was-enabled defaults to true, so new installations run enable.
