@@ -35,37 +35,37 @@ if test "$DO_CONFIGURE" = "yes"; then
 
         case "$STATE" in
             1)
-                db_input high arangodb3/password || true
+                db_input high arangodb3e/password || true
                 db_go
-                db_get arangodb3/password
+                db_get arangodb3e/password
                 ROOT_PW="$RET"
             ;;
             2)
-                db_input high arangodb3/password_again || true
+                db_input high arangodb3e/password_again || true
                 db_go
-                db_get arangodb3/password_again
+                db_get arangodb3e/password_again
                 if [ "$ROOT_PW" = "$RET" ]; then
                     ROOT_PW=""
                 else
-                    db_input critical arangodb3/password_mismatch
+                    db_input critical arangodb3e/password_mismatch
                     STATE=$((STATE - 2))
-                    db_set arangodb3/password_again ""
+                    db_set arangodb3e/password_again ""
                 fi
             ;;
             3)
-                db_input high arangodb3/upgrade || true
+                db_input high arangodb3e/upgrade || true
             ;;
             4)
-                db_input high arangodb3/storage_engine || true
+                db_input high arangodb3e/storage_engine || true
                 db_go
             ;;
             5)
-                db_get arangodb3/upgrade
+                db_get arangodb3e/upgrade
                 if [ "$RET" = "true" ]; then
-                    db_input high arangodb3/backup || true
+                    db_input high arangodb3e/backup || true
                     db_go
                 else
-                    db_set arangodb3/backup "false"
+                    db_set arangodb3e/backup "false"
                 fi
             ;;
 
