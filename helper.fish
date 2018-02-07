@@ -186,6 +186,18 @@ function buildStaticArangoDB
   end
 end
 
+function buildDebianPackage
+  # This assumes that a static build has already happened
+  rm -rf $WORKDIR/debian
+  and cp -a debian $WORKDIR
+  and runInContainer $OSKARBUILDIMAGE /scripts/buildDebianPackage.fish
+  set -l s $status
+  if test $s != 0
+    echo Error when building a debian package
+    return $s
+  end
+end
+
 function shellInUbuntuContainer
   runInContainer $OSKARBUILDIMAGE fish
 end
