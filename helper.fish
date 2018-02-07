@@ -199,15 +199,32 @@ end
 
 function buildDebianPackage
   # This assumes that a static build has already happened
+  # There must be one argument, which is the version number in the
+  # format 3.3.3-1
+  set -l version $argv[1]
+  set -l ch $WORKDIR/work/debian/changelog
+  if test -z "$version"
+    echo Need one version argument in the form 3.3.3-1.
+    return 1
+  end
+
   cd $WORKDIR
   rm -rf $WORKDIR/work/debian
   and if test "$ENTERPRISEEDITION" = "On"
     echo Building enterprise edition debian package...
     cp -a debian.enterprise $WORKDIR/work/debian
+    and echo -n "arangodb3" > $ch
   else
     echo Building community edition debian package...
     cp -a debian.community $WORKDIR/work/debian
+    and echo -n "arangodb3e" > $ch
   end
+  and echo "($version) UNRELEASED; urgency=medium" >> $ch
+  and echo >> $ch
+  and echo "  * New version." >> $ch
+  and echo >> $ch
+  and echo -n " -- ArangoDB <hackers@arangodb.com>" >> $ch
+  and date -R >> $ch
   and runInContainer $UBUNTUPACKAGINGIMAGE /scripts/buildDebianPackage.fish
   set -l s $status
   if test $s != 0
