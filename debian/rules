@@ -14,6 +14,8 @@ override_dh_auto_build:
 override_dh_auto_install:
 	echo Copying files...
 	cp -a build/install/* debian/arangodb3
+	mkdir -p debian/arangodb3/lib/systemd/system
+	cp debian/arangodb3.service debian/arangodb3/lib/systemd/system
 	cd build/install ; cp -a --parents etc/arangodb3/arangosh.conf etc/arangodb3/foxx-manager.conf usr/bin/arangosh usr/bin/foxx-manager usr/share/arangodb3/js/common usr/share/arangodb3/js/client usr/share/arangodb3/js/node ../../debian/arangodb3-client
 
 override_dh_strip:
