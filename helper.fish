@@ -231,13 +231,13 @@ end
 
 function oskar1
   showConfig
-  buildArangoDB ; or return $status
+  buildStaticArangoDB -DUSE_FAILURE_TESTS=On -DDEBUG_SYNC_REPLICATION=On ; or return $status
   oskar
 end
 
 function oskar2
   showConfig
-  buildArangoDB ; or return $status
+  buildStaticArangoDB -DUSE_FAILURE_TESTS=On -DDEBUG_SYNC_REPLICATION=On ; or return $status
   cluster ; oskar ; or return $status
   single ; oskar ; or return $status
   cluster
@@ -245,7 +245,7 @@ end
 
 function oskar4
   showConfig
-  buildArangoDB ; or return $status
+  buildStaticArangoDB -DUSE_FAILURE_TESTS=On -DDEBUG_SYNC_REPLICATION=On ; or return $status
   rocksdb
   cluster ; oskar ; or return $status
   single ; oskar ; or return $status
@@ -258,7 +258,7 @@ end
 function oskar8
   showConfig
   enterprise
-  buildArangoDB ; or return $status
+  buildStaticArangoDB -DUSE_FAILURE_TESTS=On -DDEBUG_SYNC_REPLICATION=On ; or return $status
   rocksdb
   cluster ; oskar ; or return $status
   single ; oskar ; or return $status
@@ -266,7 +266,7 @@ function oskar8
   cluster ; oskar ; or return $status
   single ; oskar ; or return $status
   community
-  buildArangoDB ; or return $status
+  buildStaticArangoDB -DUSE_FAILURE_TESTS=On -DDEBUG_SYNC_REPLICATION=On ; or return $status
   rocksdb
   cluster ; oskar ; or return $status
   single ; oskar ; or return $status
