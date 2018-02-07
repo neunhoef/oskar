@@ -187,15 +187,15 @@ cd $INNERWORKDIR/ArangoDB
 switch $TESTSUITE
   case "cluster"
     launchClusterTests
-    waitOrKill 900
+    waitOrKill 1000
     createReport
   case "single"
     launchSingleTests
-    waitOrKill 900
+    waitOrKill 1000
     createReport
   case "resilience"
     launchResilienceTests
-    waitOrKill 900
+    waitOrKill 1000
     createReport
   case "*"
     echo Unknown test suite $TESTSUITE
