@@ -201,9 +201,9 @@ function buildDebianPackage
   # This assumes that a static build has already happened
   # There must be one argument, which is the version number in the
   # format 3.3.3-1
-  set -l version $argv[1]
+  set -l v $argv[1]
   set -l ch $WORKDIR/work/debian/changelog
-  if test -z "$version"
+  if test -z "$v"
     echo Need one version argument in the form 3.3.3-1.
     return 1
   end
@@ -219,7 +219,7 @@ function buildDebianPackage
     cp -a debian.community $WORKDIR/work/debian
     and echo -n "arangodb3e" > $ch
   end
-  and echo "($version) UNRELEASED; urgency=medium" >> $ch
+  and echo "($v) UNRELEASED; urgency=medium" >> $ch
   and echo >> $ch
   and echo "  * New version." >> $ch
   and echo >> $ch
