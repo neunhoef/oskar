@@ -5,7 +5,7 @@ set -e -x LC_CTYPE
 set -e -x LANG
 set -e -x LANGUAGE
 
-and rm -rf debian
+rm -rf debian
 and cp -a $INNERWORKDIR/debian .
 and debian/rules binary
 
