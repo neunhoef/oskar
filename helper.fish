@@ -213,11 +213,11 @@ function buildDebianPackage
   and if test "$ENTERPRISEEDITION" = "On"
     echo Building enterprise edition debian package...
     cp -a debian.enterprise $WORKDIR/work/debian
-    and echo -n "arangodb3 " > $ch
+    and echo -n "arangodb3e " > $ch
   else
     echo Building community edition debian package...
     cp -a debian.community $WORKDIR/work/debian
-    and echo -n "arangodb3e " > $ch
+    and echo -n "arangodb3 " > $ch
   end
   and echo "($v) UNRELEASED; urgency=medium" >> $ch
   and echo >> $ch
