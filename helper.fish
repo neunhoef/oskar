@@ -1,5 +1,5 @@
 set -x UBUNTUBUILDIMAGE neunhoef/ubuntubuildarangodb
-set -x UBUNTUPACKAGEIMAGE neunhoef/ubuntupackagearangodb
+set -x UBUNTUPACKAGINGIMAGE neunhoef/ubuntupackagearangodb
 set -x ALPINEBUILDIMAGE neunhoef/alpinebuildarangodb
 
 function lockDirectory
@@ -283,6 +283,8 @@ function pushOskar
   pushUbuntuBuildImage
   buildAlpineBuildImage
   pushAlpineBuildImage
+  buildUbuntuPackagingImage
+  pushUbuntuPackagingImage
 end
 
 function updateOskar
