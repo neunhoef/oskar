@@ -191,9 +191,11 @@ function buildDebianPackage
   cd $WORKDIR
   rm -rf $WORKDIR/work/debian
   and if test "$ENTERPRISEEDITION" = "On"
+    echo Building enterprise edition debian package...
     cp -a debian.enterprise $WORKDIR/work/debian
   else
-    cp -a debian.community $WORKDIR/work
+    echo Building community edition debian package...
+    cp -a debian.community $WORKDIR/work/debian
   end
   and runInContainer $UBUNTUBUILDIMAGE /scripts/buildDebianPackage.fish
   set -l s $status
