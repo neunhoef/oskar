@@ -1,4 +1,5 @@
-set -x UBUNTUBUILDIMAGE neunhoef/oskar
+set -x UBUNTUBUILDIMAGE neunhoef/ubuntubuildarangodb
+set -x UBUNTUPACKAGEIMAGE neunhoef/ubuntupackagearangodb
 set -x ALPINEBUILDIMAGE neunhoef/alpinebuildarangodb
 
 function lockDirectory
@@ -75,6 +76,14 @@ end
 function pushUbuntuBuildImage ; docker push $UBUNTUBUILDIMAGE ; end
 function pullUbuntuBuildImage ; docker pull $UBUNTUBUILDIMAGE ; end
 
+function buildUbuntuPackagingImage
+  cd $WORKDIR/buildUbuntuPackaging.docker
+  docker build -t $UBUNTUPACKAGINGIMAGE .
+  cd $WORKDIR
+end
+function pushUbuntuPackagingImage ; docker push $UBUNTUPACKAGINGIMAGE ; end
+function pullUbuntuPackagingImage ; docker pull $UBUNTUPACKAGINGIMAGE ; end
+
 function buildAlpineBuildImage
   cd $WORKDIR/buildAlpine.docker
   docker build -t $ALPINEBUILDIMAGE .
@@ -88,6 +97,8 @@ function remakeImages
   pushUbuntuBuildImage
   buildAlpineBuildImage
   pushAlpineBuildImage
+  buildUbuntuPackagingImage
+  pushUbuntuPackagingImage
 end
 
 function runInContainer
@@ -197,7 +208,7 @@ function buildDebianPackage
     echo Building community edition debian package...
     cp -a debian.community $WORKDIR/work/debian
   end
-  and runInContainer $UBUNTUBUILDIMAGE /scripts/buildDebianPackage.fish
+  and runInContainer $UBUNTUPACKAGINGIMAGE /scripts/buildDebianPackage.fish
   set -l s $status
   if test $s != 0
     echo Error when building a debian package
