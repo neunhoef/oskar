@@ -172,7 +172,7 @@ end
 
 function buildArangoDB
   checkoutIfNeeded
-  runInContainer $UBUNTUBUILDIMAGE /scripts/buildArangoDB.fish
+  runInContainer $UBUNTUBUILDIMAGE /scripts/buildArangoDB.fish $argv
   set -l s $status
   if test $s != 0
     echo Build error!
@@ -189,7 +189,7 @@ function buildStaticArangoDB
       checkoutArangoDB
     end
   end
-  runInContainer $ALPINEBUILDIMAGE /scripts/build.fish
+  runInContainer $ALPINEBUILDIMAGE /scripts/build.fish $argv
   set -l s $status
   if test $s != 0
     echo Build error!
