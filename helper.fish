@@ -223,7 +223,7 @@ function buildDebianPackage
   and echo >> $ch
   and echo "  * New version." >> $ch
   and echo >> $ch
-  and echo -n " -- ArangoDB <hackers@arangodb.com>" >> $ch
+  and echo -n " -- ArangoDB <hackers@arangodb.com>  " >> $ch
   and date -R >> $ch
   and runInContainer $UBUNTUPACKAGINGIMAGE /scripts/buildDebianPackage.fish
   set -l s $status
