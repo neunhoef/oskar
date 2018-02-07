@@ -188,8 +188,9 @@ end
 
 function buildDebianPackage
   # This assumes that a static build has already happened
-  rm -rf $WORKDIR/debian
-  and cp -a debian $WORKDIR
+  cd $WORKDIR
+  rm -rf $WORKDIR/work/debian
+  and cp -a debian $WORKDIR/work
   and runInContainer $OSKARBUILDIMAGE /scripts/buildDebianPackage.fish
   set -l s $status
   if test $s != 0
