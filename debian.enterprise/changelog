@@ -1,0 +1,5 @@
+arangodb3e (3.3.4-1) UNRELEASED; urgency=medium
+
+  * Initial release. (Closes: #XXXXXX)
+
+ -- Max Neunhoeffer <neunhoef@localhost>  Sat, 13 Jan 2018 22:58:43 +0100

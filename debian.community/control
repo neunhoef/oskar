@@ -7,7 +7,7 @@ Build-Depends: debhelper (>= 9), docker-ce
 Package: arangodb3
 Architecture: any
 Depends: ${misc:Depends}
-Conflicts: arangodb3-client
+Conflicts: arangodb3-client, arangodb3e-client, arangodb3e
 Description: a multi-purpose NoSQL database
  A distributed free and open-source database with a flexible data model for documents,
  graphs, and key-values. Build high performance applications using a convenient
@@ -21,7 +21,7 @@ Description: a multi-purpose NoSQL database
 Package: arangodb3-client
 Architecture: any
 Depends: ${misc:Depends}
-Conflicts: arangodb3
+Conflicts: arangodb3, arangodb3e, arangodb3e-client
 Description: stand-alone shell
  A distributed free and open-source database with a flexible data model for documents,
  graphs, and key-values. Build high performance applications using a convenient

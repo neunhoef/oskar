@@ -1,4 +1,4 @@
-set -x OSKARBUILDIMAGE neunhoef/oskar
+set -x UBUNTUBUILDIMAGE neunhoef/oskar
 set -x ALPINEBUILDIMAGE neunhoef/alpinebuildarangodb
 
 function lockDirectory
@@ -69,11 +69,11 @@ set -g VERBOSEOSKAR Off
 
 function buildUbuntuBuildImage
   cd $WORKDIR/buildUbuntu.docker
-  docker build -t $OSKARBUILDIMAGE .
+  docker build -t $UBUNTUBUILDIMAGE .
   cd $WORKDIR
 end
-function pushUbuntuBuildImage ; docker push $OSKARBUILDIMAGE ; end
-function pullUbuntuBuildImage ; docker pull $OSKARBUILDIMAGE ; end
+function pushUbuntuBuildImage ; docker push $UBUNTUBUILDIMAGE ; end
+function pullUbuntuBuildImage ; docker pull $UBUNTUBUILDIMAGE ; end
 
 function buildAlpineBuildImage
   cd $WORKDIR/buildAlpine.docker
@@ -123,13 +123,13 @@ function runInContainer
 end
 
 function checkoutArangoDB
-  runInContainer $OSKARBUILDIMAGE /scripts/checkoutArangoDB.fish
+  runInContainer $UBUNTUBUILDIMAGE /scripts/checkoutArangoDB.fish
   or return $status
   community
 end
 
 function checkoutEnterprise
-  runInContainer $OSKARBUILDIMAGE /scripts/checkoutEnterprise.fish
+  runInContainer $UBUNTUBUILDIMAGE /scripts/checkoutEnterprise.fish
   or return $status
   enterprise
 end
@@ -146,11 +146,11 @@ end
 
 function switchBranches
   checkoutIfNeeded
-  runInContainer $OSKARBUILDIMAGE /scripts/switchBranches.fish $argv
+  runInContainer $UBUNTUBUILDIMAGE /scripts/switchBranches.fish $argv
 end
 
 function clearWorkdir
-  runInContainer $OSKARBUILDIMAGE /scripts/clearWorkdir.fish
+  runInContainer $UBUNTUBUILDIMAGE /scripts/clearWorkdir.fish
 end
 
 function clearResults
@@ -161,7 +161,7 @@ end
 
 function buildArangoDB
   checkoutIfNeeded
-  runInContainer $OSKARBUILDIMAGE /scripts/buildArangoDB.fish
+  runInContainer $UBUNTUBUILDIMAGE /scripts/buildArangoDB.fish
   set -l s $status
   if test $s != 0
     echo Build error!
@@ -188,14 +188,14 @@ end
 
 function buildDebianPackage
   # This assumes that a static build has already happened
-  echo Hallo0
   cd $WORKDIR
   rm -rf $WORKDIR/work/debian
-  and echo Ix1
-  and cp -a debian $WORKDIR/work
-  and echo Ix2
-  and runInContainer $OSKARBUILDIMAGE /scripts/buildDebianPackage.fish
-  and echo Ix3
+  and if test "$ENTERPRISEEDITION" = "On"
+    cp -a debian.enterprise $WORKDIR/work/debian
+  else
+    cp -a debian.community $WORKDIR/work
+  end
+  and runInContainer $UBUNTUBUILDIMAGE /scripts/buildDebianPackage.fish
   set -l s $status
   if test $s != 0
     echo Error when building a debian package
@@ -204,7 +204,7 @@ function buildDebianPackage
 end
 
 function shellInUbuntuContainer
-  runInContainer $OSKARBUILDIMAGE fish
+  runInContainer $UBUNTUBUILDIMAGE fish
 end
 
 function shellInAlpineContainer
@@ -213,7 +213,7 @@ end
 
 function oskar
   checkoutIfNeeded
-  runInContainer $OSKARBUILDIMAGE /scripts/runTests.fish
+  runInContainer $UBUNTUBUILDIMAGE /scripts/runTests.fish
 end
 
 function oskar1

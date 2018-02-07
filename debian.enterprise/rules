@@ -1,0 +1,23 @@
+#!/usr/bin/make -f
+%:
+	dh $@
+
+build:
+	echo We are assuming that the buildStaticArangoDB has already run.
+
+override_dh_auto_configure:
+	echo Skipping configure
+
+override_dh_auto_build:
+	echo Building static binaries here, downloading starter...
+
+override_dh_auto_install:
+	echo Copying files...
+	cp -a build/install/* debian/arangodb3e
+	mkdir -p debian/arangodb3e/lib/systemd/system
+	cp debian/arangodb3.service debian/arangodb3e/lib/systemd/system
+	cd build/install ; cp -a --parents etc/arangodb3/arangosh.conf etc/arangodb3/foxx-manager.conf usr/bin/arangosh usr/bin/foxx-manager usr/share/arangodb3/js/common usr/share/arangodb3/js/client usr/share/arangodb3/js/node ../../debian/arangodb3e-client
+
+override_dh_strip:
+	dh_strip --dbg-package arangodb3e-dbg
+
