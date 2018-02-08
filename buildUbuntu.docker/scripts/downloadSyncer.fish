@@ -9,7 +9,7 @@ if test "$c" = 0
 end
 set -l DOWNLOAD_SYNC_USER "$argv[1]"
 
-if test "c" = 1
+if test "$c" = 1
   eval "set "(grep SYNCER_REV $WORKDIR/work/ArangoDB/VERSIONS)
 else
   set SYNCER_REV "$argv[2]"
