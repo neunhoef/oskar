@@ -307,6 +307,7 @@ end
 function updateOskar
   pullUbuntuBuildImage
   pullAlpineBuildImage
+  pullUbuntuPackagingImage
   git pull
   source helper.fish
 end
