@@ -1,8 +1,10 @@
 #!/usr/bin/fish
 
+echo Hello, syncer here, arguments are: $argv
+
 if test "$argv[1]" = ""
   echo Need DOWNLOAD_SYNC_USER as first argument!
-  return 1
+  exit 1
 end
 set -l DOWNLOAD_SYNC_USER "$argv[1]"
 

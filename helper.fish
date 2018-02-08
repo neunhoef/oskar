@@ -320,7 +320,7 @@ function downloadStarter
 end
 
 function downloadSyncer
-  runInContainer $UBUNTUBUILDIMAGE /scripts/downloadStarter.fish $argv
+  runInContainer $UBUNTUBUILDIMAGE /scripts/downloadSyncer.fish $argv
 end
 
 function makeRelease
