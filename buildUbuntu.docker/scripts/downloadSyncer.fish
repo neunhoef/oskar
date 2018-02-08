@@ -2,13 +2,14 @@
 
 echo Hello, syncer here, arguments are: $argv
 
-if test "$argv[1]" = ""
+set -l c (count $argv)
+if test "$c" = 0
   echo Need DOWNLOAD_SYNC_USER as first argument!
   exit 1
 end
 set -l DOWNLOAD_SYNC_USER "$argv[1]"
 
-if test "$argv[2]" = ""
+if test "c" = 1
   eval "set "(grep SYNCER_REV $WORKDIR/work/ArangoDB/VERSIONS)
 else
   set SYNCER_REV "$argv[2]"
