@@ -323,4 +323,33 @@ function downloadSyncer
   runInContainer $UBUNTUBUILDIMAGE /scripts/downloadStarter.fish $argv
 end
 
+function makeRelease
+  if test "$DOWNLOAD_SYNC_USER" = ""
+    echo "Need to set environment variable DOWNLOAD_SYNC_USER."
+    return 1
+  end
+  if test "$argv[1]" = ""
+    echo "Need to give version to build as first argument!"
+    return 2
+  end
+  set -l v "$argv[1]"
+  maintainerOff
+  releaseMode
+
+  enterprise
+  buildStaticExecutable
+  downloadStarter
+  downloadSyncer $DOWNLOAD_SYNC_USER
+  buildDebianPackage $v
+  # buildRpmPackage $v
+  # buildDockerImage $v
+
+  community
+  buildStaticExecutable
+  downloadStarter
+  buildDebianPackage $v
+  # buildRpmPackage $v
+  # buildDockerImage $v
+end
+
 showConfig
