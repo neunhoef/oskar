@@ -315,4 +315,12 @@ function showLog
   less +G work/test.log
 end
 
+function downloadStarter
+  runInContainer $UBUNTUBUILDIMAGE /scripts/downloadStarter.fish $argv
+end
+
+function downloadSyncer
+  runInContainer $UBUNTUBUILDIMAGE /scripts/downloadStarter.fish $argv
+end
+
 showConfig
