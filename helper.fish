@@ -305,11 +305,11 @@ function pushOskar
 end
 
 function updateOskar
+  git pull
+  source helper.fish
   pullUbuntuBuildImage
   pullAlpineBuildImage
   pullUbuntuPackagingImage
-  git pull
-  source helper.fish
 end
 
 function showLog
