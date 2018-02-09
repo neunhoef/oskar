@@ -30,7 +30,6 @@ if test $status != 0
   exit $s
 end
 
-rm -rf install install.tar.gz
 mkdir install
 set -x DESTDIR (pwd)/install
 nice make -j$PARALLELISM install
@@ -38,7 +37,6 @@ and cd install
 and if test -z "$NOSTRIP"
   strip usr/sbin/arangod usr/bin/arangoimp usr/bin/arangosh usr/bin/arangovpack usr/bin/arangoexport usr/bin/arangobench usr/bin/arangodump usr/bin/arangorestore
 end
-and tar czvf ../install.tar.gz *
 
 set -l s $status
 cd $INNERWORKDIR/ArangoDB/build

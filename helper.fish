@@ -384,4 +384,22 @@ function moveResultsToWorkspace
   if test -f work/test.log ; mv work/test.log $WORKSPACE ; end
 end
 
+function makeDockerImage
+  if test (count $argv) = 0
+    echo Must give image name as argument
+    return 1
+  end
+  set -l imagename $argv[1]
+
+  cd $WORKDIR/work/ArangoDB/build/install
+  and tar czvf $WORKDIR/arangodb.docker/install.tar.gz *
+  if test $status != 0
+    echo Could not create install tarball!
+    return 1
+  end
+
+  cd $WORKDIR/arangodb.docker
+  docker build -t $imagename .
+end
+
 showConfig
