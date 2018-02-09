@@ -326,12 +326,12 @@ end
 
 function findArangoDBVersion
   set -xg ARANGODB_VERSION_MAJOR (grep "set(ARANGODB_VERSION_MAJOR" $WORKDIR/work/ArangoDB/CMakeLists.txt | sed -e 's/.*"\([0-9a-zA-Z]*\)".*$/\1/')
-  set -xg ARANGODB_VERSION_MINOR (grep "set(ARANGODB_VERSION_MINOR" $WORKDIR/work/ArangoDB/CMakeLists.txt | sed -e 's/.*"\([0-9a-zA-Z]*\)".*$/\1/')
-  set -xg ARANGODB_VERSION_REVISION (grep "set(ARANGODB_VERSION_REVISION" $WORKDIR/work/ArangoDB/CMakeLists.txt | sed -e 's/.*"\([0-9a-zA-Z]*\)".*$/\1/')
-  set -xg ARANGODB_PACKAGE_REVISION (grep "set(ARANGODB_PACKAGE_REVISION" $WORKDIR/work/ArangoDB/CMakeLists.txt | sed -e 's/.*"\([0-9a-zA-Z]*\)".*$/\1/')
-  set -xg ARANGODB_VERSION "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_REVISION"
-  set -xg ARANGODB_FULL_VERSION "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_REVISION-$ARANGODB_PACKAGE_REVISION"
-  echo $ARANGODB_FULL_VERSION
+  and set -xg ARANGODB_VERSION_MINOR (grep "set(ARANGODB_VERSION_MINOR" $WORKDIR/work/ArangoDB/CMakeLists.txt | sed -e 's/.*"\([0-9a-zA-Z]*\)".*$/\1/')
+  and set -xg ARANGODB_VERSION_REVISION (grep "set(ARANGODB_VERSION_REVISION" $WORKDIR/work/ArangoDB/CMakeLists.txt | sed -e 's/.*"\([0-9a-zA-Z]*\)".*$/\1/')
+  and set -xg ARANGODB_PACKAGE_REVISION (grep "set(ARANGODB_PACKAGE_REVISION" $WORKDIR/work/ArangoDB/CMakeLists.txt | sed -e 's/.*"\([0-9a-zA-Z]*\)".*$/\1/')
+  and set -xg ARANGODB_VERSION "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_REVISION"
+  and set -xg ARANGODB_FULL_VERSION "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_REVISION-$ARANGODB_PACKAGE_REVISION"
+  and echo $ARANGODB_FULL_VERSION
 end
 
 function makeRelease
@@ -339,11 +339,13 @@ function makeRelease
     echo "Need to set environment variable DOWNLOAD_SYNC_USER."
     return 1
   end
+  set -l v VERSION
   if test "$argv[1]" = ""
-    echo "Need to give version to build as first argument!"
-    return 1
+    findArangoDBVersion ; or return 1
+    set v $ARANGODB_FULL_VERSION 
+  else
+    set v "$argv[1]"
   end
-  set -l v "$argv[1]"
   maintainerOff
   releaseMode
 
