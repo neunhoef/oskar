@@ -1,6 +1,6 @@
-set -x UBUNTUBUILDIMAGE neunhoef/ubuntubuildarangodb
-set -x UBUNTUPACKAGINGIMAGE neunhoef/ubuntupackagearangodb
-set -x ALPINEBUILDIMAGE neunhoef/alpinebuildarangodb
+set -xg UBUNTUBUILDIMAGE neunhoef/ubuntubuildarangodb
+set -xg UBUNTUPACKAGINGIMAGE neunhoef/ubuntupackagearangodb
+set -xg ALPINEBUILDIMAGE neunhoef/alpinebuildarangodb
 
 function lockDirectory
   set -l pid (echo %self)
@@ -324,6 +324,16 @@ function downloadSyncer
   runInContainer $UBUNTUBUILDIMAGE /scripts/downloadSyncer.fish $argv
 end
 
+function findArangoDBVersion
+  set -xg ARANGODB_VERSION_MAJOR (grep "set(ARANGODB_VERSION_MAJOR" $WORKDIR/work/ArangoDB/CMakeLists.txt | sed -e 's/.*"\([0-9a-zA-Z]*\)".*$/\1/')
+  set -xg ARANGODB_VERSION_MINOR (grep "set(ARANGODB_VERSION_MINOR" $WORKDIR/work/ArangoDB/CMakeLists.txt | sed -e 's/.*"\([0-9a-zA-Z]*\)".*$/\1/')
+  set -xg ARANGODB_VERSION_REVISION (grep "set(ARANGODB_VERSION_REVISION" $WORKDIR/work/ArangoDB/CMakeLists.txt | sed -e 's/.*"\([0-9a-zA-Z]*\)".*$/\1/')
+  set -xg ARANGODB_PACKAGE_REVISION (grep "set(ARANGODB_PACKAGE_REVISION" $WORKDIR/work/ArangoDB/CMakeLists.txt | sed -e 's/.*"\([0-9a-zA-Z]*\)".*$/\1/')
+  set -xg ARANGODB_VERSION "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_REVISION"
+  set -xg ARANGODB_FULL_VERSION "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_REVISION-$ARANGODB_PACKAGE_REVISION"
+  echo $ARANGODB_FULL_VERSION
+end
+
 function makeRelease
   if test "$DOWNLOAD_SYNC_USER" = ""
     echo "Need to set environment variable DOWNLOAD_SYNC_USER."
@@ -331,7 +341,7 @@ function makeRelease
   end
   if test "$argv[1]" = ""
     echo "Need to give version to build as first argument!"
-    return 2
+    return 1
   end
   set -l v "$argv[1]"
   maintainerOff
@@ -339,18 +349,28 @@ function makeRelease
 
   enterprise
   buildStaticExecutable
-  downloadStarter
-  downloadSyncer $DOWNLOAD_SYNC_USER
-  buildDebianPackage $v
-  # buildRpmPackage $v
-  # buildDockerImage $v
+  and downloadStarter
+  and downloadSyncer
+  and buildDebianPackage $v
+  # and buildRpmPackage $v
+  # and buildDockerImage $v
+
+  if test $status != 0
+    echo Building enterprise release failed, stopping.
+    return 1
+  end
 
   community
   buildStaticExecutable
-  downloadStarter
-  buildDebianPackage $v
-  # buildRpmPackage $v
-  # buildDockerImage $v
+  and downloadStarter
+  and buildDebianPackage $v
+  # and buildRpmPackage $v
+  # and buildDockerImage $v
+
+  if test $status != 0
+    echo Building community release failed.
+    return 1
+  end
 end
 
 showConfig
