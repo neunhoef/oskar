@@ -350,7 +350,7 @@ function makeRelease
   releaseMode
 
   enterprise
-  buildStaticExecutable
+  buildStaticArangoDB
   and downloadStarter
   and downloadSyncer
   and buildDebianPackage $v
@@ -363,7 +363,7 @@ function makeRelease
   end
 
   community
-  buildStaticExecutable
+  buildStaticArangoDB
   and downloadStarter
   and buildDebianPackage $v
   # and buildRpmPackage $v
