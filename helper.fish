@@ -321,7 +321,7 @@ function downloadStarter
 end
 
 function downloadSyncer
-  runInContainer $UBUNTUBUILDIMAGE /scripts/downloadSyncer.fish $argv
+  runInContainer -e DOWNLOAD_SYNC_USER=$DOWNLOAD_SYNC_USER $UBUNTUBUILDIMAGE /scripts/downloadSyncer.fish $argv
 end
 
 function findArangoDBVersion
