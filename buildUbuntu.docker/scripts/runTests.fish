@@ -163,17 +163,19 @@ function createReport
   echo $d >> testProtocol.txt
   echo
   set -g result GOOD
+  set -l badtests
   for f in *.log
     if not tail -1 $f | grep Success > /dev/null
       set -g result BAD
       echo Bad result in $f
       echo Bad result in $f >> testProtocol.txt
+      set badtests $badtests "Bad result in $f"
     end
   end
   echo $result >> testProtocol.txt
   set -l cores core*
   tar czf "$INNERWORKDIR/testreport-$d.tar.gz" *.log testProtocol.txt $cores
-  log "$d $TESTSUITE $result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE" "" $repoState $repoStateEnterprise ""
+  log "$d $TESTSUITE $result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE" $repoState $repoStateEnterprise $badtests ""
 end
 
 function cleanUp
