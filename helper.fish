@@ -167,7 +167,7 @@ function clearWorkdir
 end
 
 function clearResults
-  cd $WORKDIR
+  cd $WORKDIR/work
   for f in testreport* ; rm -f $f ; end
   rm -f test.log
 end
