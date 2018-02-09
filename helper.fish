@@ -342,7 +342,7 @@ function makeRelease
     return 1
   end
   set -l v VERSION
-  if test "$argv[1]" = ""
+  if test (count $argv) = 0
     findArangoDBVersion ; or return 1
     set v $ARANGODB_FULL_VERSION 
   else
@@ -381,6 +381,7 @@ function moveResultsToWorkspace
   # Used in jenkins test
   echo Moving reports and logs to $WORKSPACE ...
   for f in work/testreport* ; mv $f $WORKSPACE ; end
+  for f in work/*.deb ; mv $f $WORKSPACE ; end
   if test -f work/test.log ; mv work/test.log $WORKSPACE ; end
 end
 
