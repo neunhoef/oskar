@@ -26,13 +26,13 @@ end
 echo $meta > $INNERWORKDIR/assets.json
 
 set -l asset_id (echo $meta | jq ".assets | map(select(.name == \"arangosync-linux-amd64\"))[0].id")
-if test $status = 0
+if test $status != 0
   echo Downloaded JSON cannot be parsed
   exit 1
 end
 echo Downloading: Asset with ID $asset_id
 
-curl -L -H "Accept: application/octet-stream" "https://$DOWNLOAD_SYNC_USER@api.github.com/repos/arangodb/arangosync/releases/assets/$asset_id" -o "$INNERWORKDIR/ArangoDB/build/install/usr/bin/arangosync"
+curl -s -L -H "Accept: application/octet-stream" "https://$DOWNLOAD_SYNC_USER@api.github.com/repos/arangodb/arangosync/releases/assets/$asset_id" -o "$INNERWORKDIR/ArangoDB/build/install/usr/bin/arangosync"
 
 and chmod 755 "$INNERWORKDIR/ArangoDB/build/install/usr/bin/arangosync"
 
