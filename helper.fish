@@ -375,4 +375,11 @@ function makeRelease
   end
 end
 
+function moveResultsToWorkspace
+  # Used in jenkins test
+  echo Moving reports and logs to $WORKSPACE ...
+  for f in work/testreport* ; mv $f $WORKSPACE ; end
+  if test -f work/test.log ; mv work/test.log $WORKSPACE ; end
+end
+
 showConfig
