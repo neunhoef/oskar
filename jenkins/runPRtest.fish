@@ -11,7 +11,7 @@ updateOskar ; lockDirectory ; clearResults
 
 community ; mmfiles ; cluster
 
-switchBranches devel devel
+switchBranches $ARANGODB_BRANCH $ENTERPRISE_BRANCH
 and oskar1
 
 set -l s $status ; moveResultsToWorkspace ; unlockDirectory ; exit $s
