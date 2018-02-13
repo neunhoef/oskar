@@ -3,9 +3,17 @@ set -xg UBUNTUPACKAGINGIMAGE neunhoef/ubuntupackagearangodb
 set -xg ALPINEBUILDIMAGE neunhoef/alpinebuildarangodb
 
 function lockDirectory
+  # First remove a stale lock if it is found:
+  if set -l pidfound (cat LOCK ^/dev/null)
+    if not ps ax -o pid | grep $pidfound > /dev/null
+      rm LOCK LOCK.$pidfound
+      echo Have removed stale lock.
+    end
+  end
+  # Now grab the lock ourselves:
   set -l pid (echo %self)
   if test ! -f LOCK.$pid
-    touch LOCK.$pid
+    echo $pid > LOCK.$pid
     while true
       if ln LOCK.$pid LOCK ^/dev/null
         break
