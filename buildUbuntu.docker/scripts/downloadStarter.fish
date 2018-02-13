@@ -1,7 +1,13 @@
 #!/usr/bin/fish
 
+set -l STARTER_REV
+
 if test "$argv[1]" = ""
-  eval "set "(grep STARTER_REV $INNERWORKDIR/ArangoDB/VERSIONS)
+  if test -f $INNERWORKDIR/ArangoDB/STARTER_REV
+    set STARTER_REV (cat $INNERWORKDIR/ArangoDB/STARTER_REV)
+  else
+    eval "set "(grep STARTER_REV $INNERWORKDIR/ArangoDB/VERSIONS)
+  end
 else
   set STARTER_REV "$argv[1]"
 end

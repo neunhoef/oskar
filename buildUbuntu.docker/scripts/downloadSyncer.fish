@@ -7,6 +7,11 @@ if test -z "$DOWNLOAD_SYNC_USER"
   exit 1
 end
 
+if test -f $INNERWORKDIR/ArangoDB/STARTER_REV
+  echo This is a 3.2 version, we do not ship arangosync
+  exit 0
+end
+
 if test (count $argv) = 0
   eval "set "(grep SYNCER_REV $INNERWORKDIR/ArangoDB/VERSIONS)
 else

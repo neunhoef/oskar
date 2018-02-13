@@ -19,5 +19,5 @@ override_dh_auto_install:
 	cd build/install ; cp -a --parents etc/arangodb3/arangosh.conf etc/arangodb3/foxx-manager.conf usr/bin/arangosh usr/bin/foxx-manager usr/share/arangodb3/js/common usr/share/arangodb3/js/client usr/share/arangodb3/js/node ../../debian/arangodb3e-client
 
 override_dh_strip:
-	dh_strip --dbg-package arangodb3e-dbg
+	dh_strip --exclude usr/bin/arangodb --exclude usr/bin/arangosync --dbg-package arangodb3-dbg
 
