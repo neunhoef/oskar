@@ -304,6 +304,7 @@ function oskar8
 end
 
 function pushOskar
+  cd $WORKDIR
   source helper.fish
   git push
   buildUbuntuBuildImage
@@ -315,6 +316,7 @@ function pushOskar
 end
 
 function updateOskar
+  cd $WORKDIR
   git pull
   source helper.fish
   pullUbuntuBuildImage
