@@ -19,6 +19,7 @@ cmake -DCMAKE_BUILD_TYPE=$BUILDTYPE \
       -DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=gold \
       -DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=gold \
       -DUSE_JEMALLOC=On \
+      -DTARGET_ARCHITECTURE=nehalem \
       ..
 and nice make -j$PARALLELISM
 
