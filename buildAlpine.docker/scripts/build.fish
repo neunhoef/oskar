@@ -23,7 +23,6 @@ cmake $argv \
       -DUSE_JEMALLOC=Off \
       -DCMAKE_INSTALL_PREFIX=/ \
       -DSTATIC_EXECUTABLES=On \
-      -DTARGET_ARCHITECTURE=nehalem \
       ..
 set -l s $status
 if test $status != 0

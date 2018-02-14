@@ -360,7 +360,7 @@ function makeRelease
   releaseMode
 
   enterprise
-  buildStaticArangoDB
+  buildStaticArangoDB -DTARGET_ARCHITECTURE=nehalem
   and downloadStarter
   and downloadSyncer
   and buildDebianPackage $v
@@ -373,7 +373,7 @@ function makeRelease
   end
 
   community
-  buildStaticArangoDB
+  buildStaticArangoDB _DTARGET_ARCHITECTURE=nehalem
   and downloadStarter
   and buildDebianPackage $v
   # and buildRpmPackage $v
