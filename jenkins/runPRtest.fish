@@ -1,5 +1,4 @@
 #!/usr/bin/fish
-echo NODE_NAME: $NODE_NAME
 cd $HOME
 if not cd oskar ^ /dev/null 
   git clone https://github.com/neunhoef/oskar ; and cd oskar
