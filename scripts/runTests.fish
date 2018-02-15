@@ -181,7 +181,8 @@ end
 function cleanUp
   killall -9 arangod arangosh ^/dev/null
   set -l cores core*
-  rm -rf testProtocol.txt *.log $cores
+  set -l logs *.log
+  rm -rf testProtocol.txt $logs $cores
 end
 
 cd $INNERWORKDIR/ArangoDB
