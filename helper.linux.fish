@@ -6,30 +6,33 @@ set -xg UBUNTUPACKAGINGIMAGE neunhoef/ubuntupackagearangodb
 set -xg ALPINEBUILDIMAGE neunhoef/alpinebuildarangodb
 
 function buildUbuntuBuildImage
-  cd $WORKDIR/buildUbuntu.docker
+  cd $WORKDIR
   cp -a scripts/{buildArangoDB,checkoutArangoDB,checkoutEnterprise,clearWorkDir,downloadStarter,downloadSyncer,runTests,switchBranches}.fish buildUbuntu.docker/scripts
+  cd $WORKDIR/buildUbuntu.docker
   docker build -t $UBUNTUBUILDIMAGE .
-  rm -f buildUbuntu.docker/scripts/*.fish
+  rm -f $WORKDIR/buildUbuntu.docker/scripts/*.fish
   cd $WORKDIR
 end
 function pushUbuntuBuildImage ; docker push $UBUNTUBUILDIMAGE ; end
 function pullUbuntuBuildImage ; docker pull $UBUNTUBUILDIMAGE ; end
 
 function buildUbuntuPackagingImage
-  cd $WORKDIR/buildUbuntuPackaging.docker
+  cd $WORKDIR
   cp -a scripts/buildDebianPackage.fish buildUbuntuPackaging.docker/scripts
+  cd $WORKDIR/buildUbuntuPackaging.docker
   docker build -t $UBUNTUPACKAGINGIMAGE .
-  rm -f buildUbuntuPackaging.docker/scripts/*.fish
+  rm -f $WORKDIR/buildUbuntuPackaging.docker/scripts/*.fish
   cd $WORKDIR
 end
 function pushUbuntuPackagingImage ; docker push $UBUNTUPACKAGINGIMAGE ; end
 function pullUbuntuPackagingImage ; docker pull $UBUNTUPACKAGINGIMAGE ; end
 
 function buildAlpineBuildImage
-  cd $WORKDIR/buildAlpine.docker
+  cd $WORKDIR
   cp -a scripts/buildAlpine.fish buildAlpine.docker/scripts
+  cd $WORKDIR/buildAlpine.docker
   docker build -t $ALPINEBUILDIMAGE .
-  rm -f buildAlpine.docker/scripts/*.fish
+  rm -f $WORKDIR/buildAlpine.docker/scripts/*.fish
   cd $WORKDIR
 end
 function pushAlpineBuildImage ; docker push $ALPINEBUILDIMAGE ; end
