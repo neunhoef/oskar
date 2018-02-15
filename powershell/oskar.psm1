@@ -136,10 +136,30 @@ Function silent
 }
 
 $WORKDIR = $pwd
-$INNERWORKDIR = "\work"
+$INNERWORKDIR = "$pwd\work"
 If(-Not(Test-Path -PathType Container -Path "work"))
 {
     New-Item -ItemType Directory -Path "work"
 }
 $VERBOSEOSKAR = "Off"
+
+Function checkoutArangoDB
+{
+    Set-Location $INNERWORKDIR
+    If(-Not(Test-Path -PathType Container -Path "ArangoDB"))
+    {
+        Start-Process "git "-ArgumentList "clone https://github.com/arangodb/ArangoDB" -Wait
+    }
+}
+
+Function checkoutEnterprise
+{
+    checkoutArangoDB
+    Set-Location "$INNERWORKDIR\ArangoDB"
+    If(-Not(Test-Path -PathType Container -Path "enterprise"))
+    {
+        Start-Process "git "-ArgumentList "clone sven%40arangodb.com@https://github.com/arangodb/enterprise" -Wait
+    }
+}
+
 Show-Config
