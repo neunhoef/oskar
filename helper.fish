@@ -40,36 +40,36 @@ function showConfig
   echo "Verbose           : $VERBOSEOSKAR"
 end
 
-function single ; set -g TESTSUITE single ; end
-function cluster ; set -g TESTSUITE cluster ; end
-function resilience ; set -g TESTSUITE resilience ; end
-if test -z "$TESTSUITE" ; set -g TESTSUITE cluster ; end
+function single ; set -gx TESTSUITE single ; end
+function cluster ; set -gx TESTSUITE cluster ; end
+function resilience ; set -gx TESTSUITE resilience ; end
+if test -z "$TESTSUITE" ; set -gx TESTSUITE cluster ; end
 
-function maintainerOn ; set -g MAINTAINER On ; end
-function maintainerOff ; set -g MAINTAINER Off ; end
-if test -z "$MAINTAINER" ; set -g MAINTAINER On ; end
+function maintainerOn ; set -gx MAINTAINER On ; end
+function maintainerOff ; set -gx MAINTAINER Off ; end
+if test -z "$MAINTAINER" ; set -gx MAINTAINER On ; end
 
-function debugMode ; set -g BUILDMODE Debug ; end
-function releaseMode ; set -g BUILDMODE RelWithDebInfo ; end
-if test -z "$BUILDMODE" ; set -g BUILDMODE RelWithDebInfo ; end
+function debugMode ; set -gx BUILDMODE Debug ; end
+function releaseMode ; set -gx BUILDMODE RelWithDebInfo ; end
+if test -z "$BUILDMODE" ; set -gx BUILDMODE RelWithDebInfo ; end
 
-function community ; set -g ENTERPRISEEDITION Off ; end
-function enterprise ; set -g ENTERPRISEEDITION On ; end
-if test -z "$ENTERPRISEEDITION" ; set -g ENTERPRISEEDITION On ; end
+function community ; set -gx ENTERPRISEEDITION Off ; end
+function enterprise ; set -gx ENTERPRISEEDITION On ; end
+if test -z "$ENTERPRISEEDITION" ; set -gx ENTERPRISEEDITION On ; end
 
-function mmfiles ; set -g STORAGEENGINE mmfiles ; end
-function rocksdb ; set -g STORAGEENGINE rocksdb ; end
-if test -z "$STORAGEENGINE" ; set -g STORAGEENGINE rocksdb ; end
+function mmfiles ; set -gx STORAGEENGINE mmfiles ; end
+function rocksdb ; set -gx STORAGEENGINE rocksdb ; end
+if test -z "$STORAGEENGINE" ; set -gx STORAGEENGINE rocksdb ; end
 
-function parallelism ; set -g PARALLELISM $argv[1] ; end
-if test -z "$PARALLELISM" ; set -g PARALLELISM 64 ; end
+function parallelism ; set -gx PARALLELISM $argv[1] ; end
+if test -z "$PARALLELISM" ; set -gx PARALLELISM 64 ; end
 
-function verbose ; set -g VERBOSEOSKAR On ; end
-function silent ; set -g VERBOSEOSKAR Off ; end
+function verbose ; set -gx VERBOSEOSKAR On ; end
+function silent ; set -gx VERBOSEOSKAR Off ; end
 
-set -g WORKDIR (pwd)
+set -gx WORKDIR (pwd)
 if test ! -d work ; mkdir work ; end
-set -g VERBOSEOSKAR Off
+set -gx VERBOSEOSKAR Off
 
 function checkoutIfNeeded
   if test ! -d $WORKDIR/ArangoDB
