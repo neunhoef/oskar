@@ -9,4 +9,8 @@
  - finish and test windows
  - debug alpine docker images
  - use alpine docker images in driver tests
-
+ - Mac packaging
+ - Windows packaging
+ - Linux package signing
+ - Mac package signing
+ - Windows package signing
