@@ -104,13 +104,6 @@ end
 
 function buildStaticArangoDB
   checkoutIfNeeded
-  if test ! -d $WORKDIR/ArangoDB
-    if test "$ENTERPRISEEDITION" = "On"
-      checkoutEnterprise
-    else
-      checkoutArangoDB
-    end
-  end
   runInContainer $ALPINEBUILDIMAGE /scripts/buildAlpine.fish $argv
   set -l s $status
   if test $s != 0
