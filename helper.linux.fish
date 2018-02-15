@@ -6,7 +6,9 @@ set -xg ALPINEBUILDIMAGE neunhoef/alpinebuildarangodb
 
 function buildUbuntuBuildImage
   cd $WORKDIR/buildUbuntu.docker
+  cp -a scripts/{buildArangoDB,checkoutArangoDB,checkoutEnterprise,clearWorkDir,downloadStarter,downloadSyncer,runTests,switchBranches}.fish buildUbuntu.docker/scripts
   docker build -t $UBUNTUBUILDIMAGE .
+  rm -f buildUbuntu.docker/scripts/*.fish
   cd $WORKDIR
 end
 function pushUbuntuBuildImage ; docker push $UBUNTUBUILDIMAGE ; end
@@ -14,7 +16,9 @@ function pullUbuntuBuildImage ; docker pull $UBUNTUBUILDIMAGE ; end
 
 function buildUbuntuPackagingImage
   cd $WORKDIR/buildUbuntuPackaging.docker
+  cp -a scripts/buildDebianPackage.fish buildUbuntuPackaging.docker/scripts
   docker build -t $UBUNTUPACKAGINGIMAGE .
+  rm -f buildUbuntuPackaging.docker/scripts/*.fish
   cd $WORKDIR
 end
 function pushUbuntuPackagingImage ; docker push $UBUNTUPACKAGINGIMAGE ; end
@@ -22,7 +26,9 @@ function pullUbuntuPackagingImage ; docker pull $UBUNTUPACKAGINGIMAGE ; end
 
 function buildAlpineBuildImage
   cd $WORKDIR/buildAlpine.docker
+  cp -a scripts/buildAlpine.fish buildAlpine.docker/scripts
   docker build -t $ALPINEBUILDIMAGE .
+  rm -f buildAlpine.docker/scripts/*.fish
   cd $WORKDIR
 end
 function pushAlpineBuildImage ; docker push $ALPINEBUILDIMAGE ; end
@@ -61,6 +67,8 @@ function runInContainer
              -e TESTSUITE=$TESTSUITE \
              -e VERBOSEOSKAR=$VERBOSEOSKAR \
              -e ENTERPRISEEDITION=$ENTERPRISEEDITION \
+             -e SCRIPTSDIR=$SCRIPTSDIR \
+             -e PLATFORM=$PLATFORM \
              $argv
   set -l s $status
   if test -n "$agentstarted"
@@ -72,29 +80,29 @@ function runInContainer
 end
 
 function checkoutArangoDB
-  runInContainer $UBUNTUBUILDIMAGE /scripts/checkoutArangoDB.fish
+  runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/checkoutArangoDB.fish
   or return $status
   community
 end
 
 function checkoutEnterprise
-  runInContainer $UBUNTUBUILDIMAGE /scripts/checkoutEnterprise.fish
+  runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/checkoutEnterprise.fish
   or return $status
   enterprise
 end
 
 function switchBranches
   checkoutIfNeeded
-  runInContainer $UBUNTUBUILDIMAGE /scripts/switchBranches.fish $argv
+  runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/switchBranches.fish $argv
 end
 
 function clearWorkdir
-  runInContainer $UBUNTUBUILDIMAGE /scripts/clearWorkdir.fish
+  runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/clearWorkdir.fish
 end
 
 function buildArangoDB
   checkoutIfNeeded
-  runInContainer $UBUNTUBUILDIMAGE /scripts/buildArangoDB.fish $argv
+  runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/buildArangoDB.fish $argv
   set -l s $status
   if test $s != 0
     echo Build error!
@@ -104,7 +112,7 @@ end
 
 function buildStaticArangoDB
   checkoutIfNeeded
-  runInContainer $ALPINEBUILDIMAGE /scripts/buildAlpine.fish $argv
+  runInContainer $ALPINEBUILDIMAGE $SCRIPTSDIR/buildAlpine.fish $argv
   set -l s $status
   if test $s != 0
     echo Build error!
@@ -140,7 +148,7 @@ function buildDebianPackage
   and echo >> $ch
   and echo -n " -- ArangoDB <hackers@arangodb.com>  " >> $ch
   and date -R >> $ch
-  and runInContainer $UBUNTUPACKAGINGIMAGE /scripts/buildDebianPackage.fish
+  and runInContainer $UBUNTUPACKAGINGIMAGE $SCRIPTSDIR/buildDebianPackage.fish
   set -l s $status
   if test $s != 0
     echo Error when building a debian package
@@ -158,7 +166,7 @@ end
 
 function oskar
   checkoutIfNeeded
-  runInContainer $UBUNTUBUILDIMAGE /scripts/runTests.fish
+  runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/runTests.fish
 end
 
 function pushOskar
@@ -183,11 +191,11 @@ function updateOskar
 end
 
 function downloadStarter
-  runInContainer $UBUNTUBUILDIMAGE /scripts/downloadStarter.fish $argv
+  runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/downloadStarter.fish $argv
 end
 
 function downloadSyncer
-  runInContainer -e DOWNLOAD_SYNC_USER=$DOWNLOAD_SYNC_USER $UBUNTUBUILDIMAGE /scripts/downloadSyncer.fish $argv
+  runInContainer -e DOWNLOAD_SYNC_USER=$DOWNLOAD_SYNC_USER $UBUNTUBUILDIMAGE $SCRIPTSDIR/downloadSyncer.fish $argv
 end
 
 function makeDockerImage

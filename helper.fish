@@ -178,7 +178,6 @@ function makeRelease
   community
   buildStaticArangoDB _DTARGET_ARCHITECTURE=nehalem
   and downloadStarter
-  and buildDebianPackage $v
   and buildPackage $v
 
   if test $status != 0
