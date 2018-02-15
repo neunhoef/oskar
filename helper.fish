@@ -139,11 +139,6 @@ function showLog
   less +G work/test.log
 end
 
-switch (uname)
-  case Darwin ; source helper.mac.fish
-  case '*' ; source helper.linux.fish
-end
-
 function findArangoDBVersion
   set -xg ARANGODB_VERSION_MAJOR (grep "set(ARANGODB_VERSION_MAJOR" $WORKDIR/work/ArangoDB/CMakeLists.txt | sed -e 's/.*"\([0-9a-zA-Z]*\)".*$/\1/')
   and set -xg ARANGODB_VERSION_MINOR (grep "set(ARANGODB_VERSION_MINOR" $WORKDIR/work/ArangoDB/CMakeLists.txt | sed -e 's/.*"\([0-9a-zA-Z]*\)".*$/\1/')
@@ -198,6 +193,12 @@ function moveResultsToWorkspace
   for f in work/testreport* ; mv $f $WORKSPACE ; end
   for f in work/*.deb ; mv $f $WORKSPACE ; end
   if test -f work/test.log ; mv work/test.log $WORKSPACE ; end
+end
+
+# Include the specifics for the platform
+switch (uname)
+  case Darwin ; source helper.mac.fish
+  case '*' ; source helper.linux.fish
 end
 
 showConfig
