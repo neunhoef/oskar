@@ -1,3 +1,4 @@
+set -xg INNERWORKDIR /work
 set -xg SCRIPTSDIR /scripts
 set -xg PLATFORM linux
 set -xg UBUNTUBUILDIMAGE neunhoef/ubuntubuildarangodb

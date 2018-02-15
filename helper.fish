@@ -68,7 +68,6 @@ function verbose ; set -g VERBOSEOSKAR On ; end
 function silent ; set -g VERBOSEOSKAR Off ; end
 
 set -g WORKDIR (pwd)
-set -g INNERWORKDIR /work
 if test ! -d work ; mkdir work ; end
 set -g VERBOSEOSKAR Off
 
