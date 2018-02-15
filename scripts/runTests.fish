@@ -1,4 +1,4 @@
-#!/usr/bin/fish
+#!/usr/bin/env fish
 
 set -g repoState ""
 set -g repoStateEnterprise ""

@@ -1,4 +1,4 @@
-#!/usr/bin/fish
+#!/usr/bin/env fish
 cd $INNERWORKDIR/ArangoDB
 set -e -x LC_ALL
 set -e -x LC_CTYPE
