@@ -188,4 +188,9 @@ Function clearResults
   Remove-Item -Force test.log
 }
 
+Function showLog
+{
+    Get-Content "$INNERWORKDIR\test.log" -Tail 100
+}
+
 Show-Config
