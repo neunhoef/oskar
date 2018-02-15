@@ -1,12 +1,14 @@
 #!/usr/bin/env fish
-date > /tmp/usedstamp
-if test $PARALLELISM = ""
-    set -x PARALLELISM 64
+if test "$PARALLELISM" = ""
+    set -xg PARALLELISM 64
 end
 
 cd $INNERWORKDIR
 mkdir -p .ccache.alpine
 set -x CCACHE_DIR $INNERWORKDIR/.ccache.alpine
+if test "$CCACHEBINPATH" = ""
+  set -xg CCACHEBINPATH /usr/lib/ccache/bin
+end
 ccache -M 30G
 
 cd $INNERWORKDIR/ArangoDB
@@ -16,14 +18,15 @@ cd build
 
 cmake $argv \
       -DCMAKE_BUILD_TYPE=$BUILDTYPE \
-      -DCMAKE_CXX_COMPILER=/usr/lib/ccache/bin/g++ \
-      -DCMAKE_C_COMPILER=/usr/lib/ccache/bin/gcc \
+      -DCMAKE_CXX_COMPILER=$CCACHEBINPATH/g++ \
+      -DCMAKE_C_COMPILER=$CCACHEBINPATH/gcc \
       -DUSE_MAINTAINER_MODE=$MAINTAINER \
       -DUSE_ENTERPRISE=$ENTERPRISEEDITION \
       -DUSE_JEMALLOC=Off \
       -DCMAKE_INSTALL_PREFIX=/ \
       -DSTATIC_EXECUTABLES=On \
       ..
+
 set -l s $status
 if test $status != 0
   chown -R $UID:$GID $INNERWORKDIR
