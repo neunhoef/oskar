@@ -111,7 +111,7 @@ function buildStaticArangoDB
       checkoutArangoDB
     end
   end
-  runInContainer $ALPINEBUILDIMAGE /scripts/build.fish $argv
+  runInContainer $ALPINEBUILDIMAGE /scripts/buildAlpine.fish $argv
   set -l s $status
   if test $s != 0
     echo Build error!
