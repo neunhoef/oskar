@@ -3,6 +3,7 @@ set -xg PLATFORM darwin
 set -xg UID (id -u)
 set -xg GID (id -g)
 set -xg INNERWORKDIR $WORKDIR/work
+set -xg CCACHEBINPATH /usr/local/opt/ccache/libexec
 
 function runLocal
   if test -z "$SSH_AUTH_SOCK"
