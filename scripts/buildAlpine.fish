@@ -1,4 +1,4 @@
-#!/usr/bin/fish
+#!/usr/bin/env fish
 date > /tmp/usedstamp
 if test $PARALLELISM = ""
     set -x PARALLELISM 64

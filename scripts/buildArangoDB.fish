@@ -1,4 +1,4 @@
-#!/usr/bin/fish
+#!/usr/bin/env fish
 cd $INNERWORKDIR
 mkdir -p .ccache.ubuntu
 set -x CCACHE_DIR $INNERWORKDIR/.ccache.ubuntu

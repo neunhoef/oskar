@@ -1,4 +1,4 @@
-#!/usr/bin/fish
+#!/usr/bin/env fish
 cd $INNERWORKDIR/ArangoDB
 and git checkout -- .
 and git pull
