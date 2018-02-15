@@ -34,3 +34,112 @@ Function Remove-DirectoryLock
         Remove-Item LOCK.$pid
     }   
 }
+
+Function Show-Config
+{
+  Write-Host "Workdir           : $WORKDIR"
+  Write-Host "Inner workdir     : $INNERWORKDIR"
+  Write-Host "Maintainer        : $MAINTAINER"
+  Write-Host "Buildmode         : $BUILDMODE"
+  Write-Host "Parallelism       : $PARALLELISM"
+  Write-Host "Enterpriseedition : $ENTERPRISEEDITION"
+  Write-Host "Storage engine    : $STORAGEENGINE"
+  Write-Host "Test suite        : $TESTSUITE"
+  Write-Host "Verbose           : $VERBOSEOSKAR"
+}
+
+Function single
+{
+    $TESTSUITE = "single"
+}
+Function cluster
+{
+    $TESTSUITE = "cluster"
+}
+Function resilience
+{
+    $TESTSUITE = "resilience"
+}
+If(-Not($TESTSUITE))
+{
+    $TESTSUITE = "cluster"
+}
+
+Function maintainerOn
+{
+    $MAINTAINER = "On"
+}
+Function maintainerOff
+{
+    $MAINTAINER = "Off"
+}
+If(-Not($MAINTAINER))
+{
+    $MAINTAINER = "On"
+}
+
+Function debugMode
+{
+    $BUILDMODE = "Debug"
+}
+Function releaseMode
+{
+    $BUILDMODE = "RelWithDebInfo"
+}
+If(-Not($BUILDMODE))
+{
+    $BUILDMODE = "RelWithDebInfo"
+}
+
+Function community
+{
+    $ENTERPRISEEDITION = "Off"
+}
+Function enterprise
+{
+    $ENTERPRISEEDITION = "On"
+}
+If(-Not($ENTERPRISEEDITION))
+{
+    $ENTERPRISEEDITION = "On"
+}
+
+Function mmfiles
+{
+    $STORAGEENGINE = "mmfiles"
+}
+Function rocksdb
+{
+    $STORAGEENGINE = "rocksdb"
+}
+If(-Not($STORAGEENGINE))
+{
+    $STORAGEENGINE = "rocksdb"
+}
+
+Function parallelism($arg)
+{
+    $PARALLELISM = $arg
+}
+If(-Not($PARALLELISM))
+{
+    $PARALLELISM = 64
+}
+
+Function verbose
+{
+    $VERBOSEOSKAR = "On"
+}
+Function silent
+{
+    $VERBOSEOSKAR = "Off"
+}
+
+$WORKDIR = $pwd
+$INNERWORKDIR = "\work"
+If(-Not(Test-Path -PathType Container -Path "work"))
+{
+    New-Item -ItemType Directory -Path "work"
+}
+$VERBOSEOSKAR = "Off"
+Show-Config
