@@ -162,4 +162,30 @@ Function checkoutEnterprise
     }
 }
 
+Function checkoutIfNeeded
+{
+    If(-Not(Test-Path -PathType Container -Path "$INNERWORKDIR\ArangoDB"))
+    {
+        If($ENTERPRISEEDITION -eq "On")
+        {
+            checkoutEnterprise
+        }
+        Else
+        {
+            checkoutArangoDB
+        }
+    }
+    
+}
+
+Function clearResults
+{
+  Set-Location $INNERWORKDIR
+  ForEach($file in $(Get-ChildItem -Filter testreport*))
+  {
+    Remove-Item -Force $file
+  }
+  Remove-Item -Force test.log
+}
+
 Show-Config
