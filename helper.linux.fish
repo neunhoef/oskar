@@ -1,9 +1,9 @@
-set -xg INNERWORKDIR /work
-set -xg SCRIPTSDIR /scripts
-set -xg PLATFORM linux
-set -xg UBUNTUBUILDIMAGE neunhoef/ubuntubuildarangodb
-set -xg UBUNTUPACKAGINGIMAGE neunhoef/ubuntupackagearangodb
-set -xg ALPINEBUILDIMAGE neunhoef/alpinebuildarangodb
+set -gx INNERWORKDIR /work
+set -gx SCRIPTSDIR /scripts
+set -gx PLATFORM linux
+set -gx UBUNTUBUILDIMAGE neunhoef/ubuntubuildarangodb
+set -gx UBUNTUPACKAGINGIMAGE neunhoef/ubuntupackagearangodb
+set -gx ALPINEBUILDIMAGE neunhoef/alpinebuildarangodb
 
 function buildUbuntuBuildImage
   cd $WORKDIR
