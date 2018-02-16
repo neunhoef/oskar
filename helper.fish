@@ -47,7 +47,7 @@ if test -z "$TESTSUITE" ; cluster ; else ; set -gx TESTSUITE ; end
 
 function maintainerOn ; set -gx MAINTAINER On ; end
 function maintainerOff ; set -gx MAINTAINER Off ; end
-if test -z "$MAINTAINER" ; mainertainerOn ; else ; set -gx MAINTAINER ; end
+if test -z "$MAINTAINER" ; maintainerOn ; else ; set -gx MAINTAINER ; end
 
 function debugMode ; set -gx BUILDMODE Debug ; end
 function releaseMode ; set -gx BUILDMODE RelWithDebInfo ; end
