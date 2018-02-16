@@ -1,4 +1,4 @@
-#!/usr/bin/fish
+#!/usr/bin/env fish
 cd $HOME
 if not cd oskar ^ /dev/null 
   git clone https://github.com/neunhoef/oskar ; and cd oskar

@@ -1,4 +1,4 @@
-#!/usr/bin/fish
+#!/usr/bin/env fish
 env
 cd $HOME
 if not cd oskar ^ /dev/null 

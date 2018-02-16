@@ -1,4 +1,4 @@
-#!/usr/bin/fish
+#!/usr/bin/env fish
 cd $HOME
 if test ! -d oskar ; git clone https://github.com/neunhoef/oskar
 else ; git pull ; end
