@@ -1,4 +1,36 @@
-#Import-Module VSSetup
+Import-Module VSSetup
+
+$WORKDIR = $pwd
+$INNERWORKDIR = "$pwd\work"
+If(-Not(Test-Path -PathType Container -Path "work"))
+{
+    New-Item -ItemType Directory -Path "work"
+}
+$VERBOSEOSKAR = "Off"
+$GENERATOR = "Visual Studio 15 2017 Win64"
+$env:CLCACHE_CL=$(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter cl.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx64\\x64"}).FullName
+$env:CLCACHE_DIR="$INNERWORKDIR\.clcache.windows"
+$env:CC="clcache"
+$env:CXX="clcache"
+
+Function showConfig
+{
+  Write-Host "Workdir               :"$WORKDIR
+  Write-Host "Inner workdir         :"$INNERWORKDIR
+  Write-Host "Cachedir              :"$env:CLCACHE_DIR
+  Write-Host "Maintainer            :"$MAINTAINER
+  Write-Host "Buildmode             :"$BUILDMODE
+  Write-Host "Skip Packaging        :"$SKIPPACKAGING
+  Write-Host "Generator             :"$GENERATOR
+  Write-Host "CL                    :"$env:CLCACHE_CL
+  Write-Host "CC                    :"$env:CC
+  Write-Host "CXX                   :"$env:CXX
+  Write-Host "Parallelism           :"$PARALLELISM
+  Write-Host "Enterpriseedition     :"$ENTERPRISEEDITION
+  Write-Host "Storage engine        :"$STORAGEENGINE
+  Write-Host "Test suite            :"$TESTSUITE
+  Write-Host "Verbose               :"$VERBOSEOSKAR
+}
 
 Function lockDirectory
 {
@@ -7,7 +39,6 @@ Function lockDirectory
         $pid | Out-File LOCK.$pid
         While($true)
         {
-            # Remove a stale lock if it is found:
             If($pidfound = Get-Content LOCK -ErrorAction SilentlyContinue)
             {
                 If(-Not(Get-Process -Id $pidfound -ErrorAction SilentlyContinue))
@@ -35,38 +66,6 @@ Function unlockDirectory
         Remove-Item LOCK
         Remove-Item LOCK.$pid
     }   
-}
-
-$WORKDIR = $pwd
-$INNERWORKDIR = "$pwd\work"
-If(-Not(Test-Path -PathType Container -Path "work"))
-{
-    New-Item -ItemType Directory -Path "work"
-}
-$VERBOSEOSKAR = "Off"
-$GENERATOR = "Visual Studio 15 2017 Win64"
-#$CL = $(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter cl.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx64\\x64"}).FullName
-#$CLPATH = Split-Path -Parent $CL
-#$env:GYP_MSVS_OVERRIDE_PATH=$CLPATH
-$env:CC="clcache"
-$env:CXX="clcache"
-
-Function showConfig
-{
-  Write-Host "Workdir               :"$WORKDIR
-  Write-Host "Inner workdir         :"$INNERWORKDIR
-  Write-Host "Maintainer            :"$MAINTAINER
-  Write-Host "Buildmode             :"$BUILDMODE
-  Write-Host "Skip Packaging        :"$SKIPPACKAGING
-  Write-Host "Generator             :"$GENERATOR
-  Write-Host "CC                    :"$env:CC
-  Write-Host "CXX                   :"$env:CXX
-  #Write-Host "GYP_MSVS_OVERRIDE_PATH:"$env:GYP_MSVS_OVERRIDE_PATH
-  Write-Host "Parallelism           :"$PARALLELISM
-  Write-Host "Enterpriseedition     :"$ENTERPRISEEDITION
-  Write-Host "Storage engine        :"$STORAGEENGINE
-  Write-Host "Test suite            :"$TESTSUITE
-  Write-Host "Verbose               :"$VERBOSEOSKAR
 }
 
 Function single
@@ -179,7 +178,11 @@ Function checkoutArangoDB
     Set-Location $INNERWORKDIR
     If(-Not(Test-Path -PathType Container -Path "ArangoDB"))
     {
-        Start-Process "git "-ArgumentList "clone https://github.com/arangodb/ArangoDB" -Wait
+        $PROCESS = Start-Process -FilePath "git" -commandArguments "clone https://github.com/arangodb/ArangoDB" -PassThru -Wait
+        If($PROCESS.ExitCode -ne 0)
+        {
+            Throw "Errorlevel: $($PROCESS.ExitCode)"
+        }
     }
 }
 
@@ -189,7 +192,11 @@ Function checkoutEnterprise
     Set-Location "$INNERWORKDIR\ArangoDB"
     If(-Not(Test-Path -PathType Container -Path "enterprise"))
     {
-        Start-Process "git " -ArgumentList "clone sven%40arangodb.com@https://github.com/arangodb/enterprise" -Wait
+        #$PROCESS = Start-Process -FilePath "git" -ArgumentList "clone sven%40arangodb.com@https://github.com/arangodb/enterprise" -PassThru -Wait
+        If($PROCESS.ExitCode -ne 0)
+        {
+            Throw "Errorlevel: $($PROCESS.ExitCode)"
+        }
     }
 }
 
@@ -209,20 +216,45 @@ Function checkoutIfNeeded
     
 }
 
-Function configureWinRelease
+Function configureWindows
 {
     If(-Not(Test-Path -PathType Container -Path "$INNERWORKDIR\ArangoDB\build"))
     {
         New-Item -ItemType Directory -Path "$INNERWORKDIR\ArangoDB\build"
     }
     Set-Location "$INNERWORKDIR\ArangoDB\build"
-    Start-Process "cmake" -ArgumentList "-G `"$GENERATOR`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DSKIP_PACKAGING=`"$SKIPPACKAGING`" `"$INNERWORKDIR\ArangoDB`"" -Wait
+
+    $PROCESS = Start-Process -FilePath "cmake"  -ArgumentList "-G `"$GENERATOR`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DPYTHON_EXECUTABLE:FILEPATH=C:\Python27\python.exe `"$INNERWORKDIR\ArangoDB`""
+    If($PROCESS.ExitCode -ne 0)
+    {
+        Throw "Errorlevel: $($PROCESS.ExitCode)"
+    }
 }
 
-Function buildWinRelease 
+Function buildWindows 
 {
+    If(-Not(Test-Path -PathType Container -Path "$INNERWORKDIR\ArangoDB\build"))
+    {
+        Write-Host "Please Configure before this step."
+        
+    }
     Set-Location "$INNERWORKDIR\ArangoDB\build"
-    Start-Process "cmake"  -ArgumentList "--build . --config `"$BUILDMODE`"" -Wait
+    $PROCESS = Start-Process -FilePath "cmake"  -ArgumentList "--build . --config `"$BUILDMODE`"" -PassThru -Wait
+    If($PROCESS.ExitCode -ne 0)
+    {
+        Throw "Errorlevel: $($PROCESS.ExitCode)"
+    }
+}
+
+Function buildArangoDB
+{
+    checkoutIfNeeded
+    If(Test-Path -PathType Container -Path "$INNERWORKDIR\ArangoDB\build")
+    {
+       Remove-Item -Recurse -Force -Path "$INNERWORKDIR\ArangoDB\build"
+    }
+    configureWindows
+    buildWindows
 }
 
 Function clearResults
@@ -239,5 +271,5 @@ Function showLog
 {
     Get-Content "$INNERWORKDIR\test.log" -Tail 100
 }
-
+Clear
 showConfig
