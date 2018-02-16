@@ -1,4 +1,6 @@
-Function Add-DirectoryLock
+#Import-Module VSSetup
+
+Function lockDirectory
 {
     If(-Not(Test-Path -PathType Leaf LOCK.$pid))
     {
@@ -26,7 +28,7 @@ Function Add-DirectoryLock
     } 
 }
 
-Function Remove-DirectoryLock
+Function unlockDirectory
 {
     If(Test-Path -PathType Leaf LOCK.$pid)
     {
@@ -35,27 +37,48 @@ Function Remove-DirectoryLock
     }   
 }
 
-Function Show-Config
+$WORKDIR = $pwd
+$INNERWORKDIR = "$pwd\work"
+If(-Not(Test-Path -PathType Container -Path "work"))
 {
-  Write-Host "Workdir           : $WORKDIR"
-  Write-Host "Inner workdir     : $INNERWORKDIR"
-  Write-Host "Maintainer        : $MAINTAINER"
-  Write-Host "Buildmode         : $BUILDMODE"
-  Write-Host "Parallelism       : $PARALLELISM"
-  Write-Host "Enterpriseedition : $ENTERPRISEEDITION"
-  Write-Host "Storage engine    : $STORAGEENGINE"
-  Write-Host "Test suite        : $TESTSUITE"
-  Write-Host "Verbose           : $VERBOSEOSKAR"
+    New-Item -ItemType Directory -Path "work"
+}
+$VERBOSEOSKAR = "Off"
+$GENERATOR = "Visual Studio 15 2017 Win64"
+#$CL = $(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter cl.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx64\\x64"}).FullName
+#$CLPATH = Split-Path -Parent $CL
+#$env:GYP_MSVS_OVERRIDE_PATH=$CLPATH
+$env:CC="clcache"
+$env:CXX="clcache"
+
+Function showConfig
+{
+  Write-Host "Workdir               :"$WORKDIR
+  Write-Host "Inner workdir         :"$INNERWORKDIR
+  Write-Host "Maintainer            :"$MAINTAINER
+  Write-Host "Buildmode             :"$BUILDMODE
+  Write-Host "Skip Packaging        :"$SKIPPACKAGING
+  Write-Host "Generator             :"$GENERATOR
+  Write-Host "CC                    :"$env:CC
+  Write-Host "CXX                   :"$env:CXX
+  #Write-Host "GYP_MSVS_OVERRIDE_PATH:"$env:GYP_MSVS_OVERRIDE_PATH
+  Write-Host "Parallelism           :"$PARALLELISM
+  Write-Host "Enterpriseedition     :"$ENTERPRISEEDITION
+  Write-Host "Storage engine        :"$STORAGEENGINE
+  Write-Host "Test suite            :"$TESTSUITE
+  Write-Host "Verbose               :"$VERBOSEOSKAR
 }
 
 Function single
 {
     $TESTSUITE = "single"
 }
+
 Function cluster
 {
     $TESTSUITE = "cluster"
 }
+
 Function resilience
 {
     $TESTSUITE = "resilience"
@@ -65,10 +88,24 @@ If(-Not($TESTSUITE))
     $TESTSUITE = "cluster"
 }
 
+Function skipPackagingOn
+{
+    $SKIPPACKAGING = "On"
+}
+Function skipPackagingOff
+{
+    $SKIPPACKAGING = "Off"
+}
+If(-Not($SKIPPACKAGING))
+{
+    $SKIPPACKAGING = "On"
+}
+
 Function maintainerOn
 {
     $MAINTAINER = "On"
 }
+
 Function maintainerOff
 {
     $MAINTAINER = "Off"
@@ -82,6 +119,7 @@ Function debugMode
 {
     $BUILDMODE = "Debug"
 }
+
 Function releaseMode
 {
     $BUILDMODE = "RelWithDebInfo"
@@ -95,6 +133,7 @@ Function community
 {
     $ENTERPRISEEDITION = "Off"
 }
+
 Function enterprise
 {
     $ENTERPRISEEDITION = "On"
@@ -135,14 +174,6 @@ Function silent
     $VERBOSEOSKAR = "Off"
 }
 
-$WORKDIR = $pwd
-$INNERWORKDIR = "$pwd\work"
-If(-Not(Test-Path -PathType Container -Path "work"))
-{
-    New-Item -ItemType Directory -Path "work"
-}
-$VERBOSEOSKAR = "Off"
-
 Function checkoutArangoDB
 {
     Set-Location $INNERWORKDIR
@@ -158,7 +189,7 @@ Function checkoutEnterprise
     Set-Location "$INNERWORKDIR\ArangoDB"
     If(-Not(Test-Path -PathType Container -Path "enterprise"))
     {
-        Start-Process "git "-ArgumentList "clone sven%40arangodb.com@https://github.com/arangodb/enterprise" -Wait
+        Start-Process "git " -ArgumentList "clone sven%40arangodb.com@https://github.com/arangodb/enterprise" -Wait
     }
 }
 
@@ -178,6 +209,22 @@ Function checkoutIfNeeded
     
 }
 
+Function configureWinRelease
+{
+    If(-Not(Test-Path -PathType Container -Path "$INNERWORKDIR\ArangoDB\build"))
+    {
+        New-Item -ItemType Directory -Path "$INNERWORKDIR\ArangoDB\build"
+    }
+    Set-Location "$INNERWORKDIR\ArangoDB\build"
+    Start-Process "cmake" -ArgumentList "-G `"$GENERATOR`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DSKIP_PACKAGING=`"$SKIPPACKAGING`" `"$INNERWORKDIR\ArangoDB`"" -Wait
+}
+
+Function buildWinRelease 
+{
+    Set-Location "$INNERWORKDIR\ArangoDB\build"
+    Start-Process "cmake"  -ArgumentList "--build . --config `"$BUILDMODE`"" -Wait
+}
+
 Function clearResults
 {
   Set-Location $INNERWORKDIR
@@ -193,4 +240,4 @@ Function showLog
     Get-Content "$INNERWORKDIR\test.log" -Tail 100
 }
 
-Show-Config
+showConfig
