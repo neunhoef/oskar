@@ -43,37 +43,40 @@ end
 function single ; set -gx TESTSUITE single ; end
 function cluster ; set -gx TESTSUITE cluster ; end
 function resilience ; set -gx TESTSUITE resilience ; end
-if test -z "$TESTSUITE" ; cluster ; else ; set -gx TESTSUITE ; end
+if test -z "$TESTSUITE" ; cluster
+else ; set -gx TESTSUITE $TESTSUITE ; end
 
 function maintainerOn ; set -gx MAINTAINER On ; end
 function maintainerOff ; set -gx MAINTAINER Off ; end
-if test -z "$MAINTAINER" ; maintainerOn ; else ; set -gx MAINTAINER ; end
+if test -z "$MAINTAINER" ; maintainerOn
+else ; set -gx MAINTAINER $MAINTAINER ; end
 
 function debugMode ; set -gx BUILDMODE Debug ; end
 function releaseMode ; set -gx BUILDMODE RelWithDebInfo ; end
-if test -z "$BUILDMODE" ; releaseMode ; else ; set -gx BUILDMODE ; end
+if test -z "$BUILDMODE" ; releaseMode
+else ; set -gx BUILDMODE $BUILDMODE ; end
 
 function community ; set -gx ENTERPRISEEDITION Off ; end
 function enterprise ; set -gx ENTERPRISEEDITION On ; end
-if test -z "$ENTERPRISEEDITION" ; enterprise ; else ; set -gx enterprise ; end
+if test -z "$ENTERPRISEEDITION" ; enterprise
+else ; set -gx ENTERPRISEEDITION $ENTERPRISEEDITION ; end
 
 function mmfiles ; set -gx STORAGEENGINE mmfiles ; end
 function rocksdb ; set -gx STORAGEENGINE rocksdb ; end
-if test -z "$STORAGEENGINE" ; rocksdb ; else ; set -gx STORAGEENGINE ; end
+if test -z "$STORAGEENGINE" ; rocksdb
+else ; set -gx STORAGEENGINE $STORAGEENGINE ; end
 
 function parallelism ; set -gx PARALLELISM $argv[1] ; end
-if test -z "$PARALLELISM"
-  set -gx PARALLELISM 64
-else
-  set -gx PARALLELISM
-end
+if test -z "$PARALLELISM" ; parallelism 64
+else ; set -gx PARALLELISM $PARALLELISM ; end
 
 function verbose ; set -gx VERBOSEOSKAR On ; end
 function silent ; set -gx VERBOSEOSKAR Off ; end
+if test -z "$VERBOSEOSKAR" ; silent
+else ; set -gx VERBOSEOSKAR $VERBOSEOSKAR ; end
 
 set -gx WORKDIR (pwd)
 if test ! -d work ; mkdir work ; end
-if test -z "$VERBOSEOSKAR" ; set -gx VERBOSEOSKAR Off ; else ; set -gx VERBOSEOSKAR ; end
 
 function checkoutIfNeeded
   if test ! -d $WORKDIR/ArangoDB
