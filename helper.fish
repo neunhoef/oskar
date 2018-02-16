@@ -73,7 +73,7 @@ function silent ; set -gx VERBOSEOSKAR Off ; end
 
 set -gx WORKDIR (pwd)
 if test ! -d work ; mkdir work ; end
-if test -z "$VERBOSEOSKAR" ; set -gx VERBOSEOSKAR Off ; else ; set -gx VERBOSEOSKAR ;
+if test -z "$VERBOSEOSKAR" ; set -gx VERBOSEOSKAR Off ; else ; set -gx VERBOSEOSKAR ; end
 
 function checkoutIfNeeded
   if test ! -d $WORKDIR/ArangoDB
