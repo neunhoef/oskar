@@ -1,4 +1,5 @@
 Import-Module VSSetup
+Import-Module C:\tools\poshgit\dahlbyk-posh-git-a4faccd\src\posh-git.psm1
 
 $WORKDIR = $pwd
 $INNERWORKDIR = "$pwd\work"
@@ -139,7 +140,7 @@ Function enterprise
 }
 If(-Not($ENTERPRISEEDITION))
 {
-    $ENTERPRISEEDITION = "On"
+    $ENTERPRISEEDITION = "Off"
 }
 
 Function mmfiles
@@ -178,7 +179,7 @@ Function checkoutArangoDB
     Set-Location $INNERWORKDIR
     If(-Not(Test-Path -PathType Container -Path "ArangoDB"))
     {
-        $PROCESS = Start-Process -FilePath "git" -commandArguments "clone https://github.com/arangodb/ArangoDB" -PassThru -Wait
+        $PROCESS = Start-Process -FilePath "git" -ArgumentList "clone https://github.com/arangodb/ArangoDB" -PassThru -Wait
         If($PROCESS.ExitCode -ne 0)
         {
             Throw "Errorlevel: $($PROCESS.ExitCode)"
@@ -223,12 +224,7 @@ Function configureWindows
         New-Item -ItemType Directory -Path "$INNERWORKDIR\ArangoDB\build"
     }
     Set-Location "$INNERWORKDIR\ArangoDB\build"
-
-    $PROCESS = Start-Process -FilePath "cmake"  -ArgumentList "-G `"$GENERATOR`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DPYTHON_EXECUTABLE:FILEPATH=C:\Python27\python.exe `"$INNERWORKDIR\ArangoDB`""
-    If($PROCESS.ExitCode -ne 0)
-    {
-        Throw "Errorlevel: $($PROCESS.ExitCode)"
-    }
+    cmake -G "$GENERATOR" -DUSE_MAINTAINER_MODE="$MAINTAINER" -DUSE_ENTERPRISE="$ENTERPRISEEDITION" -DCMAKE_BUILD_TYPE="$BUILDMODE" -DSKIP_PACKAGING="$SKIPPACKAGING" -DPYTHON_EXECUTABLE:FILEPATH=C:\Python27\python.exe "$INNERWORKDIR\ArangoDB"
 }
 
 Function buildWindows 
@@ -239,11 +235,7 @@ Function buildWindows
         
     }
     Set-Location "$INNERWORKDIR\ArangoDB\build"
-    $PROCESS = Start-Process -FilePath "cmake"  -ArgumentList "--build . --config `"$BUILDMODE`"" -PassThru -Wait
-    If($PROCESS.ExitCode -ne 0)
-    {
-        Throw "Errorlevel: $($PROCESS.ExitCode)"
-    }
+    cmake --build . --config "$BUILDMODE"
 }
 
 Function buildArangoDB
