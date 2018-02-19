@@ -88,6 +88,8 @@ function runInContainer
   set s (docker inspect $c --format "{{.State.ExitCode}}")
   docker rm $c >/dev/null
   functions -e termhandler
+  # Cleanup ownership:
+  docker run -v $WORKDIR/work:$INNERWORKDIR -e UID=(id -u) -e GID=(id -g)
 
   if test -n "$agentstarted"
     ssh-agent -k > /dev/null

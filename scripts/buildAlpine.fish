@@ -40,9 +40,3 @@ and cd install
 and if test -z "$NOSTRIP"
   strip usr/sbin/arangod usr/bin/arangoimp usr/bin/arangosh usr/bin/arangovpack usr/bin/arangoexport usr/bin/arangobench usr/bin/arangodump usr/bin/arangorestore
 end
-
-set -l s $status
-cd $INNERWORKDIR/ArangoDB/build
-chown -R $UID:$GID $INNERWORKDIR
-exit $s
-

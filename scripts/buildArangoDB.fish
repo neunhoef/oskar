@@ -28,7 +28,3 @@ cmake $argv \
       $GOLD \
       ..
 and nice make -j$PARALLELISM
-
-set -l s $status
-chown -R $UID:$GID $INNERWORKDIR
-exit $s

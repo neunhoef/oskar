@@ -43,7 +43,3 @@ echo Downloading: Asset with ID $asset_id
 curl -s -L -H "Accept: application/octet-stream" "https://$DOWNLOAD_SYNC_USER@api.github.com/repos/arangodb/arangosync/releases/assets/$asset_id" -o "$INNERWORKDIR/ArangoDB/build/install/usr/bin/arangosync"
 
 and chmod 755 "$INNERWORKDIR/ArangoDB/build/install/usr/bin/arangosync"
-
-set -l s $status
-chown -R $UID:$GID $INNERWORKDIR
-exit $s

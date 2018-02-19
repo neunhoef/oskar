@@ -11,6 +11,3 @@ and if test $ENTERPRISEEDITION = On
   and git checkout $argv[2]
   and git pull
 end
-set -l s $status
-chown -R $UID:$GID $INNERWORKDIR
-exit $s
