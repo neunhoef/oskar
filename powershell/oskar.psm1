@@ -1,5 +1,4 @@
 Import-Module VSSetup
-Import-Module C:\tools\poshgit\dahlbyk-posh-git-a4faccd\src\posh-git.psm1
 
 $WORKDIR = $pwd
 $INNERWORKDIR = "$pwd\work"
@@ -179,11 +178,7 @@ Function checkoutArangoDB
     Set-Location $INNERWORKDIR
     If(-Not(Test-Path -PathType Container -Path "ArangoDB"))
     {
-        $PROCESS = Start-Process -FilePath "git" -ArgumentList "clone https://github.com/arangodb/ArangoDB" -PassThru -Wait
-        If($PROCESS.ExitCode -ne 0)
-        {
-            Throw "Errorlevel: $($PROCESS.ExitCode)"
-        }
+        Start-Process -FilePath "git" -ArgumentList "clone https://github.com/arangodb/ArangoDB" -NoNewWindow -Wait
     }
 }
 
@@ -224,7 +219,7 @@ Function configureWindows
         New-Item -ItemType Directory -Path "$INNERWORKDIR\ArangoDB\build"
     }
     Set-Location "$INNERWORKDIR\ArangoDB\build"
-    cmake -G "$GENERATOR" -DUSE_MAINTAINER_MODE="$MAINTAINER" -DUSE_ENTERPRISE="$ENTERPRISEEDITION" -DCMAKE_BUILD_TYPE="$BUILDMODE" -DSKIP_PACKAGING="$SKIPPACKAGING" -DPYTHON_EXECUTABLE:FILEPATH=C:\Python27\python.exe "$INNERWORKDIR\ArangoDB"
+    Start-Process -FilePath "cmake" -ArgumentList "-G `"$GENERATOR`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DPYTHON_EXECUTABLE:FILEPATH=C:\Python27\python.exe `"$INNERWORKDIR\ArangoDB`"" -Wait -NoNewWindow
 }
 
 Function buildWindows 
@@ -235,7 +230,7 @@ Function buildWindows
         
     }
     Set-Location "$INNERWORKDIR\ArangoDB\build"
-    cmake --build . --config "$BUILDMODE"
+    Start-Process -FilePath "cmake" -ArgumentList "--build . --config `"$BUILDMODE`"" -NoNewWindow -Wait
 }
 
 Function buildArangoDB
