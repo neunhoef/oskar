@@ -55,7 +55,14 @@ function runInContainer
   else
     set -l agentstarted ""
   end
-  docker run -v $WORKDIR/work:$INNERWORKDIR \
+
+  # Run script in container in background, but print output and react to
+  # a TERM signal to the shell or to a foreground subcommand. Note that the
+  # container process itself will run as root and will be immune to SIGTERM
+  # from a regular user. Therefore we have to do some Eiertanz to stop it
+  # if we receive a TERM outside the container. Note that this does not
+  # cover SIGINT, since this will directly abort the whole function.
+  set c (docker run -v $WORKDIR/work:$INNERWORKDIR \
              -v $SSH_AUTH_SOCK:/ssh-agent \
              -e SSH_AUTH_SOCK=/ssh-agent \
              -e UID=(id -u) \
@@ -73,8 +80,15 @@ function runInContainer
              -e ENTERPRISEEDITION=$ENTERPRISEEDITION \
              -e SCRIPTSDIR=$SCRIPTSDIR \
              -e PLATFORM=$PLATFORM \
-             $argv
-  set -l s $status
+             $argv)
+  function termhandler --on-signal TERM --inherit-variable c
+    if test -n "$c" ; docker stop $c ; end
+  end
+  docker logs -f $c        # print output to stdout
+  docker stop $c           # happens when the previous command gets a SIGTERM
+  set s (docker inspect $c --format "{{.State.ExitCode}}")
+  functions -e termhandler
+
   if test -n "$agentstarted"
     ssh-agent -k > /dev/null
     set -e SSH_AUTH_SOCK
