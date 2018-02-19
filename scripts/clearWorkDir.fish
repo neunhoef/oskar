@@ -1,3 +1,5 @@
 #!/usr/bin/env fish
 cd $INNERWORKDIR
-rm -rf ArangoDB .ccache testreport*
+for f in testreport* ; rm -f $f ; end
+for f in .ccache* ; rm -rf $f ; end
+rm -rf ArangoDB
