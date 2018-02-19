@@ -118,8 +118,8 @@ function switchBranches
   runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/switchBranches.fish $argv
 end
 
-function clearWorkdir
-  runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/clearWorkdir.fish
+function clearWorkDir
+  runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/clearWorkDir.fish
 end
 
 function buildArangoDB
