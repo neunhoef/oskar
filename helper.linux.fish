@@ -7,7 +7,7 @@ set -gx ALPINEBUILDIMAGE neunhoef/alpinebuildarangodb
 
 function buildUbuntuBuildImage
   cd $WORKDIR
-  cp -a scripts/{buildArangoDB,checkoutArangoDB,checkoutEnterprise,clearWorkDir,downloadStarter,downloadSyncer,runTests,switchBranches}.fish buildUbuntu.docker/scripts
+  cp -a scripts/{buildArangoDB,checkoutArangoDB,checkoutEnterprise,clearWorkDir,downloadStarter,downloadSyncer,runTests,switchBranches,recursiveChown}.fish buildUbuntu.docker/scripts
   cd $WORKDIR/buildUbuntu.docker
   docker build -t $UBUNTUBUILDIMAGE .
   rm -f $WORKDIR/buildUbuntu.docker/scripts/*.fish
@@ -89,7 +89,8 @@ function runInContainer
   docker rm $c >/dev/null
   functions -e termhandler
   # Cleanup ownership:
-  docker run -v $WORKDIR/work:$INNERWORKDIR -e UID=(id -u) -e GID=(id -g)
+  docker run -v $WORKDIR/work:$INNERWORKDIR -e UID=(id -u) -e GID=(id -g) \
+      $UBUNTUBUILDIMAGE $SCRIPTSDIR/recursiveChown.fish
 
   if test -n "$agentstarted"
     ssh-agent -k > /dev/null
