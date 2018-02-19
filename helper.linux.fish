@@ -90,6 +90,7 @@ function runInContainer
   functions -e termhandler
   # Cleanup ownership:
   docker run -v $WORKDIR/work:$INNERWORKDIR -e UID=(id -u) -e GID=(id -g) \
+      -e INNERWORKDIR=$INNERWORKDIR \
       $UBUNTUBUILDIMAGE $SCRIPTSDIR/recursiveChown.fish
 
   if test -n "$agentstarted"
