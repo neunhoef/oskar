@@ -67,7 +67,6 @@ function runInContainer
              -e SSH_AUTH_SOCK=/ssh-agent \
              -e UID=(id -u) \
              -e GID=(id -g) \
-             --rm \
              -e NOSTRIP="$NOSTRIP" \
              -e GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no" \
              -e INNERWORKDIR=$INNERWORKDIR \
@@ -85,9 +84,9 @@ function runInContainer
     if test -n "$c" ; docker stop $c ; end
   end
   docker logs -f $c        # print output to stdout
-  echo Raus
   docker stop $c           # happens when the previous command gets a SIGTERM
   set s (docker inspect $c --format "{{.State.ExitCode}}")
+  docker rm $c
   functions -e termhandler
 
   if test -n "$agentstarted"
