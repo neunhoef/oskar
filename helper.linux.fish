@@ -81,12 +81,12 @@ function runInContainer
              -e PLATFORM=$PLATFORM \
              $argv)
   function termhandler --on-signal TERM --inherit-variable c
-    if test -n "$c" ; docker stop $c ; end
+    if test -n "$c" ; docker stop $c >/dev/null ; end
   end
-  docker logs -f $c        # print output to stdout
-  docker stop $c           # happens when the previous command gets a SIGTERM
+  docker logs -f $c          # print output to stdout
+  docker stop $c >/dev/null  # happens when the previous command gets a SIGTERM
   set s (docker inspect $c --format "{{.State.ExitCode}}")
-  docker rm $c
+  docker rm $c >/dev/null
   functions -e termhandler
 
   if test -n "$agentstarted"
