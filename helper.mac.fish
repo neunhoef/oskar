@@ -56,7 +56,8 @@ end
 
 function buildStaticArangoDB
   checkoutIfNeeded
-  runLocal $SCRIPTSDIR/buildAlpine.fish $argv
+  runLocal $SCRIPTSDIR/buildArangoDB.fish $argv
+#  runLocal $SCRIPTSDIR/buildAlpine.fish $argv
   set -l s $status
   if test $s != 0
     echo Build error!
