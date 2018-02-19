@@ -1,14 +1,17 @@
 Import-Module VSSetup
 
 $WORKDIR = $pwd
-$INNERWORKDIR = "$pwd\work"
 If(-Not(Test-Path -PathType Container -Path "work"))
 {
     New-Item -ItemType Directory -Path "work"
 }
+$INNERWORKDIR = "$pwd\work"
+$cl = $(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter cl.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx64\\x64"}).FullName
+$cl_path = Split-Path -Parent $cl
 $VERBOSEOSKAR = "Off"
 $GENERATOR = "Visual Studio 15 2017 Win64"
-$env:CLCACHE_CL=$(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter cl.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx64\\x64"}).FullName
+$env:GYP_MSVS_OVERRIDE_PATH=$cl_path
+$env:CLCACHE_CL=$cl
 $env:CLCACHE_DIR="$INNERWORKDIR\.clcache.windows"
 $env:CC="clcache"
 $env:CXX="clcache"
@@ -178,7 +181,7 @@ Function checkoutArangoDB
     Set-Location $INNERWORKDIR
     If(-Not(Test-Path -PathType Container -Path "ArangoDB"))
     {
-        Start-Process -FilePath "git" -ArgumentList "clone https://github.com/arangodb/ArangoDB" -NoNewWindow -Wait
+        git clone https://github.com/arangodb/ArangoDB
     }
 }
 
@@ -188,11 +191,7 @@ Function checkoutEnterprise
     Set-Location "$INNERWORKDIR\ArangoDB"
     If(-Not(Test-Path -PathType Container -Path "enterprise"))
     {
-        #$PROCESS = Start-Process -FilePath "git" -ArgumentList "clone sven%40arangodb.com@https://github.com/arangodb/enterprise" -PassThru -Wait
-        If($PROCESS.ExitCode -ne 0)
-        {
-            Throw "Errorlevel: $($PROCESS.ExitCode)"
-        }
+        #git clone https://github.com/arangodb/enterprise
     }
 }
 
@@ -212,6 +211,24 @@ Function checkoutIfNeeded
     
 }
 
+Function switchBranches($branch_c,$branch_e)
+{
+    checkoutIfNeeded
+    Set-Location "$INNERWORKDIR\ArangoDB"
+    git checkout -- .
+    git pull
+    git checkout $branch_c
+    git pull
+    If($ENTERPRISEEDITION -eq "On")
+    {
+        Set-Location "$INNERWORKDIR\ArangoDB\enterprise"
+        git checkout -- .
+        git pull
+        git checkout $branch_e
+        git pull
+    }
+}
+
 Function configureWindows
 {
     If(-Not(Test-Path -PathType Container -Path "$INNERWORKDIR\ArangoDB\build"))
@@ -219,7 +236,7 @@ Function configureWindows
         New-Item -ItemType Directory -Path "$INNERWORKDIR\ArangoDB\build"
     }
     Set-Location "$INNERWORKDIR\ArangoDB\build"
-    Start-Process -FilePath "cmake" -ArgumentList "-G `"$GENERATOR`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DPYTHON_EXECUTABLE:FILEPATH=C:\Python27\python.exe `"$INNERWORKDIR\ArangoDB`"" -Wait -NoNewWindow
+    cmake -G "$GENERATOR" -DUSE_MAINTAINER_MODE="$MAINTAINER" -DUSE_ENTERPRISE="$ENTERPRISEEDITION" -DCMAKE_BUILD_TYPE="$BUILDMODE" -DSKIP_PACKAGING="$SKIPPACKAGING" -DPYTHON_EXECUTABLE:FILEPATH=C:\Python27\python.exe "$INNERWORKDIR\ArangoDB"
 }
 
 Function buildWindows 
@@ -230,7 +247,7 @@ Function buildWindows
         
     }
     Set-Location "$INNERWORKDIR\ArangoDB\build"
-    Start-Process -FilePath "cmake" -ArgumentList "--build . --config `"$BUILDMODE`"" -NoNewWindow -Wait
+    cmake --build . --config "$BUILDMODE"
 }
 
 Function buildArangoDB
