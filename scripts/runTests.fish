@@ -170,29 +170,21 @@ function createReport
       echo Bad result in $f
       echo Bad result in $f >> testProtocol.txt
       set badtests $badtests "Bad result in $f"
-      set tmp (grep "^not cleaning up" -A 1 $f | tail -n 1 | jq -r '.[0]')
-      # tmp is now the base path of the log and database files
-      pushd (dirname $tmp)
-      and begin
-        tar czvf $INNERWORKDIR/$f.tar.gz (basename $tmp) --exclude databases --exclude rocksdb --exclude journals
-        popd
-      end
     end
   end
   echo $result >> testProtocol.txt
+  pushd $INNERWORKDIR
+  and begin
+    tar czvf $INNERWORKDIR/ArangoDB/innerlogs.tar.gz tmp --exclude databases --exclude rocksdb --exclude journals
+    popd
+  end
+  
   set cores core*
   set archives *.tar.gz
   set logs *.log
-  tar czf "$INNERWORKDIR/testreport-$d.tar.gz" $logs testProtocol.txt $cores $archives
-  rm -rf $cores $archives
+  tar czf "$INNERWORKDIR/testreport-$d.tar.gz" $logs testProtocol.txt $cores $archives innerlogs.tar.gz
+  rm -rf $cores $archives innerlogs.tar.gz testProtocol.txt
   log "$d $TESTSUITE $result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE" $repoState $repoStateEnterprise $badtests ""
-end
-
-function cleanUp
-  killall -9 arangod arangosh ^/dev/null
-  set -l cores core*
-  set -l logs *.log
-  rm -rf testProtocol.txt $logs $cores
 end
 
 cd $INNERWORKDIR
@@ -218,8 +210,6 @@ switch $TESTSUITE
     echo Unknown test suite $TESTSUITE
     set -g result BAD
 end
-
-cleanUp
 
 if test $result = GOOD
   exit 0
