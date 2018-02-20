@@ -182,7 +182,9 @@ function createReport
   set cores core*
   set archives *.tar.gz
   set logs *.log
-  tar czf "$INNERWORKDIR/testreport-$d.tar.gz" $logs testProtocol.txt $cores $archives innerlogs.tar.gz
+  echo tar czvf "$INNERWORKDIR/testreport-$d.tar.gz" $logs testProtocol.txt $cores $archives innerlogs.tar.gz
+  tar czvf "$INNERWORKDIR/testreport-$d.tar.gz" $logs testProtocol.txt $cores $archives innerlogs.tar.gz
+  echo rm -rf $cores $archives innerlogs.tar.gz testProtocol.txt
   rm -rf $cores $archives innerlogs.tar.gz testProtocol.txt
   log "$d $TESTSUITE $result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE" $repoState $repoStateEnterprise $badtests ""
 end
