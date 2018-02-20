@@ -221,6 +221,10 @@ function downloadSyncer
 end
 
 function makeDockerImage
+  if test "$DOWNLOAD_SYNC_USER" = ""
+    echo "Need to set environment variable DOWNLOAD_SYNC_USER."
+    return 1
+  end
   if test (count $argv) = 0
     echo Must give image name as argument
     return 1

@@ -1,6 +1,5 @@
 #!/usr/bin/env fish
-env
-cd $HOME
+mkdir -p "$HOME/x$NODE_NAME" ; cd "$HOME/x$NODE_NAME"
 if not cd oskar ^ /dev/null 
   git clone https://github.com/neunhoef/oskar ; and cd oskar
 end
