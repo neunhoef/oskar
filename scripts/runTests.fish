@@ -170,7 +170,7 @@ function createReport
       echo Bad result in $f
       echo Bad result in $f >> testProtocol.txt
       set badtests $badtests "Bad result in $f"
-      set tmp (grep "^not cleaning up" -A 1 guck2 | tail -n 1 | jq -r '.[0]')
+      set tmp (grep "^not cleaning up" -A 1 $f | tail -n 1 | jq -r '.[0]')
       # tmp is now the base path of the log and database files
       pushd (dirname $tmp)
       and begin
