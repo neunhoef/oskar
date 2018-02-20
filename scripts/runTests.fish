@@ -170,11 +170,21 @@ function createReport
       echo Bad result in $f
       echo Bad result in $f >> testProtocol.txt
       set badtests $badtests "Bad result in $f"
+      set tmp (grep "^not cleaning up" -A 1 guck2 | tail -n 1 | jq -r '.[0]')
+      # tmp is now the base path of the log and database files
+      pushd (dirname $tmp)
+      and begin
+        tar czvf $INNERWORKDIR/$f.tar.gz (basename $tmp) --exclude databases --exclude rocksdb --exclude journals
+        popd
+      end
     end
   end
   echo $result >> testProtocol.txt
-  set -l cores core*
-  tar czf "$INNERWORKDIR/testreport-$d.tar.gz" *.log testProtocol.txt $cores
+  set cores core*
+  set archives *.tar.gz
+  set logs *.log
+  tar czf "$INNERWORKDIR/testreport-$d.tar.gz" $logs testProtocol.txt $cores $archives
+  rm -rf $cores $archives
   log "$d $TESTSUITE $result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE" $repoState $repoStateEnterprise $badtests ""
 end
 
@@ -185,6 +195,10 @@ function cleanUp
   rm -rf testProtocol.txt $logs $cores
 end
 
+cd $INNERWORKDIR
+rm -rf tmp
+mkdir tmp
+set -xg TMPDIR $INNERWORKDIR/tmp
 cd $INNERWORKDIR/ArangoDB
 
 switch $TESTSUITE
