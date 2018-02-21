@@ -215,17 +215,41 @@ Function switchBranches($branch_c,$branch_e)
 {
     checkoutIfNeeded
     Set-Location "$INNERWORKDIR\ArangoDB"
-    git checkout -- .
-    git pull
-    git checkout $branch_c
-    git pull
+    If (-Not($Error)) 
+    {
+        git checkout -- .
+    }
+    If (-Not($Error)) 
+    {
+        git pull
+    }
+    If (-Not($Error)) 
+    {
+        git checkout $branch_c
+    }
+    If (-Not($Error)) 
+    {
+        git pull
+    }
     If($ENTERPRISEEDITION -eq "On")
     {
         Set-Location "$INNERWORKDIR\ArangoDB\enterprise"
-        git checkout -- .
-        git pull
-        git checkout $branch_e
-        git pull
+        If (-Not($Error)) 
+        {
+            git checkout -- .
+        }
+        If (-Not($Error)) 
+        {
+            git pull
+        }
+        If (-Not($Error)) 
+        {
+            git checkout $branch_e
+        }
+        If (-Not($Error)) 
+        {
+            git pull
+        }
     }
 }
 
