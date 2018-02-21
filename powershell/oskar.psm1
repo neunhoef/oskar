@@ -5,7 +5,7 @@ If(-Not(Test-Path -PathType Container -Path "work"))
 {
     New-Item -ItemType Directory -Path "work"
 }
-$INNERWORKDIR = "$pwd\work"
+$INNERWORKDIR = "$WORKDIR\work"
 $cl = $(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter cl.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx64\\x64"}).FullName
 $cl_path = Split-Path -Parent $cl
 $VERBOSEOSKAR = "Off"
@@ -285,6 +285,31 @@ Function buildArangoDB
     buildWindows
 }
 
+Function showLog
+{
+    Get-Content "$INNERWORKDIR\test.log" -Tail 100
+}
+
+Function moveResultsToWorkspace
+{
+  Write-Host "Moving reports and logs to $WORKSPACE ..."
+  ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter testreport*))
+  {
+    Write-Host "Move $file"
+    Move-Item -Path $file -Destination $WORKSPACE 
+  }
+  ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter *.deb))
+  {
+    Write-Host "Move $file"
+    Move-Item -Path $file -Destination $WORKSPACE 
+  }
+  If(Test-Path -PathType Leaf $INNERWORKDIR\test.log)
+  {
+    Write-Host "Move $INNERWORKDIR\test.log"
+    Move-Item -Path "$INNERWORKDIR\test.log" -Destination $WORKSPACE 
+  }
+}
+
 Function clearResults
 {
   Set-Location $INNERWORKDIR
@@ -295,9 +320,16 @@ Function clearResults
   Remove-Item -Force test.log
 }
 
-Function showLog
+Function  findArangoDBVersion
 {
-    Get-Content "$INNERWORKDIR\test.log" -Tail 100
+  $ARANGODB_VERSION_MAJOR = Select-String -Path $INNERWORKDIR\ArangoDB\CMakeLists.txt -SimpleMatch "set(ARANGODB_VERSION_MAJOR" | 
+  and set -xg ARANGODB_VERSION_MINOR (grep "set(ARANGODB_VERSION_MINOR" $WORKDIR/work/ArangoDB/CMakeLists.txt | sed -e 's/.*"\([0-9a-zA-Z]*\)".*$/\1/')
+  and set -xg ARANGODB_VERSION_REVISION (grep "set(ARANGODB_VERSION_REVISION" $WORKDIR/work/ArangoDB/CMakeLists.txt | sed -e 's/.*"\([0-9a-zA-Z]*\)".*$/\1/')
+  and set -xg ARANGODB_PACKAGE_REVISION (grep "set(ARANGODB_PACKAGE_REVISION" $WORKDIR/work/ArangoDB/CMakeLists.txt | sed -e 's/.*"\([0-9a-zA-Z]*\)".*$/\1/')
+  and set -xg ARANGODB_VERSION "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_REVISION"
+  and set -xg ARANGODB_FULL_VERSION "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_REVISION-$ARANGODB_PACKAGE_REVISION"
+  and echo $ARANGODB_FULL_VERSION
 }
+
 Clear
 showConfig
