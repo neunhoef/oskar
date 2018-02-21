@@ -197,7 +197,7 @@ function moveResultsToWorkspace
   echo Moving reports and logs to $WORKSPACE ...
   for f in $WORKDIR/work/testreport* ; echo "mv $f" ; mv $f $WORKSPACE ; end
   for f in $WORKDIR/work/*.deb ; echo "mv $f" ; mv $f $WORKSPACE ; end
-  if test -f $WORKDIR/work/test.log ; echo "mv $WORKDIR/work/test.log" ; $WORKDIR/work/test.log $WORKSPACE ; end
+  if test -f $WORKDIR/work/test.log ; echo "mv $WORKDIR/work/test.log" ; mv $WORKDIR/work/test.log $WORKSPACE ; end
 end
 
 # Include the specifics for the platform
