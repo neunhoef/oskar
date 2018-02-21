@@ -1,0 +1,10 @@
+#!/bin/sh
+me=$(realpath $0)
+program=$(basename $me)
+installation=$(dirname $(dirname $me))
+executable=$installation/usr/sbin/$program
+if [ -x $executable ] ; then
+  exec $executable -c none --javascript.startup-directory $installation/usr/share/arangodb3/js "$@"
+fi
+echo "Could not find executable!"
+exit 1

@@ -178,6 +178,26 @@ function buildDebianPackage
   end
 end
 
+function buildTarGzPackage
+  # This assumes that a static build has already happened
+  # There must be one argument, which is the version number in the
+  # format 3.3.3-1
+  set -l v $argv[1]
+  cd $WORKDIR
+  and pushd $WORKDIR/work/ArangoDB/build/install
+  and rm -rf bin
+  and cp -a $WORKDIR/binForTarGz bin
+  or return $status
+  if test "$ENTERPRISEEDITION" = "On"
+    tar czvf "$WORKDIR/work/arangodb3e-binary-$v.tar.gz" *
+  else
+    tar czvf "$WORKDIR/work/arangodb3-binary-$v.tar.gz" *
+  end
+  set s $status
+  popd
+  return $s 
+end
+
 function interactiveContainer
   docker run -it -v $WORKDIR/work:$INNERWORKDIR \
              -v $SSH_AUTH_SOCK:/ssh-agent \
@@ -265,6 +285,7 @@ end
 
 function buildPackage
   buildDebianPackage $argv
+  buildTarGzPackage $argv
   # buildRpmPackage $argv
   # buildDockerImage $argv
 end
