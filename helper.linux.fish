@@ -187,8 +187,9 @@ function buildTarGzPackage
   and pushd $WORKDIR/work/ArangoDB/build/install
   and rm -rf bin
   and cp -a $WORKDIR/binForTarGz bin
-  or return $status
-  if test "$ENTERPRISEEDITION" = "On"
+  or begin ; popd ; return $status ; end
+  strip usr/sbin/arangod usr/bin/{arangobench,arangodump,arangoexport,arangoimp,arangorestore,arangosh,arangovpack}
+  and if test "$ENTERPRISEEDITION" = "On"
     tar czvf "$WORKDIR/work/arangodb3e-binary-$v.tar.gz" *
   else
     tar czvf "$WORKDIR/work/arangodb3-binary-$v.tar.gz" *
@@ -285,7 +286,6 @@ end
 
 function buildPackage
   buildDebianPackage $argv
-  buildTarGzPackage $argv
-  # buildRpmPackage $argv
-  # buildDockerImage $argv
+  # and buildRpmPackage $argv
+  and buildTarGzPackage $argv
 end
