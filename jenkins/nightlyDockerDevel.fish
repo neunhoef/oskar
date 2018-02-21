@@ -15,7 +15,7 @@ and findArangoDBVersion
 and buildStaticArangoDB
 and downloadStarter
 and makeDockerImage arangodb/arangodb-preview:3.4.devel
-and docker push arangodb/arangodb-preview:3.4.devel.devel.devel.devel
+and docker push arangodb/arangodb-preview:3.4.devel
 
 if test $status != 0
   echo Production of community image failed, giving up...

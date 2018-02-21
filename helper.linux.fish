@@ -178,12 +178,33 @@ function buildDebianPackage
   end
 end
 
+function interactiveContainer
+  docker run -it -v $WORKDIR/work:$INNERWORKDIR \
+             -v $SSH_AUTH_SOCK:/ssh-agent \
+             -e SSH_AUTH_SOCK=/ssh-agent \
+             -e UID=(id -u) \
+             -e GID=(id -g) \
+             -e NOSTRIP="$NOSTRIP" \
+             -e GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no" \
+             -e INNERWORKDIR=$INNERWORKDIR \
+             -e MAINTAINER=$MAINTAINER \
+             -e BUILDMODE=$BUILDMODE \
+             -e PARALLELISM=$PARALLELISM \
+             -e STORAGEENGINE=$STORAGEENGINE \
+             -e TESTSUITE=$TESTSUITE \
+             -e VERBOSEOSKAR=$VERBOSEOSKAR \
+             -e ENTERPRISEEDITION=$ENTERPRISEEDITION \
+             -e SCRIPTSDIR=$SCRIPTSDIR \
+             -e PLATFORM=$PLATFORM \
+             $argv
+end
+
 function shellInUbuntuContainer
-  runInContainer $UBUNTUBUILDIMAGE fish
+  interactiveContainer $UBUNTUBUILDIMAGE fish
 end
 
 function shellInAlpineContainer
-  runInContainer $ALPINEBUILDIMAGE fish
+  interactiveContainer $ALPINEBUILDIMAGE fish
 end
 
 function oskar
