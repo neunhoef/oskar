@@ -285,6 +285,17 @@ Function buildArangoDB
     buildWindows
 }
 
+Function buildStaticArangoDB
+{
+    checkoutIfNeeded
+    If(Test-Path -PathType Container -Path "$INNERWORKDIR\ArangoDB\build")
+    {
+       Remove-Item -Recurse -Force -Path "$INNERWORKDIR\ArangoDB\build"
+    }
+    configureWindows
+    buildWindows
+}
+
 Function showLog
 {
     Get-Content "$INNERWORKDIR\test.log" -Tail 100
