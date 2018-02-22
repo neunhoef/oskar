@@ -32,5 +32,11 @@ and downloadSyncer
 and makeDockerImage registry.arangodb.biz:5000/arangodb/arangodb-preview:3.4.devel-$KEY
 and docker push registry.arangodb.biz:5000/arangodb/arangodb-preview:3.4.devel-$KEY
 
+and begin
+  rm -rf $WORKSPACE/imagenames.log
+  echo arangodb/arangodb-preview:3.4.devel >> $WORKSPACE/imagenames.log
+  echo registry.arangodb.biz:5000/arangodb/arangodb-preview:3.4.devel-$KEY >> $WORKSPACE/imagenames.log
+end
+
 set -l s $status ; unlockDirectory ; exit $s
 
