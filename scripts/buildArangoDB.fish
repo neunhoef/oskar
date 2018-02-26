@@ -27,4 +27,4 @@ cmake $argv \
       -DUSE_JEMALLOC=On \
       $GOLD \
       ..
-and nice make -j$PARALLELISM | tee $INNERWORKDIR/make.log
+and nice make -j$PARALLELISM ^&1 | tee $INNERWORKDIR/make.log
