@@ -145,10 +145,12 @@ function waitOrKill
   echo Waiting for processes to terminate...
   if waitForProcesses $argv[1]
     kill (jobs -p)
-    if waitForProcesses 15
+    if waitForProcesses 30
       kill -9 (jobs -p)
+      waitForProcesses 15    # give jobs some time to finish
     end
   end
+  return 0
 end
 
 function log
@@ -198,15 +200,15 @@ cd $INNERWORKDIR/ArangoDB
 switch $TESTSUITE
   case "cluster"
     launchClusterTests
-    waitOrKill 1000
+    waitOrKill 1200
     createReport
   case "single"
     launchSingleTests
-    waitOrKill 1000
+    waitOrKill 1200
     createReport
   case "resilience"
     launchResilienceTests
-    waitOrKill 1000
+    waitOrKill 1200
     createReport
   case "*"
     echo Unknown test suite $TESTSUITE

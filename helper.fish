@@ -182,7 +182,7 @@ function makeRelease
   end
 
   community
-  buildStaticArangoDB _DTARGET_ARCHITECTURE=nehalem
+  buildStaticArangoDB -DTARGET_ARCHITECTURE=nehalem
   and downloadStarter
   and buildPackage $v
 
