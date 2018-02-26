@@ -27,15 +27,11 @@ cmake $argv \
       -DSTATIC_EXECUTABLES=On \
       ..
 
-set -l s $status
-if test $status != 0
-  chown -R $UID:$GID $INNERWORKDIR
-  exit $s
-end
+or exit $status
 
 mkdir install
 set -x DESTDIR (pwd)/install
-nice make -j$PARALLELISM install
+nice make -j$PARALLELISM install | tee $INNERWORKDIR/make.log
 and cd install
 and if test -z "$NOSTRIP"
   strip usr/sbin/arangod usr/bin/arangoimp usr/bin/arangosh usr/bin/arangovpack usr/bin/arangoexport usr/bin/arangobench usr/bin/arangodump usr/bin/arangorestore
