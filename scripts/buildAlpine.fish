@@ -31,7 +31,7 @@ or exit $status
 
 mkdir install
 set -x DESTDIR (pwd)/install
-nice make -j$PARALLELISM install ^&1 | tee $INNERWORKDIR/make.log
+nice make -j$PARALLELISM install
 and cd install
 and if test -z "$NOSTRIP"
   strip usr/sbin/arangod usr/bin/arangoimp usr/bin/arangosh usr/bin/arangovpack usr/bin/arangoexport usr/bin/arangobench usr/bin/arangodump usr/bin/arangorestore
