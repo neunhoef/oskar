@@ -78,8 +78,9 @@ end
 
 function updateOskar
   cd $WORKDIR
-  git pull
-  source helper.fish
+  and git checkout -- .
+  and git pull
+  and source helper.fish
 end
 
 function downloadStarter
