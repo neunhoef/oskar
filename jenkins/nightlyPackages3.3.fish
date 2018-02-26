@@ -11,5 +11,7 @@ updateOskar ; lockDirectory ; clearResults
 switchBranches 3.3 3.3
 and makeRelease
 
-set -l s $status ; moveResultsToWorkspace ; unlockDirectory ; exit $s
+set -l s $status
+cd "$HOME/$NODE_NAME/oskar" ; moveResultsToWorkspace ; unlockDirectory
+exit $s
 

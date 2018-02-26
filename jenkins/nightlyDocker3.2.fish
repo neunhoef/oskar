@@ -38,5 +38,5 @@ and begin
   echo registry.arangodb.biz:5000/arangodb/arangodb-preview:3.2-$KEY >> $WORKSPACE/imagenames.log
 end
 
-set -l s $status ; unlockDirectory ; exit $s
+set -l s $status ; cd "$HOME/$NODE_NAME/oskar" ; unlockDirectory ; exit $s
 

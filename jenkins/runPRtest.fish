@@ -13,6 +13,7 @@ eval $EDITION ; eval $STORAGE_ENGINE ; eval $TEST_SUITE
 switchBranches $ARANGODB_BRANCH $ENTERPRISE_BRANCH
 and oskar1
 
-set -l s $status ; moveResultsToWorkspace ; unlockDirectory 
+set -l s $status
+cd "$HOME/$NODE_NAME/oskar" ; moveResultsToWorkspace ; unlockDirectory 
 exit $s
 
