@@ -44,21 +44,25 @@ DownloadFile -src 'https://slproweb.com/download/Win64OpenSSL-1_0_2n.exe' -dest 
 ExternalProcess -process "C:\Windows\Temp\Win64OpenSSL1_0_2n.exe" -wait $true -arguments " "
 Remove-Item "C:\Windows\Temp\Win64OpenSSL1_0_2n.exe"
 
-$arguments = @'
--NoProfile -ExecutionPolicy Bypass -Command "Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))"
-'@
-ExternalProcess -process Powershell -arguments $arguments -wait $true
-
-$arguments = @("choco install -y cmake.portable nsis python3 python2 procdump windbg wget nuget.commandline vim putty.install openssh","choco install -y git winflexbison ruby","choco install -y ruby2.devkit nodejs","gem install bundler persistent_httparty rspec rspec-core","npm install -g gitbook-cli","pip3 install git+https://github.com/frerich/clcache.git")
-ForEach($argument in $arguments)
-{
-    ExternalProcess -process Powershell -arguments $argument -wait $true
-}
+DownloadFile -src 'https://www.python.org/ftp/python/3.5.4/python-3.5.4-amd64.exe' -dest "C:\Windows\Temp\python-3.5.4-amd64.exe"
+ExternalProcess -process "C:\Windows\Temp\python-3.5.4-amd64.exe" -wait $true -arguments '/quiet InstallAllUsers=1 PrependPath=1 TargetDir="C:\Python35"'
+Remove-Item "C:\Windows\Temp\python-3.5.4-amd64.exe"
 
 DownloadFile -src 'https://github.com/Microsoft/vssetup.powershell/releases/download/2.0.1/VSSetup.zip' -dest "C:\Windows\Temp\VSSetup.zip"
 Expand-Archive -Force "C:\Windows\Temp\VSSetup.zip" "$env:ProgramFiles\WindowsPowerShell\Modules\VSSetup"
 Expand-Archive -Force "C:\Windows\Temp\VSSetup.zip" "${env:ProgramFiles(x86)}\WindowsPowerShell\Modules\VSSetup"
 Remove-Item "C:\Windows\Temp\VSSetup.zip"
+
+$arguments = @'
+-NoProfile -ExecutionPolicy Bypass -Command "Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))"
+'@
+ExternalProcess -process Powershell -arguments $arguments -wait $true
+
+$arguments = @("choco install -y cmake.portable nsis python2 procdump windbg wget nuget.commandline vim putty.install openssh","choco install -y git winflexbison3 ruby","choco install -y ruby2.devkit nodejs","gem install bundler persistent_httparty rspec rspec-core","npm install -g gitbook-cli","pip3.5 install git+https://github.com/frerich/clcache.git")
+ForEach($argument in $arguments)
+{
+    ExternalProcess -process Powershell -arguments $argument -wait $true
+}
 
 DownloadFile -src 'https://aka.ms/vs/15/release/vs_community.exe' -dest "C:\Windows\Temp\vs_community.exe"
 $arguments = "--add Microsoft.VisualStudio.Workload.Node --add Microsoft.VisualStudio.Workload.NativeCrossPlat --add Microsoft.VisualStudio.Workload.NativeDesktop --includeRecommended --includeOptional --passive"
