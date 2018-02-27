@@ -331,16 +331,114 @@ Function clearResults
   Remove-Item -Force test.log
 }
 
-Function  findArangoDBVersion
+Function getRepoState
 {
-  $ARANGODB_VERSION_MAJOR = Select-String -Path $INNERWORKDIR\ArangoDB\CMakeLists.txt -SimpleMatch "set(ARANGODB_VERSION_MAJOR" | 
-  and set -xg ARANGODB_VERSION_MINOR (grep "set(ARANGODB_VERSION_MINOR" $WORKDIR/work/ArangoDB/CMakeLists.txt | sed -e 's/.*"\([0-9a-zA-Z]*\)".*$/\1/')
-  and set -xg ARANGODB_VERSION_REVISION (grep "set(ARANGODB_VERSION_REVISION" $WORKDIR/work/ArangoDB/CMakeLists.txt | sed -e 's/.*"\([0-9a-zA-Z]*\)".*$/\1/')
-  and set -xg ARANGODB_PACKAGE_REVISION (grep "set(ARANGODB_PACKAGE_REVISION" $WORKDIR/work/ArangoDB/CMakeLists.txt | sed -e 's/.*"\([0-9a-zA-Z]*\)".*$/\1/')
-  and set -xg ARANGODB_VERSION "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_REVISION"
-  and set -xg ARANGODB_FULL_VERSION "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_REVISION-$ARANGODB_PACKAGE_REVISION"
-  and echo $ARANGODB_FULL_VERSION
+    Set-Location "$INNERWORKDIR\Arangodb"
+    $repoState = $(git status -b -s | Select-String -Pattern "^[?]" -NotMatch)
+    If($ENTERPRISEEDITION -eq "On")
+    {
+        Set-Location "$INNERWORKDIR\ArangoDB\enterprise"
+        $repoStateEnterprise = $(git status -b -s | Select-String -Pattern "^[?]" -NotMatch)
+        Set-Location "$INNERWORKDIR\Arangodb"
+    }
+    Else
+    {
+        $repoStateEnterprise = ""
+    }
 }
+
+Function noteStartAndRepoState
+{
+    getRepoState
+    If(Test-Path -PathType testProtocol.txt)
+    {
+        Remove-Item -Force testProtocol.txt
+    }
+    Out-File -Append -FilePath testProtocol.txt -InputObject $(Get-Date -UFormat +%Y-%M-%D_%H.%M.%SZ)
+    Write-Output "========== Status of main repository:" | Out-File -Append -FilePath testProtocol.txt
+    Write-Host "========== Status of main repository:"
+    ForEach($line in $repoState)
+    {
+        Write-Output " $line" | Out-File -Append -FilePath testProtocol.txt
+        Write-Host " $line"
+    }
+    If($ENTERPRISEEDITION -eq "On")
+    {
+        Write-Output "Status of enterprise repository:" | Out-File -Append -FilePath testProtocol.txt
+        Write-Host "Status of enterprise repository:"
+        ForEach($line in $repoStateEnterprise)
+        {
+            Write-Output " $line" | Out-File -Append -FilePath testProtocol.txt
+            Write-Host " $line"
+        }
+    }
+
+}
+
+Function unittest([array]$test)
+{
+    $PORT=Get-Random -Minimum 1025 -Maximum 65535
+    Set-Location "$INNERWORKDIR\ArangoDB"
+    Start-Process -FilePath "$INNERWORKDIR\ArangoDB\build\bin\RelWithDebInfo\arangosh.exe" -ArgumentList " -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\UnitTests\unittest.js $test" -NoNewWindow
+}
+
+Function launchSingleTests
+{
+    noteStartAndRepoState
+    Write-Host "Launching tests..."
+    $portBase = 10000
+
+    Function test1([array]$test)
+    {
+        If($VERBOSEOSKAR -eq "On")
+        {
+            Write-Host "Launching $test"
+        }
+        unittest "$test[1] --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort $($portBase + 99) $test --skipNonDeterministic true --skipTimeCritical true"
+        $portBase = $($portBase + 100)
+        Start-Sleep 5
+    }
+}
+
+Function launchClusterTests
+{
+    noteStartAndRepoState
+    Write-Host "Launching tests..."
+    $portBase = 10000
+
+    Function test1([array]$test)
+    {
+        If($VERBOSEOSKAR -eq "On")
+        {
+            Write-Host "Launching $test"
+        }
+        unittest "$test[1] --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort $($portBase + 99) $test --skipNonDeterministic true --skipTimeCritical true"
+        $portBase = $($portBase + 100)
+        Start-Sleep 5
+    }
+
+    Function test3([array]$test)
+    {
+        If($VERBOSEOSKAR -eq "On")
+        {
+            Write-Host "Launching $test"
+        }
+        unittest "$argv[1] --test $argv[3] --storageEngine $STORAGEENGINE --cluster true --minPort $portBase --maxPort $($portBase + 99) --skipNonDeterministic true"
+        $portBase = $($portBase + 100)
+        Start-Sleep 5
+    }
+}
+
+#Function  findArangoDBVersion
+#{
+#  $ARANGODB_VERSION_MAJOR = Select-String -Path $INNERWORKDIR\ArangoDB\CMakeLists.txt -SimpleMatch "set(ARANGODB_VERSION_MAJOR" | 
+#  and set -xg ARANGODB_VERSION_MINOR (grep "set(ARANGODB_VERSION_MINOR" $WORKDIR/work/ArangoDB/CMakeLists.txt | sed -e 's/.*"\([0-9a-zA-Z]*\)".*$/\1/')
+#  and set -xg ARANGODB_VERSION_REVISION (grep "set(ARANGODB_VERSION_REVISION" $WORKDIR/work/ArangoDB/CMakeLists.txt | sed -e 's/.*"\([0-9a-zA-Z]*\)".*$/\1/')
+#  and set -xg ARANGODB_PACKAGE_REVISION (grep "set(ARANGODB_PACKAGE_REVISION" $WORKDIR/work/ArangoDB/CMakeLists.txt | sed -e 's/.*"\([0-9a-zA-Z]*\)".*$/\1/')
+#  and set -xg ARANGODB_VERSION "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_REVISION"
+#  and set -xg ARANGODB_FULL_VERSION "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_REVISION-$ARANGODB_PACKAGE_REVISION"
+#  and echo $ARANGODB_FULL_VERSION
+#}
 
 Clear
 showConfig
