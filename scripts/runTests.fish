@@ -177,7 +177,7 @@ function createReport
   echo $result >> testProtocol.txt
   pushd $INNERWORKDIR
   and begin
-    tar czvf $INNERWORKDIR/ArangoDB/innerlogs.tar.gz tmp --exclude databases --exclude rocksdb --exclude journals
+    tar czvf "$INNERWORKDIR/ArangoDB/innerlogs.tar.gz" tmp --exclude databases --exclude rocksdb --exclude journals
     popd
   end
   
