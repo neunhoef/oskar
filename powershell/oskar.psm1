@@ -375,6 +375,13 @@ Function noteStartAndRepoState
 
 }
 
+Function unittest([array]$test)
+{
+    $PORT=Get-Random -Minimum 1025 -Maximum 65535
+    Set-Location "$INNERWORKDIR\ArangoDB"
+    Start-Process -FilePath "$INNERWORKDIR\ArangoDB\build\bin\RelWithDebInfo\arangosh.exe" -ArgumentList " -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\UnitTests\unittest.js $test" -NoNewWindow
+}
+
 Function launchSingleTests
 {
     noteStartAndRepoState
@@ -386,9 +393,38 @@ Function launchSingleTests
         If($VERBOSEOSKAR -eq "On")
         {
             Write-Host "Launching $test"
-
         }
-        $portBase = $portBase + 100
+        unittest "$test[1] --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort $($portBase + 99) $test --skipNonDeterministic true --skipTimeCritical true"
+        $portBase = $($portBase + 100)
+        Start-Sleep 5
+    }
+}
+
+Function launchClusterTests
+{
+    noteStartAndRepoState
+    Write-Host "Launching tests..."
+    $portBase = 10000
+
+    Function test1([array]$test)
+    {
+        If($VERBOSEOSKAR -eq "On")
+        {
+            Write-Host "Launching $test"
+        }
+        unittest "$test[1] --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort $($portBase + 99) $test --skipNonDeterministic true --skipTimeCritical true"
+        $portBase = $($portBase + 100)
+        Start-Sleep 5
+    }
+
+    Function test3([array]$test)
+    {
+        If($VERBOSEOSKAR -eq "On")
+        {
+            Write-Host "Launching $test"
+        }
+        unittest "$argv[1] --test $argv[3] --storageEngine $STORAGEENGINE --cluster true --minPort $portBase --maxPort $($portBase + 99) --skipNonDeterministic true"
+        $portBase = $($portBase + 100)
         Start-Sleep 5
     }
 }
