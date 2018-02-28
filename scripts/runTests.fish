@@ -201,15 +201,15 @@ for f in *.log ; rm -f $f ; end
 switch $TESTSUITE
   case "cluster"
     launchClusterTests
-    waitOrKill 1200
+    waitOrKill 1800
     createReport
   case "single"
     launchSingleTests
-    waitOrKill 1200
+    waitOrKill 1800
     createReport
   case "resilience"
     launchResilienceTests
-    waitOrKill 1200
+    waitOrKill 1800
     createReport
   case "*"
     echo Unknown test suite $TESTSUITE
