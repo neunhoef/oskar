@@ -50,28 +50,28 @@ function launchSingleTests
     sleep 5
   end
 
-  #test1 shell_server ""
-  #test1 shell_client ""
-  #test1 recovery 0 --testBuckets 4/0
-  #test1 recovery 1 --testBuckets 4/1
-  #test1 recovery 2 --testBuckets 4/2
-  #test1 recovery 3 --testBuckets 4/3
-  #test1 replication_sync ""
-  #test1 replication_static ""
-  #test1 replication_ongoing ""
-  #test1 http_server ""
-  #test1 ssl_server ""
-  #test1 shell_server_aql 0 --testBuckets 5/0
-  #test1 shell_server_aql 1 --testBuckets 5/1
-  #test1 shell_server_aql 2 --testBuckets 5/2
-  #test1 shell_server_aql 3 --testBuckets 5/3
-  #test1 shell_server_aql 4 --testBuckets 5/4
-  #test1 dump ""
-  #test1 server_http ""
+  test1 shell_server ""
+  test1 shell_client ""
+  test1 recovery 0 --testBuckets 4/0
+  test1 recovery 1 --testBuckets 4/1
+  test1 recovery 2 --testBuckets 4/2
+  test1 recovery 3 --testBuckets 4/3
+  test1 replication_sync ""
+  test1 replication_static ""
+  test1 replication_ongoing ""
+  test1 http_server ""
+  test1 ssl_server ""
+  test1 shell_server_aql 0 --testBuckets 5/0
+  test1 shell_server_aql 1 --testBuckets 5/1
+  test1 shell_server_aql 2 --testBuckets 5/2
+  test1 shell_server_aql 3 --testBuckets 5/3
+  test1 shell_server_aql 4 --testBuckets 5/4
+  test1 dump ""
+  test1 server_http ""
   test1 agency ""
-  #test1 shell_replication ""
-  #test1 http_replication ""
-  #test1 catch ""
+  test1 shell_replication ""
+  test1 http_replication ""
+  test1 catch ""
 end
 
 function launchClusterTests
@@ -196,6 +196,7 @@ rm -rf tmp
 mkdir tmp
 set -xg TMPDIR $INNERWORKDIR/tmp
 cd $INNERWORKDIR/ArangoDB
+for f in *.log ; rm -f $f ; end
 
 switch $TESTSUITE
   case "cluster"
