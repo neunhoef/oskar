@@ -39,7 +39,7 @@ Function lockDirectory
 {
     If(-Not(Test-Path -PathType Leaf LOCK.$pid))
     {
-        $pid | Out-File LOCK.$pid
+        $pid | Add-Content LOCK.$pid
         While($true)
         {
             If($pidfound = Get-Content LOCK -ErrorAction SilentlyContinue)
@@ -175,6 +175,10 @@ Function silent
 {
     $VERBOSEOSKAR = "Off"
 }
+If(-Not($VERBOSEOSKAR))
+{
+    verbose
+}
 
 Function checkoutArangoDB
 {
@@ -285,20 +289,45 @@ Function buildArangoDB
     buildWindows
 }
 
-Function buildStaticArangoDB
-{
-    checkoutIfNeeded
-    If(Test-Path -PathType Container -Path "$INNERWORKDIR\ArangoDB\build")
-    {
-       Remove-Item -Recurse -Force -Path "$INNERWORKDIR\ArangoDB\build"
-    }
-    configureWindows
-    buildWindows
-}
+#Function buildStaticArangoDB
+#{
+#    checkoutIfNeeded
+#    If(Test-Path -PathType Container -Path "$INNERWORKDIR\ArangoDB\build")
+#    {
+#       Remove-Item -Recurse -Force -Path "$INNERWORKDIR\ArangoDB\build"
+#    }
+#    configureWindows
+#    buildWindows
+#}
 
 Function showLog
 {
     Get-Content "$INNERWORKDIR\test.log" -Tail 100
+}
+
+Function  findArangoDBVersion
+{
+    If($(Select-String -Path $INNERWORKDIR\ArangoDB\CMakeLists.txt -SimpleMatch "set(ARANGODB_VERSION_MAJOR") -match '.*"([0-9a-zA-Z]*)".*')
+    {
+        $ARANGODB_VERSION_MAJOR = $Matches[1]
+        If($(Select-String -Path $INNERWORKDIR\ArangoDB\CMakeLists.txt -SimpleMatch "set(ARANGODB_VERSION_MINOR") -match '.*"([0-9a-zA-Z]*)".*')
+        {
+            $ARANGODB_VERSION_MINOR = $Matches[1]
+            If($(Select-String -Path $INNERWORKDIR\ArangoDB\CMakeLists.txt -SimpleMatch "set(ARANGODB_VERSION_REVISION") -match '.*"([0-9a-zA-Z]*)".*')
+            {
+                $ARANGODB_VERSION_REVISION = $Matches[1]
+                If($(Select-String -Path $INNERWORKDIR\ArangoDB\CMakeLists.txt -SimpleMatch "set(ARANGODB_PACKAGE_REVISION") -match '.*"([0-9a-zA-Z]*)".*')
+                {
+                    $ARANGODB_PACKAGE_REVISION = $Matches[1]
+                    $ARANGODB_VERSION = "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_REVISION"
+                    $ARANGODB_FULL_VERSION = "$ARANGODB_VERSION-$ARANGODB_PACKAGE_REVISION"
+                    Write-Host $ARANGODB_FULL_VERSION
+                }
+
+            }
+        }
+
+    }
 }
 
 Function moveResultsToWorkspace
@@ -350,25 +379,25 @@ Function getRepoState
 Function noteStartAndRepoState
 {
     getRepoState
-    If(Test-Path -PathType testProtocol.txt)
+    If(Test-Path -PathType Leaf -Path testProtocol.txt)
     {
         Remove-Item -Force testProtocol.txt
     }
-    Out-File -Append -FilePath testProtocol.txt -InputObject $(Get-Date -UFormat +%Y-%M-%D_%H.%M.%SZ)
-    Write-Output "========== Status of main repository:" | Out-File -Append -FilePath testProtocol.txt
+    $(Get-Date -UFormat +%Y-%M-%D_%H.%M.%SZ) | Add-Content testProtocol.txt
+    Write-Output "========== Status of main repository:" | Add-Content testProtocol.txt
     Write-Host "========== Status of main repository:"
     ForEach($line in $repoState)
     {
-        Write-Output " $line" | Out-File -Append -FilePath testProtocol.txt
+        Write-Output " $line" | Add-Content testProtocol.txt
         Write-Host " $line"
     }
     If($ENTERPRISEEDITION -eq "On")
     {
-        Write-Output "Status of enterprise repository:" | Out-File -Append -FilePath testProtocol.txt
+        Write-Output "Status of enterprise repository:" | Add-Content testProtocol.txt
         Write-Host "Status of enterprise repository:"
         ForEach($line in $repoStateEnterprise)
         {
-            Write-Output " $line" | Out-File -Append -FilePath testProtocol.txt
+            Write-Output " $line" | Add-Content testProtocol.txt
             Write-Host " $line"
         }
     }
@@ -429,16 +458,155 @@ Function launchClusterTests
     }
 }
 
-#Function  findArangoDBVersion
+#Function waitForProcesses([array]$var)
 #{
-#  $ARANGODB_VERSION_MAJOR = Select-String -Path $INNERWORKDIR\ArangoDB\CMakeLists.txt -SimpleMatch "set(ARANGODB_VERSION_MAJOR" | 
-#  and set -xg ARANGODB_VERSION_MINOR (grep "set(ARANGODB_VERSION_MINOR" $WORKDIR/work/ArangoDB/CMakeLists.txt | sed -e 's/.*"\([0-9a-zA-Z]*\)".*$/\1/')
-#  and set -xg ARANGODB_VERSION_REVISION (grep "set(ARANGODB_VERSION_REVISION" $WORKDIR/work/ArangoDB/CMakeLists.txt | sed -e 's/.*"\([0-9a-zA-Z]*\)".*$/\1/')
-#  and set -xg ARANGODB_PACKAGE_REVISION (grep "set(ARANGODB_PACKAGE_REVISION" $WORKDIR/work/ArangoDB/CMakeLists.txt | sed -e 's/.*"\([0-9a-zA-Z]*\)".*$/\1/')
-#  and set -xg ARANGODB_VERSION "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_REVISION"
-#  and set -xg ARANGODB_FULL_VERSION "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_REVISION-$ARANGODB_PACKAGE_REVISION"
-#  and echo $ARANGODB_FULL_VERSION
+#    $i=$var[1]
+#    While($true)
+#    {
+#        
+#    }
 #}
+#  set i $argv[1]
+#  while true
+#    # Check subprocesses:
+#    set pids (jobs -p)
+#    if test (count $pids) -eq 0
+#      echo
+#      return 1
+#    end
+#
+#    echo -n (count $pids) jobs still running, remaining $i "seconds..."\r
+#
+#    set i (math $i - 5)
+#    if test $i -lt 0
+#      echo
+#      return 0
+#    end
+#
+#    sleep 5
+#  end
+#end
+
+#Function waitOrKill
+#{
+#   Write-Host "Waiting for processes to terminate..." 
+#}
+#  echo Waiting for processes to terminate...
+#  if waitForProcesses $argv[1]
+#    kill (jobs -p)
+#    if waitForProcesses 15
+#      kill -9 (jobs -p)
+#    end
+#  end
+#end
+
+Function log([array]$log)
+{
+    ForEach($l in $log)
+    {
+        Write-Host $l
+        $l | Add-Content "$INNERWORKDIR/test.log"
+    }
+}
+
+Function createReport
+{
+    $d = $(Get-Date -UFormat +%Y-%M-%D_%H.%M.%SZ)
+    $d | Add-Content testProtocol.txt
+    $result = "GOOD"
+    ForEach($f in $(Get-ChildItem -Filter *.log))
+    {
+        If(-Not($(Get-Content $f -Tail 1) -eq "Success"))
+        {
+            $result = "BAD"
+            Write-Host "Bad result in $f"
+            "Bad result in $f" | Add-Content testProtocol.txt
+            $badtests = $badtests + "Bad result in $f"
+        }
+    }
+
+  $result | Add-Content testProtocol.txt
+  #pushd $INNERWORKDIR
+  #and begin
+  #  tar czvf $INNERWORKDIR/ArangoDB/innerlogs.tar.gz tmp --exclude databases --exclude rocksdb --exclude journals
+  #  popd
+  #end
+  
+  $cores = Get-ChildItem -Filter "core*"
+  $archives = Get-ChildItem -Filter "*.tar.gz"
+  $logs = Get-ChildItem -Filter "*.log"
+  Write-Host "Compress-Archive -Path $logs -DestinationPath `"$INNERWORKDIR/testreport-$d.tar.gz`""
+  Compress-Archive -Path $logs -DestinationPath "$INNERWORKDIR/testreport-$d.tar.gz"
+  Write-Host "Compress-Archive -Path $cores -Update -DestinationPath `"$INNERWORKDIR/testreport-$d.tar.gz`""
+  Compress-Archive -Path $cores -Update -DestinationPath "$INNERWORKDIR/testreport-$d.tar.gz"
+  Write-Host "Compress-Archive -Path $archives -Update -DestinationPath `"$INNERWORKDIR/testreport-$d.tar.gz`""
+  Compress-Archive -Path $archives -Update -DestinationPath "$INNERWORKDIR/testreport-$d.tar.gz"
+  Write-Host "Compress-Archive -Path testProtocol.txt -Update -DestinationPath `"$INNERWORKDIR/testreport-$d.tar.gz`""
+  Compress-Archive -Path testProtocol.txt -Update -DestinationPath "$INNERWORKDIR/testreport-$d.tar.gz"
+  Write-Host "Remove-Item -Recurse -Force $cores"
+  Remove-Item -Recurse -Force $cores
+  Write-Host "Remove-Item -Recurse -Force $archives"
+  Remove-Item -Recurse -Force $archives
+  Write-Host "Remove-Item -Recurse -Force testProtocol.txt"
+  Remove-Item -Recurse -Force testProtocol.txt
+  log "$d $TESTSUITE $result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE" $repoState $repoStateEnterprise $badtests ""
+}
+
+Function runTests
+{
+    Set-Location $INNERWORKDIR
+    If(Test-Path -PathType Container -Path tmp)
+    {
+        Remove-Item -Recurse -Force -Path tmp
+        New-Item -ItemType Directory -Path tmp
+    }
+    Else
+    {
+        New-Item -ItemType Directory -Path tmp
+    }
+    $TMPDIR = "$INNERWORKDIR/tmp"
+    Set-Location $INNERWORKDIR/ArangoDB
+
+    Switch -Regex ($TESTSUITE)
+    {
+        "cluster"
+        {
+            launchClusterTests
+            waitOrKill 1800
+            createReport  
+            Break
+        }
+        "single"
+        {
+            launchSingleTests
+            waitOrKill 1800
+            createReport
+            Break
+        }
+        "resilience"
+        {
+            launchResilienceTests
+            waitOrKill 1800
+            createReport
+            Break
+        }
+        "*"
+        {
+            Write-Host "Unknown test suite $TESTSUITE"
+            $result = "BAD"
+            Break
+        }
+    }
+
+    If($result -eq "GOOD")
+    {
+    Exit 0
+    }
+    Else
+    {
+    Exit 1
+    }   
+}
 
 Clear
 showConfig
