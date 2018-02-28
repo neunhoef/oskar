@@ -12,8 +12,10 @@ end
 ccache -M 30G
 
 cd $INNERWORKDIR/ArangoDB
-rm -rf build
-mkdir -p build
+if test -z "$NO_RM_BUILD"
+    rm -rf build
+    mkdir -p build
+end
 cd build
 
 cmake $argv \

@@ -7,7 +7,7 @@ set -gx ALPINEBUILDIMAGE neunhoef/alpinebuildarangodb
 
 function buildUbuntuBuildImage
   cd $WORKDIR
-  cp -a scripts/{buildArangoDB,checkoutArangoDB,checkoutEnterprise,clearWorkDir,downloadStarter,downloadSyncer,runTests,switchBranches,recursiveChown}.fish buildUbuntu.docker/scripts
+  cp -a scripts/{makeArangoDB,buildArangoDB,checkoutArangoDB,checkoutEnterprise,clearWorkDir,downloadStarter,downloadSyncer,runTests,switchBranches,recursiveChown}.fish buildUbuntu.docker/scripts
   cd $WORKDIR/buildUbuntu.docker
   docker build -t $UBUNTUBUILDIMAGE .
   rm -f $WORKDIR/buildUbuntu.docker/scripts/*.fish
@@ -29,7 +29,7 @@ function pullUbuntuPackagingImage ; docker pull $UBUNTUPACKAGINGIMAGE ; end
 
 function buildAlpineBuildImage
   cd $WORKDIR
-  cp -a scripts/buildAlpine.fish buildAlpine.docker/scripts
+  cp -a scripts/makeAlpine.fish scripts/buildAlpine.fish buildAlpine.docker/scripts
   cd $WORKDIR/buildAlpine.docker
   docker build -t $ALPINEBUILDIMAGE .
   rm -f $WORKDIR/buildAlpine.docker/scripts/*.fish
@@ -132,9 +132,27 @@ function buildArangoDB
   end
 end
 
+function makeArangoDB
+  runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/makeArangoDB.fish $argv
+  set -l s $status
+  if test $s != 0
+    echo Build error!
+    return $s
+  end
+end
+
 function buildStaticArangoDB
   checkoutIfNeeded
   runInContainer $ALPINEBUILDIMAGE $SCRIPTSDIR/buildAlpine.fish $argv
+  set -l s $status
+  if test $s != 0
+    echo Build error!
+    return $s
+  end
+end
+
+function makeStaticArangoDB
+  runInContainer $ALPINEBUILDIMAGE $SCRIPTSDIR/makeAlpine.fish $argv
   set -l s $status
   if test $s != 0
     echo Build error!

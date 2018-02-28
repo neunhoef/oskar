@@ -8,7 +8,6 @@ end
 ccache -M 30G
 cd $INNERWORKDIR/ArangoDB
 
-rm -rf
 rm -rf build
 mkdir -p build
 cd build
