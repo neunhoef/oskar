@@ -72,7 +72,7 @@ else ; set -gx PARALLELISM $PARALLELISM ; end
 
 function verbose ; set -gx VERBOSEOSKAR On ; end
 function silent ; set -gx VERBOSEOSKAR Off ; end
-if test -z "$VERBOSEOSKAR" ; silent
+if test -z "$VERBOSEOSKAR" ; verbose
 else ; set -gx VERBOSEOSKAR $VERBOSEOSKAR ; end
 
 set -gx WORKDIR (pwd)
