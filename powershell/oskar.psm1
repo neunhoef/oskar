@@ -6,15 +6,10 @@ If(-Not(Test-Path -PathType Container -Path "work"))
     New-Item -ItemType Directory -Path "work"
 }
 $INNERWORKDIR = "$WORKDIR\work"
-$cl = $(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter cl.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx64\\x64"}).FullName
-$cl_path = Split-Path -Parent $cl
-$VERBOSEOSKAR = "Off"
+$clcache = $(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter cl.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx86\\x64"}).FullName
 $GENERATOR = "Visual Studio 15 2017 Win64"
-$env:GYP_MSVS_OVERRIDE_PATH=$cl_path
-$env:CLCACHE_CL=$cl
+$env:GYP_MSVS_OVERRIDE_PATH= Split-Path -Parent $clcache
 $env:CLCACHE_DIR="$INNERWORKDIR\.clcache.windows"
-$env:CC="clcache"
-$env:CXX="clcache"
 
 Function showConfig
 {
@@ -24,10 +19,9 @@ Function showConfig
   Write-Host "Maintainer            :"$MAINTAINER
   Write-Host "Buildmode             :"$BUILDMODE
   Write-Host "Skip Packaging        :"$SKIPPACKAGING
+  Write-Host "Static Executables    :"$STATICEXECUTABLES
   Write-Host "Generator             :"$GENERATOR
   Write-Host "CL                    :"$env:CLCACHE_CL
-  Write-Host "CC                    :"$env:CC
-  Write-Host "CXX                   :"$env:CXX
   Write-Host "Parallelism           :"$PARALLELISM
   Write-Host "Enterpriseedition     :"$ENTERPRISEEDITION
   Write-Host "Storage engine        :"$STORAGEENGINE
@@ -73,111 +67,119 @@ Function unlockDirectory
 
 Function single
 {
-    $TESTSUITE = "single"
+    $global:TESTSUITE = "single"
 }
-
 Function cluster
 {
-    $TESTSUITE = "cluster"
+    $global:TESTSUITE = "cluster"
 }
-
 Function resilience
 {
-    $TESTSUITE = "resilience"
+    $global:TESTSUITE = "resilience"
 }
 If(-Not($TESTSUITE))
 {
-    $TESTSUITE = "cluster"
+    cluster
 }
 
 Function skipPackagingOn
 {
-    $SKIPPACKAGING = "On"
+    $global:SKIPPACKAGING = "On"
 }
 Function skipPackagingOff
 {
-    $SKIPPACKAGING = "Off"
+    $global:SKIPPACKAGING = "Off"
 }
 If(-Not($SKIPPACKAGING))
 {
-    $SKIPPACKAGING = "On"
+    skipPackagingOn
+}
+
+Function staticExecutablesOn
+{
+    $global:STATICEXECUTABLES = "On"
+}
+Function staticExecutablesOff
+{
+    $global:STATICEXECUTABLES = "Off"
+}
+If(-Not($STATICEXECUTABLES))
+{
+    staticExecutablesOff
 }
 
 Function maintainerOn
 {
-    $MAINTAINER = "On"
+    $global:MAINTAINER = "On"
 }
-
 Function maintainerOff
 {
-    $MAINTAINER = "Off"
+    $global:MAINTAINER = "Off"
 }
 If(-Not($MAINTAINER))
 {
-    $MAINTAINER = "On"
+    maintainerOn
 }
 
 Function debugMode
 {
-    $BUILDMODE = "Debug"
+    $global:BUILDMODE = "Debug"
 }
-
 Function releaseMode
 {
-    $BUILDMODE = "RelWithDebInfo"
+    $global:BUILDMODE = "RelWithDebInfo"
 }
 If(-Not($BUILDMODE))
 {
-    $BUILDMODE = "RelWithDebInfo"
+    releaseMode
 }
 
 Function community
 {
-    $ENTERPRISEEDITION = "Off"
+    $global:ENTERPRISEEDITION = "Off"
 }
-
 Function enterprise
 {
-    $ENTERPRISEEDITION = "On"
+    $global:ENTERPRISEEDITION = "On"
 }
 If(-Not($ENTERPRISEEDITION))
 {
-    $ENTERPRISEEDITION = "Off"
+    enterprise
 }
 
 Function mmfiles
 {
-    $STORAGEENGINE = "mmfiles"
+    $global:STORAGEENGINE = "mmfiles"
 }
 Function rocksdb
 {
-    $STORAGEENGINE = "rocksdb"
+    $global:STORAGEENGINE = "rocksdb"
 }
 If(-Not($STORAGEENGINE))
 {
-    $STORAGEENGINE = "rocksdb"
-}
-
-Function parallelism($arg)
-{
-    $PARALLELISM = $arg
-}
-If(-Not($PARALLELISM))
-{
-    $PARALLELISM = 64
+    rocksdb
 }
 
 Function verbose
 {
-    $VERBOSEOSKAR = "On"
+    $global:VERBOSEOSKAR = "On"
 }
 Function silent
 {
-    $VERBOSEOSKAR = "Off"
+    $global:VERBOSEOSKAR = "Off"
 }
 If(-Not($VERBOSEOSKAR))
 {
     verbose
+}
+
+Function parallelism($arg)
+{
+    $global:PARALLELISM = $arg
+}
+If(-Not($PARALLELISM))
+{
+    $global:PARALLELISM = 64
 }
 
 Function checkoutArangoDB
@@ -195,7 +197,12 @@ Function checkoutEnterprise
     Set-Location "$INNERWORKDIR\ArangoDB"
     If(-Not(Test-Path -PathType Container -Path "enterprise"))
     {
-        #git clone https://github.com/arangodb/enterprise
+        If(Test-Path -PathType Leaf -Path "$HOME\.ssh\known_hosts")
+        {
+            Remove-Item -Force "$HOME\.ssh\known_hosts"
+        }
+        ssh -o StrictHostKeyChecking=no git@github.com
+        git clone ssh://git@github.com/arangodb/enterprise
     }
 }
 
@@ -257,48 +264,15 @@ Function switchBranches($branch_c,$branch_e)
     }
 }
 
-Function configureWindows
+Function clearResults
 {
-    If(-Not(Test-Path -PathType Container -Path "$INNERWORKDIR\ArangoDB\build"))
-    {
-        New-Item -ItemType Directory -Path "$INNERWORKDIR\ArangoDB\build"
-    }
-    Set-Location "$INNERWORKDIR\ArangoDB\build"
-    cmake -G "$GENERATOR" -DUSE_MAINTAINER_MODE="$MAINTAINER" -DUSE_ENTERPRISE="$ENTERPRISEEDITION" -DCMAKE_BUILD_TYPE="$BUILDMODE" -DSKIP_PACKAGING="$SKIPPACKAGING" -DPYTHON_EXECUTABLE:FILEPATH=C:\Python27\python.exe "$INNERWORKDIR\ArangoDB"
+  Set-Location $INNERWORKDIR
+  ForEach($file in $(Get-ChildItem -Filter testreport*))
+  {
+    Remove-Item -Force $file
+  }
+  Remove-Item -Force test.log
 }
-
-Function buildWindows 
-{
-    If(-Not(Test-Path -PathType Container -Path "$INNERWORKDIR\ArangoDB\build"))
-    {
-        Write-Host "Please Configure before this step."
-        
-    }
-    Set-Location "$INNERWORKDIR\ArangoDB\build"
-    cmake --build . --config "$BUILDMODE"
-}
-
-Function buildArangoDB
-{
-    checkoutIfNeeded
-    If(Test-Path -PathType Container -Path "$INNERWORKDIR\ArangoDB\build")
-    {
-       Remove-Item -Recurse -Force -Path "$INNERWORKDIR\ArangoDB\build"
-    }
-    configureWindows
-    buildWindows
-}
-
-#Function buildStaticArangoDB
-#{
-#    checkoutIfNeeded
-#    If(Test-Path -PathType Container -Path "$INNERWORKDIR\ArangoDB\build")
-#    {
-#       Remove-Item -Recurse -Force -Path "$INNERWORKDIR\ArangoDB\build"
-#    }
-#    configureWindows
-#    buildWindows
-#}
 
 Function showLog
 {
@@ -330,6 +304,44 @@ Function  findArangoDBVersion
     }
 }
 
+Function configureWindows
+{
+    If(-Not(Test-Path -PathType Container -Path "$INNERWORKDIR\ArangoDB\build"))
+    {
+        New-Item -ItemType Directory -Path "$INNERWORKDIR\ArangoDB\build"
+    }
+    Set-Location "$INNERWORKDIR\ArangoDB\build"
+    cmake -G "$GENERATOR" -DUSE_MAINTAINER_MODE="$MAINTAINER" -DUSE_ENTERPRISE="$ENTERPRISEEDITION" -DCMAKE_BUILD_TYPE="$BUILDMODE" -DSKIP_PACKAGING="$SKIPPACKAGING" -DSTATIC_EXECUTABLES="$STATICEXECUTABLES" "$INNERWORKDIR\ArangoDB"
+}
+
+Function buildWindows 
+{
+    If(-Not(Test-Path -PathType Container -Path "$INNERWORKDIR\ArangoDB\build"))
+    {
+        Write-Host "Please Configure before this step."
+        
+    }
+    Set-Location "$INNERWORKDIR\ArangoDB\build"
+    cmake --build . --config "$BUILDMODE"
+}
+
+Function buildArangoDB
+{
+    checkoutIfNeeded
+    If(Test-Path -PathType Container -Path "$INNERWORKDIR\ArangoDB\build")
+    {
+       Remove-Item -Recurse -Force -Path "$INNERWORKDIR\ArangoDB\build"
+    }
+    configureWindows
+    buildWindows
+}
+
+Function buildStaticArangodb
+{
+    staticExecutablesOn
+    buildArangoDB
+}
+
 Function moveResultsToWorkspace
 {
   Write-Host "Moving reports and logs to $WORKSPACE ..."
@@ -348,16 +360,6 @@ Function moveResultsToWorkspace
     Write-Host "Move $INNERWORKDIR\test.log"
     Move-Item -Path "$INNERWORKDIR\test.log" -Destination $WORKSPACE 
   }
-}
-
-Function clearResults
-{
-  Set-Location $INNERWORKDIR
-  ForEach($file in $(Get-ChildItem -Filter testreport*))
-  {
-    Remove-Item -Force $file
-  }
-  Remove-Item -Force test.log
 }
 
 Function getRepoState
@@ -406,9 +408,9 @@ Function noteStartAndRepoState
 
 Function unittest([array]$test)
 {
-    $PORT=Get-Random -Minimum 1025 -Maximum 65535
+    $PORT=Get-Random -Minimum 20000 -Maximum 65535
     Set-Location "$INNERWORKDIR\ArangoDB"
-    Start-Process -FilePath "$INNERWORKDIR\ArangoDB\build\bin\RelWithDebInfo\arangosh.exe" -ArgumentList " -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\UnitTests\unittest.js $test" -NoNewWindow
+    $UPID = $UPID+$(Start-Process -FilePath "$INNERWORKDIR\ArangoDB\build\bin\RelWithDebInfo\arangosh.exe" -ArgumentList " -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\UnitTests\unittest.js $test" -NoNewWindow -PassThru)
 }
 
 Function launchSingleTests
@@ -423,7 +425,7 @@ Function launchSingleTests
         {
             Write-Host "Launching $test"
         }
-        unittest "$test[1] --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort $($portBase + 99) $test --skipNonDeterministic true --skipTimeCritical true"
+        #unittest "$test[1] --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort $($portBase + 99) $test[3..#] --skipNonDeterministic true --skipTimeCritical true"
         $portBase = $($portBase + 100)
         Start-Sleep 5
     }
@@ -505,7 +507,7 @@ Function log([array]$log)
     ForEach($l in $log)
     {
         Write-Host $l
-        $l | Add-Content "$INNERWORKDIR/test.log"
+        $l | Add-Content "$INNERWORKDIR\test.log"
     }
 }
 
@@ -526,23 +528,22 @@ Function createReport
     }
 
   $result | Add-Content testProtocol.txt
-  #pushd $INNERWORKDIR
-  #and begin
-  #  tar czvf $INNERWORKDIR/ArangoDB/innerlogs.tar.gz tmp --exclude databases --exclude rocksdb --exclude journals
-  #  popd
-  #end
+  $olddir = $pwd
+  Set-Location $INNERWORKDIR
+  Compress-Archive -Path tmp -DestinationPath "$INNERWORKDIR\ArangoDB\innerlogs.zip"
+  Set-Location $olddir
   
   $cores = Get-ChildItem -Filter "core*"
-  $archives = Get-ChildItem -Filter "*.tar.gz"
+  $archives = Get-ChildItem -Filter "*.zip"
   $logs = Get-ChildItem -Filter "*.log"
-  Write-Host "Compress-Archive -Path $logs -DestinationPath `"$INNERWORKDIR/testreport-$d.tar.gz`""
-  Compress-Archive -Path $logs -DestinationPath "$INNERWORKDIR/testreport-$d.tar.gz"
-  Write-Host "Compress-Archive -Path $cores -Update -DestinationPath `"$INNERWORKDIR/testreport-$d.tar.gz`""
-  Compress-Archive -Path $cores -Update -DestinationPath "$INNERWORKDIR/testreport-$d.tar.gz"
-  Write-Host "Compress-Archive -Path $archives -Update -DestinationPath `"$INNERWORKDIR/testreport-$d.tar.gz`""
-  Compress-Archive -Path $archives -Update -DestinationPath "$INNERWORKDIR/testreport-$d.tar.gz"
-  Write-Host "Compress-Archive -Path testProtocol.txt -Update -DestinationPath `"$INNERWORKDIR/testreport-$d.tar.gz`""
-  Compress-Archive -Path testProtocol.txt -Update -DestinationPath "$INNERWORKDIR/testreport-$d.tar.gz"
+  Write-Host "Compress-Archive -Path $logs -DestinationPath `"$INNERWORKDIR\testreport-$d.zip`""
+  Compress-Archive -Path $logs -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
+  Write-Host "Compress-Archive -Path $cores -Update -DestinationPath `"$INNERWORKDIR\testreport-$d.zip`""
+  Compress-Archive -Path $cores -Update -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
+  Write-Host "Compress-Archive -Path $archives -Update -DestinationPath `"$INNERWORKDIR\testreport-$d.zip`""
+  Compress-Archive -Path $archives -Update -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
+  Write-Host "Compress-Archive -Path testProtocol.txt -Update -DestinationPath `"$INNERWORKDIR\testreport-$d.zip`""
+  Compress-Archive -Path testProtocol.txt -Update -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
   Write-Host "Remove-Item -Recurse -Force $cores"
   Remove-Item -Recurse -Force $cores
   Write-Host "Remove-Item -Recurse -Force $archives"
@@ -564,8 +565,8 @@ Function runTests
     {
         New-Item -ItemType Directory -Path tmp
     }
-    $TMPDIR = "$INNERWORKDIR/tmp"
-    Set-Location $INNERWORKDIR/ArangoDB
+    $TMPDIR = "$INNERWORKDIR\tmp"
+    Set-Location "$INNERWORKDIR\ArangoDB"
 
     Switch -Regex ($TESTSUITE)
     {

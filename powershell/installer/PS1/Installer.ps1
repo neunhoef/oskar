@@ -44,14 +44,12 @@ DownloadFile -src 'https://slproweb.com/download/Win64OpenSSL-1_0_2n.exe' -dest 
 ExternalProcess -process "C:\Windows\Temp\Win64OpenSSL1_0_2n.exe" -wait $true -arguments " "
 Remove-Item "C:\Windows\Temp\Win64OpenSSL1_0_2n.exe"
 
-DownloadFile -src 'https://www.python.org/ftp/python/3.5.4/python-3.5.4-amd64.exe' -dest "C:\Windows\Temp\python-3.5.4-amd64.exe"
-ExternalProcess -process "C:\Windows\Temp\python-3.5.4-amd64.exe" -wait $true -arguments '/quiet InstallAllUsers=1 PrependPath=1 TargetDir="C:\Python35"'
-Remove-Item "C:\Windows\Temp\python-3.5.4-amd64.exe"
-
 DownloadFile -src 'https://github.com/Microsoft/vssetup.powershell/releases/download/2.0.1/VSSetup.zip' -dest "C:\Windows\Temp\VSSetup.zip"
 Expand-Archive -Force "C:\Windows\Temp\VSSetup.zip" "$env:ProgramFiles\WindowsPowerShell\Modules\VSSetup"
 Expand-Archive -Force "C:\Windows\Temp\VSSetup.zip" "${env:ProgramFiles(x86)}\WindowsPowerShell\Modules\VSSetup"
 Remove-Item "C:\Windows\Temp\VSSetup.zip"
+
+Import-Module VSSetup
 
 $arguments = @'
 -NoProfile -ExecutionPolicy Bypass -Command "Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))"
@@ -66,4 +64,14 @@ ForEach($argument in $arguments)
 
 DownloadFile -src 'https://aka.ms/vs/15/release/vs_community.exe' -dest "C:\Windows\Temp\vs_community.exe"
 $arguments = "--add Microsoft.VisualStudio.Workload.Node --add Microsoft.VisualStudio.Workload.NativeCrossPlat --add Microsoft.VisualStudio.Workload.NativeDesktop --includeRecommended --includeOptional --passive"
-ExternalProcess -process "C:\Windows\Temp\vs_community.exe" -arguments $arguments -wait $false
+ExternalProcess -process "C:\Windows\Temp\vs_community.exe" -arguments $arguments -wait $true
+
+DownloadFile -src 'https://github.com/frerich/clcache/releases/download/v4.1.0/clcache-4.1.0.zip' -dest "C:\Windows\Temp\clcache-4.1.0.zip"
+$clpath = $(Split-Path -Parent $(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter cl.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx86\\x64"}).FullName) 
+Expand-Archive -Force "C:\Windows\Temp\clcache-4.1.0.zip" "$clpath"
+Rename-Item -Path "$clpath\cl.exe" -NewName "clo.exe"
+Rename-Item -Path "$clpath\cl.exe.config" -NewName "clo.exe.config"
+Rename-Item -Path "$clpath\clcache.exe" -NewName "cl.exe"
+Rename-Item -Path "$clpath\clcache.exe.manifest" -NewName "cl.exe.manifest"
+[Environment]::SetEnvironmentVariable("CLCACHE_CL", "$($(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter clo.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx86\\x64"}).FullName)", "Machine")
+Remove-Item "C:\Windows\Temp\clcache-4.1.0.zip"
