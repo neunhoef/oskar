@@ -19,6 +19,8 @@ function ExternalProcess($process,$arguments,$wait)
 
 function DownloadFile($src,$dest)
 {
+    $AllProtocols = [System.Net.SecurityProtocolType]'Tls11,Tls12'
+    [System.Net.ServicePointManager]::SecurityProtocol = $AllProtocols
     (New-Object System.Net.WebClient).DownloadFile($src,$dest)
 }
 
