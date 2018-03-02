@@ -51,8 +51,6 @@ Expand-Archive -Force "C:\Windows\Temp\VSSetup.zip" "$env:ProgramFiles\WindowsPo
 Expand-Archive -Force "C:\Windows\Temp\VSSetup.zip" "${env:ProgramFiles(x86)}\WindowsPowerShell\Modules\VSSetup"
 Remove-Item "C:\Windows\Temp\VSSetup.zip"
 
-Import-Module VSSetup
-
 $arguments = @'
 -NoProfile -ExecutionPolicy Bypass -Command "Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))"
 '@
@@ -65,9 +63,18 @@ ForEach($argument in $arguments)
 }
 
 DownloadFile -src 'https://aka.ms/vs/15/release/vs_community.exe' -dest "C:\Windows\Temp\vs_community.exe"
-$arguments = "--add Microsoft.VisualStudio.Workload.Node --add Microsoft.VisualStudio.Workload.NativeCrossPlat --add Microsoft.VisualStudio.Workload.NativeDesktop --includeRecommended --includeOptional --passive"
-ExternalProcess -process "C:\Windows\Temp\vs_community.exe" -arguments $arguments -wait $true
+Start-Job -Name VSCommunity -ScriptBlock {
+    $arguments = "--add Microsoft.VisualStudio.Workload.Node --add Microsoft.VisualStudio.Workload.NativeCrossPlat --add Microsoft.VisualStudio.Workload.NativeDesktop --includeRecommended --includeOptional --passive"
+    ExternalProcess -process "C:\Windows\Temp\vs_community.exe" -arguments $arguments -wait $false
+}
+Write-Host "Install VSCommunity"
+While($(Get-Job -Name VSCommunity).State -ne "Completed")
+{
+    Start-Sleep 30
+}
+Remove-Item "C:\Windows\Temp\vs_community.exe"
 
+Import-Module VSSetup
 DownloadFile -src 'https://github.com/frerich/clcache/releases/download/v4.1.0/clcache-4.1.0.zip' -dest "C:\Windows\Temp\clcache-4.1.0.zip"
 $clpath = $(Split-Path -Parent $(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter cl.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx86\\x64"}).FullName) 
 Expand-Archive -Force "C:\Windows\Temp\clcache-4.1.0.zip" "$clpath"
