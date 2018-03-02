@@ -15,19 +15,9 @@ and findArangoDBVersion
 and buildStaticArangoDB
 and downloadStarter
 and makeDockerImage arangodb/arangodb-preview:3.3
-and begin
-  set count 0
-  while true
-    echo Trying docker push
-    if docker push arangodb/arangodb-preview:3.3 ; break ; end
-    set count (math $count + 1)
-    if test $count -gt 10
-      echo Could not push docker image, giving up.
-      exit 1
-    end
-  end
-end
-    
+and docker push arangodb/arangodb-preview:3.3
+and docker tag arangodb/arangodb-preview:3.3 registry.arangodb.biz:5000/arangodb/linux-community-maintainer:3.3
+and docker push registry.arangodb.biz:5000/arangodb/linux-community-maintainer:3.3
 
 if test $status != 0
   echo Production of community image failed, giving up...
@@ -43,25 +33,16 @@ and downloadStarter
 and downloadSyncer
 and makeDockerImage registry.arangodb.biz:5000/arangodb/arangodb-preview:3.3-$KEY
 docker push registry.arangodb.biz:5000/arangodb/arangodb-preview:3.3-$KEY
-and begin
-  set count 0
-  while true
-    echo Trying docker push
-    if docker push registry.arangodb.biz:5000/arangodb/arangodb-preview:3.3-$KEY
-      break
-    end
-    set count (math $count + 1)
-    if test $count -gt 10
-      echo Could not push docker image, giving up.
-      exit 1
-    end
-  end
-end
+and docker push registry.arangodb.biz:5000/arangodb/arangodb-preview:3.3-$KEY
+and docker tag registry.arangodb.biz:5000/arangodb/arangodb-preview:3.3-$KEY registry.arangodb.biz:5000/arangodb/linux-enterprise-maintainer:3.3
+and docker push registry.arangodb.biz:5000/arangodb/linux-enterprise-maintainer:3.3
 
 and begin
   rm -rf $WORKSPACE/imagenames.log
   echo arangodb/arangodb-preview:3.3 >> $WORKSPACE/imagenames.log
+  echo registry.arangodb.biz:5000/arangodb/linux-community-maintainer:3.3 >> $WORKSPACE/imagenames.log
   echo registry.arangodb.biz:5000/arangodb/arangodb-preview:3.3-$KEY >> $WORKSPACE/imagenames.log
+  echo registry.arangodb.biz:5000/arangodb/linux-enterprise-maintainer:3.3 >> $WORKSPACE/imagenames.log
 end
 
 set -l s $status ; cd "$HOME/$NODE_NAME/oskar" ; unlockDirectory ; exit $s
