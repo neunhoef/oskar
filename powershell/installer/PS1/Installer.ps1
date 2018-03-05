@@ -75,7 +75,7 @@ $arguments = @'
 '@
 ExternalProcess -process Powershell -arguments $arguments -wait $true
 
-$arguments = @("choco install -y cmake.portable nsis python2 procdump windbg wget nuget.commandline vim putty.install openssh","choco install -y git winflexbison3 ruby","choco install -y ruby2.devkit nodejs","gem install bundler persistent_httparty rspec rspec-core","npm install -g gitbook-cli","pip3.5 install git+https://github.com/frerich/clcache.git")
+$arguments = @("choco install -y cmake.portable nsis python2 procdump windbg wget nuget.commandline vim putty.install openssh","choco install -y git winflexbison3 ruby","choco install -y ruby2.devkit nodejs jdk8","gem install bundler persistent_httparty rspec rspec-core","npm install -g gitbook-cli","pip3.5 install git+https://github.com/frerich/clcache.git")
 ForEach($argument in $arguments)
 {
     ExternalProcess -process Powershell -arguments $argument -wait $true
