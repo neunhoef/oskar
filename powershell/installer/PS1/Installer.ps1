@@ -32,15 +32,26 @@ If (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     Break
 }
 
-If ( -NOT (Test-Path "$PSScriptRoot\path.set"))
+If (-Not ((Get-ItemPropertyValue -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem' -Name 'LongPathsEnabled') -eq 1))
+{
+    Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem' -Name 'LongPathsEnabled' -Value '1'
+}
+
+If (-NOT((Get-ItemPropertyValue -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\PathSet' -Name '(default)') -eq 1))
 {
     $oldpath = (Get-ItemProperty -Path ‘Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment’ -Name PATH).path
     $newpath = “$oldpath;%ALLUSERSPROFILE%\chocolatey\bin;C:\tools\DevKit2\bin;C:\tools\DevKit2\mingw\bin”
     Set-ItemProperty -Path ‘Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment’ -Name PATH -Value $newPath
-    echo $null > "$PSScriptRoot\path.set"
-}
 
-Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem' -Name 'LongPathsEnabled' -Value '1'
+    If(Get-ItemPropertyValue -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\PathSet' -Name '(default)')
+    {
+        Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\PathSet' -Name '(default)' -Value '1'
+    }
+    Else
+    {
+        New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows' -Name "PathSet" -Value "1"
+    }
+}
 
 DownloadFile -src 'https://slproweb.com/download/Win64OpenSSL-1_0_2n.exe' -dest "C:\Windows\Temp\Win64OpenSSL1_0_2n.exe"
 ExternalProcess -process "C:\Windows\Temp\Win64OpenSSL1_0_2n.exe" -wait $true -arguments " "
@@ -63,13 +74,11 @@ ForEach($argument in $arguments)
 }
 
 DownloadFile -src 'https://aka.ms/vs/15/release/vs_community.exe' -dest "C:\Windows\Temp\vs_community.exe"
-Start-Job -Name VSCommunity -ScriptBlock {
-    $arguments = "--add Microsoft.VisualStudio.Workload.Node --add Microsoft.VisualStudio.Workload.NativeCrossPlat --add Microsoft.VisualStudio.Workload.NativeDesktop --includeRecommended --includeOptional --passive"
-    ExternalProcess -process "C:\Windows\Temp\vs_community.exe" -arguments $arguments -wait $false
-}
-Write-Host "Install VSCommunity"
-While($(Get-Job -Name VSCommunity).State -ne "Completed")
+$arguments = "--add Microsoft.VisualStudio.Workload.Node --add Microsoft.VisualStudio.Workload.NativeCrossPlat --add Microsoft.VisualStudio.Workload.NativeDesktop --includeRecommended --includeOptional --passive"
+ExternalProcess -process "C:\Windows\Temp\vs_community.exe" -arguments $arguments -wait $false
+While(-Not((Get-ItemPropertyValue  -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64' -Name 'Installed') -eq 1))
 {
+    Write-Host "Waiting for Installer ..."
     Start-Sleep 30
 }
 Remove-Item "C:\Windows\Temp\vs_community.exe"
@@ -84,3 +93,4 @@ Rename-Item -Path "$clpath\clcache.exe" -NewName "cl.exe"
 Rename-Item -Path "$clpath\clcache.exe.manifest" -NewName "cl.exe.manifest"
 [Environment]::SetEnvironmentVariable("CLCACHE_CL", "$($(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter clo.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx86\\x64"}).FullName)", "Machine")
 Remove-Item "C:\Windows\Temp\clcache-4.1.0.zip"
+
