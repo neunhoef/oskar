@@ -264,6 +264,20 @@ Function switchBranches($branch_c,$branch_e)
     }
 }
 
+Function updateOskar
+{
+    Set-Location $WORKDIR
+    If (-Not($Error)) 
+    {
+        git checkout -- .
+    }
+    If (-Not($Error)) 
+    {
+        git pull
+    }
+
+}
+
 Function clearResults
 {
   Set-Location $INNERWORKDIR
@@ -276,7 +290,7 @@ Function clearResults
 
 Function showLog
 {
-    Get-Content "$INNERWORKDIR\test.log" -Tail 100
+    Get-Content "$INNERWORKDIR\test.log" | Out-GridView -Title "$INNERWORKDIR\test.log"
 }
 
 Function  findArangoDBVersion
@@ -642,6 +656,83 @@ Function runTests
     {
     Exit 1
     }   
+}
+
+Function oskar
+{
+    checkoutIfNeeded
+    runTests
+}
+
+Function oskar1
+{
+    showConfig
+    #buildStaticArangodb
+    buildArangoDB
+    oskar
+}
+
+Function oskar2
+{
+    showConfig
+    #buildStaticArangodb
+    buildArangoDB
+    cluster
+    oskar
+    single
+    oskar
+    cluster
+}
+
+Function oskar4
+{
+    showConfig
+    #buildStaticArangodb
+    buildArangoDB
+    rocksdb
+    cluster
+    oskar
+    single
+    oskar
+    mmfiles
+    cluster
+    oskar
+    single
+    oskar
+    cluster
+    rocksdb
+}
+
+Function oskar8
+{
+    showConfig
+    #buildStaticArangodb
+    enterprise
+    buildArangoDB
+    rocksdb
+    cluster
+    oskar
+    single
+    oskar
+    mmfiles
+    cluster
+    oskar
+    single
+    oskar
+    community
+    buildArangoDB
+    rocksdb
+    cluster
+    oskar
+    single
+    oskar
+    mmfiles
+    cluster
+    oskar
+    single
+    oskar
+    cluster
+    rocksdb
 }
 
 Clear
