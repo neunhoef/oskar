@@ -54,7 +54,13 @@ If (-NOT((Get-ItemPropertyValue -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Mic
 }
 
 DownloadFile -src 'https://raw.githubusercontent.com/arangodb-helper/openssl-installer/master/Win64OpenSSL-1_0_2n_sib.exe' -dest "C:\Windows\Temp\Win64OpenSSL1_0_2n.exe"
-ExternalProcess -process "C:\Windows\Temp\Win64OpenSSL1_0_2n.exe" -wait $true -arguments " "
+Start-Process "C:\Windows\Temp\Win64OpenSSL1_0_2n.exe"
+Start-Sleep 15
+While(Get-Process -Name Win64OpenSSL-1_0_2n -ErrorAction SilentlyContinue)
+{
+    Write-Host "Waiting for Installer ..."
+    Start-Sleep 15 
+}
 Remove-Item "C:\Windows\Temp\Win64OpenSSL1_0_2n.exe"
 
 DownloadFile -src 'https://github.com/Microsoft/vssetup.powershell/releases/download/2.0.1/VSSetup.zip' -dest "C:\Windows\Temp\VSSetup.zip"
@@ -81,7 +87,7 @@ ExternalProcess -process "C:\Windows\Temp\vs_community.exe" -arguments $argument
 While(-Not(Get-VSSetupInstance -ErrorAction SilentlyContinue))
 {
     Write-Host "Waiting for Installer ..."
-    Start-Sleep 60
+    Start-Sleep 30
 }
 Remove-Item "C:\Windows\Temp\vs_community.exe"
 
@@ -94,4 +100,3 @@ Rename-Item -Path "$clpath\clcache.exe" -NewName "cl.exe"
 Rename-Item -Path "$clpath\clcache.exe.manifest" -NewName "cl.exe.manifest"
 [Environment]::SetEnvironmentVariable("CLCACHE_CL", "$($(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter clo.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx86\\x64"}).FullName)", "Machine")
 Remove-Item "C:\Windows\Temp\clcache-4.1.0.zip"
-
