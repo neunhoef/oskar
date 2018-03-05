@@ -528,10 +528,10 @@ Function createReport
     }
 
   $result | Add-Content testProtocol.txt
-  $olddir = $pwd
-  Set-Location $INNERWORKDIR
-  Compress-Archive -Path tmp -DestinationPath "$INNERWORKDIR\ArangoDB\innerlogs.zip"
-  Set-Location $olddir
+  Push-Location
+    Set-Location $INNERWORKDIR
+    Compress-Archive -Path tmp -DestinationPath "$INNERWORKDIR\ArangoDB\innerlogs.zip"
+  Pop-Location
   
   $cores = Get-ChildItem -Filter "core*"
   $archives = Get-ChildItem -Filter "*.zip"
