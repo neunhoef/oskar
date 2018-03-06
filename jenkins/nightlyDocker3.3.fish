@@ -32,7 +32,6 @@ and buildStaticArangoDB
 and downloadStarter
 and downloadSyncer
 and makeDockerImage registry.arangodb.biz:5000/arangodb/arangodb-preview:3.3-$KEY
-docker push registry.arangodb.biz:5000/arangodb/arangodb-preview:3.3-$KEY
 and docker push registry.arangodb.biz:5000/arangodb/arangodb-preview:3.3-$KEY
 and docker tag registry.arangodb.biz:5000/arangodb/arangodb-preview:3.3-$KEY registry.arangodb.biz:5000/arangodb/linux-enterprise-maintainer:3.3
 and docker push registry.arangodb.biz:5000/arangodb/linux-enterprise-maintainer:3.3
