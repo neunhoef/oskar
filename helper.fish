@@ -96,12 +96,14 @@ end
 
 function oskar1
   showConfig
+  set -x NOSTRIP 1
   buildStaticArangoDB -DUSE_FAILURE_TESTS=On -DDEBUG_SYNC_REPLICATION=On ; or return $status
   oskar
 end
 
 function oskar2
   showConfig
+  set -x NOSTRIP 1
   buildStaticArangoDB -DUSE_FAILURE_TESTS=On -DDEBUG_SYNC_REPLICATION=On ; or return $status
   cluster ; oskar ; or return $status
   single ; oskar ; or return $status
@@ -110,6 +112,7 @@ end
 
 function oskar4
   showConfig
+  set -x NOSTRIP 1
   buildStaticArangoDB -DUSE_FAILURE_TESTS=On -DDEBUG_SYNC_REPLICATION=On ; or return $status
   rocksdb
   cluster ; oskar ; or return $status
@@ -123,6 +126,7 @@ end
 function oskar8
   showConfig
   enterprise
+  set -x NOSTRIP 1
   buildStaticArangoDB -DUSE_FAILURE_TESTS=On -DDEBUG_SYNC_REPLICATION=On ; or return $status
   rocksdb
   cluster ; oskar ; or return $status
