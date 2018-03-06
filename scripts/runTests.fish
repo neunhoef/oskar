@@ -184,7 +184,11 @@ function createReport
   set cores core*
   set archives *.tar.gz
   set logs *.log
-  echo tar czvf "$INNERWORKDIR/testreport-$d.tar.gz" $logs testProtocol.txt $cores $archives
+  set binary
+  if test (count $cores) != 0
+    set binary build/bin/arangod
+  end
+  echo tar czvf "$INNERWORKDIR/testreport-$d.tar.gz" $logs testProtocol.txt $cores $archives $binary
   tar czvf "$INNERWORKDIR/testreport-$d.tar.gz" $logs testProtocol.txt $cores $archives
   echo rm -rf $cores $archives testProtocol.txt
   rm -rf $cores $archives testProtocol.txt
