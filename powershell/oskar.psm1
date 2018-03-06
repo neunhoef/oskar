@@ -341,6 +341,7 @@ Function buildWindows
     }
     Set-Location "$INNERWORKDIR\ArangoDB\build"
     cmake --build . --config "$BUILDMODE"
+    Copy-Item "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\*" -Destination "$INNERWORKDIR\ArangoDB\build\bin\"
 }
 
 Function buildArangoDB
@@ -424,11 +425,11 @@ Function noteStartAndRepoState
 
 }
 
-Function unittest([array]$test)
+Function unittest($test)
 {
     $PORT=Get-Random -Minimum 20000 -Maximum 65535
     Set-Location "$INNERWORKDIR\ArangoDB"
-    [array]$global:UPIDS = $global:UPIDS+$(Start-Process -FilePath "$INNERWORKDIR\ArangoDB\build\bin\RelWithDebInfo\arangosh.exe" -ArgumentList " -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\UnitTests\unittest.js $test" -NoNewWindow -PassThru).Id
+    [array]$global:UPIDS = $global:UPIDS+$(Start-Process -FilePath "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\arangosh.exe" -ArgumentList " -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\UnitTests\unittest.js -- $test" -NoNewWindow -PassThru -ErrorAction SilentlyContinue).Id
 }
 
 Function launchSingleTests
@@ -448,28 +449,28 @@ Function launchSingleTests
         Start-Sleep 5
     }
     $UPIDS = $null
-    test1 shell_server ""
-    test1 shell_client ""
-    test1 recovery 0 --testBuckets 4/0
-    test1 recovery 1 --testBuckets 4/1
-    test1 recovery 2 --testBuckets 4/2
-    test1 recovery 3 --testBuckets 4/3
-    test1 replication_sync ""
-    test1 replication_static ""
-    test1 replication_ongoing ""
-    test1 http_server ""
-    test1 ssl_server ""
-    test1 shell_server_aql 0 --testBuckets 5/0
-    test1 shell_server_aql 1 --testBuckets 5/1
-    test1 shell_server_aql 2 --testBuckets 5/2
-    test1 shell_server_aql 3 --testBuckets 5/3
-    test1 shell_server_aql 4 --testBuckets 5/4
-    test1 dump ""
-    test1 server_http ""
-    test1 agency ""
-    test1 shell_replication ""
-    test1 http_replication ""
-    test1 catch ""
+    test1 "shell_server",""
+    test1 "shell_client",""
+    test1 "recovery","0","--testBuckets","4/0"
+    test1 "recovery","1","--testBuckets","4/1"
+    test1 "recovery","2","--testBuckets","4/2"
+    test1 "recovery","3","--testBuckets","4/3"
+    test1 "replication_sync",""
+    test1 "replication_static",""
+    test1 "replication_ongoing",""
+    test1 "http_server",""
+    test1 "ssl_server",""
+    test1 "shell_server_aql","0","--testBuckets","5/0"
+    test1 "shell_server_aql","1","--testBuckets","5/1"
+    test1 "shell_server_aql","2","--testBuckets","5/2"
+    test1 "shell_server_aql","3","--testBuckets","5/3"
+    test1 "shell_server_aql","4","--testBuckets","5/4"
+    test1 "dump",""
+    test1 "server_http",""
+    test1 "agency",""
+    test1 "shell_replication",""
+    test1 "http_replication",""
+    test1 "catch",""
 }
 
 Function launchClusterTests
@@ -500,37 +501,39 @@ Function launchClusterTests
         Start-Sleep 5
     }
     $UPIDS = $null
-    test3 resilience move js/server/tests/resilience/moving-shards-cluster.js
-    test3 resilience failover js/server/tests/resilience/resilience-synchronous-repl-cluster.js
-    test1 shell_client ""
-    test1 shell_server ""
-    test1 http_server ""
-    test1 ssl_server ""
-    test3 resilience sharddist js/server/tests/resilience/shard-distribution-spec.js
-    test1 shell_server_aql 0 --testBuckets 5/0
-    test1 shell_server_aql 1 --testBuckets 5/1
-    test1 shell_server_aql 2 --testBuckets 5/2
-    test1 shell_server_aql 3 --testBuckets 5/3
-    test1 shell_server_aql 4 --testBuckets 5/4
-    test1 dump ""
-    test1 server_http ""
-    test1 agency ""
+    test3 "resilience","move","js/server/tests/resilience/moving-shards-cluster.js"
+    test3 "resilience","failover","js/server/tests/resilience/resilience-synchronous-repl-cluster.js"
+    test1 "shell_client",""
+    test1 "shell_server",""
+    test1 "http_server",""
+    test1 "ssl_server",""
+    test3 "resilience","sharddist","js/server/tests/resilience/shard-distribution-spec.js"
+    test1 "shell_server_aql","0","--testBuckets","5/0"
+    test1 "shell_server_aql","1","--testBuckets","5/1"
+    test1 "shell_server_aql","2","--testBuckets","5/2"
+    test1 "shell_server_aql","3","--testBuckets","5/3"
+    test1 "shell_server_aql","4","--testBuckets","5/4"
+    test1 "dump",""
+    test1 "server_http",""
+    test1 "agency",""
 }
 
 Function waitForProcesses($seconds)
 {
     While($true)
     {
-        #ForEach($UPID in $UPIDS)
-        #{
-        #    Get-Process 
-        #} 
-        If($UPIDS.Count -eq 0 ) 
+        ForEach($UPID in $UPIDS)
         {
-            Write-Host ""
+            If(Get-Process $UPID -ErrorAction SilentlyContinue)
+            {
+                [array]$global:NUPIDS = $NUPIDS + $UPID
+            }
+        } 
+        If($NUPIDS.Count -eq 0 ) 
+        {
             Return $false
         }
-        Write-Host "$($UPIDS.Count) jobs still running, remaining $seconds seconds..."
+        Write-Host "$($NUPIDS.Count) jobs still running, remaining $seconds seconds..."
         $seconds = $($seconds - 5)
         If($seconds -lt 0)
         {
@@ -545,15 +548,15 @@ Function waitOrKill($seconds)
     Write-Host "Waiting for processes to terminate..."
     If(waitForProcesses $seconds) 
     {
-        ForEach($UPID in $UPIDS)
+        ForEach($NUPID in $NUPIDS)
         {
-            Stop-Process -Id $UPID
+            Stop-Process -Id $NUPID
         } 
         If(waitForProcesses 30) 
         {
-            ForEach($UPID in $UPIDS)
+            ForEach($NUPID in $NUPIDS)
             {
-                Stop-Process -Force -Id $UPID
+                Stop-Process -Force -Id $NUPID
             } 
             waitForProcesses 15  
         }
