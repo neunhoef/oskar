@@ -1,4 +1,4 @@
-$HDD = $(Split-Path -Parent $(Split-Path -Parent $ENV:WORKSPACE))
+$HDD = $(Split-Path -Qualifier $ENV:WORKSPACE)
 If(-Not(Test-Path -PathType Container -Path "$HDD\$env:NODE_NAME"))
 {
     New-Item -ItemType Directory -Path "$HDD\$env:NODE_NAME"
