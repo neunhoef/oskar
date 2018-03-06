@@ -12,13 +12,11 @@ If(-Not(Test-Path -PathType Container -Path "$OSKARDIR\oskar"))
 }
 Set-Location "$OSKARDIR\oskar"
 Import-Module "$OSKARDIR\oskar\powershell\oskar.psm1"
-If($Error -ne 0)
+If(-Not($?))
 {
     Write-Host "Did not find oskar and helpers"
     Exit 1
 }
-
-$($env:EDITION)
 
 lockDirectory
 updateOskar
@@ -30,7 +28,8 @@ clearResults
 . $env:TEST_SUITE
 
 switchBranches $env:ARANGODB_BRANCH $env:ENTERPRISE_BRANCH
-If (-Not($Error)) 
+
+If ($?) 
 {
     oskar1
 }
