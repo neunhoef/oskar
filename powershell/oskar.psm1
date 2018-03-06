@@ -521,16 +521,18 @@ Function waitForProcesses($seconds)
 {
     While($true)
     {
-        #ForEach($UPID in $UPIDS)
-        #{
-        #    Get-Process 
-        #} 
-        If($UPIDS.Count -eq 0 ) 
+        ForEach($UPID in $UPIDS)
         {
-            Write-Host ""
+            If(Get-Process $UPID -ErrorAction SilentlyContinue)
+            {
+                [array]$global:NUPIDS = $NUPIDS + $UPID
+            }
+        } 
+        If($NUPIDS.Count -eq 0 ) 
+        {
             Return $false
         }
-        Write-Host "$($UPIDS.Count) jobs still running, remaining $seconds seconds..."
+        Write-Host "$($NUPIDS.Count) jobs still running, remaining $seconds seconds..."
         $seconds = $($seconds - 5)
         If($seconds -lt 0)
         {
@@ -545,15 +547,15 @@ Function waitOrKill($seconds)
     Write-Host "Waiting for processes to terminate..."
     If(waitForProcesses $seconds) 
     {
-        ForEach($UPID in $UPIDS)
+        ForEach($NUPID in $NUPIDS)
         {
-            Stop-Process -Id $UPID
+            Stop-Process -Id $NUPID
         } 
         If(waitForProcesses 30) 
         {
-            ForEach($UPID in $UPIDS)
+            ForEach($NUPID in $NUPIDS)
             {
-                Stop-Process -Force -Id $UPID
+                Stop-Process -Force -Id $NUPID
             } 
             waitForProcesses 15  
         }
