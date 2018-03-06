@@ -22,6 +22,7 @@ $($env:EDITION)
 
 lockDirectory
 updateOskar
+Import-Module "$OSKARDIR\oskar\powershell\oskar.psm1"
 clearResults
 
 . $env:EDITION
