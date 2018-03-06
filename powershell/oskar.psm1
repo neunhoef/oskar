@@ -173,9 +173,9 @@ If(-Not($VERBOSEOSKAR))
     verbose
 }
 
-Function parallelism($arg)
+Function parallelism($threads)
 {
-    $global:PARALLELISM = $arg
+    $global:PARALLELISM = $threads
 }
 If(-Not($PARALLELISM))
 {
@@ -264,6 +264,20 @@ Function switchBranches($branch_c,$branch_e)
     }
 }
 
+Function updateOskar
+{
+    Set-Location $WORKDIR
+    If (-Not($Error)) 
+    {
+        git checkout -- .
+    }
+    If (-Not($Error)) 
+    {
+        git pull
+    }
+
+}
+
 Function clearResults
 {
   Set-Location $INNERWORKDIR
@@ -276,7 +290,7 @@ Function clearResults
 
 Function showLog
 {
-    Get-Content "$INNERWORKDIR\test.log" -Tail 100
+    Get-Content "$INNERWORKDIR\test.log" | Out-GridView -Title "$INNERWORKDIR\test.log"
 }
 
 Function  findArangoDBVersion
@@ -410,7 +424,7 @@ Function unittest([array]$test)
 {
     $PORT=Get-Random -Minimum 20000 -Maximum 65535
     Set-Location "$INNERWORKDIR\ArangoDB"
-    $UPID = $UPID+$(Start-Process -FilePath "$INNERWORKDIR\ArangoDB\build\bin\RelWithDebInfo\arangosh.exe" -ArgumentList " -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\UnitTests\unittest.js $test" -NoNewWindow -PassThru)
+    [array]$global:UPIDS = $global:UPIDS+$(Start-Process -FilePath "$INNERWORKDIR\ArangoDB\build\bin\RelWithDebInfo\arangosh.exe" -ArgumentList " -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\UnitTests\unittest.js $test" -NoNewWindow -PassThru).Id
 }
 
 Function launchSingleTests
@@ -425,10 +439,33 @@ Function launchSingleTests
         {
             Write-Host "Launching $test"
         }
-        #unittest "$test[1] --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort $($portBase + 99) $test[3..#] --skipNonDeterministic true --skipTimeCritical true"
+        unittest "$($test[1]) --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort $($portBase + 99) $($test[3..$($test.Length-1)]) --skipNonDeterministic true --skipTimeCritical true" | Tee-Object -FilePath "$($test[1])_$($test[2]).log"
         $portBase = $($portBase + 100)
         Start-Sleep 5
     }
+
+    test1 shell_server ""
+    test1 shell_client ""
+    test1 recovery 0 --testBuckets 4/0
+    test1 recovery 1 --testBuckets 4/1
+    test1 recovery 2 --testBuckets 4/2
+    test1 recovery 3 --testBuckets 4/3
+    test1 replication_sync ""
+    test1 replication_static ""
+    test1 replication_ongoing ""
+    test1 http_server ""
+    test1 ssl_server ""
+    test1 shell_server_aql 0 --testBuckets 5/0
+    test1 shell_server_aql 1 --testBuckets 5/1
+    test1 shell_server_aql 2 --testBuckets 5/2
+    test1 shell_server_aql 3 --testBuckets 5/3
+    test1 shell_server_aql 4 --testBuckets 5/4
+    test1 dump ""
+    test1 server_http ""
+    test1 agency ""
+    test1 shell_replication ""
+    test1 http_replication ""
+    test1 catch ""
 }
 
 Function launchClusterTests
@@ -443,7 +480,7 @@ Function launchClusterTests
         {
             Write-Host "Launching $test"
         }
-        unittest "$test[1] --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort $($portBase + 99) $test --skipNonDeterministic true --skipTimeCritical true"
+        unittest "$($test[1]) --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort $($portBase + 99) $($test[3..$($test.Length-1)]) --skipNonDeterministic true --skipTimeCritical true" | Tee-Object -FilePath "$($test[1])_$($test[2]).log"
         $portBase = $($portBase + 100)
         Start-Sleep 5
     }
@@ -454,53 +491,65 @@ Function launchClusterTests
         {
             Write-Host "Launching $test"
         }
-        unittest "$argv[1] --test $argv[3] --storageEngine $STORAGEENGINE --cluster true --minPort $portBase --maxPort $($portBase + 99) --skipNonDeterministic true"
+        unittest "$($test[1]) --test $($test[3]) --storageEngine $STORAGEENGINE --cluster true --minPort $portBase --maxPort $($portBase + 99) --skipNonDeterministic true" | Tee-Object -FilePath "$($test[1])_$($test[2]).log"
         $portBase = $($portBase + 100)
+        Start-Sleep 5
+    }
+    test3 resilience move js/server/tests/resilience/moving-shards-cluster.js
+    test3 resilience failover js/server/tests/resilience/resilience-synchronous-repl-cluster.js
+    test1 shell_client ""
+    test1 shell_server ""
+    test1 http_server ""
+    test1 ssl_server ""
+    test3 resilience sharddist js/server/tests/resilience/shard-distribution-spec.js
+    test1 shell_server_aql 0 --testBuckets 5/0
+    test1 shell_server_aql 1 --testBuckets 5/1
+    test1 shell_server_aql 2 --testBuckets 5/2
+    test1 shell_server_aql 3 --testBuckets 5/3
+    test1 shell_server_aql 4 --testBuckets 5/4
+    test1 dump ""
+    test1 server_http ""
+    test1 agency ""
+}
+
+Function waitForProcesses($seconds)
+{
+    While($true)
+    {
+        If($UPIDS.Count -eq 0 ) 
+        {
+            Write-Host ""
+            Return $false
+        }
+        Write-Host "$($UPIDS.Count) jobs still running, remaining $seconds seconds..."
+        $seconds = $($seconds - 5)
+        If($seconds -lt 0)
+        {
+            return $true
+        }
         Start-Sleep 5
     }
 }
 
-#Function waitForProcesses([array]$var)
-#{
-#    $i=$var[1]
-#    While($true)
-#    {
-#        
-#    }
-#}
-#  set i $argv[1]
-#  while true
-#    # Check subprocesses:
-#    set pids (jobs -p)
-#    if test (count $pids) -eq 0
-#      echo
-#      return 1
-#    end
-#
-#    echo -n (count $pids) jobs still running, remaining $i "seconds..."\r
-#
-#    set i (math $i - 5)
-#    if test $i -lt 0
-#      echo
-#      return 0
-#    end
-#
-#    sleep 5
-#  end
-#end
-
-#Function waitOrKill
-#{
-#   Write-Host "Waiting for processes to terminate..." 
-#}
-#  echo Waiting for processes to terminate...
-#  if waitForProcesses $argv[1]
-#    kill (jobs -p)
-#    if waitForProcesses 15
-#      kill -9 (jobs -p)
-#    end
-#  end
-#end
+Function waitOrKill($seconds)
+{
+    Write-Host "Waiting for processes to terminate..."
+    If(waitForProcesses $seconds) 
+    {
+        ForEach($UPID in $UPIDS)
+        {
+            Stop-Process -Id $UPID
+        } 
+        If(waitForProcesses 30) 
+        {
+            ForEach($UPID in $UPIDS)
+            {
+                Stop-Process -Id $UPID
+            } 
+            waitForProcesses 15  
+        }
+    }
+}
 
 Function log([array]$log)
 {
@@ -528,10 +577,10 @@ Function createReport
     }
 
   $result | Add-Content testProtocol.txt
-  $olddir = $pwd
-  Set-Location $INNERWORKDIR
-  Compress-Archive -Path tmp -DestinationPath "$INNERWORKDIR\ArangoDB\innerlogs.zip"
-  Set-Location $olddir
+  Push-Location
+    Set-Location $INNERWORKDIR
+    Compress-Archive -Path tmp -DestinationPath "$INNERWORKDIR\ArangoDB\innerlogs.zip"
+  Pop-Location
   
   $cores = Get-ChildItem -Filter "core*"
   $archives = Get-ChildItem -Filter "*.zip"
@@ -607,6 +656,83 @@ Function runTests
     {
     Exit 1
     }   
+}
+
+Function oskar
+{
+    checkoutIfNeeded
+    runTests
+}
+
+Function oskar1
+{
+    showConfig
+    #buildStaticArangodb
+    buildArangoDB
+    oskar
+}
+
+Function oskar2
+{
+    showConfig
+    #buildStaticArangodb
+    buildArangoDB
+    cluster
+    oskar
+    single
+    oskar
+    cluster
+}
+
+Function oskar4
+{
+    showConfig
+    #buildStaticArangodb
+    buildArangoDB
+    rocksdb
+    cluster
+    oskar
+    single
+    oskar
+    mmfiles
+    cluster
+    oskar
+    single
+    oskar
+    cluster
+    rocksdb
+}
+
+Function oskar8
+{
+    showConfig
+    #buildStaticArangodb
+    enterprise
+    buildArangoDB
+    rocksdb
+    cluster
+    oskar
+    single
+    oskar
+    mmfiles
+    cluster
+    oskar
+    single
+    oskar
+    community
+    buildArangoDB
+    rocksdb
+    cluster
+    oskar
+    single
+    oskar
+    mmfiles
+    cluster
+    oskar
+    single
+    oskar
+    cluster
+    rocksdb
 }
 
 Clear

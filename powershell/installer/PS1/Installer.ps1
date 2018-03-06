@@ -32,49 +32,65 @@ If (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     Break
 }
 
-If ( -NOT (Test-Path "$PSScriptRoot\path.set"))
+If (-Not ((Get-ItemPropertyValue -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem' -Name 'LongPathsEnabled') -eq 1))
+{
+    Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem' -Name 'LongPathsEnabled' -Value '1'
+}
+
+If (-NOT((Get-ItemPropertyValue -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\PathSet' -Name '(default)' -ErrorAction SilentlyContinue ) -eq 1))
 {
     $oldpath = (Get-ItemProperty -Path ‘Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment’ -Name PATH).path
     $newpath = “$oldpath;%ALLUSERSPROFILE%\chocolatey\bin;C:\tools\DevKit2\bin;C:\tools\DevKit2\mingw\bin”
     Set-ItemProperty -Path ‘Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment’ -Name PATH -Value $newPath
-    echo $null > "$PSScriptRoot\path.set"
+
+    If(Get-ItemPropertyValue -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\PathSet' -Name '(default)' -ErrorAction SilentlyContinue)
+    {
+        Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\PathSet' -Name '(default)' -Value '1'
+    }
+    Else
+    {
+        New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows' -Name "PathSet" -Value "1"
+    }
 }
 
-Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem' -Name 'LongPathsEnabled' -Value '1'
-
-DownloadFile -src 'https://slproweb.com/download/Win64OpenSSL-1_0_2n.exe' -dest "C:\Windows\Temp\Win64OpenSSL1_0_2n.exe"
-ExternalProcess -process "C:\Windows\Temp\Win64OpenSSL1_0_2n.exe" -wait $true -arguments " "
+DownloadFile -src 'https://raw.githubusercontent.com/arangodb-helper/openssl-installer/master/Win64OpenSSL-1_0_2n_sib.exe' -dest "C:\Windows\Temp\Win64OpenSSL1_0_2n.exe"
+Start-Process "C:\Windows\Temp\Win64OpenSSL1_0_2n.exe"
+Start-Sleep 15
+While(Get-Process -Name Win64OpenSSL-1_0_2n -ErrorAction SilentlyContinue)
+{
+    Write-Host "Waiting for Installer ..."
+    Start-Sleep 15 
+}
 Remove-Item "C:\Windows\Temp\Win64OpenSSL1_0_2n.exe"
 
 DownloadFile -src 'https://github.com/Microsoft/vssetup.powershell/releases/download/2.0.1/VSSetup.zip' -dest "C:\Windows\Temp\VSSetup.zip"
 Expand-Archive -Force "C:\Windows\Temp\VSSetup.zip" "$env:ProgramFiles\WindowsPowerShell\Modules\VSSetup"
 Expand-Archive -Force "C:\Windows\Temp\VSSetup.zip" "${env:ProgramFiles(x86)}\WindowsPowerShell\Modules\VSSetup"
 Remove-Item "C:\Windows\Temp\VSSetup.zip"
+UpdatePath
+Import-Module VSSetup
 
 $arguments = @'
 -NoProfile -ExecutionPolicy Bypass -Command "Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))"
 '@
 ExternalProcess -process Powershell -arguments $arguments -wait $true
 
-$arguments = @("choco install -y cmake.portable nsis python2 procdump windbg wget nuget.commandline vim putty.install openssh","choco install -y git winflexbison3 ruby","choco install -y ruby2.devkit nodejs","gem install bundler persistent_httparty rspec rspec-core","npm install -g gitbook-cli","pip3.5 install git+https://github.com/frerich/clcache.git")
+$arguments = @("choco install -y cmake.portable nsis python2 procdump windbg wget nuget.commandline vim putty.install openssh","choco install -y git winflexbison3 ruby","choco install -y ruby2.devkit nodejs jdk8","gem install bundler persistent_httparty rspec rspec-core","npm install -g gitbook-cli","pip3.5 install git+https://github.com/frerich/clcache.git")
 ForEach($argument in $arguments)
 {
     ExternalProcess -process Powershell -arguments $argument -wait $true
 }
 
 DownloadFile -src 'https://aka.ms/vs/15/release/vs_community.exe' -dest "C:\Windows\Temp\vs_community.exe"
-Start-Job -Name VSCommunity -ScriptBlock {
-    $arguments = "--add Microsoft.VisualStudio.Workload.Node --add Microsoft.VisualStudio.Workload.NativeCrossPlat --add Microsoft.VisualStudio.Workload.NativeDesktop --includeRecommended --includeOptional --passive"
-    ExternalProcess -process "C:\Windows\Temp\vs_community.exe" -arguments $arguments -wait $false
-}
-Write-Host "Install VSCommunity"
-While($(Get-Job -Name VSCommunity).State -ne "Completed")
+$arguments = "--add Microsoft.VisualStudio.Workload.Node --add Microsoft.VisualStudio.Workload.NativeCrossPlat --add Microsoft.VisualStudio.Workload.NativeDesktop --includeRecommended --includeOptional --quiet"
+ExternalProcess -process "C:\Windows\Temp\vs_community.exe" -arguments $arguments -wait $false
+While(-Not(Get-VSSetupInstance -ErrorAction SilentlyContinue))
 {
+    Write-Host "Waiting for Installer ..."
     Start-Sleep 30
 }
 Remove-Item "C:\Windows\Temp\vs_community.exe"
 
-Import-Module VSSetup
 DownloadFile -src 'https://github.com/frerich/clcache/releases/download/v4.1.0/clcache-4.1.0.zip' -dest "C:\Windows\Temp\clcache-4.1.0.zip"
 $clpath = $(Split-Path -Parent $(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter cl.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx86\\x64"}).FullName) 
 Expand-Archive -Force "C:\Windows\Temp\clcache-4.1.0.zip" "$clpath"
