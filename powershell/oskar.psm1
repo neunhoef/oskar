@@ -341,7 +341,7 @@ Function buildWindows
     }
     Set-Location "$INNERWORKDIR\ArangoDB\build"
     cmake --build . --config "$BUILDMODE"
-    Copy-Item "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\" -Destination "$INNERWORKDIR\ArangoDB\build\bin\" -Recurse
+    Copy-Item "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\*" -Destination "$INNERWORKDIR\ArangoDB\build\bin\"
 }
 
 Function buildArangoDB
