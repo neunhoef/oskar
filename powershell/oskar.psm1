@@ -281,12 +281,15 @@ Function updateOskar
 
 Function clearResults
 {
-  Set-Location $INNERWORKDIR
-  ForEach($file in $(Get-ChildItem -Filter testreport*))
-  {
-    Remove-Item -Force $file
-  }
-  Remove-Item -Force test.log
+    Set-Location $INNERWORKDIR
+    ForEach($file in $(Get-ChildItem -Filter testreport*))
+    {
+        Remove-Item -Force $file
+    }
+    If(Test-Path -PathType Leaf -Path test.log)
+    {
+        Remove-Item -Force test.log
+    }
 }
 
 Function showLog
