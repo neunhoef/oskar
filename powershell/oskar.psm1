@@ -27,6 +27,7 @@ Function showConfig
   Write-Host "Storage engine        :"$STORAGEENGINE
   Write-Host "Test suite            :"$TESTSUITE
   Write-Host "Verbose               :"$VERBOSEOSKAR
+  Write-Host "System User           :"$env:USERDOMAIN\$env:USERNAME
 }
 
 Function lockDirectory
@@ -280,12 +281,15 @@ Function updateOskar
 
 Function clearResults
 {
-  Set-Location $INNERWORKDIR
-  ForEach($file in $(Get-ChildItem -Filter testreport*))
-  {
-    Remove-Item -Force $file
-  }
-  Remove-Item -Force test.log
+    Set-Location $INNERWORKDIR
+    ForEach($file in $(Get-ChildItem -Filter testreport*))
+    {
+        Remove-Item -Force $file
+    }
+    If(Test-Path -PathType Leaf -Path test.log)
+    {
+        Remove-Item -Force test.log
+    }
 }
 
 Function showLog
@@ -439,11 +443,11 @@ Function launchSingleTests
         {
             Write-Host "Launching $test"
         }
-        unittest "$($test[1]) --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort $($portBase + 99) $($test[3..$($test.Length-1)]) --skipNonDeterministic true --skipTimeCritical true" | Tee-Object -FilePath "$($test[1])_$($test[2]).log"
+        unittest "$($test[0]) --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort $($portBase + 99) $($test[2..$($test.Length)]) --skipNonDeterministic true --skipTimeCritical true" | Tee-Object -FilePath "$($test[0])_$($test[1]).log"
         $portBase = $($portBase + 100)
         Start-Sleep 5
     }
-
+    $UPIDS = $null
     test1 shell_server ""
     test1 shell_client ""
     test1 recovery 0 --testBuckets 4/0
@@ -480,7 +484,7 @@ Function launchClusterTests
         {
             Write-Host "Launching $test"
         }
-        unittest "$($test[1]) --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort $($portBase + 99) $($test[3..$($test.Length-1)]) --skipNonDeterministic true --skipTimeCritical true" | Tee-Object -FilePath "$($test[1])_$($test[2]).log"
+        unittest "$($test[0]) --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort $($portBase + 99) $($test[2..$($test.Length)]) --skipNonDeterministic true --skipTimeCritical true" | Tee-Object -FilePath "$($test[0])_$($test[1]).log"
         $portBase = $($portBase + 100)
         Start-Sleep 5
     }
@@ -491,10 +495,11 @@ Function launchClusterTests
         {
             Write-Host "Launching $test"
         }
-        unittest "$($test[1]) --test $($test[3]) --storageEngine $STORAGEENGINE --cluster true --minPort $portBase --maxPort $($portBase + 99) --skipNonDeterministic true" | Tee-Object -FilePath "$($test[1])_$($test[2]).log"
+        unittest "$($test[0]) --test $($test[2]) --storageEngine $STORAGEENGINE --cluster true --minPort $portBase --maxPort $($portBase + 99) --skipNonDeterministic true" | Tee-Object -FilePath "$($test[0])_$($test[1]).log"
         $portBase = $($portBase + 100)
         Start-Sleep 5
     }
+    $UPIDS = $null
     test3 resilience move js/server/tests/resilience/moving-shards-cluster.js
     test3 resilience failover js/server/tests/resilience/resilience-synchronous-repl-cluster.js
     test1 shell_client ""
@@ -516,6 +521,10 @@ Function waitForProcesses($seconds)
 {
     While($true)
     {
+        #ForEach($UPID in $UPIDS)
+        #{
+        #    Get-Process 
+        #} 
         If($UPIDS.Count -eq 0 ) 
         {
             Write-Host ""
@@ -544,7 +553,7 @@ Function waitOrKill($seconds)
         {
             ForEach($UPID in $UPIDS)
             {
-                Stop-Process -Id $UPID
+                Stop-Process -Force -Id $UPID
             } 
             waitForProcesses 15  
         }
