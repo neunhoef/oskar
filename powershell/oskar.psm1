@@ -27,7 +27,7 @@ Function showConfig
   Write-Host "Storage engine        :"$STORAGEENGINE
   Write-Host "Test suite            :"$TESTSUITE
   Write-Host "Verbose               :"$VERBOSEOSKAR
-  Write-Host "System User           :""$env:USERDOMAIN\$env:USERNAME"
+  Write-Host "System User           :"$env:USERDOMAIN\$env:USERNAME
 }
 
 Function lockDirectory
