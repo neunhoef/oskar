@@ -195,10 +195,16 @@ end
 function moveResultsToWorkspace
   # Used in jenkins test
   echo Moving reports and logs to $WORKSPACE ...
-  for f in $WORKDIR/work/testreport* ; echo "mv $f" ; mv $f $WORKSPACE ; end
+  if test -f $WORKDIR/work/test.log
+    if head -1 $WORKDIR/work/test.log | grep BAD > /dev/null
+      mv $WORKDIR/work/test.log $WORKSPACE
+      for f in $WORKDIR/work/testreport* ; echo "mv $f" ; mv $f $WORKSPACE ; end
+    else
+      for f in $WORKDIR/work/testreport* ; echo "rm $f" ; rm $f ; end
+    end
+  end
   for f in $WORKDIR/work/*.deb ; echo "mv $f" ; mv $f $WORKSPACE ; end
   for f in $WORKDIR/work/*.tar.gz ; echo "mv $f" ; mv $f $WORKSPACE ; end
-  if test -f $WORKDIR/work/test.log ; echo "mv $WORKDIR/work/test.log" ; mv $WORKDIR/work/test.log $WORKSPACE ; end
 end
 
 # Include the specifics for the platform
