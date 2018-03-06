@@ -45,7 +45,7 @@ function launchSingleTests
     set -e argv[1..2]
     scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE \
       --minPort $portBase --maxPort (math $portBase + 99) $argv \
-      --skipNonDeterministic true --skipTimeCritical true >"$t""$tt".log ^&1 &
+      --skipNondeterministic true --skipTimeCritical true >"$t""$tt".log ^&1 &
     set -g portBase (math $portBase + 100)
     sleep 5
   end
