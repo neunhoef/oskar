@@ -524,8 +524,10 @@ Function waitForProcesses($seconds)
     {
         ForEach($UPID in $UPIDS)
         {
+            Write-Host "Try $UPID"
             If(Get-Process $UPID -ErrorAction SilentlyContinue)
             {
+                Write-Host "Got $UPID"
                 [array]$global:NUPIDS = $NUPIDS + $UPID
             }
         } 
