@@ -644,21 +644,21 @@ Function runTests
         "cluster"
         {
             launchClusterTests
-            waitOrKill 1800
+            waitOrKill 600
             createReport  
             Break
         }
         "single"
         {
             launchSingleTests
-            waitOrKill 1800
+            waitOrKill 600
             createReport
             Break
         }
         "resilience"
         {
             launchResilienceTests
-            waitOrKill 1800
+            waitOrKill 600
             createReport
             Break
         }
