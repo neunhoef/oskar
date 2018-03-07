@@ -363,21 +363,16 @@ Function buildStaticArangodb
 
 Function moveResultsToWorkspace
 {
-  Write-Host "Moving reports and logs to $WORKSPACE ..."
+  Write-Host "Moving reports and logs to $env:WORKSPACE ..."
   ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter testreport*))
   {
     Write-Host "Move $file"
-    Move-Item -Path $file -Destination $WORKSPACE 
-  }
-  ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter *.deb))
-  {
-    Write-Host "Move $file"
-    Move-Item -Path $file -Destination $WORKSPACE 
+    Move-Item -Path $file -Destination $env:WORKSPACE
   }
   If(Test-Path -PathType Leaf $INNERWORKDIR\test.log)
   {
     Write-Host "Move $INNERWORKDIR\test.log"
-    Move-Item -Path "$INNERWORKDIR\test.log" -Destination $WORKSPACE 
+    Move-Item -Path "$INNERWORKDIR\test.log" -Destination $env:WORKSPACE
   }
 }
 
@@ -592,7 +587,8 @@ Function createReport
   $result | Add-Content testProtocol.txt
   Push-Location
     Set-Location $INNERWORKDIR
-    Compress-Archive -Path tmp -DestinationPath "$INNERWORKDIR\ArangoDB\innerlogs.zip"
+    Write-Host "Compress-Archive -Path `"$INNERWORKDIR\tmp\`" -DestinationPath `"$INNERWORKDIR\ArangoDB\innerlogs.zip`""
+    Compress-Archive -Path "$INNERWORKDIR\tmp\" -DestinationPath "$INNERWORKDIR\ArangoDB\innerlogs.zip"
   Pop-Location
 
   ForEach($log in $(Get-ChildItem -Filter "*.log"))
@@ -672,11 +668,11 @@ Function runTests
 
     If($result -eq "GOOD")
     {
-    Exit 0
+        Return $true
     }
     Else
     {
-    Exit 1
+        Return $false
     }   
 }
 
