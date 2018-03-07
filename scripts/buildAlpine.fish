@@ -20,6 +20,8 @@ cd build
 
 echo cmake $argv -DCMAKE_BUILD_TYPE=$BUILDTYPE -DCMAKE_CXX_COMPILER=$CCACHEBINPATH/g++ -DCMAKE_C_COMPILER=$CCACHEBINPATH/gcc -DUSE_MAINTAINER_MODE=$MAINTAINER -DUSE_ENTERPRISE=$ENTERPRISEEDITION -DUSE_JEMALLOC=Off -DCMAKE_INSTALL_PREFIX=/ -DSTATIC_EXECUTABLES=On ..
 
+echo cmake output in work/cmakeAlpine.log
+
 cmake $argv \
       -DCMAKE_BUILD_TYPE=$BUILDTYPE \
       -DCMAKE_CXX_COMPILER=$CCACHEBINPATH/g++ \
@@ -29,7 +31,7 @@ cmake $argv \
       -DUSE_JEMALLOC=Off \
       -DCMAKE_INSTALL_PREFIX=/ \
       -DSTATIC_EXECUTABLES=On \
-      ..
+      .. > work/cmakeAlpine.log ^&1
 
 or exit $status
 

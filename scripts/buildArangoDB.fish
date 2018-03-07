@@ -19,6 +19,8 @@ end
 
 echo cmake $argv -DCMAKE_BUILD_TYPE=$BUILDTYPE -DCMAKE_CXX_COMPILER=$CCACHEBINPATH/g++ -DCMAKE_C_COMPILER=$CCACHEBINPATH/gcc -DUSE_MAINTAINER_MODE=$MAINTAINER -DUSE_ENTERPRISE=$ENTERPRISEEDITION -DUSE_JEMALLOC=On $GOLD ..
 
+echo cmake output in $INNERWORKDIR/cmakeArangoDB.log
+
 cmake $argv \
       -DCMAKE_BUILD_TYPE=$BUILDTYPE \
       -DCMAKE_CXX_COMPILER=$CCACHEBINPATH/g++ \
@@ -27,6 +29,6 @@ cmake $argv \
       -DUSE_ENTERPRISE=$ENTERPRISEEDITION \
       -DUSE_JEMALLOC=On \
       $GOLD \
-      ..
+      .. > $INNERWORKDIR/cmakeArangoDB.log ^&1
 and echo Running make, output in work/buildArangoDB.log
 and nice make -j$PARALLELISM $INNERWORKDIR/buildArangoDB.log ^&1

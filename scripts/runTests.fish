@@ -43,6 +43,7 @@ function launchSingleTests
     set -l t $argv[1]
     set -l tt $argv[2]
     set -e argv[1..2]
+    echo scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort (math $portBase + 99) $argv --skipNondeterministic true --skipTimeCritical true
     scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE \
       --minPort $portBase --maxPort (math $portBase + 99) $argv \
       --skipNondeterministic true --skipTimeCritical true >"$t""$tt".log ^&1 &
@@ -85,6 +86,7 @@ function launchClusterTests
     set -l t $argv[1]
     set -l tt $argv[2]
     set -e argv[1..2]
+    echo scripts/unittest $t --cluster true --storageEngine $STORAGEENGINE --minPort $portBase --maxPort (math $portBase + 99) $argv --skipNonDeterministic true --skipTimeCritical true
     scripts/unittest $t --cluster true --storageEngine $STORAGEENGINE \
       --minPort $portBase --maxPort (math $portBase + 99) $argv \
       --skipNonDeterministic true --skipTimeCritical true >"$t""$tt".log ^&1 &
@@ -94,6 +96,7 @@ function launchClusterTests
 
   function test3
     if test $VERBOSEOSKAR = On ; echo Launching $argv ; end
+    echo scripts/unittest $argv[1] --test $argv[3] --storageEngine $STORAGEENGINE --cluster true --minPort $portBase --maxPort (math $portBase + 99) --skipNonDeterministic true
     scripts/unittest $argv[1] --test $argv[3] \
       --storageEngine $STORAGEENGINE --cluster true \
       --minPort $portBase --maxPort (math $portBase + 99) \
