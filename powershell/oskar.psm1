@@ -429,7 +429,7 @@ Function unittest($test,$output)
 {
     $PORT=Get-Random -Minimum 20000 -Maximum 65535
     Set-Location "$INNERWORKDIR\ArangoDB"
-    [array]$global:UPIDS = $global:UPIDS+$(Start-Process -FilePath "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\arangosh.exe" -ArgumentList " -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\UnitTests\unittest.js -- $test" -NoNewWindow -RedirectStandardOutput $output -PassThru).Id
+    [array]$global:UPIDS = $global:UPIDS+$(Start-Process -FilePath "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\arangosh.exe" -ArgumentList " -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\UnitTests\unittest.js -- $test" -NoNewWindow -RedirectStandardOutput "$output.stdout.log" -RedirectStandardError "$output.stderr.log" -PassThru).Id
 }
 
 Function launchSingleTests
@@ -444,7 +444,7 @@ Function launchSingleTests
         {
             Write-Host "Launching $test"
         }
-        unittest "$($test[0]) --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort $($portBase + 99) $($test[2..$($test.Length)]) --skipNonDeterministic true --skipTimeCritical true" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1]).log"
+        unittest "$($test[0]) --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort $($portBase + 99) $($test[2..$($test.Length)]) --skipNonDeterministic true --skipTimeCritical true" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1])"
         $portBase = $($portBase + 100)
         Start-Sleep 5
     }
@@ -485,7 +485,7 @@ Function launchClusterTests
         {
             Write-Host "Launching $test"
         }
-        unittest "$($test[0]) --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort $($portBase + 99) $($test[2..$($test.Length)]) --skipNonDeterministic true --skipTimeCritical true" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1]).log"
+        unittest "$($test[0]) --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort $($portBase + 99) $($test[2..$($test.Length)]) --skipNonDeterministic true --skipTimeCritical true" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1])"
         $portBase = $($portBase + 100)
         Start-Sleep 5
     }
@@ -496,7 +496,7 @@ Function launchClusterTests
         {
             Write-Host "Launching $test"
         }
-        unittest "$($test[0]) --test $($test[2]) --storageEngine $STORAGEENGINE --cluster true --minPort $portBase --maxPort $($portBase + 99) --skipNonDeterministic true" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1]).log"
+        unittest "$($test[0]) --test $($test[2]) --storageEngine $STORAGEENGINE --cluster true --minPort $portBase --maxPort $($portBase + 99) --skipNonDeterministic true" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1])"
         $portBase = $($portBase + 100)
         Start-Sleep 5
     }
@@ -605,6 +605,8 @@ Function createReport
   Compress-Archive -Path $archives -Update -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
   Write-Host "Compress-Archive -Path testProtocol.txt -Update -DestinationPath `"$INNERWORKDIR\testreport-$d.zip`""
   Compress-Archive -Path testProtocol.txt -Update -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
+  Write-Host "Remove-Item -Recurse -Force $logs"
+  Remove-Item -Recurse -Force $logs
   Write-Host "Remove-Item -Recurse -Force $cores"
   Remove-Item -Recurse -Force $cores
   Write-Host "Remove-Item -Recurse -Force $archives"
