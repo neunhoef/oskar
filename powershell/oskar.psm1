@@ -51,7 +51,7 @@ Function lockDirectory
                Break
             }
             Write-Host "Directory is locked, waiting..."
-            Get-Date
+            $(get-date).ToUniversalTime().ToString("yyyy-MM-ddTHH.mm.ssZ")
             Start-Sleep -Seconds 15
         }
     } 
@@ -355,29 +355,18 @@ Function buildArangoDB
     buildWindows
 }
 
-Function buildStaticArangodb
-{
-    staticExecutablesOn
-    buildArangoDB
-}
-
 Function moveResultsToWorkspace
 {
-  Write-Host "Moving reports and logs to $WORKSPACE ..."
+  Write-Host "Moving reports and logs to $env:WORKSPACE ..."
   ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter testreport*))
   {
-    Write-Host "Move $file"
-    Move-Item -Path $file -Destination $WORKSPACE 
-  }
-  ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter *.deb))
-  {
-    Write-Host "Move $file"
-    Move-Item -Path $file -Destination $WORKSPACE 
+    Write-Host "Move $INNERWORKDIR\$file"
+    Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE
   }
   If(Test-Path -PathType Leaf $INNERWORKDIR\test.log)
   {
     Write-Host "Move $INNERWORKDIR\test.log"
-    Move-Item -Path "$INNERWORKDIR\test.log" -Destination $WORKSPACE 
+    Move-Item -Path "$INNERWORKDIR\test.log" -Destination $env:WORKSPACE
   }
 }
 
@@ -404,7 +393,7 @@ Function noteStartAndRepoState
     {
         Remove-Item -Force testProtocol.txt
     }
-    $(Get-Date -UFormat +%Y-%M-%D_%H.%M.%SZ) | Add-Content testProtocol.txt
+    $(get-date).ToUniversalTime().ToString("yyyy-MM-ddTHH.mm.ssZ") | Add-Content testProtocol.txt
     Write-Output "========== Status of main repository:" | Add-Content testProtocol.txt
     Write-Host "========== Status of main repository:"
     ForEach($line in $repoState)
@@ -429,7 +418,7 @@ Function unittest($test,$output)
 {
     $PORT=Get-Random -Minimum 20000 -Maximum 65535
     Set-Location "$INNERWORKDIR\ArangoDB"
-    $UPIDS = $UPIDS+$(Start-Process -FilePath "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\arangosh.exe" -ArgumentList " -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\UnitTests\unittest.js -- $test" -NoNewWindow -RedirectStandardOutput "$output.stdout.log" -RedirectStandardError "$output.stderr.log" -PassThru).Id
+    [array]$global:UPIDS = [array]$global:UPIDS+$(Start-Process -FilePath "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\arangosh.exe" -ArgumentList " -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\UnitTests\unittest.js -- $test" -NoNewWindow -RedirectStandardOutput "$output.stdout.log" -RedirectStandardError "$output.stderr.log" -PassThru).Id
 }
 
 Function launchSingleTests
@@ -527,7 +516,7 @@ Function waitForProcesses($seconds)
         {
             If(Get-WmiObject win32_process | Where {$_.ParentProcessId -eq $UPID})
             {
-                $NUPIDS = $NUPIDS + $(Get-WmiObject win32_process | Where {$_.ParentProcessId -eq $UPID})
+                [array]$global:NUPIDS = [array]$global:NUPIDS + $(Get-WmiObject win32_process | Where {$_.ParentProcessId -eq $UPID})
             }
         } 
         If($NUPIDS.Count -eq 0 ) 
@@ -575,7 +564,7 @@ Function log([array]$log)
 
 Function createReport
 {
-    $d = $(get-date).ToUniversalTime().ToString("yyyy-MM-dd_HH.mm.ssZ")
+    $d = $(get-date).ToUniversalTime().ToString("yyyy-MM-ddTHH.mm.ssZ")
     $d | Add-Content testProtocol.txt
     $result = "GOOD"
     ForEach($f in $(Get-ChildItem -Filter *.stdout.log))
@@ -592,7 +581,8 @@ Function createReport
   $result | Add-Content testProtocol.txt
   Push-Location
     Set-Location $INNERWORKDIR
-    Compress-Archive -Path tmp -DestinationPath "$INNERWORKDIR\ArangoDB\innerlogs.zip"
+    Write-Host "Compress-Archive -Path `"$INNERWORKDIR\tmp\`" -DestinationPath `"$INNERWORKDIR\ArangoDB\innerlogs.zip`""
+    Compress-Archive -Path "$INNERWORKDIR\tmp\" -DestinationPath "$INNERWORKDIR\ArangoDB\innerlogs.zip"
   Pop-Location
 
   ForEach($log in $(Get-ChildItem -Filter "*.log"))
@@ -672,11 +662,11 @@ Function runTests
 
     If($result -eq "GOOD")
     {
-    Exit 0
+        Return $true
     }
     Else
     {
-    Exit 1
+        Return $false
     }   
 }
 
@@ -689,7 +679,6 @@ Function oskar
 Function oskar1
 {
     showConfig
-    #buildStaticArangodb
     buildArangoDB
     oskar
 }
@@ -697,7 +686,6 @@ Function oskar1
 Function oskar2
 {
     showConfig
-    #buildStaticArangodb
     buildArangoDB
     cluster
     oskar
@@ -709,7 +697,6 @@ Function oskar2
 Function oskar4
 {
     showConfig
-    #buildStaticArangodb
     buildArangoDB
     rocksdb
     cluster
@@ -728,7 +715,6 @@ Function oskar4
 Function oskar8
 {
     showConfig
-    #buildStaticArangodb
     enterprise
     buildArangoDB
     rocksdb

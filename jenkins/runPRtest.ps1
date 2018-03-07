@@ -20,6 +20,10 @@ If(-Not($?))
 
 lockDirectory
 updateOskar
+If($(Get-Module).Name -ccontains "oskar")
+{
+    Remove-Module oskar
+}
 Import-Module "$OSKARDIR\oskar\powershell\oskar.psm1"
 clearResults
 
@@ -38,4 +42,4 @@ Set-Location "$OSKARDIR\oskar"
 moveResultsToWorkspace
 unlockDirectory
 
-exit $Error
+Return $Error
