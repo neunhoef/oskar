@@ -355,12 +355,6 @@ Function buildArangoDB
     buildWindows
 }
 
-Function buildStaticArangodb
-{
-    staticExecutablesOn
-    buildArangoDB
-}
-
 Function moveResultsToWorkspace
 {
   Write-Host "Moving reports and logs to $env:WORKSPACE ..."
@@ -685,7 +679,6 @@ Function oskar
 Function oskar1
 {
     showConfig
-    #buildStaticArangodb
     buildArangoDB
     oskar
 }
@@ -693,7 +686,6 @@ Function oskar1
 Function oskar2
 {
     showConfig
-    #buildStaticArangodb
     buildArangoDB
     cluster
     oskar
@@ -705,7 +697,6 @@ Function oskar2
 Function oskar4
 {
     showConfig
-    #buildStaticArangodb
     buildArangoDB
     rocksdb
     cluster
@@ -724,7 +715,6 @@ Function oskar4
 Function oskar8
 {
     showConfig
-    #buildStaticArangodb
     enterprise
     buildArangoDB
     rocksdb
