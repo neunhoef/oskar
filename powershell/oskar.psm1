@@ -429,7 +429,7 @@ Function unittest($test,$output)
 {
     $PORT=Get-Random -Minimum 20000 -Maximum 65535
     Set-Location "$INNERWORKDIR\ArangoDB"
-    [array]$global:UPIDS = $global:UPIDS+$(Start-Process -FilePath "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\arangosh.exe" -ArgumentList " -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\UnitTests\unittest.js -- $test" -NoNewWindow -RedirectStandardOutput "$output.stdout.log" -RedirectStandardError "$output.stderr.log" -PassThru -Wait).Id
+    [array]$global:UPIDS = $global:UPIDS+$(Start-Process -FilePath "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\arangosh.exe" -ArgumentList " -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\UnitTests\unittest.js -- $test" -NoNewWindow -RedirectStandardOutput "$output.stdout.log" -RedirectStandardError "$output.stderr.log" -PassThru).Id
 }
 
 Function launchSingleTests
@@ -525,10 +525,10 @@ Function waitForProcesses($seconds)
         ForEach($UPID in $UPIDS)
         {
             Write-Host "Try $UPID"
-            If(Get-Process $UPID -ErrorAction SilentlyContinue)
+            If(Get-WmiObject win32_process | Where {$_.ParentProcessId -eq $UPID})
             {
                 Write-Host "Got $UPID"
-                [array]$global:NUPIDS = $NUPIDS + $UPID
+                [array]$global:NUPIDS = $NUPIDS + $(Get-WmiObject win32_process | Where {$_.ParentProcessId -eq $UPID})
             }
         } 
         If($NUPIDS.Count -eq 0 ) 
