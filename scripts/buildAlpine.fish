@@ -31,7 +31,7 @@ cmake $argv \
       -DUSE_JEMALLOC=Off \
       -DCMAKE_INSTALL_PREFIX=/ \
       -DSTATIC_EXECUTABLES=On \
-      .. > work/cmakeAlpine.log ^&1
+      .. > $INNERWORKDIR/cmakeAlpine.log ^&1
 
 or exit $status
 
