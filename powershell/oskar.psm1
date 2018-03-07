@@ -429,7 +429,7 @@ Function unittest($test)
 {
     $PORT=Get-Random -Minimum 20000 -Maximum 65535
     Set-Location "$INNERWORKDIR\ArangoDB"
-    [array]$global:UPIDS = $global:UPIDS+$(Start-Process -FilePath "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\arangosh.exe" -ArgumentList " -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\UnitTests\unittest.js -- $test" -NoNewWindow -PassThru -ErrorAction SilentlyContinue).Id
+    [array]$global:UPIDS = $global:UPIDS+$(Start-Process -FilePath "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\arangosh.exe" -ArgumentList " -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\UnitTests\unittest.js -- $test" -PassThru).Id
 }
 
 Function launchSingleTests
@@ -444,7 +444,7 @@ Function launchSingleTests
         {
             Write-Host "Launching $test"
         }
-        unittest "$($test[0]) --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort $($portBase + 99) $($test[2..$($test.Length)]) --skipNonDeterministic true --skipTimeCritical true" | Tee-Object -FilePath "$($test[0])_$($test[1]).log"
+        unittest "$($test[0]) --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort $($portBase + 99) $($test[2..$($test.Length)]) --skipNonDeterministic true --skipTimeCritical true" | Add-Content -Path "$($test[0])_$($test[1]).log"
         $portBase = $($portBase + 100)
         Start-Sleep 5
     }
@@ -485,7 +485,7 @@ Function launchClusterTests
         {
             Write-Host "Launching $test"
         }
-        unittest "$($test[0]) --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort $($portBase + 99) $($test[2..$($test.Length)]) --skipNonDeterministic true --skipTimeCritical true" | Tee-Object -FilePath "$($test[0])_$($test[1]).log"
+        unittest "$($test[0]) --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort $($portBase + 99) $($test[2..$($test.Length)]) --skipNonDeterministic true --skipTimeCritical true" | Add-Content -Path "$($test[0])_$($test[1]).log"
         $portBase = $($portBase + 100)
         Start-Sleep 5
     }
@@ -496,7 +496,7 @@ Function launchClusterTests
         {
             Write-Host "Launching $test"
         }
-        unittest "$($test[0]) --test $($test[2]) --storageEngine $STORAGEENGINE --cluster true --minPort $portBase --maxPort $($portBase + 99) --skipNonDeterministic true" | Tee-Object -FilePath "$($test[0])_$($test[1]).log"
+        unittest "$($test[0]) --test $($test[2]) --storageEngine $STORAGEENGINE --cluster true --minPort $portBase --maxPort $($portBase + 99) --skipNonDeterministic true" | Add-Content -Path "$($test[0])_$($test[1]).log"
         $portBase = $($portBase + 100)
         Start-Sleep 5
     }
