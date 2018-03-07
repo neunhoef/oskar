@@ -29,4 +29,4 @@ cmake $argv \
       $GOLD \
       ..
 and echo Running make, output in work/buildArangoDB.log
-and nice make -j$PARALLELISM ^&1 > ../buildArangoDB.log
+and nice make -j$PARALLELISM $INNERWORKDIR/buildArangoDB.log ^&1
