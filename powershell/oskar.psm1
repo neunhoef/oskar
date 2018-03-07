@@ -593,24 +593,27 @@ Function createReport
     Set-Location $INNERWORKDIR
     Compress-Archive -Path tmp -DestinationPath "$INNERWORKDIR\ArangoDB\innerlogs.zip"
   Pop-Location
-  
-  $cores = Get-ChildItem -Filter "core*"
-  $archives = Get-ChildItem -Filter "*.zip"
-  $logs = Get-ChildItem -Filter "*.log"
-  Write-Host "Compress-Archive -Path $logs -DestinationPath `"$INNERWORKDIR\testreport-$d.zip`""
-  Compress-Archive -Path $logs -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
-  Write-Host "Compress-Archive -Path $cores -Update -DestinationPath `"$INNERWORKDIR\testreport-$d.zip`""
-  Compress-Archive -Path $cores -Update -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
-  Write-Host "Compress-Archive -Path $archives -Update -DestinationPath `"$INNERWORKDIR\testreport-$d.zip`""
-  Compress-Archive -Path $archives -Update -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
+
+  ForEach($log in $(Get-ChildItem -Filter "*.log"))
+  {
+    Write-Host "Compress-Archive -Path $log -Update -DestinationPath `"$INNERWORKDIR\testreport-$d.zip`""
+    Compress-Archive -Path $log -Update -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
+    Remove-Item -Recurse -Force $log 
+  }
+  ForEach($archive in $(Get-ChildItem -Filter "*.zip"))
+  {
+    Write-Host "Compress-Archive -Path $archive -Update -DestinationPath `"$INNERWORKDIR\testreport-$d.zip`""
+    Compress-Archive -Path $archive -Update -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
+    Remove-Item -Recurse -Force $archive 
+  }
+  ForEach($core in $(Get-ChildItem -Filter "core*"))
+  {
+    Write-Host "Compress-Archive -Path $core -Update -DestinationPath `"$INNERWORKDIR\testreport-$d.zip`""
+    Compress-Archive -Path $core -Update -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
+    Remove-Item -Recurse -Force $core 
+  }
   Write-Host "Compress-Archive -Path testProtocol.txt -Update -DestinationPath `"$INNERWORKDIR\testreport-$d.zip`""
   Compress-Archive -Path testProtocol.txt -Update -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
-  Write-Host "Remove-Item -Recurse -Force $logs"
-  Remove-Item -Recurse -Force $logs
-  Write-Host "Remove-Item -Recurse -Force $cores"
-  Remove-Item -Recurse -Force $cores
-  Write-Host "Remove-Item -Recurse -Force $archives"
-  Remove-Item -Recurse -Force $archives
   Write-Host "Remove-Item -Recurse -Force testProtocol.txt"
   Remove-Item -Recurse -Force testProtocol.txt
   log "$d $TESTSUITE $result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE" $repoState $repoStateEnterprise $badtests ""
@@ -630,6 +633,10 @@ Function runTests
     }
     $TMPDIR = "$INNERWORKDIR\tmp"
     Set-Location "$INNERWORKDIR\ArangoDB"
+    ForEach($log in $(Get-ChildItem -Filter "*.log"))
+    {
+        Remove-Item -Recurse -Force $log 
+    }
 
     Switch -Regex ($TESTSUITE)
     {
