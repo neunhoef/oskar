@@ -366,8 +366,8 @@ Function moveResultsToWorkspace
   Write-Host "Moving reports and logs to $env:WORKSPACE ..."
   ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter testreport*))
   {
-    Write-Host "Move $file"
-    Move-Item -Path $file -Destination $env:WORKSPACE
+    Write-Host "Move $INNERWORKDIR\$file"
+    Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE
   }
   If(Test-Path -PathType Leaf $INNERWORKDIR\test.log)
   {
