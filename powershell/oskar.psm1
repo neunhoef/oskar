@@ -429,7 +429,7 @@ Function unittest($test,$output)
 {
     $PORT=Get-Random -Minimum 20000 -Maximum 65535
     Set-Location "$INNERWORKDIR\ArangoDB"
-    [array]$global:UPIDS = $global:UPIDS+$(Start-Process -FilePath "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\arangosh.exe" -ArgumentList " -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\UnitTests\unittest.js -- $test" -NoNewWindow -RedirectStandardOutput "$output.stdout.log" -RedirectStandardError "$output.stderr.log" -PassThru).Id
+    $UPIDS = $UPIDS+$(Start-Process -FilePath "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\arangosh.exe" -ArgumentList " -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\UnitTests\unittest.js -- $test" -NoNewWindow -RedirectStandardOutput "$output.stdout.log" -RedirectStandardError "$output.stderr.log" -PassThru).Id
 }
 
 Function launchSingleTests
@@ -448,7 +448,7 @@ Function launchSingleTests
         $portBase = $($portBase + 100)
         Start-Sleep 5
     }
-    $UPIDS = $null
+    [array]$global:UPIDS = $null
     test1 "shell_server",""
     test1 "shell_client",""
     test1 "recovery","0","--testBuckets","4/0"
@@ -500,7 +500,7 @@ Function launchClusterTests
         $portBase = $($portBase + 100)
         Start-Sleep 5
     }
-    $UPIDS = $null
+    [array]$global:UPIDS = $null
     test3 "resilience","move","js/server/tests/resilience/moving-shards-cluster.js"
     test3 "resilience","failover","js/server/tests/resilience/resilience-synchronous-repl-cluster.js"
     test1 "shell_client",""
@@ -527,7 +527,7 @@ Function waitForProcesses($seconds)
         {
             If(Get-WmiObject win32_process | Where {$_.ParentProcessId -eq $UPID})
             {
-                [array]$global:NUPIDS = $NUPIDS + $(Get-WmiObject win32_process | Where {$_.ParentProcessId -eq $UPID})
+                $NUPIDS = $NUPIDS + $(Get-WmiObject win32_process | Where {$_.ParentProcessId -eq $UPID})
             }
         } 
         If($NUPIDS.Count -eq 0 ) 
@@ -551,13 +551,13 @@ Function waitOrKill($seconds)
     {
         ForEach($NUPID in $NUPIDS)
         {
-            Stop-Process -Id $NUPID
+            Stop-Process -Id $NUPID.Handle
         } 
         If(waitForProcesses 30) 
         {
             ForEach($NUPID in $NUPIDS)
             {
-                Stop-Process -Force -Id $NUPID
+                Stop-Process -Force -Id $NUPID.Handle
             } 
             waitForProcesses 15  
         }
@@ -575,10 +575,10 @@ Function log([array]$log)
 
 Function createReport
 {
-    $d = $(Get-Date -UFormat +%Y-%M-%D_%H.%M.%SZ)
+    $d = $(get-date).ToUniversalTime().ToString("yyyy-MM-dd_HH.mm.ssZ")
     $d | Add-Content testProtocol.txt
     $result = "GOOD"
-    ForEach($f in $(Get-ChildItem -Filter *.log))
+    ForEach($f in $(Get-ChildItem -Filter *.stdout.log))
     {
         If(-Not($(Get-Content $f -Tail 1) -eq "Success"))
         {
@@ -632,7 +632,7 @@ Function runTests
     {
         New-Item -ItemType Directory -Path tmp
     }
-    $TMPDIR = "$INNERWORKDIR\tmp"
+    $env:TMPDIR = "$INNERWORKDIR\tmp"
     Set-Location "$INNERWORKDIR\ArangoDB"
     ForEach($log in $(Get-ChildItem -Filter "*.log"))
     {
