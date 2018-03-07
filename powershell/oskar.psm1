@@ -522,12 +522,11 @@ Function waitForProcesses($seconds)
 {
     While($true)
     {
+        [array]$global:NUPIDS = $null
         ForEach($UPID in $UPIDS)
         {
-            Write-Host "Try $UPID"
             If(Get-WmiObject win32_process | Where {$_.ParentProcessId -eq $UPID})
             {
-                Write-Host "Got $UPID"
                 [array]$global:NUPIDS = $NUPIDS + $(Get-WmiObject win32_process | Where {$_.ParentProcessId -eq $UPID})
             }
         } 
