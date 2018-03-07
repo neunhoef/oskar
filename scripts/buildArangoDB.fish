@@ -28,4 +28,5 @@ cmake $argv \
       -DUSE_JEMALLOC=On \
       $GOLD \
       ..
-and nice make -j$PARALLELISM
+and echo Running make, output in work/buildArangoDB.log
+and nice make -j$PARALLELISM ^&1 > ../buildArangoDB.log

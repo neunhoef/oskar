@@ -35,7 +35,8 @@ or exit $status
 
 mkdir install
 set -x DESTDIR (pwd)/install
-nice make -j$PARALLELISM install
+echo Running make (static build), output in work/buildAlpine.log
+nice make -j$PARALLELISM install ^&1 > ../buildAlpine.log
 and cd install
 and if test -z "$NOSTRIP"
   echo Stripping executables...
