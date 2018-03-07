@@ -18,6 +18,8 @@ if test -z "$NO_RM_BUILD"
 end
 cd build
 
+echo cmake $argv -DCMAKE_BUILD_TYPE=$BUILDTYPE -DCMAKE_CXX_COMPILER=$CCACHEBINPATH/g++ -DCMAKE_C_COMPILER=$CCACHEBINPATH/gcc -DUSE_MAINTAINER_MODE=$MAINTAINER -DUSE_ENTERPRISE=$ENTERPRISEEDITION -DUSE_JEMALLOC=Off -DCMAKE_INSTALL_PREFIX=/ -DSTATIC_EXECUTABLES=On ..
+
 cmake $argv \
       -DCMAKE_BUILD_TYPE=$BUILDTYPE \
       -DCMAKE_CXX_COMPILER=$CCACHEBINPATH/g++ \
@@ -36,5 +38,6 @@ set -x DESTDIR (pwd)/install
 nice make -j$PARALLELISM install
 and cd install
 and if test -z "$NOSTRIP"
+  echo Stripping executables...
   strip usr/sbin/arangod usr/bin/arangoimp usr/bin/arangosh usr/bin/arangovpack usr/bin/arangoexport usr/bin/arangobench usr/bin/arangodump usr/bin/arangorestore
 end
