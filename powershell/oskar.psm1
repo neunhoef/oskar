@@ -51,7 +51,7 @@ Function lockDirectory
                Break
             }
             Write-Host "Directory is locked, waiting..."
-            Get-Date
+            $(get-date).ToUniversalTime().ToString("yyyy-MM-ddTHH.mm.ssZ")
             Start-Sleep -Seconds 15
         }
     } 
@@ -404,7 +404,7 @@ Function noteStartAndRepoState
     {
         Remove-Item -Force testProtocol.txt
     }
-    $(Get-Date -UFormat +%Y-%M-%D_%H.%M.%SZ) | Add-Content testProtocol.txt
+    $(get-date).ToUniversalTime().ToString("yyyy-MM-ddTHH.mm.ssZ") | Add-Content testProtocol.txt
     Write-Output "========== Status of main repository:" | Add-Content testProtocol.txt
     Write-Host "========== Status of main repository:"
     ForEach($line in $repoState)
@@ -429,7 +429,7 @@ Function unittest($test,$output)
 {
     $PORT=Get-Random -Minimum 20000 -Maximum 65535
     Set-Location "$INNERWORKDIR\ArangoDB"
-    $UPIDS = $UPIDS+$(Start-Process -FilePath "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\arangosh.exe" -ArgumentList " -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\UnitTests\unittest.js -- $test" -NoNewWindow -RedirectStandardOutput "$output.stdout.log" -RedirectStandardError "$output.stderr.log" -PassThru).Id
+    [array]$global:UPIDS = [array]$global:UPIDS+$(Start-Process -FilePath "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\arangosh.exe" -ArgumentList " -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\UnitTests\unittest.js -- $test" -NoNewWindow -RedirectStandardOutput "$output.stdout.log" -RedirectStandardError "$output.stderr.log" -PassThru).Id
 }
 
 Function launchSingleTests
@@ -527,7 +527,7 @@ Function waitForProcesses($seconds)
         {
             If(Get-WmiObject win32_process | Where {$_.ParentProcessId -eq $UPID})
             {
-                $NUPIDS = $NUPIDS + $(Get-WmiObject win32_process | Where {$_.ParentProcessId -eq $UPID})
+                [array]$global:NUPIDS = [array]$global:NUPIDS + $(Get-WmiObject win32_process | Where {$_.ParentProcessId -eq $UPID})
             }
         } 
         If($NUPIDS.Count -eq 0 ) 
@@ -575,7 +575,7 @@ Function log([array]$log)
 
 Function createReport
 {
-    $d = $(get-date).ToUniversalTime().ToString("yyyy-MM-dd_HH.mm.ssZ")
+    $d = $(get-date).ToUniversalTime().ToString("yyyy-MM-ddTHH.mm.ssZ")
     $d | Add-Content testProtocol.txt
     $result = "GOOD"
     ForEach($f in $(Get-ChildItem -Filter *.stdout.log))
