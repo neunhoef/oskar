@@ -133,13 +133,13 @@ function launchClusterTests
   set -g launchCount (math $launchCount + 1)
   return 1
 end
-
-function waitForProcesses
+\r
+fmunction waitForProcesses
   set i $argv[1]
   set launcher $argv[2]
   while true
     # Launch if necessary:
-    while test (math (count (jobs -p)) * $launchFactor) -lt $PARALLELISM
+    while test (math (count (jobs -p))"*$launchFactor)" -lt $PARALLELISM
       if test -z "$launcher" ; break ; end
       if eval $launcher ; break ; end
     end
