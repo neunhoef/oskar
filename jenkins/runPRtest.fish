@@ -9,6 +9,7 @@ if test $status != 0 ; echo Did not find oskar and helpers ; exit 1 ; end
 lockDirectory ; updateOskar ; clearResults
 
 eval $EDITION ; eval $STORAGE_ENGINE ; eval $TEST_SUITE
+parallelism 12
 
 switchBranches $ARANGODB_BRANCH $ENTERPRISE_BRANCH
 and oskar1

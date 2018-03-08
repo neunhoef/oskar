@@ -3,6 +3,10 @@
 set -g repoState ""
 set -g repoStateEnterprise ""
 
+if test -z "$PARALLELISM"
+  set -g PARALLELISM 64
+end
+
 function getRepoState
   set -g repoState (git status -b -s | grep -v "^[?]")
   if test $ENTERPRISEEDITION = On 
@@ -31,12 +35,15 @@ function noteStartAndRepoState
   end
 end
 
-function launchSingleTests
+function resetLaunch
   noteStartAndRepoState
-  echo Launching tests...
-
+  set -g launchFactor $argv[1]
   set -g portBase 10000
+  set -g launchCount 0
+  echo Launching tests...
+end
 
+function launchSingleTests
   function test1
     if test $VERBOSEOSKAR = On ; echo Launching $argv ; end
 
@@ -51,36 +58,36 @@ function launchSingleTests
     sleep 5
   end
 
-  test1 shell_server ""
-  test1 shell_client ""
-  test1 recovery 0 --testBuckets 4/0
-  test1 recovery 1 --testBuckets 4/1
-  test1 recovery 2 --testBuckets 4/2
-  test1 recovery 3 --testBuckets 4/3
-  test1 replication_sync ""
-  test1 replication_static ""
-  test1 replication_ongoing ""
-  test1 http_server ""
-  test1 ssl_server ""
-  test1 shell_server_aql 0 --testBuckets 5/0
-  test1 shell_server_aql 1 --testBuckets 5/1
-  test1 shell_server_aql 2 --testBuckets 5/2
-  test1 shell_server_aql 3 --testBuckets 5/3
-  test1 shell_server_aql 4 --testBuckets 5/4
-  test1 dump ""
-  test1 server_http ""
-  test1 agency ""
-  test1 shell_replication ""
-  test1 http_replication ""
-  test1 catch ""
+  switch $launchCount
+    case 0 ; test1 shell_server ""
+    case 1 ; test1 shell_client ""
+    case 2 ; test1 recovery 0 --testBuckets 4/0
+    case 3 ; test1 recovery 1 --testBuckets 4/1
+    case 4 ; test1 recovery 2 --testBuckets 4/2
+    case 5 ; test1 recovery 3 --testBuckets 4/3
+    case 6 ; test1 replication_sync ""
+    case 7 ; test1 replication_static ""
+    case 8 ; test1 replication_ongoing ""
+    case 9 ; test1 http_server ""
+    case 10 ; test1 ssl_server ""
+    case 11 ; test1 shell_server_aql 0 --testBuckets 5/0
+    case 12 ; test1 shell_server_aql 1 --testBuckets 5/1
+    case 13 ; test1 shell_server_aql 2 --testBuckets 5/2
+    case 14 ; test1 shell_server_aql 3 --testBuckets 5/3
+    case 15 ; test1 shell_server_aql 4 --testBuckets 5/4
+    case 16 ; test1 dump ""
+    case 17 ; test1 server_http ""
+    case 18 ; test1 agency ""
+    case 19 ; test1 shell_replication ""
+    case 20 ; test1 http_replication ""
+    case 21 ; test1 catch ""
+    case '*' ; return 0
+  end
+  set -g launchCount (math $launchCount + 1)
+  return 1
 end
 
 function launchClusterTests
-  noteStartAndRepoState
-  echo Launching tests...
-
-  set -g portBase 10000
-
   function test1
     if test $VERBOSEOSKAR = On ; echo Launching $argv ; end
     set -l t $argv[1]
@@ -105,38 +112,46 @@ function launchClusterTests
     sleep 5
   end
 
-  test3 resilience move js/server/tests/resilience/moving-shards-cluster.js
-  test3 resilience failover js/server/tests/resilience/resilience-synchronous-repl-cluster.js
-  test1 shell_client ""
-  test1 shell_server ""
-  test1 http_server ""
-  test1 ssl_server ""
-  test3 resilience sharddist js/server/tests/resilience/shard-distribution-spec.js
-  test1 shell_server_aql 0 --testBuckets 5/0
-  test1 shell_server_aql 1 --testBuckets 5/1
-  test1 shell_server_aql 2 --testBuckets 5/2
-  test1 shell_server_aql 3 --testBuckets 5/3
-  test1 shell_server_aql 4 --testBuckets 5/4
-  test1 dump ""
-  test1 server_http ""
-  test1 agency ""
+  switch $launchCount
+    case 0 ; test3 resilience move js/server/tests/resilience/moving-shards-cluster.js
+    case 1 ; test3 resilience failover js/server/tests/resilience/resilience-synchronous-repl-cluster.js
+    case 2 ; test1 shell_client ""
+    case 3 ; test1 shell_server ""
+    case 4 ; test1 http_server ""
+    case 5 ; test1 ssl_server ""
+    case 6 ; test3 resilience sharddist js/server/tests/resilience/shard-distribution-spec.js
+    case 7 ; test1 shell_server_aql 0 --testBuckets 5/0
+    case 8 ; test1 shell_server_aql 1 --testBuckets 5/1
+    case 9 ; test1 shell_server_aql 2 --testBuckets 5/2
+    case 10 ; test1 shell_server_aql 3 --testBuckets 5/3
+    case 11 ; test1 shell_server_aql 4 --testBuckets 5/4
+    case 12 ; test1 dump ""
+    case 13 ; test1 server_http ""
+    case 14 ; test1 agency ""
+    case '*' ; return 0
+  end
+  set -g launchCount (math $launchCount + 1)
+  return 1
 end
 
 function waitForProcesses
   set i $argv[1]
+  set launcher $argv[2]
   while true
+    # Launch if necessary:
+    while test (math (count (jobs -p)) * $launchFactor) -lt $PARALLELISM
+      if test -z "$launcher" ; break ; end
+      if eval $launcher ; break ; end
+    end
     # Check subprocesses:
-    set pids (jobs -p)
-    if test (count $pids) -eq 0
-      echo
+    if test (count (jobs -p)) -eq 0
       return 1
     end
 
-    echo -n (count $pids) jobs still running, remaining $i "seconds..."\r
+    echo -n (count (jobs -p)) jobs still running, remaining $i "seconds..."
 
     set i (math $i - 5)
     if test $i -lt 0
-      echo
       return 0
     end
 
@@ -145,12 +160,14 @@ function waitForProcesses
 end
 
 function waitOrKill
-  echo Waiting for processes to terminate...
-  if waitForProcesses $argv[1]
+  set timeout $argv[1]
+  set launcher $argv[2]
+  echo Controlling subprocesses...
+  if waitForProcesses $timeout $launcher
     kill (jobs -p)
-    if waitForProcesses 30
+    if waitForProcesses 30 ""
       kill -9 (jobs -p)
-      waitForProcesses 15    # give jobs some time to finish
+      waitForProcesses 15 ""   # give jobs some time to finish
     end
   end
   return 0
@@ -207,16 +224,16 @@ for f in *.log ; rm -f $f ; end
 
 switch $TESTSUITE
   case "cluster"
-    launchClusterTests
-    waitOrKill 1800
+    resetLaunch 4
+    waitOrKill 1800 launchClusterTests
     createReport
   case "single"
-    launchSingleTests
-    waitOrKill 1800
+    resetLaunch 1
+    waitOrKill 1800 launchSingleTests
     createReport
   case "resilience"
-    launchResilienceTests
-    waitOrKill 1800
+    resetLaunch 4
+    waitOrKill 1800 launchResilienceTests
     createReport
   case "*"
     echo Unknown test suite $TESTSUITE
