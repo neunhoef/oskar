@@ -31,4 +31,4 @@ cmake $argv \
       $GOLD \
       .. > $INNERWORKDIR/cmakeArangoDB.log ^&1
 and echo Running make, output in work/buildArangoDB.log
-and nice make -j$PARALLELISM $INNERWORKDIR/buildArangoDB.log ^&1
+and nice make -j$PARALLELISM > $INNERWORKDIR/buildArangoDB.log ^&1
