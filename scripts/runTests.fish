@@ -192,7 +192,7 @@ function createReport
     set binary build/bin/arangod
   end
   echo tar czvf "$INNERWORKDIR/testreport-$d.tar.gz" $logs testProtocol.txt $cores $archives $binary
-  tar czvf "$INNERWORKDIR/testreport-$d.tar.gz" $logs testProtocol.txt $cores $archives
+  tar czvf "$INNERWORKDIR/testreport-$d.tar.gz" $logs testProtocol.txt $cores $archives $binary
   echo rm -rf $cores $archives testProtocol.txt
   rm -rf $cores $archives testProtocol.txt
   log "$d $TESTSUITE $result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE" $repoState $repoStateEnterprise $badtests ""
