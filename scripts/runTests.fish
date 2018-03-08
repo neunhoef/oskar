@@ -55,7 +55,7 @@ function launchSingleTests
       --minPort $portBase --maxPort (math $portBase + 99) $argv \
       --skipNondeterministic true --skipTimeCritical true >"$t""$tt".log ^&1 &
     set -g portBase (math $portBase + 100)
-    sleep 5
+    sleep 1
   end
 
   switch $launchCount
@@ -98,7 +98,7 @@ function launchClusterTests
       --minPort $portBase --maxPort (math $portBase + 99) $argv \
       --skipNonDeterministic true --skipTimeCritical true >"$t""$tt".log ^&1 &
     set -g portBase (math $portBase + 100)
-    sleep 5
+    sleep 1
   end
 
   function test3
@@ -109,7 +109,7 @@ function launchClusterTests
       --minPort $portBase --maxPort (math $portBase + 99) \
       --skipNonDeterministic true >$argv[1]_$argv[2].log ^&1 &
     set -g portBase (math $portBase + 100)
-    sleep 5
+    sleep 1
   end
 
   switch $launchCount
