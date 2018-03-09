@@ -18,6 +18,8 @@ and makeDockerImage arangodb/arangodb-preview:3.3
 and docker push arangodb/arangodb-preview:3.3
 and docker tag arangodb/arangodb-preview:3.3 registry.arangodb.biz:5000/arangodb/linux-community-maintainer:3.3
 and docker push registry.arangodb.biz:5000/arangodb/linux-community-maintainer:3.3
+and docker tag arangodb/arangodb-preview:3.3 arangodb/arangodb-preview:latest
+and docker push arangodb/arangodb-preview:latest
 
 if test $status != 0
   echo Production of community image failed, giving up...
@@ -36,6 +38,8 @@ and makeDockerImage registry.arangodb.biz:5000/arangodb/arangodb-preview:3.3-$KE
 and docker push registry.arangodb.biz:5000/arangodb/arangodb-preview:3.3-$KEY
 and docker tag registry.arangodb.biz:5000/arangodb/arangodb-preview:3.3-$KEY registry.arangodb.biz:5000/arangodb/linux-enterprise-maintainer:3.3
 and docker push registry.arangodb.biz:5000/arangodb/linux-enterprise-maintainer:3.3
+and docker tag registry.arangodb.biz:5000/arangodb/arangodb-preview:3.3-$KEY registry.arangodb.biz:5000/arangodb/arangodb-preview:latest-$KEY
+and docker push registry.arangodb.biz:5000/arangodb/arangodb-preview:latest-$KEY
 
 and begin
   rm -rf $WORKSPACE/imagenames.log
