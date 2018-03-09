@@ -164,21 +164,22 @@ function makeRelease
     echo "Need to set environment variable DOWNLOAD_SYNC_USER."
     return 1
   end
-  set -l v VERSION
-  if test (count $argv) = 0
+  if test (count $argv) -lt 2
     findArangoDBVersion ; or return 1
-    set v $ARANGODB_FULL_VERSION 
   else
-    set v "$argv[1]"
+    set -xg ARANGODB_VERSION "$argv[1]"
+    set -xg ARANGODB_PACKAGE_REVISION "$argv[2]"
+    set -xg ARANGODB_FULL_VERSION "$argv[1]-$argv[2]"
   end
   maintainerOff
   releaseMode
 
   enterprise
+  set -x NOSTRIP dont
   buildStaticArangoDB -DTARGET_ARCHITECTURE=nehalem
   and downloadStarter
   and downloadSyncer
-  and buildPackage $v
+  and buildPackage
 
   if test $status != 0
     echo Building enterprise release failed, stopping.

@@ -4,6 +4,7 @@ set -gx PLATFORM linux
 set -gx UBUNTUBUILDIMAGE neunhoef/ubuntubuildarangodb
 set -gx UBUNTUPACKAGINGIMAGE neunhoef/ubuntupackagearangodb
 set -gx ALPINEBUILDIMAGE neunhoef/alpinebuildarangodb
+set -gx CENTOSPACKAGINGIMAGE neunhoef/centospackagearangodb
 
 function buildUbuntuBuildImage
   cd $WORKDIR
@@ -38,6 +39,17 @@ end
 function pushAlpineBuildImage ; docker push $ALPINEBUILDIMAGE ; end
 function pullAlpineBuildImage ; docker pull $ALPINEBUILDIMAGE ; end
 
+function buildCentosPackagingImage
+  cd $WORKDIR
+  cp -a scripts/buildRPMPackage.sh buildCentos7Packaging.docker/scripts
+  cd $WORKDIR/buildCentos7Packaging.docker
+  docker build -t $CENTOSPACKAGINGIMAGE .
+  rm -f $WORKDIR/buildCentos7Packaging.docker/scripts/*.sh
+  cd $WORKDIR
+end
+function pushCentosPackagingImage ; docker push $CENTOSPACKAGINGIMAGE ; end
+function pullCentosPackagingImage ; docker pull $CENTOSPACKAGINGIMAGE ; end
+
 function remakeImages
   buildUbuntuBuildImage
   pushUbuntuBuildImage
@@ -45,6 +57,8 @@ function remakeImages
   pushAlpineBuildImage
   buildUbuntuPackagingImage
   pushUbuntuPackagingImage
+  buildCentosPackagingImage
+  pushCentosPackagingImage
 end
 
 function runInContainer
@@ -162,9 +176,9 @@ end
 
 function buildDebianPackage
   # This assumes that a static build has already happened
-  # There must be one argument, which is the version number in the
-  # format 3.3.3-1
-  set -l v $argv[1]
+  # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
+  # ARANGODB_FULL_VERSION, for example by running findArangoDBVersion.
+  set -l v "$ARANGODB_FULL_VERSION"
   set -l ch $WORKDIR/work/debian/changelog
   if test -z "$v"
     echo Need one version argument in the form 3.3.3-1.
@@ -196,11 +210,33 @@ function buildDebianPackage
   end
 end
 
+function transformSpec
+  if test (count $argv) != 2
+    echo transformSpec: wrong number of arguments
+    return 1
+  end
+  cp "$argv[1]" "$argv[2]"
+  sed -i -e "s/@PACKAGE_VERSION@/$ARANGODB_VERSION/" "$argv[2]"
+  sed -i -e "s/@PACKAGE_REVISION@/$ARANGODB_PACKAGE_REVISION/" "$argv[2]"
+end
+
+function buildRPMPackage
+  # This assumes that a static build has already happened
+  # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
+  # ARANGODB_FULL_VERSION, for example by running findArangoDBVersion.
+  if test "$ENTERPRISEEDITION" = "On"
+    transformSpec rpm/arangodb3e.spec.in $WORKDIR/work/arangodb3.spec
+  else
+    transformSpec rpm/arangodb3.spec.in $WORKDIR/work/arangodb3.spec
+  end
+  and runInContainer -e ARANGODB_VERSION=$ARANGODB_VERSION -e ARANGODB_PACKAGE_REVISION=$ARANGODB_PACKAGE_REVISION -e ARANGODB_FULL_VERSION=$ARANGODB_FULL_VERSION $CENTOSPACKAGINGIMAGE $SCRIPTSDIR/buildRPMPackage.sh
+end
+
 function buildTarGzPackage
   # This assumes that a static build has already happened
-  # There must be one argument, which is the version number in the
-  # format 3.3.3-1
-  set -l v $argv[1]
+  # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
+  # ARANGODB_FULL_VERSION, for example by running findArangoDBVersion.
+  set -l v "$ARANGODB_FULL_VERSION"
   cd $WORKDIR
   and pushd $WORKDIR/work/ArangoDB/build/install
   and rm -rf bin
@@ -304,7 +340,9 @@ function makeDockerImage
 end
 
 function buildPackage
-  buildDebianPackage $argv
-  # and buildRpmPackage $argv
-  and buildTarGzPackage $argv
+  # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
+  # ARANGODB_FULL_VERSION, for example by running findArangoDBVersion.
+  buildDebianPackage
+  # and buildRpmPackage
+  and buildTarGzPackage
 end
