@@ -329,7 +329,8 @@ Function configureWindows
         New-Item -ItemType Directory -Path "$INNERWORKDIR\ArangoDB\build"
     }
     Set-Location "$INNERWORKDIR\ArangoDB\build"
-    cmake -G "$GENERATOR" -DUSE_MAINTAINER_MODE="$MAINTAINER" -DUSE_ENTERPRISE="$ENTERPRISEEDITION" -DCMAKE_BUILD_TYPE="$BUILDMODE" -DSKIP_PACKAGING="$SKIPPACKAGING" -DSTATIC_EXECUTABLES="$STATICEXECUTABLES -DDebugInformationFormat?OldStyle" "$INNERWORKDIR\ArangoDB"
+    Write-Host "cmake -G `"$GENERATOR`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES -DDebugInformationFormat?OldStyle`" `"$INNERWORKDIR\ArangoDB`""
+    Start-Process -FilePath "cmake" -ArgumentList "-G `"$GENERATOR`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES -DDebugInformationFormat?OldStyle`" `"$INNERWORKDIR\ArangoDB`"" -NoNewWindow -RedirectStandardOutput "$INNERWORKDIR\ArangoDB\cmake-configure.stdout.log" -RedirectStandardError "$INNERWORKDIR\ArangoDB\cmake-configure.stderr.log"
 }
 
 Function buildWindows 
@@ -340,7 +341,8 @@ Function buildWindows
         
     }
     Set-Location "$INNERWORKDIR\ArangoDB\build"
-    cmake --build . --config "$BUILDMODE"
+    Write-Host "cmake --build . --config `"$BUILDMODE`""
+    Start-Process -FilePath "cmake" -ArgumentList "--build . --config `"$BUILDMODE`"" -NoNewWindow -RedirectStandardOutput "$INNERWORKDIR\ArangoDB\cmake-build.stdout.log" -RedirectStandardError "$INNERWORKDIR\ArangoDB\cmake-build.stderr.log"
     Copy-Item "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\*" -Destination "$INNERWORKDIR\ArangoDB\build\bin\"
 }
 
