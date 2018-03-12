@@ -282,13 +282,29 @@ Function updateOskar
 Function clearResults
 {
     Set-Location $INNERWORKDIR
-    ForEach($file in $(Get-ChildItem -Filter testreport*))
+    ForEach($report in $(Get-ChildItem -Filter testreport*))
     {
-        Remove-Item -Force $file
+        Remove-Item -Force $report
+    }
+    ForEach($log in $(Get-ChildItem -Filter "*.log"))
+    {
+    Remove-Item -Recurse -Force $log 
+    }
+    ForEach($archive in $(Get-ChildItem -Filter "*.zip"))
+    {
+        Remove-Item -Recurse -Force $archive 
+    }
+    ForEach($core in $(Get-ChildItem -Filter "core*"))
+    {
+        Remove-Item -Recurse -Force $core 
     }
     If(Test-Path -PathType Leaf -Path test.log)
     {
         Remove-Item -Force test.log
+    }
+    If(Test-Path -PathType Leaf -Path testProtocol.txt)
+    {
+        Remove-Item -Force testProtocol.txt
     }
 }
 
@@ -360,15 +376,31 @@ Function buildArangoDB
 Function moveResultsToWorkspace
 {
   Write-Host "Moving reports and logs to $env:WORKSPACE ..."
-  ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter testreport*))
+  ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter cmake-*))
   {
     Write-Host "Move $INNERWORKDIR\$file"
     Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE
   }
   If(Test-Path -PathType Leaf $INNERWORKDIR\test.log)
   {
-    Write-Host "Move $INNERWORKDIR\test.log"
-    Move-Item -Path "$INNERWORKDIR\test.log" -Destination $env:WORKSPACE
+    If($(Get-Content $f -Head 1) -eq "BAD")
+    {
+        Write-Host "Move $INNERWORKDIR\test.log"
+        Move-Item -Path "$INNERWORKDIR\test.log" -Destination $env:WORKSPACE
+        ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter testreport*))
+        {
+            Write-Host "Move $INNERWORKDIR\$file"
+            Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE
+        } 
+    }
+    Else
+    {
+        ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter testreport*))
+        {
+            Write-Host "Remove $INNERWORKDIR\$file"
+            Remove-Item -Force "$INNERWORKDIR\$file" 
+        } 
+    }
   }
 }
 
@@ -591,24 +623,20 @@ Function createReport
   {
     Write-Host "Compress-Archive -Path $log -Update -DestinationPath `"$INNERWORKDIR\testreport-$d.zip`""
     Compress-Archive -Path $log -Update -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
-    Remove-Item -Recurse -Force $log 
   }
   ForEach($archive in $(Get-ChildItem -Filter "*.zip"))
   {
     Write-Host "Compress-Archive -Path $archive -Update -DestinationPath `"$INNERWORKDIR\testreport-$d.zip`""
     Compress-Archive -Path $archive -Update -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
-    Remove-Item -Recurse -Force $archive 
   }
   ForEach($core in $(Get-ChildItem -Filter "core*"))
   {
     Write-Host "Compress-Archive -Path $core -Update -DestinationPath `"$INNERWORKDIR\testreport-$d.zip`""
     Compress-Archive -Path $core -Update -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
-    Remove-Item -Recurse -Force $core 
   }
   Write-Host "Compress-Archive -Path testProtocol.txt -Update -DestinationPath `"$INNERWORKDIR\testreport-$d.zip`""
   Compress-Archive -Path testProtocol.txt -Update -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
   Write-Host "Remove-Item -Recurse -Force testProtocol.txt"
-  Remove-Item -Recurse -Force testProtocol.txt
   log "$d $TESTSUITE $result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE" $repoState $repoStateEnterprise $badtests ""
 }
 
