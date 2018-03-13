@@ -279,6 +279,22 @@ Function updateOskar
 
 }
 
+Function disableDebugSymbols
+{
+    ForEach($file in (Get-ChildItem -Path "$INNERWORKDIR\ArangoDB" -Filter "CMakeLists.txt" -Recurse -ErrorAction SilentlyContinue -Force).FullName)
+    {
+        (Get-Content $file).Replace('/Zi','/Z7') | Set-Content $file
+    }
+}
+
+Function enableDebugSymbols
+{
+    ForEach($file in (Get-ChildItem -Path "$INNERWORKDIR\ArangoDB" -Filter "CMakeLists.txt" -Recurse -ErrorAction SilentlyContinue -Force).FullName)
+    {
+        (Get-Content $file).Replace('/Z7','/Zi') | Set-Content $file
+    }
+}
+
 Function clearResults
 {
     Set-Location $INNERWORKDIR
