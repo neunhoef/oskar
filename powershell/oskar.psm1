@@ -1,33 +1,33 @@
-Import-Module VSSetup
-
 $WORKDIR = $pwd
 If(-Not(Test-Path -PathType Container -Path "work"))
 {
     New-Item -ItemType Directory -Path "work"
 }
 $INNERWORKDIR = "$WORKDIR\work"
-$clcache = $(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter cl.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx86\\x64"}).FullName
 $GENERATOR = "Visual Studio 15 2017 Win64"
-$env:GYP_MSVS_OVERRIDE_PATH= Split-Path -Parent $clcache
+If(Import-Module VSSetup)
+{
+    $env:GYP_MSVS_OVERRIDE_PATH= Split-Path -Parent $((Get-ChildItem (Get-VSSetupInstance).InstallationPath -Filter cl.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx86\\x64"}).FullName)
+}
 $env:CLCACHE_DIR="$INNERWORKDIR\.clcache.windows"
 
 Function showConfig
 {
-  Write-Host "Workdir               :"$WORKDIR
-  Write-Host "Inner workdir         :"$INNERWORKDIR
-  Write-Host "Cachedir              :"$env:CLCACHE_DIR
-  Write-Host "Maintainer            :"$MAINTAINER
-  Write-Host "Buildmode             :"$BUILDMODE
-  Write-Host "Skip Packaging        :"$SKIPPACKAGING
-  Write-Host "Static Executables    :"$STATICEXECUTABLES
-  Write-Host "Generator             :"$GENERATOR
-  Write-Host "CL                    :"$env:CLCACHE_CL
-  Write-Host "Parallelism           :"$PARALLELISM
-  Write-Host "Enterpriseedition     :"$ENTERPRISEEDITION
-  Write-Host "Storage engine        :"$STORAGEENGINE
-  Write-Host "Test suite            :"$TESTSUITE
-  Write-Host "Verbose               :"$VERBOSEOSKAR
-  Write-Host "System User           :"$env:USERDOMAIN\$env:USERNAME
+    Write-Host "System User           :"$env:USERDOMAIN\$env:USERNAME
+    Write-Host "Workdir               :"$WORKDIR
+    Write-Host "Inner workdir         :"$INNERWORKDIR
+    Write-Host "Cachedir              :"$env:CLCACHE_DIR
+    Write-Host "Cache                 :"$env:CLCACHE_CL
+    Write-Host "Generator             :"$GENERATOR
+    Write-Host "Maintainer            :"$MAINTAINER
+    Write-Host "Enterpriseedition     :"$ENTERPRISEEDITION
+    Write-Host "Buildmode             :"$BUILDMODE
+    Write-Host "Skip Packaging        :"$SKIPPACKAGING
+    Write-Host "Static Executables    :"$STATICEXECUTABLES
+    Write-Host "Test suite            :"$TESTSUITE
+    Write-Host "Storage engine        :"$STORAGEENGINE
+    Write-Host "Verbose               :"$VERBOSEOSKAR
+    Write-Host "Parallelism           :"$PARALLELISM
 }
 
 Function lockDirectory
