@@ -51,7 +51,7 @@ Function lockDirectory
                Break
             }
             Write-Host "Directory is locked, waiting..."
-            $(get-date).ToUniversalTime().ToString("yyyy-MM-ddTHH.mm.ssZ")
+            $(Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH.mm.ssZ")
             Start-Sleep -Seconds 15
         }
     } 
@@ -188,7 +188,7 @@ Function checkoutArangoDB
     Set-Location $INNERWORKDIR
     If(-Not(Test-Path -PathType Container -Path "ArangoDB"))
     {
-        git clone https://github.com/arangodb/ArangoDB
+        Start-Process -FilePath "git" -ArgumentList "clone https://github.com/arangodb/ArangoDB" -NoNewWindow -PassThru | Wait-Process
     }
 }
 
@@ -202,8 +202,8 @@ Function checkoutEnterprise
         {
             Remove-Item -Force "$HOME\.ssh\known_hosts"
         }
-        ssh -o StrictHostKeyChecking=no git@github.com
-        git clone ssh://git@github.com/arangodb/enterprise
+        Start-Process -FilePath "ssh" -ArgumentList "-o StrictHostKeyChecking=no git@github.com" -NoNewWindow -PassThru | Wait-Process
+        Start-Process -FilePath "git" -ArgumentList "clone ssh://git@github.com/arangodb/enterprise" -NoNewWindow -PassThru | Wait-Process
     }
 }
 
@@ -229,38 +229,38 @@ Function switchBranches($branch_c,$branch_e)
     Set-Location "$INNERWORKDIR\ArangoDB"
     If (-Not($Error)) 
     {
-        git checkout -- .
+        Start-Process -FilePath "git" -ArgumentList "checkout -- ." -NoNewWindow -PassThru | Wait-Process
     }
     If (-Not($Error)) 
     {
-        git pull
+        Start-Process -FilePath "git" -ArgumentList "pull" -NoNewWindow -PassThru | Wait-Process
     }
     If (-Not($Error)) 
     {
-        git checkout $branch_c
+        Start-Process -FilePath "git" -ArgumentList "checkout $branch_c" -NoNewWindow -PassThru | Wait-Process
     }
     If (-Not($Error)) 
     {
-        git pull
+        Start-Process -FilePath "git" -ArgumentList "pull" -NoNewWindow -PassThru | Wait-Process
     }
     If($ENTERPRISEEDITION -eq "On")
     {
         Set-Location "$INNERWORKDIR\ArangoDB\enterprise"
         If (-Not($Error)) 
         {
-            git checkout -- .
+            Start-Process -FilePath "git" -ArgumentList "checkout -- ." -NoNewWindow -PassThru | Wait-Process
         }
         If (-Not($Error)) 
         {
-            git pull
+            Start-Process -FilePath "git" -ArgumentList "pull" -NoNewWindow -PassThru | Wait-Process
         }
         If (-Not($Error)) 
         {
-            git checkout $branch_e
+            Start-Process -FilePath "git" -ArgumentList "checkout $branch_e" -NoNewWindow -PassThru | Wait-Process
         }
         If (-Not($Error)) 
         {
-            git pull
+            Start-Process -FilePath "git" -ArgumentList "pull" -NoNewWindow -PassThru | Wait-Process
         }
     }
 }
@@ -270,11 +270,11 @@ Function updateOskar
     Set-Location $WORKDIR
     If (-Not($Error)) 
     {
-        git checkout -- .
+        Start-Process -FilePath "git" -ArgumentList "checkout -- ." -NoNewWindow -PassThru | Wait-Process
     }
     If (-Not($Error)) 
     {
-        git pull
+        Start-Process -FilePath "git" -ArgumentList "pull" -NoNewWindow -PassThru | Wait-Process
     }
 
 }
@@ -427,7 +427,7 @@ Function noteStartAndRepoState
     {
         Remove-Item -Force testProtocol.txt
     }
-    $(get-date).ToUniversalTime().ToString("yyyy-MM-ddTHH.mm.ssZ") | Add-Content testProtocol.txt
+    $(Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH.mm.ssZ") | Add-Content testProtocol.txt
     Write-Output "========== Status of main repository:" | Add-Content testProtocol.txt
     Write-Host "========== Status of main repository:"
     ForEach($line in $repoState)
@@ -598,7 +598,7 @@ Function log([array]$log)
 
 Function createReport
 {
-    $d = $(get-date).ToUniversalTime().ToString("yyyy-MM-ddTHH.mm.ssZ")
+    $d = $(Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH.mm.ssZ")
     $d | Add-Content testProtocol.txt
     $result = "GOOD"
     ForEach($f in $(Get-ChildItem -Filter *.stdout.log))
