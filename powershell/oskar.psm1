@@ -346,8 +346,8 @@ Function configureWindows
     }
     Set-Location "$INNERWORKDIR\ArangoDB\build"
     Write-Host "Configure: cmake -G `"$GENERATOR`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES -DDebugInformationFormat?OldStyle`" `"$INNERWORKDIR\ArangoDB`""
-    $process = (Start-Process -FilePath "cmake" -ArgumentList "-G `"$GENERATOR`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES -DDebugInformationFormat?OldStyle`" `"$INNERWORKDIR\ArangoDB`"" -RedirectStandardOutput "$INNERWORKDIR\cmake-configure.stdout.log" -RedirectStandardError "$INNERWORKDIR\cmake-configure.stderr.log" -PassThru).HasExited
-    While(((Get-Item "$INNERWORKDIR\cmake-configure.stdout.log").Length -eq 0) -and ((Get-Item "$INNERWORKDIR\cmake-configure.stderr.log").Length -eq 0))
+    $process = (Start-Process -FilePath "cmake" -ArgumentList "-G `"$GENERATOR`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES -DDebugInformationFormat?OldStyle`" `"$INNERWORKDIR\ArangoDB`"" -RedirectStandardOutput "$INNERWORKDIR\cmake-configure.stdout.log" -RedirectStandardError "$INNERWORKDIR\cmake-configure.stderr.log" -PassThru)
+    While(-not($process.HasExited))
     {
         Write-Host "Configure job still running ..."
         Start-Sleep 30
@@ -363,10 +363,10 @@ Function buildWindows
     }
     Set-Location "$INNERWORKDIR\ArangoDB\build"
     Write-Host "Build: cmake --build . --config `"$BUILDMODE`""
-    $process = (Start-Process -FilePath "cmake" -ArgumentList "--build . --config `"$BUILDMODE`"" -Wait -RedirectStandardOutput "$INNERWORKDIR\cmake-build.stdout.log" -RedirectStandardError "$INNERWORKDIR\cmake-build.stderr.log" -PassThru).Id
-    While(((Get-Item "$INNERWORKDIR\cmake-build.stdout.log").Length -eq 0) -and ((Get-Item "$INNERWORKDIR\cmake-build.stderr.log").Length -eq 0))
+    $process = (Start-Process -FilePath "cmake" -ArgumentList "--build . --config `"$BUILDMODE`"" -Wait -RedirectStandardOutput "$INNERWORKDIR\cmake-build.stdout.log" -RedirectStandardError "$INNERWORKDIR\cmake-build.stderr.log" -PassThru)
+    While(-not($process.HasExited))
     {
-        Write-Host "Build job still running ..."
+        Write-Host "Configure job still running ..."
         Start-Sleep 30
     }
     Copy-Item "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\*" -Destination "$INNERWORKDIR\ArangoDB\build\bin\"
