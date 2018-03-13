@@ -346,7 +346,7 @@ Function configureWindows
     }
     Set-Location "$INNERWORKDIR\ArangoDB\build"
     Write-Host "Configure: cmake -G `"$GENERATOR`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES -DDebugInformationFormat?OldStyle`" `"$INNERWORKDIR\ArangoDB`""
-    $process = (Start-Process -FilePath "cmake" -ArgumentList "-G `"$GENERATOR`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES -DDebugInformationFormat?OldStyle`" `"$INNERWORKDIR\ArangoDB`"" -RedirectStandardOutput "$INNERWORKDIR\cmake-configure.stdout.log" -RedirectStandardError "$INNERWORKDIR\cmake-configure.stderr.log").Id
+    $process = (Start-Process -FilePath "cmake" -ArgumentList "-G `"$GENERATOR`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES -DDebugInformationFormat?OldStyle`" `"$INNERWORKDIR\ArangoDB`"" -RedirectStandardOutput "$INNERWORKDIR\cmake-configure.stdout.log" -RedirectStandardError "$INNERWORKDIR\cmake-configure.stderr.log" -PassThru).HasExited
     While($(Get-WmiObject win32_process | Where {$_.ParentProcessId -eq $process}).Count -ne 0)
     {
         Write-Host "Configure job still running ..."
@@ -363,7 +363,7 @@ Function buildWindows
     }
     Set-Location "$INNERWORKDIR\ArangoDB\build"
     Write-Host "Build: cmake --build . --config `"$BUILDMODE`""
-    $process = (Start-Process -FilePath "cmake" -ArgumentList "--build . --config `"$BUILDMODE`"" -Wait -RedirectStandardOutput "$INNERWORKDIR\cmake-build.stdout.log" -RedirectStandardError "$INNERWORKDIR\cmake-build.stderr.log").Id
+    $process = (Start-Process -FilePath "cmake" -ArgumentList "--build . --config `"$BUILDMODE`"" -Wait -RedirectStandardOutput "$INNERWORKDIR\cmake-build.stdout.log" -RedirectStandardError "$INNERWORKDIR\cmake-build.stderr.log" -PassThru).Id
     While($(Get-WmiObject win32_process | Where {$_.ParentProcessId -eq $process}).Count -ne 0)
     {
         Write-Host "Configure job still running ..."
