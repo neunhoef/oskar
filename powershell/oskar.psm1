@@ -381,9 +381,9 @@ Function moveResultsToWorkspace
     Write-Host "Move $INNERWORKDIR\$file"
     Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE
   }
-  If(Test-Path -PathType Leaf $INNERWORKDIR\test.log)
+  If(Test-Path -PathType Leaf "$INNERWORKDIR\test.log")
   {
-    If($(Get-Content $f -Head 1) -eq "BAD")
+    If(Get-Content -Path "$INNERWORKDIR\test.log" -Head 1 | Select-String -Pattern "BAD" -CaseSensitive)
     {
         Write-Host "Move $INNERWORKDIR\test.log"
         Move-Item -Path "$INNERWORKDIR\test.log" -Destination $env:WORKSPACE
