@@ -1,33 +1,33 @@
-Import-Module VSSetup
-
 $WORKDIR = $pwd
 If(-Not(Test-Path -PathType Container -Path "work"))
 {
     New-Item -ItemType Directory -Path "work"
 }
 $INNERWORKDIR = "$WORKDIR\work"
-$clcache = $(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter cl.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx86\\x64"}).FullName
 $GENERATOR = "Visual Studio 15 2017 Win64"
-$env:GYP_MSVS_OVERRIDE_PATH= Split-Path -Parent $clcache
+If(Import-Module VSSetup)
+{
+    $env:GYP_MSVS_OVERRIDE_PATH= Split-Path -Parent $((Get-ChildItem (Get-VSSetupInstance).InstallationPath -Filter cl.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx86\\x64"}).FullName)
+}
 $env:CLCACHE_DIR="$INNERWORKDIR\.clcache.windows"
 
 Function showConfig
 {
-  Write-Host "Workdir               :"$WORKDIR
-  Write-Host "Inner workdir         :"$INNERWORKDIR
-  Write-Host "Cachedir              :"$env:CLCACHE_DIR
-  Write-Host "Maintainer            :"$MAINTAINER
-  Write-Host "Buildmode             :"$BUILDMODE
-  Write-Host "Skip Packaging        :"$SKIPPACKAGING
-  Write-Host "Static Executables    :"$STATICEXECUTABLES
-  Write-Host "Generator             :"$GENERATOR
-  Write-Host "CL                    :"$env:CLCACHE_CL
-  Write-Host "Parallelism           :"$PARALLELISM
-  Write-Host "Enterpriseedition     :"$ENTERPRISEEDITION
-  Write-Host "Storage engine        :"$STORAGEENGINE
-  Write-Host "Test suite            :"$TESTSUITE
-  Write-Host "Verbose               :"$VERBOSEOSKAR
-  Write-Host "System User           :"$env:USERDOMAIN\$env:USERNAME
+    Write-Host "System User           :"$env:USERDOMAIN\$env:USERNAME
+    Write-Host "Workdir               :"$WORKDIR
+    Write-Host "Inner workdir         :"$INNERWORKDIR
+    Write-Host "Cachedir              :"$env:CLCACHE_DIR
+    Write-Host "Cache                 :"$env:CLCACHE_CL
+    Write-Host "Generator             :"$GENERATOR
+    Write-Host "Maintainer            :"$MAINTAINER
+    Write-Host "Enterpriseedition     :"$ENTERPRISEEDITION
+    Write-Host "Buildmode             :"$BUILDMODE
+    Write-Host "Skip Packaging        :"$SKIPPACKAGING
+    Write-Host "Static Executables    :"$STATICEXECUTABLES
+    Write-Host "Test suite            :"$TESTSUITE
+    Write-Host "Storage engine        :"$STORAGEENGINE
+    Write-Host "Verbose               :"$VERBOSEOSKAR
+    Write-Host "Parallelism           :"$PARALLELISM
 }
 
 Function lockDirectory
@@ -51,7 +51,7 @@ Function lockDirectory
                Break
             }
             Write-Host "Directory is locked, waiting..."
-            $(get-date).ToUniversalTime().ToString("yyyy-MM-ddTHH.mm.ssZ")
+            $(Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH.mm.ssZ")
             Start-Sleep -Seconds 15
         }
     } 
@@ -188,7 +188,7 @@ Function checkoutArangoDB
     Set-Location $INNERWORKDIR
     If(-Not(Test-Path -PathType Container -Path "ArangoDB"))
     {
-        git clone https://github.com/arangodb/ArangoDB
+        Start-Process -FilePath "git" -ArgumentList "clone https://github.com/arangodb/ArangoDB" -NoNewWindow -PassThru | Wait-Process
     }
 }
 
@@ -202,8 +202,8 @@ Function checkoutEnterprise
         {
             Remove-Item -Force "$HOME\.ssh\known_hosts"
         }
-        ssh -o StrictHostKeyChecking=no git@github.com
-        git clone ssh://git@github.com/arangodb/enterprise
+        Start-Process -FilePath "ssh" -ArgumentList "-o StrictHostKeyChecking=no git@github.com" -NoNewWindow -PassThru | Wait-Process
+        Start-Process -FilePath "git" -ArgumentList "clone ssh://git@github.com/arangodb/enterprise" -NoNewWindow -PassThru | Wait-Process
     }
 }
 
@@ -229,38 +229,38 @@ Function switchBranches($branch_c,$branch_e)
     Set-Location "$INNERWORKDIR\ArangoDB"
     If (-Not($Error)) 
     {
-        git checkout -- .
+        Start-Process -FilePath "git" -ArgumentList "checkout -- ." -NoNewWindow -PassThru | Wait-Process
     }
     If (-Not($Error)) 
     {
-        git pull
+        Start-Process -FilePath "git" -ArgumentList "pull" -NoNewWindow -PassThru | Wait-Process
     }
     If (-Not($Error)) 
     {
-        git checkout $branch_c
+        Start-Process -FilePath "git" -ArgumentList "checkout $branch_c" -NoNewWindow -PassThru | Wait-Process
     }
     If (-Not($Error)) 
     {
-        git pull
+        Start-Process -FilePath "git" -ArgumentList "pull" -NoNewWindow -PassThru | Wait-Process
     }
     If($ENTERPRISEEDITION -eq "On")
     {
         Set-Location "$INNERWORKDIR\ArangoDB\enterprise"
         If (-Not($Error)) 
         {
-            git checkout -- .
+            Start-Process -FilePath "git" -ArgumentList "checkout -- ." -NoNewWindow -PassThru | Wait-Process
         }
         If (-Not($Error)) 
         {
-            git pull
+            Start-Process -FilePath "git" -ArgumentList "pull" -NoNewWindow -PassThru | Wait-Process
         }
         If (-Not($Error)) 
         {
-            git checkout $branch_e
+            Start-Process -FilePath "git" -ArgumentList "checkout $branch_e" -NoNewWindow -PassThru | Wait-Process
         }
         If (-Not($Error)) 
         {
-            git pull
+            Start-Process -FilePath "git" -ArgumentList "pull" -NoNewWindow -PassThru | Wait-Process
         }
     }
 }
@@ -270,25 +270,57 @@ Function updateOskar
     Set-Location $WORKDIR
     If (-Not($Error)) 
     {
-        git checkout -- .
+        Start-Process -FilePath "git" -ArgumentList "checkout -- ." -NoNewWindow -PassThru | Wait-Process
     }
     If (-Not($Error)) 
     {
-        git pull
+        Start-Process -FilePath "git" -ArgumentList "pull" -NoNewWindow -PassThru | Wait-Process
     }
 
+}
+
+Function disableDebugSymbols
+{
+    ForEach($file in (Get-ChildItem -Path "$INNERWORKDIR\ArangoDB" -Filter "CMakeLists.txt" -Recurse -ErrorAction SilentlyContinue -Force).FullName)
+    {
+        (Get-Content $file).Replace('/Zi','/Z7') | Set-Content $file
+    }
+}
+
+Function enableDebugSymbols
+{
+    ForEach($file in (Get-ChildItem -Path "$INNERWORKDIR\ArangoDB" -Filter "CMakeLists.txt" -Recurse -ErrorAction SilentlyContinue -Force).FullName)
+    {
+        (Get-Content $file).Replace('/Z7','/Zi') | Set-Content $file
+    }
 }
 
 Function clearResults
 {
     Set-Location $INNERWORKDIR
-    ForEach($file in $(Get-ChildItem -Filter testreport*))
+    ForEach($report in $(Get-ChildItem -Filter testreport*))
     {
-        Remove-Item -Force $file
+        Remove-Item -Force $report
+    }
+    ForEach($log in $(Get-ChildItem -Filter "*.log"))
+    {
+    Remove-Item -Recurse -Force $log 
+    }
+    ForEach($archive in $(Get-ChildItem -Filter "*.zip"))
+    {
+        Remove-Item -Recurse -Force $archive 
+    }
+    ForEach($core in $(Get-ChildItem -Filter "core*"))
+    {
+        Remove-Item -Recurse -Force $core 
     }
     If(Test-Path -PathType Leaf -Path test.log)
     {
         Remove-Item -Force test.log
+    }
+    If(Test-Path -PathType Leaf -Path testProtocol.txt)
+    {
+        Remove-Item -Force testProtocol.txt
     }
 }
 
@@ -329,8 +361,8 @@ Function configureWindows
         New-Item -ItemType Directory -Path "$INNERWORKDIR\ArangoDB\build"
     }
     Set-Location "$INNERWORKDIR\ArangoDB\build"
-    Write-Host "Configure: cmake -G `"$GENERATOR`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES -DDebugInformationFormat?OldStyle`" `"$INNERWORKDIR\ArangoDB`""
-    Start-Process -FilePath "cmake" -ArgumentList "-G `"$GENERATOR`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES -DDebugInformationFormat?OldStyle`" `"$INNERWORKDIR\ArangoDB`"" -NoNewWindow -Wait -RedirectStandardOutput "$INNERWORKDIR\ArangoDB\cmake-configure.stdout.log" -RedirectStandardError "$INNERWORKDIR\ArangoDB\cmake-configure.stderr.log"
+    Write-Host "Configure: cmake -G `"$GENERATOR`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES`" `"$INNERWORKDIR\ArangoDB`""
+    Start-Process -FilePath "cmake" -ArgumentList "-G `"$GENERATOR`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES`" `"$INNERWORKDIR\ArangoDB`"" -RedirectStandardOutput "$INNERWORKDIR\cmake-configure.stdout.log" -RedirectStandardError "$INNERWORKDIR\cmake-configure.stderr.log" -PassThru | Wait-Process
 }
 
 Function buildWindows 
@@ -342,7 +374,7 @@ Function buildWindows
     }
     Set-Location "$INNERWORKDIR\ArangoDB\build"
     Write-Host "Build: cmake --build . --config `"$BUILDMODE`""
-    Start-Process -FilePath "cmake" -ArgumentList "--build . --config `"$BUILDMODE`"" -NoNewWindow -Wait -RedirectStandardOutput "$INNERWORKDIR\ArangoDB\cmake-build.stdout.log" -RedirectStandardError "$INNERWORKDIR\ArangoDB\cmake-build.stderr.log"
+    Start-Process -FilePath "cmake" -ArgumentList "--build . --config `"$BUILDMODE`"" -RedirectStandardOutput "$INNERWORKDIR\cmake-build.stdout.log" -RedirectStandardError "$INNERWORKDIR\cmake-build.stderr.log" -PassThru | Wait-Process
     Copy-Item "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\*" -Destination "$INNERWORKDIR\ArangoDB\build\bin\"
 }
 
@@ -360,15 +392,31 @@ Function buildArangoDB
 Function moveResultsToWorkspace
 {
   Write-Host "Moving reports and logs to $env:WORKSPACE ..."
-  ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter testreport*))
+  ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter cmake-*))
   {
     Write-Host "Move $INNERWORKDIR\$file"
     Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE
   }
-  If(Test-Path -PathType Leaf $INNERWORKDIR\test.log)
+  If(Test-Path -PathType Leaf "$INNERWORKDIR\test.log")
   {
-    Write-Host "Move $INNERWORKDIR\test.log"
-    Move-Item -Path "$INNERWORKDIR\test.log" -Destination $env:WORKSPACE
+    If(Get-Content -Path "$INNERWORKDIR\test.log" -Head 1 | Select-String -Pattern "BAD" -CaseSensitive)
+    {
+        Write-Host "Move $INNERWORKDIR\test.log"
+        Move-Item -Path "$INNERWORKDIR\test.log" -Destination $env:WORKSPACE
+        ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter testreport*))
+        {
+            Write-Host "Move $INNERWORKDIR\$file"
+            Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE
+        } 
+    }
+    Else
+    {
+        ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter testreport*))
+        {
+            Write-Host "Remove $INNERWORKDIR\$file"
+            Remove-Item -Force "$INNERWORKDIR\$file" 
+        } 
+    }
   }
 }
 
@@ -395,7 +443,7 @@ Function noteStartAndRepoState
     {
         Remove-Item -Force testProtocol.txt
     }
-    $(get-date).ToUniversalTime().ToString("yyyy-MM-ddTHH.mm.ssZ") | Add-Content testProtocol.txt
+    $(Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH.mm.ssZ") | Add-Content testProtocol.txt
     Write-Output "========== Status of main repository:" | Add-Content testProtocol.txt
     Write-Host "========== Status of main repository:"
     ForEach($line in $repoState)
@@ -420,7 +468,7 @@ Function unittest($test,$output)
 {
     $PORT=Get-Random -Minimum 20000 -Maximum 65535
     Set-Location "$INNERWORKDIR\ArangoDB"
-    [array]$global:UPIDS = [array]$global:UPIDS+$(Start-Process -FilePath "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\arangosh.exe" -ArgumentList " -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\UnitTests\unittest.js -- $test" -NoNewWindow -RedirectStandardOutput "$output.stdout.log" -RedirectStandardError "$output.stderr.log" -PassThru).Id
+    [array]$global:UPIDS = [array]$global:UPIDS+$(Start-Process -FilePath "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\arangosh.exe" -ArgumentList " -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\UnitTests\unittest.js -- $test" -RedirectStandardOutput "$output.stdout.log" -RedirectStandardError "$output.stderr.log" -PassThru).Id
 }
 
 Function launchSingleTests
@@ -566,7 +614,7 @@ Function log([array]$log)
 
 Function createReport
 {
-    $d = $(get-date).ToUniversalTime().ToString("yyyy-MM-ddTHH.mm.ssZ")
+    $d = $(Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH.mm.ssZ")
     $d | Add-Content testProtocol.txt
     $result = "GOOD"
     ForEach($f in $(Get-ChildItem -Filter *.stdout.log))
@@ -591,24 +639,20 @@ Function createReport
   {
     Write-Host "Compress-Archive -Path $log -Update -DestinationPath `"$INNERWORKDIR\testreport-$d.zip`""
     Compress-Archive -Path $log -Update -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
-    Remove-Item -Recurse -Force $log 
   }
   ForEach($archive in $(Get-ChildItem -Filter "*.zip"))
   {
     Write-Host "Compress-Archive -Path $archive -Update -DestinationPath `"$INNERWORKDIR\testreport-$d.zip`""
     Compress-Archive -Path $archive -Update -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
-    Remove-Item -Recurse -Force $archive 
   }
   ForEach($core in $(Get-ChildItem -Filter "core*"))
   {
     Write-Host "Compress-Archive -Path $core -Update -DestinationPath `"$INNERWORKDIR\testreport-$d.zip`""
     Compress-Archive -Path $core -Update -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
-    Remove-Item -Recurse -Force $core 
   }
   Write-Host "Compress-Archive -Path testProtocol.txt -Update -DestinationPath `"$INNERWORKDIR\testreport-$d.zip`""
   Compress-Archive -Path testProtocol.txt -Update -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
   Write-Host "Remove-Item -Recurse -Force testProtocol.txt"
-  Remove-Item -Recurse -Force testProtocol.txt
   log "$d $TESTSUITE $result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE" $repoState $repoStateEnterprise $badtests ""
 }
 
