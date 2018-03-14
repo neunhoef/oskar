@@ -82,7 +82,6 @@ function makeStaticArangoDB
     return $s
   end
 end
-end
 
 function oskar
   checkoutIfNeeded
