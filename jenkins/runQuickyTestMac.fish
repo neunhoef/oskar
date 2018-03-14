@@ -7,7 +7,7 @@ echo Working on branch $ARANGODB_BRANCH of main repository and
 echo on branch $ENTERPRISE_BRANCH of enterprise repository.
 
 switchBranches $ARANGODB_BRANCH $ENTERPRISE_BRANCH
-or block
+or begin
   echo switchBranches error, giving up.
   unlockDirectory
   exit 1
@@ -18,7 +18,7 @@ parallelism 15
 enterprise ; rocksdb ; cluster
 
 oskar1
-or block
+or begin
   echo Errors in enterprise/rocksdb/cluster, stopping.
   moveResultsToWorkspace
   unlockDirectory
