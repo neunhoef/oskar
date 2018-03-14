@@ -346,3 +346,6 @@ function buildPackage
   # and buildRpmPackage
   and buildTarGzPackage
 end
+
+# Set PARALLELISM in a sensible way:
+set -xg PARALLELISM (math (grep processor /proc/cpuinfo | wc -l) "*" 2)
