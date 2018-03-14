@@ -24,6 +24,7 @@ or begin
 end
   
 cd $WORKDIR/work
+mv test.log testEnterprise.log
 mv cmakeAlpine.log cmakeAlpineEnterprise.log
 mv buildAlpine.log buildAlpineEnterprise.log
 
