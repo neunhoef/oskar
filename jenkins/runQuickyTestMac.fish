@@ -25,8 +25,9 @@ or begin
   exit 1
 end
   
-mv work/cmakeAlpine.log work/cmakeAlpine.log
-mv work/buildAlpine.log work/buildAlpineEnterprise.log
+cd $WORKDIR/work
+mv cmakeAlpine.log cmakeAlpineEnterprise.log
+mv buildAlpine.log buildAlpineEnterprise.log
 
 community ; mmfiles ; single
 
