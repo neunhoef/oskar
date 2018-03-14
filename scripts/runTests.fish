@@ -8,10 +8,10 @@ if test -z "$PARALLELISM"
 end
 
 function getRepoState
-  set -g repoState (git status -b -s | grep -v "^[?]")
+  set -g repoState (git rev-parse HEAD) (git status -b -s | grep -v "^[?]")
   if test $ENTERPRISEEDITION = On 
     cd enterprise
-    set -g repoStateEnterprise (git status -b -s | grep -v "^[?]")
+    set -g repoStateEnterprise (git rev-parse HEAD) (git status -b -s | grep -v "^[?]")
     cd ..
   else
     set -g repoStateEnterprise ""
