@@ -13,7 +13,7 @@ function ExternalProcess($process,$arguments,$wait)
     if($wait -eq $true)
     {
         UpdatePath
-        Start-Process $process -Verb runAs -ArgumentList $arguments -Wait
+        Start-Process $process -Verb runAs -ArgumentList $arguments -PassThru | Wait-Process
     }
 }
 
@@ -54,13 +54,7 @@ If (-NOT((Get-ItemPropertyValue -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Mic
 }
 
 DownloadFile -src 'https://raw.githubusercontent.com/arangodb-helper/openssl-installer/master/Win64OpenSSL-1_0_2n_sib.exe' -dest "C:\Windows\Temp\Win64OpenSSL1_0_2n.exe"
-Start-Process "C:\Windows\Temp\Win64OpenSSL1_0_2n.exe"
-Start-Sleep 15
-While(Get-Process -Name Win64OpenSSL-1_0_2n -ErrorAction SilentlyContinue)
-{
-    Write-Host "Waiting for Installer ..."
-    Start-Sleep 15 
-}
+ExternalProcess -process "C:\Windows\Temp\Win64OpenSSL1_0_2n.exe" -arguments " " -wait $true
 Remove-Item "C:\Windows\Temp\Win64OpenSSL1_0_2n.exe"
 
 DownloadFile -src 'https://github.com/Microsoft/vssetup.powershell/releases/download/2.0.1/VSSetup.zip' -dest "C:\Windows\Temp\VSSetup.zip"
@@ -83,12 +77,7 @@ ForEach($argument in $arguments)
 
 DownloadFile -src 'https://aka.ms/vs/15/release/vs_community.exe' -dest "C:\Windows\Temp\vs_community.exe"
 $arguments = "--add Microsoft.VisualStudio.Workload.Node --add Microsoft.VisualStudio.Workload.NativeCrossPlat --add Microsoft.VisualStudio.Workload.NativeDesktop --includeRecommended --includeOptional --quiet"
-ExternalProcess -process "C:\Windows\Temp\vs_community.exe" -arguments $arguments -wait $false
-While(-Not(Get-VSSetupInstance -ErrorAction SilentlyContinue))
-{
-    Write-Host "Waiting for Installer ..."
-    Start-Sleep 30
-}
+ExternalProcess -process "C:\Windows\Temp\vs_community.exe" -arguments $arguments -wait $true
 Remove-Item "C:\Windows\Temp\vs_community.exe"
 
 DownloadFile -src 'https://github.com/frerich/clcache/releases/download/v4.1.0/clcache-4.1.0.zip' -dest "C:\Windows\Temp\clcache-4.1.0.zip"

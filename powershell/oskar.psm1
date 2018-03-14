@@ -5,10 +5,8 @@ If(-Not(Test-Path -PathType Container -Path "work"))
 }
 $INNERWORKDIR = "$WORKDIR\work"
 $GENERATOR = "Visual Studio 15 2017 Win64"
-If(Import-Module VSSetup)
-{
-    $env:GYP_MSVS_OVERRIDE_PATH= Split-Path -Parent $((Get-ChildItem (Get-VSSetupInstance).InstallationPath -Filter cl.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx86\\x64"}).FullName)
-}
+Import-Module VSSetup
+$env:GYP_MSVS_OVERRIDE_PATH= Split-Path -Parent $((Get-ChildItem (Get-VSSetupInstance).InstallationPath -Filter cl.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx86\\x64"}).FullName)
 $env:CLCACHE_DIR="$INNERWORKDIR\.clcache.windows"
 
 Function showConfig
