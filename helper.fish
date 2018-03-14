@@ -219,6 +219,7 @@ end
 # Include the specifics for the platform
 switch (uname)
   case Darwin ; source helper.mac.fish
+  case Windows ; source helper.windows.fish
   case '*' ; source helper.linux.fish
 end
 

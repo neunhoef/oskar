@@ -54,6 +54,15 @@ function buildArangoDB
   end
 end
 
+function makeArangoDB
+  runLocal $SCRIPTSDIR/makeArangoDB.fish $argv
+  set -l s $status
+  if test $s != 0
+    echo Build error!
+    return $s
+  end
+end
+
 function buildStaticArangoDB
   checkoutIfNeeded
   runLocal $SCRIPTSDIR/buildArangoDB.fish $argv
@@ -63,6 +72,16 @@ function buildStaticArangoDB
     echo Build error!
     return $s
   end
+end
+
+function makeStaticArangoDB
+  runLocal $SCRIPTSDIR/makeArangoDB.fish $argv
+  set -l s $status
+  if test $s != 0
+    echo Build error!
+    return $s
+  end
+end
 end
 
 function oskar
@@ -88,7 +107,7 @@ function downloadStarter
 end
 
 function downloadSyncer
-  runLocal -e DOWNLOAD_SYNC_USER=$DOWNLOAD_SYNC_USER $SCRIPTSDIR/downloadSyncer.fish $argv
+  runLocal $SCRIPTSDIR/downloadSyncer.fish $argv
 end
 
 function buildMacPackage
