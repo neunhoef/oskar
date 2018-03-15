@@ -1,3 +1,40 @@
+function proc($process,$argument,$logfile)
+{
+    If($logfile -eq $false)
+    {
+        $p = Start-Process $process -ArgumentList $argument -NoNewWindow -PassThru
+        $h = $p.Handle
+        $p.WaitForExit()
+        If($p.ExitCode -eq 0)
+        {
+            $global:ok = $true
+        }
+        Else
+        {
+            $global:ok = $false
+        }
+    }
+    Else
+    {
+        $p = Start-Process $process -ArgumentList $argument -RedirectStandardOutput "$logfile.stdout.log" -RedirectStandardError "$logfile.stderr.log" -PassThru
+        $h = $p.Handle
+        $p.WaitForExit()
+        If($p.ExitCode -eq 0)
+        {
+            $global:ok = $true
+        }
+        Else
+        {
+            $global:ok = $false
+        }
+    }
+}
+
+function comm()
+{
+    $global:ok = $?
+}
+
 $WORKDIR = $pwd
 If(-Not(Test-Path -PathType Container -Path "work"))
 {
@@ -5,7 +42,7 @@ If(-Not(Test-Path -PathType Container -Path "work"))
 }
 $INNERWORKDIR = "$WORKDIR\work"
 $GENERATOR = "Visual Studio 15 2017 Win64"
-Import-Module VSSetup
+Import-Module VSSetup -ErrorAction Stop
 $env:GYP_MSVS_OVERRIDE_PATH= Split-Path -Parent $((Get-ChildItem (Get-VSSetupInstance).InstallationPath -Filter cl.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx86\\x64"}).FullName)
 $env:CLCACHE_DIR="$INNERWORKDIR\.clcache.windows"
 
@@ -26,6 +63,7 @@ Function showConfig
     Write-Host "Storage engine        :"$STORAGEENGINE
     Write-Host "Verbose               :"$VERBOSEOSKAR
     Write-Host "Parallelism           :"$PARALLELISM
+    comm
 }
 
 Function lockDirectory
@@ -186,23 +224,28 @@ Function checkoutArangoDB
     Set-Location $INNERWORKDIR
     If(-Not(Test-Path -PathType Container -Path "ArangoDB"))
     {
-        Start-Process -FilePath "git" -ArgumentList "clone https://github.com/arangodb/ArangoDB" -NoNewWindow -PassThru | Wait-Process
+        proc -process "git" -argument "clone https://github.com/arangodb/ArangoDB" -logfile $false
     }
+    comm
 }
 
 Function checkoutEnterprise
 {
     checkoutArangoDB
-    Set-Location "$INNERWORKDIR\ArangoDB"
-    If(-Not(Test-Path -PathType Container -Path "enterprise"))
+    if($ok)
     {
-        If(Test-Path -PathType Leaf -Path "$HOME\.ssh\known_hosts")
+        Set-Location "$INNERWORKDIR\ArangoDB"
+        If(-Not(Test-Path -PathType Container -Path "enterprise"))
         {
-            Remove-Item -Force "$HOME\.ssh\known_hosts"
+            If(Test-Path -PathType Leaf -Path "$HOME\.ssh\known_hosts")
+            {
+                Remove-Item -Force "$HOME\.ssh\known_hosts"
+            }
+            proc -process "ssh" -argument "-o StrictHostKeyChecking=no git@github.com" -logfile $false
+            proc -process "git" -argument "clone ssh://git@github.com/arangodb/enterprise" -logfile $false
         }
-        Start-Process -FilePath "ssh" -ArgumentList "-o StrictHostKeyChecking=no git@github.com" -NoNewWindow -PassThru | Wait-Process
-        Start-Process -FilePath "git" -ArgumentList "clone ssh://git@github.com/arangodb/enterprise" -NoNewWindow -PassThru | Wait-Process
     }
+    comm
 }
 
 Function checkoutIfNeeded
@@ -218,63 +261,67 @@ Function checkoutIfNeeded
             checkoutArangoDB
         }
     }
-    
+    comm
 }
 
 Function switchBranches($branch_c,$branch_e)
 {
     checkoutIfNeeded
-    Set-Location "$INNERWORKDIR\ArangoDB"
-    If (-Not($Error)) 
+    if($ok)
     {
-        Start-Process -FilePath "git" -ArgumentList "checkout -- ." -NoNewWindow -PassThru | Wait-Process
-    }
-    If (-Not($Error)) 
-    {
-        Start-Process -FilePath "git" -ArgumentList "pull" -NoNewWindow -PassThru | Wait-Process
-    }
-    If (-Not($Error)) 
-    {
-        Start-Process -FilePath "git" -ArgumentList "checkout $branch_c" -NoNewWindow -PassThru | Wait-Process
-    }
-    If (-Not($Error)) 
-    {
-        Start-Process -FilePath "git" -ArgumentList "pull" -NoNewWindow -PassThru | Wait-Process
-    }
-    If($ENTERPRISEEDITION -eq "On")
-    {
-        Set-Location "$INNERWORKDIR\ArangoDB\enterprise"
-        If (-Not($Error)) 
+        Set-Location "$INNERWORKDIR\ArangoDB";comm
+        If ($ok) 
         {
-            Start-Process -FilePath "git" -ArgumentList "checkout -- ." -NoNewWindow -PassThru | Wait-Process
+            proc -process "git" -argument "checkout -- ." -logfile $false
         }
         If (-Not($Error)) 
         {
-            Start-Process -FilePath "git" -ArgumentList "pull" -NoNewWindow -PassThru | Wait-Process
+            proc -process "git" -argument "pull" -logfile $false
         }
-        If (-Not($Error)) 
+        If ($ok) 
         {
-            Start-Process -FilePath "git" -ArgumentList "checkout $branch_e" -NoNewWindow -PassThru | Wait-Process
+            proc -process "git" -argument "checkout $branch_c" -logfile $false
         }
-        If (-Not($Error)) 
+        If ($ok) 
         {
-            Start-Process -FilePath "git" -ArgumentList "pull" -NoNewWindow -PassThru | Wait-Process
+            proc -process "git" -argument "pull" -logfile $false
+        }
+        If($ENTERPRISEEDITION -eq "On")
+        {
+            Set-Location "$INNERWORKDIR\ArangoDB\enterprise"
+            If ($ok) 
+            {
+                proc -process "git" -argument "checkout -- ." -logfile $false
+            }
+            If ($ok) 
+            {
+                proc -process "git" -argument "pull" -logfile $false
+            }
+            If ($ok) 
+            {
+                proc -process "git" -argument "checkout $branch_e" -logfile $false
+            }
+            If ($ok) 
+            {
+                proc -process "git" -argument "pull" -logfile $false
+            }
         }
     }
+    comm
 }
 
 Function updateOskar
 {
     Set-Location $WORKDIR
-    If (-Not($Error)) 
+    If ($ok) 
     {
-        Start-Process -FilePath "git" -ArgumentList "checkout -- ." -NoNewWindow -PassThru | Wait-Process
+        proc -process "git" -argument "checkout -- ." -logfile $false
     }
-    If (-Not($Error)) 
+    If ($ok) 
     {
-        Start-Process -FilePath "git" -ArgumentList "pull" -NoNewWindow -PassThru | Wait-Process
+        proc -process "git" -argument "pull" -logfile $false
     }
-
+    comm
 }
 
 Function disableDebugSymbols
@@ -283,6 +330,7 @@ Function disableDebugSymbols
     {
         (Get-Content $file).Replace('/Zi','/Z7') | Set-Content $file
     }
+    comm
 }
 
 Function enableDebugSymbols
@@ -291,6 +339,7 @@ Function enableDebugSymbols
     {
         (Get-Content $file).Replace('/Z7','/Zi') | Set-Content $file
     }
+    comm
 }
 
 Function clearResults
@@ -320,11 +369,13 @@ Function clearResults
     {
         Remove-Item -Force testProtocol.txt
     }
+    comm
 }
 
 Function showLog
 {
     Get-Content "$INNERWORKDIR\test.log" | Out-GridView -Title "$INNERWORKDIR\test.log"
+    comm
 }
 
 Function  findArangoDBVersion
@@ -350,6 +401,7 @@ Function  findArangoDBVersion
         }
 
     }
+    comm
 }
 
 Function configureWindows
@@ -360,7 +412,8 @@ Function configureWindows
     }
     Set-Location "$INNERWORKDIR\ArangoDB\build"
     Write-Host "Configure: cmake -G `"$GENERATOR`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES`" `"$INNERWORKDIR\ArangoDB`""
-    Start-Process -FilePath "cmake" -ArgumentList "-G `"$GENERATOR`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES`" `"$INNERWORKDIR\ArangoDB`"" -RedirectStandardOutput "$INNERWORKDIR\cmake-configure.stdout.log" -RedirectStandardError "$INNERWORKDIR\cmake-configure.stderr.log" -PassThru | Wait-Process
+    proc -process "cmake" -argument "-G `"$GENERATOR`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES`" `"$INNERWORKDIR\ArangoDB`"" -logfile "$INNERWORKDIR\cmake-configure"
+    comm
 }
 
 Function buildWindows 
@@ -372,8 +425,9 @@ Function buildWindows
     }
     Set-Location "$INNERWORKDIR\ArangoDB\build"
     Write-Host "Build: cmake --build . --config `"$BUILDMODE`""
-    Start-Process -FilePath "cmake" -ArgumentList "--build . --config `"$BUILDMODE`"" -RedirectStandardOutput "$INNERWORKDIR\cmake-build.stdout.log" -RedirectStandardError "$INNERWORKDIR\cmake-build.stderr.log" -PassThru | Wait-Process
+    proc -process "cmake" -argument "--build . --config `"$BUILDMODE`"" -logfile "$INNERWORKDIR\cmake-build"
     Copy-Item "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\*" -Destination "$INNERWORKDIR\ArangoDB\build\bin\"
+    comm
 }
 
 Function buildArangoDB
@@ -385,6 +439,7 @@ Function buildArangoDB
     }
     configureWindows
     buildWindows
+    comm
 }
 
 Function moveResultsToWorkspace
@@ -416,6 +471,7 @@ Function moveResultsToWorkspace
         } 
     }
   }
+  comm
 }
 
 Function getRepoState
@@ -432,6 +488,7 @@ Function getRepoState
     {
         $repoStateEnterprise = ""
     }
+    comm
 }
 
 Function noteStartAndRepoState
@@ -459,7 +516,7 @@ Function noteStartAndRepoState
             Write-Host " $line"
         }
     }
-
+    comm
 }
 
 Function unittest($test,$output)
@@ -467,6 +524,7 @@ Function unittest($test,$output)
     $PORT=Get-Random -Minimum 20000 -Maximum 65535
     Set-Location "$INNERWORKDIR\ArangoDB"
     [array]$global:UPIDS = [array]$global:UPIDS+$(Start-Process -FilePath "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\arangosh.exe" -ArgumentList " -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\UnitTests\unittest.js -- $test" -RedirectStandardOutput "$output.stdout.log" -RedirectStandardError "$output.stderr.log" -PassThru).Id
+    comm
 }
 
 Function launchSingleTests
@@ -508,6 +566,7 @@ Function launchSingleTests
     test1 "shell_replication",""
     test1 "http_replication",""
     test1 "catch",""
+    comm
 }
 
 Function launchClusterTests
@@ -553,6 +612,7 @@ Function launchClusterTests
     test1 "dump",""
     test1 "server_http",""
     test1 "agency",""
+    comm
 }
 
 Function waitForProcesses($seconds)
@@ -579,6 +639,7 @@ Function waitForProcesses($seconds)
         }
         Start-Sleep 5
     }
+    comm
 }
 
 Function waitOrKill($seconds)
@@ -599,6 +660,7 @@ Function waitOrKill($seconds)
             waitForProcesses 15  
         }
     }
+    comm
 }
 
 Function log([array]$log)
@@ -608,6 +670,7 @@ Function log([array]$log)
         Write-Host $l
         $l | Add-Content "$INNERWORKDIR\test.log"
     }
+    comm
 }
 
 Function createReport
@@ -652,6 +715,7 @@ Function createReport
   Compress-Archive -Path testProtocol.txt -Update -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
   Write-Host "Remove-Item -Recurse -Force testProtocol.txt"
   log "$d $TESTSUITE $result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE" $repoState $repoStateEnterprise $badtests ""
+  comm
 }
 
 Function runTests
@@ -712,12 +776,14 @@ Function runTests
     {
         Return $false
     }   
+    comm
 }
 
 Function oskar
 {
     checkoutIfNeeded
     runTests
+    comm
 }
 
 Function oskar1
@@ -725,6 +791,7 @@ Function oskar1
     showConfig
     buildArangoDB
     oskar
+    comm
 }
 
 Function oskar2
@@ -736,6 +803,7 @@ Function oskar2
     single
     oskar
     cluster
+    comm
 }
 
 Function oskar4
@@ -754,6 +822,7 @@ Function oskar4
     oskar
     cluster
     rocksdb
+    comm
 }
 
 Function oskar8
@@ -785,6 +854,7 @@ Function oskar8
     oskar
     cluster
     rocksdb
+    comm
 }
 
 Clear
