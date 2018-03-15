@@ -14,7 +14,7 @@ Set-Location "$OSKARDIR\oskar"
 Import-Module "$OSKARDIR\oskar\powershell\oskar.psm1"
 If(-Not($?))
 {
-    Write-Host "Did not find oskar and helpers"
+    Write-Host "Did not find oskar modul"
     Exit 1
 }
 
@@ -27,19 +27,11 @@ If($(Get-Module).Name -ccontains "oskar")
 Import-Module "$OSKARDIR\oskar\powershell\oskar.psm1"
 clearResults
 
-. $env:EDITION
-. $env:STORAGE_ENGINE
-. $env:TEST_SUITE
-
 switchBranches $env:ARANGODB_BRANCH $env:ENTERPRISE_BRANCH
-
+#disableDebugSymbols
 If ($?) 
 {
     oskar1
 }
-
-Set-Location "$OSKARDIR\oskar"
 moveResultsToWorkspace
 unlockDirectory
-
-Return $Error
