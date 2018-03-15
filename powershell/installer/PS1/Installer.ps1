@@ -54,7 +54,7 @@ If (-NOT((Get-ItemPropertyValue -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Mic
 }
 
 DownloadFile -src 'https://raw.githubusercontent.com/arangodb-helper/openssl-installer/master/Win64OpenSSL-1_0_2n_sib.exe' -dest "C:\Windows\Temp\Win64OpenSSL1_0_2n.exe"
-ExternalProcess -process "C:\Windows\Temp\Win64OpenSSL1_0_2n.exe" -arguments " " -wait $true
+Start-Process "C:\Windows\Temp\Win64OpenSSL1_0_2n.exe" -PassThru | Wait-Process
 Remove-Item "C:\Windows\Temp\Win64OpenSSL1_0_2n.exe"
 
 DownloadFile -src 'https://github.com/Microsoft/vssetup.powershell/releases/download/2.0.1/VSSetup.zip' -dest "C:\Windows\Temp\VSSetup.zip"
