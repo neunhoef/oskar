@@ -9,7 +9,7 @@ cd /tmp
 wget ftp://ftp.openldap.org/pub/OpenLDAP/openldap-release/openldap-2.4.45.tgz
 tar xzvf openldap-2.4.45.tgz
 cd openldap-2.4.45
-cp -a /tools/config.* .
+cp -a /tools/config.* ./build
 ./configure --prefix=/usr --enable-static
 make depend && make -j64
 make install
