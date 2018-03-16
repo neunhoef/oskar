@@ -14,3 +14,4 @@
  - Linux package signing
  - Mac package signing
  - Windows package signing
+ - sort out tar and dbfiles
