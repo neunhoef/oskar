@@ -1,23 +1,56 @@
 # Oskar
 
 This is a set of scripts and a container image to conveniently run
-tests for ArangoDB on linux. It only needs the `fish` shell and `Docker`
-installed on the system.
+tests for ArangoDB on linux. It only needs the `fish` shell, `git` and 
+`Docker` installed on the system (for Linux, for Mac you do not need
+`Docker`).
 
 ## Initial setup
 
-Once you have cloned this repo or extracted the release or simply copied
-the `helper.fish` script, the initial setup is as follows:
+Once you have cloned this repo and have set up `ssh-agent` with a
+private key that is registered with `github`, 
+the initial setup is as follows (in `fish`, so start a `fish` shell
+first if it is not your login shell):
 
     cd oskar
     source helper.fish
-    cloneArangoDB             (or cloneEnterprise if you have access)
+    cloneEnterprise             (or cloneArangoDB if you do not have access)
     
 This will pull the Docker image, start up a build and test container
 and clone the ArangoDB source (optionally including the enterprise code)
 into a subdirectory `work` in the current directory. It will also show
 its current configuration.
 
+## Choosing branches
+
+Use
+
+    switchBranches devel devel
+
+where the first devel is the branch of the main repository and the
+second one is the branch of the enterprise repository to checkout. This
+will check out the branches and do a `git pull` afterwards. You should
+not have local modifications in the repos because they could be deleted.
+
+## Building ArangoDB
+
+You can then do
+
+    buildStaticArangoDB
+
+and add `cmake` options if you need like for example:
+
+    buildStaticArangoDB -DTARGET_ARCHITECTURE=nehalem
+
+The first time this will take some time, but then the configured
+`ccache` will make things a lot quicker. Once you have built for the
+first time you can do
+
+    makeStaticArangoDB
+
+which does not throw away the `build` directory and should be even
+faster.
+ 
 ## Choices for the tests
 
 For the compilation, you can choose between maintainer mode switched on or
@@ -27,7 +60,7 @@ switch the build mode between `Debug` and `RelWithDebInfo`, use the commands
 enterprise code, you can switch between the community and enterprise
 editions using `community` and `enterprise`. Use `parallelism <number>`
 to specify which argument to `-j` should be used in the `make` stage,
-the default is 64.
+the default is 64 (and on Linux twice the number of cores detected).
 
 At runtime, you can choose the storage engine (use the `mmfiles` or
 `rocksdb` command), and you can select a test suite. Use the `cluster`,
@@ -42,23 +75,38 @@ with the command
 
 Build ArangoDB with the current build options by issueing
 
-    buildArangoDB
+    buildStaticArangoDB
 
 and run the tests with the current runtime options using
 
     oskar
 
 A report of the run will be shown on screen and a file with the current
-timestamp will be put into the `work` directory.
+timestamp will be put into the `work` directory. Alternatively, you can
+combine these two steps in one by doing
+
+    oskar1
+
+To run both single as well as cluster tests on the current configuration
+do
+
+    oskar2
+
+To run both with both storage engines do
+
+    oskar4
+
+and, finally, to run everything for both the community as well as the
+enterprise edition do
+
+    oskar8
+
+The test results as well as logs will be left in the `work` directory.
 
 ## Cleaning up
 
 To erase the build directories and checked out sources, use
 
     clearWorkDir
-
-To stop the running build/test Docker container, use
-
-    stopContainer
 
 After that, essentially all resources used by oskar are freed again.
