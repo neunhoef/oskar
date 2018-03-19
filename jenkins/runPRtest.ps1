@@ -29,7 +29,7 @@ clearResults
 
 switchBranches $env:ARANGODB_BRANCH $env:ENTERPRISE_BRANCH
 #disableDebugSymbols
-If ($?) 
+If ($globak:ok) 
 {
     oskar1
 }
