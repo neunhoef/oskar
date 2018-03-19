@@ -272,6 +272,7 @@ function interactiveContainer
              -e ENTERPRISEEDITION=$ENTERPRISEEDITION \
              -e SCRIPTSDIR=$SCRIPTSDIR \
              -e PLATFORM=$PLATFORM \
+             --privileged \
              $argv
 end
 
