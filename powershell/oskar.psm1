@@ -30,6 +30,18 @@ function proc($process,$argument,$logfile)
     }
 }
 
+function ok
+{
+    If($? -eq 0)
+    {
+        $global:ok = $true
+    }
+    Else
+    {
+        $global:ok = $false
+    }
+}
+
 $WORKDIR = $pwd
 If(-Not(Test-Path -PathType Container -Path "work"))
 {
@@ -58,7 +70,7 @@ Function showConfig
     Write-Host "Storage engine        :"$STORAGEENGINE
     Write-Host "Verbose               :"$VERBOSEOSKAR
     Write-Host "Parallelism           :"$PARALLELISM
-    $global:ok = $?
+    ok
 }
 
 Function lockDirectory
@@ -86,7 +98,7 @@ Function lockDirectory
             Start-Sleep -Seconds 15
         }
     }
-    $global:ok = $? 
+    ok 
 }
 
 Function unlockDirectory
@@ -96,7 +108,7 @@ Function unlockDirectory
         Remove-Item LOCK
         Remove-Item LOCK.$pid
     }
-    $global:ok = $?   
+    ok   
 }
 
 Function single
@@ -223,7 +235,7 @@ Function checkoutArangoDB
     {
         proc -process "git" -argument "clone https://github.com/arangodb/ArangoDB" -logfile $false
     }
-    $global:ok = $?
+    ok
 }
 
 Function checkoutEnterprise
@@ -245,7 +257,7 @@ Function checkoutEnterprise
             }
         }
     }
-    $global:ok = $?
+    ok
 }
 
 Function checkoutIfNeeded
@@ -261,7 +273,7 @@ Function checkoutIfNeeded
             checkoutArangoDB
         }
     }
-    $global:ok = $?
+    ok
 }
 
 Function switchBranches($branch_c,$branch_e)
@@ -269,7 +281,7 @@ Function switchBranches($branch_c,$branch_e)
     checkoutIfNeeded
     if($global:ok)
     {
-        Set-Location "$INNERWORKDIR\ArangoDB";$global:ok = $?
+        Set-Location "$INNERWORKDIR\ArangoDB";ok
         If ($global:ok) 
         {
             proc -process "git" -argument "checkout -- ." -logfile $false
@@ -307,7 +319,7 @@ Function switchBranches($branch_c,$branch_e)
             }
         }
     }
-    $global:ok = $?
+    ok
 }
 
 Function updateOskar
@@ -321,7 +333,7 @@ Function updateOskar
     {
         proc -process "git" -argument "pull" -logfile $false
     }
-    $global:ok = $?
+    ok
 }
 
 Function disableDebugSymbols
@@ -330,7 +342,7 @@ Function disableDebugSymbols
     {
         (Get-Content $file).Replace('/Zi','/Z7') | Set-Content $file
     }
-    $global:ok = $?
+    ok
 }
 
 Function enableDebugSymbols
@@ -339,7 +351,7 @@ Function enableDebugSymbols
     {
         (Get-Content $file).Replace('/Z7','/Zi') | Set-Content $file
     }
-    $global:ok = $?
+    ok
 }
 
 Function clearResults
@@ -369,13 +381,13 @@ Function clearResults
     {
         Remove-Item -Force testProtocol.txt
     }
-    $global:ok = $?
+    ok
 }
 
 Function showLog
 {
     Get-Content "$INNERWORKDIR\test.log" | Out-GridView -Title "$INNERWORKDIR\test.log"
-    $global:ok = $?
+    ok
 }
 
 Function  findArangoDBVersion
@@ -401,7 +413,7 @@ Function  findArangoDBVersion
         }
 
     }
-    $global:ok = $?
+    ok
 }
 
 Function configureWindows
@@ -413,7 +425,7 @@ Function configureWindows
     Set-Location "$INNERWORKDIR\ArangoDB\build"
     Write-Host "Configure: cmake -G `"$GENERATOR`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES`" `"$INNERWORKDIR\ArangoDB`""
     proc -process "cmake" -argument "-G `"$GENERATOR`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES`" `"$INNERWORKDIR\ArangoDB`"" -logfile "$INNERWORKDIR\cmake-configure"
-    $global:ok = $?
+    ok
 }
 
 Function buildWindows 
@@ -427,7 +439,7 @@ Function buildWindows
     Write-Host "Build: cmake --build . --config `"$BUILDMODE`""
     proc -process "cmake" -argument "--build . --config `"$BUILDMODE`"" -logfile "$INNERWORKDIR\cmake-build"
     Copy-Item "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\*" -Destination "$INNERWORKDIR\ArangoDB\build\bin\"
-    $global:ok = $?
+    ok
 }
 
 Function buildArangoDB
@@ -439,7 +451,7 @@ Function buildArangoDB
     }
     configureWindows
     buildWindows
-    $global:ok = $?
+    ok
 }
 
 Function moveResultsToWorkspace
@@ -471,7 +483,7 @@ Function moveResultsToWorkspace
         } 
     }
   }
-  $global:ok = $?
+  ok
 }
 
 Function getRepoState
@@ -488,7 +500,7 @@ Function getRepoState
     {
         $repoStateEnterprise = ""
     }
-    $global:ok = $?
+    ok
 }
 
 Function noteStartAndRepoState
@@ -516,7 +528,7 @@ Function noteStartAndRepoState
             Write-Host " $line"
         }
     }
-    $global:ok = $?
+    ok
 }
 
 Function unittest($test,$output)
@@ -524,7 +536,7 @@ Function unittest($test,$output)
     $PORT=Get-Random -Minimum 20000 -Maximum 65535
     Set-Location "$INNERWORKDIR\ArangoDB"
     [array]$global:UPIDS = [array]$global:UPIDS+$(Start-Process -FilePath "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\arangosh.exe" -ArgumentList " -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\UnitTests\unittest.js -- $test" -RedirectStandardOutput "$output.stdout.log" -RedirectStandardError "$output.stderr.log" -PassThru).Id
-    $global:ok = $?
+    ok
 }
 
 Function launchSingleTests
@@ -566,7 +578,7 @@ Function launchSingleTests
     test1 "shell_replication",""
     test1 "http_replication",""
     test1 "catch",""
-    $global:ok = $?
+    ok
 }
 
 Function launchClusterTests
@@ -612,7 +624,7 @@ Function launchClusterTests
     test1 "dump",""
     test1 "server_http",""
     test1 "agency",""
-    $global:ok = $?
+    ok
 }
 
 Function waitForProcesses($seconds)
@@ -639,7 +651,7 @@ Function waitForProcesses($seconds)
         }
         Start-Sleep 5
     }
-    $global:ok = $?
+    ok
 }
 
 Function waitOrKill($seconds)
@@ -660,7 +672,7 @@ Function waitOrKill($seconds)
             waitForProcesses 15  
         }
     }
-    $global:ok = $?
+    ok
 }
 
 Function log([array]$log)
@@ -670,7 +682,7 @@ Function log([array]$log)
         Write-Host $l
         $l | Add-Content "$INNERWORKDIR\test.log"
     }
-    $global:ok = $?
+    ok
 }
 
 Function createReport
@@ -715,7 +727,7 @@ Function createReport
   Compress-Archive -Path testProtocol.txt -Update -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
   Write-Host "Remove-Item -Recurse -Force testProtocol.txt"
   log "$d $TESTSUITE $result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE" $repoState $repoStateEnterprise $badtests ""
-  $global:ok = $?
+  ok
 }
 
 Function runTests
@@ -776,14 +788,14 @@ Function runTests
     {
         Return $false
     }   
-    $global:ok = $?
+    ok
 }
 
 Function oskar
 {
     checkoutIfNeeded
     runTests
-    $global:ok = $?
+    ok
 }
 
 Function oskar1
@@ -791,7 +803,7 @@ Function oskar1
     showConfig
     buildArangoDB
     oskar
-    $global:ok = $?
+    ok
 }
 
 Function oskar2
@@ -803,7 +815,7 @@ Function oskar2
     single
     oskar
     cluster
-    $global:ok = $?
+    ok
 }
 
 Function oskar4
@@ -822,7 +834,7 @@ Function oskar4
     oskar
     cluster
     rocksdb
-    $global:ok = $?
+    ok
 }
 
 Function oskar8
@@ -854,7 +866,7 @@ Function oskar8
     oskar
     cluster
     rocksdb
-    $global:ok = $?
+    ok
 }
 
 Clear
