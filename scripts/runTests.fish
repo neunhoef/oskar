@@ -207,7 +207,7 @@ function createReport
   set logs *.log
   set binary
   if test (count $cores) != 0
-    set binary build/bin/arangod
+    set binary build/bin/arangod build/bin/arangodbtests
   end
   echo tar czvf "$INNERWORKDIR/testreport-$d.tar.gz" $logs testProtocol.txt $cores $archives $binary
   tar czvf "$INNERWORKDIR/testreport-$d.tar.gz" $logs testProtocol.txt $cores $archives $binary
