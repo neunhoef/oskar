@@ -252,22 +252,22 @@ Function checkoutEnterprise
 
 Function checkoutIfNeeded
 {
-        If($ENTERPRISEEDITION -eq "On")
+    If($ENTERPRISEEDITION -eq "On")
+    {
+        If(-Not(Test-Path -PathType Container -Path "$INNERWORKDIR\ArangoDB\enterprise"))
         {
-            If(-Not(Test-Path -PathType Container -Path "$INNERWORKDIR\ArangoDB\enterprise"))
-            {
-                checkoutEnterprise
-            }
+            checkoutEnterprise
         }
-        Else
+    }
+    Else
+    {
+        If(-Not(Test-Path -PathType Container -Path "$INNERWORKDIR\ArangoDB"))
         {
-            If(-Not(Test-Path -PathType Container -Path "$INNERWORKDIR\ArangoDB"))
-            {
-                checkoutArangoDB
-            }
+            checkoutArangoDB
         }
     }
 }
+
 
 Function switchBranches($branch_c,$branch_e)
 {
