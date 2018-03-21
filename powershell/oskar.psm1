@@ -230,7 +230,6 @@ Function checkoutArangoDB
     {
         proc -process "git" -argument "clone https://github.com/arangodb/ArangoDB" -logfile $false
     }
-    comm
 }
 
 Function checkoutEnterprise
@@ -249,7 +248,6 @@ Function checkoutEnterprise
             proc -process "git" -argument "clone ssh://git@github.com/arangodb/enterprise" -logfile $false
         }
     }
-    comm
 }
 
 Function checkoutIfNeeded
@@ -269,7 +267,6 @@ Function checkoutIfNeeded
             }
         }
     }
-    comm
 }
 
 Function switchBranches($branch_c,$branch_e)
@@ -315,7 +312,6 @@ Function switchBranches($branch_c,$branch_e)
             }
         }
     }
-    comm
 }
 
 Function updateOskar
@@ -329,25 +325,22 @@ Function updateOskar
     {
         proc -process "git" -argument "pull" -logfile $false
     }
-    comm
 }
 
 Function disableDebugSymbols
 {
     ForEach($file in (Get-ChildItem -Path "$INNERWORKDIR\ArangoDB" -Filter "CMakeLists.txt" -Recurse -ErrorAction SilentlyContinue -Force).FullName)
     {
-        (Get-Content $file).Replace('/Zi','/Z7') | Set-Content $file
+        (Get-Content $file).Replace('/Zi','/Z7') | Set-Content $file; comm
     }
-    comm
 }
 
 Function enableDebugSymbols
 {
     ForEach($file in (Get-ChildItem -Path "$INNERWORKDIR\ArangoDB" -Filter "CMakeLists.txt" -Recurse -ErrorAction SilentlyContinue -Force).FullName)
     {
-        (Get-Content $file).Replace('/Z7','/Zi') | Set-Content $file
+        (Get-Content $file).Replace('/Z7','/Zi') | Set-Content $file; comm
     }
-    comm
 }
 
 Function clearResults
@@ -382,8 +375,7 @@ Function clearResults
 
 Function showLog
 {
-    Get-Content "$INNERWORKDIR\test.log" | Out-GridView -Title "$INNERWORKDIR\test.log"
-    comm
+    Get-Content "$INNERWORKDIR\test.log" | Out-GridView -Title "$INNERWORKDIR\test.log";comm
 }
 
 Function  findArangoDBVersion
@@ -409,7 +401,6 @@ Function  findArangoDBVersion
         }
 
     }
-    comm
 }
 
 Function configureWindows
@@ -421,7 +412,6 @@ Function configureWindows
     Set-Location "$INNERWORKDIR\ArangoDB\build"
     Write-Host "Configure: cmake -G `"$GENERATOR`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES`" `"$INNERWORKDIR\ArangoDB`""
     proc -process "cmake" -argument "-G `"$GENERATOR`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES`" `"$INNERWORKDIR\ArangoDB`"" -logfile "$INNERWORKDIR\cmake-configure"
-    comm
 }
 
 Function buildWindows 
@@ -434,8 +424,7 @@ Function buildWindows
     Set-Location "$INNERWORKDIR\ArangoDB\build"
     Write-Host "Build: cmake --build . --config `"$BUILDMODE`""
     proc -process "cmake" -argument "--build . --config `"$BUILDMODE`"" -logfile "$INNERWORKDIR\cmake-build"
-    Copy-Item "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\*" -Destination "$INNERWORKDIR\ArangoDB\build\bin\"
-    comm
+    Copy-Item "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\*" -Destination "$INNERWORKDIR\ArangoDB\build\bin\"; comm
 }
 
 Function buildArangoDB
@@ -447,7 +436,6 @@ Function buildArangoDB
     }
     configureWindows
     buildWindows
-    comm
 }
 
 Function moveResultsToWorkspace
@@ -456,18 +444,18 @@ Function moveResultsToWorkspace
   ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter cmake-*))
   {
     Write-Host "Move $INNERWORKDIR\$file"
-    Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE
+    Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE; comm
   }
   If(Test-Path -PathType Leaf "$INNERWORKDIR\test.log")
   {
     If(Get-Content -Path "$INNERWORKDIR\test.log" -Head 1 | Select-String -Pattern "BAD" -CaseSensitive)
     {
         Write-Host "Move $INNERWORKDIR\test.log"
-        Move-Item -Path "$INNERWORKDIR\test.log" -Destination $env:WORKSPACE
+        Move-Item -Path "$INNERWORKDIR\test.log" -Destination $env:WORKSPACE; comm
         ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter testreport*))
         {
             Write-Host "Move $INNERWORKDIR\$file"
-            Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE
+            Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE; comm
         } 
     }
     Else
@@ -475,28 +463,26 @@ Function moveResultsToWorkspace
         ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter testreport*))
         {
             Write-Host "Remove $INNERWORKDIR\$file"
-            Remove-Item -Force "$INNERWORKDIR\$file" 
+            Remove-Item -Force "$INNERWORKDIR\$file"; comm 
         } 
     }
   }
-  comm
 }
 
 Function getRepoState
 {
-    Set-Location "$INNERWORKDIR\Arangodb"
+    Set-Location "$INNERWORKDIR\Arangodb"; comm
     $repoState = $(git status -b -s | Select-String -Pattern "^[?]" -NotMatch)
     If($ENTERPRISEEDITION -eq "On")
     {
-        Set-Location "$INNERWORKDIR\ArangoDB\enterprise"
+        Set-Location "$INNERWORKDIR\ArangoDB\enterprise"; comm
         $repoStateEnterprise = $(git status -b -s | Select-String -Pattern "^[?]" -NotMatch)
-        Set-Location "$INNERWORKDIR\Arangodb"
+        Set-Location "$INNERWORKDIR\Arangodb"; comm
     }
     Else
     {
         $repoStateEnterprise = ""
     }
-    comm
 }
 
 Function noteStartAndRepoState
@@ -524,15 +510,13 @@ Function noteStartAndRepoState
             Write-Host " $line"
         }
     }
-    comm
 }
 
 Function unittest($test,$output)
 {
     $PORT=Get-Random -Minimum 20000 -Maximum 65535
-    Set-Location "$INNERWORKDIR\ArangoDB"
-    [array]$global:UPIDS = [array]$global:UPIDS+$(Start-Process -FilePath "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\arangosh.exe" -ArgumentList " -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\UnitTests\unittest.js -- $test" -RedirectStandardOutput "$output.stdout.log" -RedirectStandardError "$output.stderr.log" -PassThru).Id
-    comm
+    Set-Location "$INNERWORKDIR\ArangoDB"; comm
+    [array]$global:UPIDS = [array]$global:UPIDS+$(Start-Process -FilePath "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\arangosh.exe" -ArgumentList " -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\UnitTests\unittest.js -- $test" -RedirectStandardOutput "$output.stdout.log" -RedirectStandardError "$output.stderr.log" -PassThru).Id; comm
 }
 
 Function launchSingleTests
