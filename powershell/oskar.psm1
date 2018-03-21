@@ -1,35 +1,3 @@
-function proc($process,$argument,$logfile)
-{
-    If($logfile -eq $false)
-    {
-        $p = Start-Process $process -ArgumentList $argument -NoNewWindow -PassThru
-        $h = $p.Handle
-        $p.WaitForExit()
-        If($p.ExitCode -eq 0)
-        {
-            $global:ok = $true
-        }
-        Else
-        {
-            $global:ok = $false
-        }
-    }
-    Else
-    {
-        $p = Start-Process $process -ArgumentList $argument -RedirectStandardOutput "$logfile.stdout.log" -RedirectStandardError "$logfile.stderr.log" -PassThru
-        $h = $p.Handle
-        $p.WaitForExit()
-        If($p.ExitCode -eq 0)
-        {
-            $global:ok = $true
-        }
-        Else
-        {
-            $global:ok = $false
-        }
-    }
-}
-
 $WORKDIR = $pwd
 If(-Not(Test-Path -PathType Container -Path "work"))
 {
@@ -40,6 +8,45 @@ $GENERATOR = "Visual Studio 15 2017 Win64"
 Import-Module VSSetup -ErrorAction Stop
 $env:GYP_MSVS_OVERRIDE_PATH= Split-Path -Parent $((Get-ChildItem (Get-VSSetupInstance).InstallationPath -Filter cl.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx86\\x64"}).FullName)
 $env:CLCACHE_DIR="$INNERWORKDIR\.clcache.windows"
+
+Function proc($process,$argument,$logfile)
+{
+    If($logfile -eq $false)
+    {
+        $p = Start-Process $process -ArgumentList $argument -NoNewWindow -PassThru
+        $h = $p.Handle
+        $p.WaitForExit()
+        If($p.ExitCode -eq 0)
+        {
+            Set-Variable -Name "ok" -Value $true -Scope global
+        }
+        Else
+        {
+            Set-Variable -Name "ok" -Value $false -Scope global
+        }
+    }
+    Else
+    {
+        $p = Start-Process $process -ArgumentList $argument -RedirectStandardOutput "$logfile.stdout.log" -RedirectStandardError "$logfile.stderr.log" -PassThru
+        $h = $p.Handle
+        $p.WaitForExit()
+        If($p.ExitCode -eq 0)
+        {
+            Set-Variable -Name "ok" -Value $true -Scope global
+        }
+        Else
+        {
+            Set-Variable -Name "ok" -Value $false -Scope global
+        }
+    }
+    Write-Host "Debug Proc: $global:ok"
+}
+
+Function comm
+{
+    Set-Variable -Name "ok" -Value $? -Scope global
+    Write-Host "Debug Comm: $global:ok"
+}
 
 Function showConfig
 {
@@ -58,7 +65,7 @@ Function showConfig
     Write-Host "Storage engine        :"$STORAGEENGINE
     Write-Host "Verbose               :"$VERBOSEOSKAR
     Write-Host "Parallelism           :"$PARALLELISM
-    $global:ok = $?
+    comm
 }
 
 Function lockDirectory
@@ -86,7 +93,7 @@ Function lockDirectory
             Start-Sleep -Seconds 15
         }
     }
-    $global:ok = $? 
+    comm 
 }
 
 Function unlockDirectory
@@ -96,7 +103,7 @@ Function unlockDirectory
         Remove-Item LOCK
         Remove-Item LOCK.$pid
     }
-    $global:ok = $?   
+    comm   
 }
 
 Function single
@@ -223,7 +230,6 @@ Function checkoutArangoDB
     {
         proc -process "git" -argument "clone https://github.com/arangodb/ArangoDB" -logfile $false
     }
-    $global:ok = $?
 }
 
 Function checkoutEnterprise
@@ -237,39 +243,38 @@ Function checkoutEnterprise
             If(Test-Path -PathType Leaf -Path "$HOME\.ssh\known_hosts")
             {
                 Remove-Item -Force "$HOME\.ssh\known_hosts"
+                proc -process "ssh" -argument "-o StrictHostKeyChecking=no git@github.com" -logfile $false
             }
-            proc -process "ssh" -argument "-o StrictHostKeyChecking=no git@github.com" -logfile $false
-            if($global:ok)
-            {
-                proc -process "git" -argument "clone ssh://git@github.com/arangodb/enterprise" -logfile $false
-            }
+            proc -process "git" -argument "clone ssh://git@github.com/arangodb/enterprise" -logfile $false
         }
     }
-    $global:ok = $?
 }
 
 Function checkoutIfNeeded
 {
-    If(-Not(Test-Path -PathType Container -Path "$INNERWORKDIR\ArangoDB"))
+    If($ENTERPRISEEDITION -eq "On")
     {
-        If($ENTERPRISEEDITION -eq "On")
+        If(-Not(Test-Path -PathType Container -Path "$INNERWORKDIR\ArangoDB\enterprise"))
         {
             checkoutEnterprise
         }
-        Else
+    }
+    Else
+    {
+        If(-Not(Test-Path -PathType Container -Path "$INNERWORKDIR\ArangoDB"))
         {
             checkoutArangoDB
         }
     }
-    $global:ok = $?
 }
+
 
 Function switchBranches($branch_c,$branch_e)
 {
     checkoutIfNeeded
     if($global:ok)
     {
-        Set-Location "$INNERWORKDIR\ArangoDB";$global:ok = $?
+        Set-Location "$INNERWORKDIR\ArangoDB";comm
         If ($global:ok) 
         {
             proc -process "git" -argument "checkout -- ." -logfile $false
@@ -288,7 +293,7 @@ Function switchBranches($branch_c,$branch_e)
         }
         If($ENTERPRISEEDITION -eq "On")
         {
-            Set-Location "$INNERWORKDIR\ArangoDB\enterprise"
+            Set-Location "$INNERWORKDIR\ArangoDB\enterprise";comm
             If ($global:ok) 
             {
                 proc -process "git" -argument "checkout -- ." -logfile $false
@@ -307,7 +312,6 @@ Function switchBranches($branch_c,$branch_e)
             }
         }
     }
-    $global:ok = $?
 }
 
 Function updateOskar
@@ -321,25 +325,22 @@ Function updateOskar
     {
         proc -process "git" -argument "pull" -logfile $false
     }
-    $global:ok = $?
 }
 
 Function disableDebugSymbols
 {
     ForEach($file in (Get-ChildItem -Path "$INNERWORKDIR\ArangoDB" -Filter "CMakeLists.txt" -Recurse -ErrorAction SilentlyContinue -Force).FullName)
     {
-        (Get-Content $file).Replace('/Zi','/Z7') | Set-Content $file
+        (Get-Content $file).Replace('/Zi','/Z7') | Set-Content $file; comm
     }
-    $global:ok = $?
 }
 
 Function enableDebugSymbols
 {
     ForEach($file in (Get-ChildItem -Path "$INNERWORKDIR\ArangoDB" -Filter "CMakeLists.txt" -Recurse -ErrorAction SilentlyContinue -Force).FullName)
     {
-        (Get-Content $file).Replace('/Z7','/Zi') | Set-Content $file
+        (Get-Content $file).Replace('/Z7','/Zi') | Set-Content $file; comm
     }
-    $global:ok = $?
 }
 
 Function clearResults
@@ -369,13 +370,12 @@ Function clearResults
     {
         Remove-Item -Force testProtocol.txt
     }
-    $global:ok = $?
+    comm
 }
 
 Function showLog
 {
-    Get-Content "$INNERWORKDIR\test.log" | Out-GridView -Title "$INNERWORKDIR\test.log"
-    $global:ok = $?
+    Get-Content "$INNERWORKDIR\test.log" | Out-GridView -Title "$INNERWORKDIR\test.log";comm
 }
 
 Function  findArangoDBVersion
@@ -401,7 +401,6 @@ Function  findArangoDBVersion
         }
 
     }
-    $global:ok = $?
 }
 
 Function configureWindows
@@ -413,7 +412,6 @@ Function configureWindows
     Set-Location "$INNERWORKDIR\ArangoDB\build"
     Write-Host "Configure: cmake -G `"$GENERATOR`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES`" `"$INNERWORKDIR\ArangoDB`""
     proc -process "cmake" -argument "-G `"$GENERATOR`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES`" `"$INNERWORKDIR\ArangoDB`"" -logfile "$INNERWORKDIR\cmake-configure"
-    $global:ok = $?
 }
 
 Function buildWindows 
@@ -426,8 +424,7 @@ Function buildWindows
     Set-Location "$INNERWORKDIR\ArangoDB\build"
     Write-Host "Build: cmake --build . --config `"$BUILDMODE`""
     proc -process "cmake" -argument "--build . --config `"$BUILDMODE`"" -logfile "$INNERWORKDIR\cmake-build"
-    Copy-Item "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\*" -Destination "$INNERWORKDIR\ArangoDB\build\bin\"
-    $global:ok = $?
+    Copy-Item "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\*" -Destination "$INNERWORKDIR\ArangoDB\build\bin\"; comm
 }
 
 Function buildArangoDB
@@ -439,7 +436,6 @@ Function buildArangoDB
     }
     configureWindows
     buildWindows
-    $global:ok = $?
 }
 
 Function moveResultsToWorkspace
@@ -448,18 +444,18 @@ Function moveResultsToWorkspace
   ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter cmake-*))
   {
     Write-Host "Move $INNERWORKDIR\$file"
-    Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE
+    Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE; comm
   }
   If(Test-Path -PathType Leaf "$INNERWORKDIR\test.log")
   {
     If(Get-Content -Path "$INNERWORKDIR\test.log" -Head 1 | Select-String -Pattern "BAD" -CaseSensitive)
     {
         Write-Host "Move $INNERWORKDIR\test.log"
-        Move-Item -Path "$INNERWORKDIR\test.log" -Destination $env:WORKSPACE
+        Move-Item -Path "$INNERWORKDIR\test.log" -Destination $env:WORKSPACE; comm
         ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter testreport*))
         {
             Write-Host "Move $INNERWORKDIR\$file"
-            Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE
+            Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE; comm
         } 
     }
     Else
@@ -467,28 +463,26 @@ Function moveResultsToWorkspace
         ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter testreport*))
         {
             Write-Host "Remove $INNERWORKDIR\$file"
-            Remove-Item -Force "$INNERWORKDIR\$file" 
+            Remove-Item -Force "$INNERWORKDIR\$file"; comm 
         } 
     }
   }
-  $global:ok = $?
 }
 
 Function getRepoState
 {
-    Set-Location "$INNERWORKDIR\Arangodb"
-    $repoState = $(git status -b -s | Select-String -Pattern "^[?]" -NotMatch)
+    Set-Location "$INNERWORKDIR\Arangodb"; comm
+    $global:repoState = $(git status -b -s | Select-String -Pattern "^[?]" -NotMatch)
     If($ENTERPRISEEDITION -eq "On")
     {
-        Set-Location "$INNERWORKDIR\ArangoDB\enterprise"
-        $repoStateEnterprise = $(git status -b -s | Select-String -Pattern "^[?]" -NotMatch)
-        Set-Location "$INNERWORKDIR\Arangodb"
+        Set-Location "$INNERWORKDIR\ArangoDB\enterprise"; comm
+        $global:repoStateEnterprise = $(git status -b -s | Select-String -Pattern "^[?]" -NotMatch)
+        Set-Location "$INNERWORKDIR\Arangodb"; comm
     }
     Else
     {
-        $repoStateEnterprise = ""
+        $global:repoStateEnterprise = ""
     }
-    $global:ok = $?
 }
 
 Function noteStartAndRepoState
@@ -501,7 +495,7 @@ Function noteStartAndRepoState
     $(Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH.mm.ssZ") | Add-Content testProtocol.txt
     Write-Output "========== Status of main repository:" | Add-Content testProtocol.txt
     Write-Host "========== Status of main repository:"
-    ForEach($line in $repoState)
+    ForEach($line in $global:repoState)
     {
         Write-Output " $line" | Add-Content testProtocol.txt
         Write-Host " $line"
@@ -510,21 +504,19 @@ Function noteStartAndRepoState
     {
         Write-Output "Status of enterprise repository:" | Add-Content testProtocol.txt
         Write-Host "Status of enterprise repository:"
-        ForEach($line in $repoStateEnterprise)
+        ForEach($line in $global:repoStateEnterprise)
         {
             Write-Output " $line" | Add-Content testProtocol.txt
             Write-Host " $line"
         }
     }
-    $global:ok = $?
 }
 
 Function unittest($test,$output)
 {
     $PORT=Get-Random -Minimum 20000 -Maximum 65535
-    Set-Location "$INNERWORKDIR\ArangoDB"
-    [array]$global:UPIDS = [array]$global:UPIDS+$(Start-Process -FilePath "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\arangosh.exe" -ArgumentList " -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\UnitTests\unittest.js -- $test" -RedirectStandardOutput "$output.stdout.log" -RedirectStandardError "$output.stderr.log" -PassThru).Id
-    $global:ok = $?
+    Set-Location "$INNERWORKDIR\ArangoDB"; comm
+    [array]$global:UPIDS = [array]$global:UPIDS+$(Start-Process -FilePath "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\arangosh.exe" -ArgumentList " -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\UnitTests\unittest.js -- $test" -RedirectStandardOutput "$output.stdout.log" -RedirectStandardError "$output.stderr.log" -PassThru).Id; comm
 }
 
 Function launchSingleTests
@@ -566,7 +558,7 @@ Function launchSingleTests
     test1 "shell_replication",""
     test1 "http_replication",""
     test1 "catch",""
-    $global:ok = $?
+    comm
 }
 
 Function launchClusterTests
@@ -612,7 +604,7 @@ Function launchClusterTests
     test1 "dump",""
     test1 "server_http",""
     test1 "agency",""
-    $global:ok = $?
+    comm
 }
 
 Function waitForProcesses($seconds)
@@ -639,7 +631,7 @@ Function waitForProcesses($seconds)
         }
         Start-Sleep 5
     }
-    $global:ok = $?
+    comm
 }
 
 Function waitOrKill($seconds)
@@ -660,7 +652,7 @@ Function waitOrKill($seconds)
             waitForProcesses 15  
         }
     }
-    $global:ok = $?
+    comm
 }
 
 Function log([array]$log)
@@ -670,26 +662,26 @@ Function log([array]$log)
         Write-Host $l
         $l | Add-Content "$INNERWORKDIR\test.log"
     }
-    $global:ok = $?
+    comm
 }
 
 Function createReport
 {
     $d = $(Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH.mm.ssZ")
     $d | Add-Content testProtocol.txt
-    $result = "GOOD"
+    $global:result = "GOOD"
     ForEach($f in $(Get-ChildItem -Filter *.stdout.log))
     {
         If(-Not($(Get-Content $f -Tail 1) -eq "Success"))
         {
-            $result = "BAD"
+            $global:result = "BAD"
             Write-Host "Bad result in $f"
             "Bad result in $f" | Add-Content testProtocol.txt
             $badtests = $badtests + "Bad result in $f"
         }
     }
 
-  $result | Add-Content testProtocol.txt
+  $global:result | Add-Content testProtocol.txt
   Push-Location
     Set-Location $INNERWORKDIR
     Write-Host "Compress-Archive -Path `"$INNERWORKDIR\tmp\`" -DestinationPath `"$INNERWORKDIR\ArangoDB\innerlogs.zip`""
@@ -714,8 +706,8 @@ Function createReport
   Write-Host "Compress-Archive -Path testProtocol.txt -Update -DestinationPath `"$INNERWORKDIR\testreport-$d.zip`""
   Compress-Archive -Path testProtocol.txt -Update -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
   Write-Host "Remove-Item -Recurse -Force testProtocol.txt"
-  log "$d $TESTSUITE $result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE" $repoState $repoStateEnterprise $badtests ""
-  $global:ok = $?
+  log "$d $TESTSUITE $global:result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE" $global:repoState $global:repoStateEnterprise $badtests ""
+  comm
 }
 
 Function runTests
@@ -763,27 +755,28 @@ Function runTests
         "*"
         {
             Write-Host "Unknown test suite $TESTSUITE"
-            $result = "BAD"
+            $global:result = "BAD"
             Break
         }
     }
 
-    If($result -eq "GOOD")
+    If($global:result -eq "GOOD")
     {
-        Return $true
+        Set-Variable -Name "ok" -Value $true -Scope global
     }
     Else
     {
-        Return $false
+        Set-Variable -Name "ok" -Value $false -Scope global
     }   
-    $global:ok = $?
 }
 
 Function oskar
 {
     checkoutIfNeeded
-    runTests
-    $global:ok = $?
+    if($global:ok)
+    {
+        runTests
+    }
 }
 
 Function oskar1
@@ -791,7 +784,6 @@ Function oskar1
     showConfig
     buildArangoDB
     oskar
-    $global:ok = $?
 }
 
 Function oskar2
@@ -803,7 +795,7 @@ Function oskar2
     single
     oskar
     cluster
-    $global:ok = $?
+    comm
 }
 
 Function oskar4
@@ -822,7 +814,7 @@ Function oskar4
     oskar
     cluster
     rocksdb
-    $global:ok = $?
+    comm
 }
 
 Function oskar8
@@ -854,7 +846,7 @@ Function oskar8
     oskar
     cluster
     rocksdb
-    $global:ok = $?
+    comm
 }
 
 Clear
