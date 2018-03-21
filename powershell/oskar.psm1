@@ -1,4 +1,15 @@
-function proc($process,$argument,$logfile)
+$WORKDIR = $pwd
+If(-Not(Test-Path -PathType Container -Path "work"))
+{
+    New-Item -ItemType Directory -Path "work"
+}
+$INNERWORKDIR = "$WORKDIR\work"
+$GENERATOR = "Visual Studio 15 2017 Win64"
+Import-Module VSSetup -ErrorAction Stop
+$env:GYP_MSVS_OVERRIDE_PATH= Split-Path -Parent $((Get-ChildItem (Get-VSSetupInstance).InstallationPath -Filter cl.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx86\\x64"}).FullName)
+$env:CLCACHE_DIR="$INNERWORKDIR\.clcache.windows"
+
+Function proc($process,$argument,$logfile)
 {
     If($logfile -eq $false)
     {
@@ -30,22 +41,11 @@ function proc($process,$argument,$logfile)
     }
 }
 
-function comm
+Function comm
 {
     Set-Variable -Name "ok" -Value $? -Scope global
     Write-Host "Debug OK: $global:ok"
 }
-
-$WORKDIR = $pwd
-If(-Not(Test-Path -PathType Container -Path "work"))
-{
-    New-Item -ItemType Directory -Path "work"
-}
-$INNERWORKDIR = "$WORKDIR\work"
-$GENERATOR = "Visual Studio 15 2017 Win64"
-Import-Module VSSetup -ErrorAction Stop
-$env:GYP_MSVS_OVERRIDE_PATH= Split-Path -Parent $((Get-ChildItem (Get-VSSetupInstance).InstallationPath -Filter cl.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx86\\x64"}).FullName)
-$env:CLCACHE_DIR="$INNERWORKDIR\.clcache.windows"
 
 Function showConfig
 {
