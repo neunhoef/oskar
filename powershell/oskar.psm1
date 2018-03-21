@@ -254,15 +254,19 @@ Function checkoutEnterprise
 
 Function checkoutIfNeeded
 {
-    If(-Not(Test-Path -PathType Container -Path "$INNERWORKDIR\ArangoDB"))
-    {
         If($ENTERPRISEEDITION -eq "On")
         {
-            checkoutEnterprise
+            If(-Not(Test-Path -PathType Container -Path "$INNERWORKDIR\ArangoDB\enterprise"))
+            {
+                checkoutEnterprise
+            }
         }
         Else
         {
-            checkoutArangoDB
+            If(-Not(Test-Path -PathType Container -Path "$INNERWORKDIR\ArangoDB"))
+            {
+                checkoutArangoDB
+            }
         }
     }
     comm
