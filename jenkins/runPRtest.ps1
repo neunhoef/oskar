@@ -10,7 +10,11 @@ If(-Not(Test-Path -PathType Container -Path "$OSKARDIR\oskar"))
     git clone https://github.com/neunhoef/oskar
     Set-Location "$OSKARDIR\oskar"
 }
-Set-Location "$OSKARDIR\oskar"
+Else
+{
+    Set-Location "$OSKARDIR\oskar"
+    git pull
+}
 Import-Module "$OSKARDIR\oskar\powershell\oskar.psm1"
 If(-Not($?))
 {
@@ -28,10 +32,17 @@ Import-Module "$OSKARDIR\oskar\powershell\oskar.psm1"
 clearResults
 
 switchBranches $env:ARANGODB_BRANCH $env:ENTERPRISE_BRANCH
-#disableDebugSymbols
 If ($global:ok) 
 {
     oskar1
 }
 moveResultsToWorkspace
 unlockDirectory
+If($global:result -eq "BAD")
+{
+    Exit $false
+}
+Else
+{
+    Exit $global:ok
+}
