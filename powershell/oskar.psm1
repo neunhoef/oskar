@@ -33,6 +33,7 @@ function proc($process,$argument,$logfile)
 function ok
 {
     Set-Variable -Name "ok" -Value $? -Scope global
+    Write-Host "Debug OK: $global:ok"
 }
 
 $WORKDIR = $pwd
