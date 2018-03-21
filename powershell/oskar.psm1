@@ -244,12 +244,9 @@ Function checkoutEnterprise
             If(Test-Path -PathType Leaf -Path "$HOME\.ssh\known_hosts")
             {
                 Remove-Item -Force "$HOME\.ssh\known_hosts"
+                proc -process "ssh" -argument "-o StrictHostKeyChecking=no git@github.com" -logfile $false
             }
-            proc -process "ssh" -argument "-o StrictHostKeyChecking=no git@github.com" -logfile $false
-            if($global:ok)
-            {
-                proc -process "git" -argument "clone ssh://git@github.com/arangodb/enterprise" -logfile $false
-            }
+            proc -process "git" -argument "clone ssh://git@github.com/arangodb/enterprise" -logfile $false
         }
     }
     comm
@@ -295,7 +292,7 @@ Function switchBranches($branch_c,$branch_e)
         }
         If($ENTERPRISEEDITION -eq "On")
         {
-            Set-Location "$INNERWORKDIR\ArangoDB\enterprise"
+            Set-Location "$INNERWORKDIR\ArangoDB\enterprise";comm
             If ($global:ok) 
             {
                 proc -process "git" -argument "checkout -- ." -logfile $false
