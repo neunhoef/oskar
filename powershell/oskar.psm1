@@ -39,12 +39,13 @@ Function proc($process,$argument,$logfile)
             Set-Variable -Name "ok" -Value $false -Scope global
         }
     }
+    Write-Host "Debug Proc: $global:ok"
 }
 
 Function comm
 {
     Set-Variable -Name "ok" -Value $? -Scope global
-    Write-Host "Debug OK: $global:ok"
+    Write-Host "Debug Comm: $global:ok"
 }
 
 Function showConfig
