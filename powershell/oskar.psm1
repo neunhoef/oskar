@@ -669,19 +669,19 @@ Function createReport
 {
     $d = $(Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH.mm.ssZ")
     $d | Add-Content testProtocol.txt
-    $result = "GOOD"
+    $global:result = "GOOD"
     ForEach($f in $(Get-ChildItem -Filter *.stdout.log))
     {
         If(-Not($(Get-Content $f -Tail 1) -eq "Success"))
         {
-            $result = "BAD"
+            $global:result = "BAD"
             Write-Host "Bad result in $f"
             "Bad result in $f" | Add-Content testProtocol.txt
             $badtests = $badtests + "Bad result in $f"
         }
     }
 
-  $result | Add-Content testProtocol.txt
+  $global:result | Add-Content testProtocol.txt
   Push-Location
     Set-Location $INNERWORKDIR
     Write-Host "Compress-Archive -Path `"$INNERWORKDIR\tmp\`" -DestinationPath `"$INNERWORKDIR\ArangoDB\innerlogs.zip`""
@@ -706,7 +706,7 @@ Function createReport
   Write-Host "Compress-Archive -Path testProtocol.txt -Update -DestinationPath `"$INNERWORKDIR\testreport-$d.zip`""
   Compress-Archive -Path testProtocol.txt -Update -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
   Write-Host "Remove-Item -Recurse -Force testProtocol.txt"
-  log "$d $TESTSUITE $result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE" $repoState $repoStateEnterprise $badtests ""
+  log "$d $TESTSUITE $global:result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE" $repoState $repoStateEnterprise $badtests ""
   comm
 }
 
@@ -755,27 +755,28 @@ Function runTests
         "*"
         {
             Write-Host "Unknown test suite $TESTSUITE"
-            $result = "BAD"
+            $global:result = "BAD"
             Break
         }
     }
 
-    If($result -eq "GOOD")
+    If($global:result -eq "GOOD")
     {
-        Return $true
+        Set-Variable -Name "ok" -Value $true -Scope global
     }
     Else
     {
-        Return $false
+        Set-Variable -Name "ok" -Value $false -Scope global
     }   
-    comm
 }
 
 Function oskar
 {
     checkoutIfNeeded
-    runTests
-    comm
+    if($global:ok)
+    {
+        runTests
+    }
 }
 
 Function oskar1
@@ -783,7 +784,6 @@ Function oskar1
     showConfig
     buildArangoDB
     oskar
-    comm
 }
 
 Function oskar2
