@@ -472,16 +472,16 @@ Function moveResultsToWorkspace
 Function getRepoState
 {
     Set-Location "$INNERWORKDIR\Arangodb"; comm
-    $repoState = $(git status -b -s | Select-String -Pattern "^[?]" -NotMatch)
+    $global:repoState = $(git status -b -s | Select-String -Pattern "^[?]" -NotMatch)
     If($ENTERPRISEEDITION -eq "On")
     {
         Set-Location "$INNERWORKDIR\ArangoDB\enterprise"; comm
-        $repoStateEnterprise = $(git status -b -s | Select-String -Pattern "^[?]" -NotMatch)
+        $global:repoStateEnterprise = $(git status -b -s | Select-String -Pattern "^[?]" -NotMatch)
         Set-Location "$INNERWORKDIR\Arangodb"; comm
     }
     Else
     {
-        $repoStateEnterprise = ""
+        $global:repoStateEnterprise = ""
     }
 }
 
@@ -495,7 +495,7 @@ Function noteStartAndRepoState
     $(Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH.mm.ssZ") | Add-Content testProtocol.txt
     Write-Output "========== Status of main repository:" | Add-Content testProtocol.txt
     Write-Host "========== Status of main repository:"
-    ForEach($line in $repoState)
+    ForEach($line in $global:repoState)
     {
         Write-Output " $line" | Add-Content testProtocol.txt
         Write-Host " $line"
@@ -504,7 +504,7 @@ Function noteStartAndRepoState
     {
         Write-Output "Status of enterprise repository:" | Add-Content testProtocol.txt
         Write-Host "Status of enterprise repository:"
-        ForEach($line in $repoStateEnterprise)
+        ForEach($line in $global:repoStateEnterprise)
         {
             Write-Output " $line" | Add-Content testProtocol.txt
             Write-Host " $line"
@@ -706,7 +706,7 @@ Function createReport
   Write-Host "Compress-Archive -Path testProtocol.txt -Update -DestinationPath `"$INNERWORKDIR\testreport-$d.zip`""
   Compress-Archive -Path testProtocol.txt -Update -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
   Write-Host "Remove-Item -Recurse -Force testProtocol.txt"
-  log "$d $TESTSUITE $global:result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE" $repoState $repoStateEnterprise $badtests ""
+  log "$d $TESTSUITE $global:result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE" $global:repoState $global:repoStateEnterprise $badtests ""
   comm
 }
 
