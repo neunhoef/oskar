@@ -66,7 +66,7 @@ if [ "$1" = 'arangod' ]; then
 
         echo "Initializing database...Hang on..."
 
-        arangod --server.endpoint unix:///tmp/arangodb-tmp.sock \
+        arangod --server.endpoint tcp://127.0.0.1:8529 \
                 --server.authentication false \
 		--log.file /tmp/init-log \
 		--log.foreground-tty false &
@@ -88,7 +88,7 @@ if [ "$1" = 'arangod' ]; then
             let counter=counter+1
             ARANGO_UP=1
                 arangosh \
-                    --server.endpoint=unix:///tmp/arangodb-tmp.sock \
+                    --server.endpoint=tcp://127.0.0.1:8529 \
                     --server.authentication false \
                     --javascript.execute-string "db._version()" \
                     > /dev/null 2>&1 || ARANGO_UP=0
@@ -103,7 +103,7 @@ if [ "$1" = 'arangod' ]; then
             *.js)
                         echo "$0: running $f"
                         arangosh ${ARANGOSH_ARGS} \
-                                --server.endpoint=unix:///tmp/arangodb-tmp.sock \
+                                --server.endpoint=tcp://127.0.0.1:8529 \
                                 --javascript.execute "$f"
                         ;;
             */dumps)
@@ -113,7 +113,7 @@ if [ "$1" = 'arangod' ]; then
                             echo "restoring $d into ${DBName}";
                             arangorestore \
                                 ${ARANGOSH_ARGS} \
-                                --server.endpoint=unix:///tmp/arangodb-tmp.sock \
+                                --server.endpoint=tcp://127.0.0.1:8529 \
                                 --create-database true \
                                 --include-system-collections true \
                                 --server.database "$DBName" \
