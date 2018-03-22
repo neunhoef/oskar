@@ -530,7 +530,7 @@ Function launchSingleTests
 {
     noteStartAndRepoState
     Write-Host "Launching tests..."
-    $portBase = 10000
+    $global:portBase = 10000
 
     Function test1([array]$test)
     {
@@ -538,8 +538,8 @@ Function launchSingleTests
         {
             Write-Host "Launching $test"
         }
-        unittest "$($test[0]) --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort $($portBase + 99) $($test[2..$($test.Length)]) --skipNonDeterministic true --skipTimeCritical true" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1])"
-        $portBase = $($portBase + 100)
+        unittest "$($test[0]) --cluster false --storageEngine $STORAGEENGINE --minPort $global:portBase --maxPort $($global:portBase + 99) $($test[2..$($test.Length)]) --skipNonDeterministic true --skipTimeCritical true" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1])"
+        $global:portBase = $($global:portBase + 100)
         Start-Sleep 5
     }
     [array]$global:UPIDS = $null
@@ -572,7 +572,7 @@ Function launchClusterTests
 {
     noteStartAndRepoState
     Write-Host "Launching tests..."
-    $portBase = 10000
+    $global:portBase = 10000
 
     Function test1([array]$test)
     {
@@ -580,8 +580,8 @@ Function launchClusterTests
         {
             Write-Host "Launching $test"
         }
-        unittest "$($test[0]) --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort $($portBase + 99) $($test[2..$($test.Length)]) --skipNonDeterministic true --skipTimeCritical true" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1])"
-        $portBase = $($portBase + 100)
+        unittest "$($test[0]) --cluster false --storageEngine $STORAGEENGINE --minPort $global:portBase --maxPort $($global:portBase + 99) $($test[2..$($test.Length)]) --skipNonDeterministic true --skipTimeCritical true" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1])"
+        $global:portBase = $($global:portBase + 100)
         Start-Sleep 5
     }
 
@@ -591,8 +591,8 @@ Function launchClusterTests
         {
             Write-Host "Launching $test"
         }
-        unittest "$($test[0]) --test $($test[2]) --storageEngine $STORAGEENGINE --cluster true --minPort $portBase --maxPort $($portBase + 99) --skipNonDeterministic true" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1])"
-        $portBase = $($portBase + 100)
+        unittest "$($test[0]) --test $($test[2]) --storageEngine $STORAGEENGINE --cluster true --minPort $global:portBase --maxPort $($global:portBase + 99) --skipNonDeterministic true" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1])"
+        $global:portBase = $($global:portBase + 100)
         Start-Sleep 5
     }
     [array]$global:UPIDS = $null
