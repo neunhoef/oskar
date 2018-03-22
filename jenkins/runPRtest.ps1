@@ -36,13 +36,15 @@ If ($global:ok)
 {
     oskar1
 }
+$s = $global:ok
 moveResultsToWorkspace
 unlockDirectory
-If($global:result -eq "BAD")
+
+If($s)
 {
-    Exit $false
+    Exit 0
 }
 Else
 {
-    Exit $global:ok
-}
+    Exit 1
+} 

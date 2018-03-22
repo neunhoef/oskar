@@ -424,7 +424,10 @@ Function buildWindows
     Set-Location "$INNERWORKDIR\ArangoDB\build"
     Write-Host "Build: cmake --build . --config `"$BUILDMODE`""
     proc -process "cmake" -argument "--build . --config `"$BUILDMODE`"" -logfile "$INNERWORKDIR\cmake-build"
-    Copy-Item "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\*" -Destination "$INNERWORKDIR\ArangoDB\build\bin\"; comm
+    If($global:ok)
+    {
+        Copy-Item "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\*" -Destination "$INNERWORKDIR\ArangoDB\build\bin\"; comm
+    }
 }
 
 Function buildArangoDB
@@ -435,7 +438,10 @@ Function buildArangoDB
        Remove-Item -Recurse -Force -Path "$INNERWORKDIR\ArangoDB\build"
     }
     configureWindows
-    buildWindows
+    If($global:ok)
+    {
+        buildWindows
+    }
 }
 
 Function moveResultsToWorkspace
@@ -516,6 +522,7 @@ Function unittest($test,$output)
 {
     $PORT=Get-Random -Minimum 20000 -Maximum 65535
     Set-Location "$INNERWORKDIR\ArangoDB"; comm
+    Write-Host "Test: $INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\arangosh.exe -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\UnitTests\unittest.js -- $test"
     [array]$global:UPIDS = [array]$global:UPIDS+$(Start-Process -FilePath "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\arangosh.exe" -ArgumentList " -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\UnitTests\unittest.js -- $test" -RedirectStandardOutput "$output.stdout.log" -RedirectStandardError "$output.stderr.log" -PassThru).Id; comm
 }
 
@@ -523,7 +530,7 @@ Function launchSingleTests
 {
     noteStartAndRepoState
     Write-Host "Launching tests..."
-    $portBase = 10000
+    $global:portBase = 10000
 
     Function test1([array]$test)
     {
@@ -531,8 +538,8 @@ Function launchSingleTests
         {
             Write-Host "Launching $test"
         }
-        unittest "$($test[0]) --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort $($portBase + 99) $($test[2..$($test.Length)]) --skipNonDeterministic true --skipTimeCritical true" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1])"
-        $portBase = $($portBase + 100)
+        unittest "$($test[0]) --cluster false --storageEngine $STORAGEENGINE --minPort $global:portBase --maxPort $($global:portBase + 99) $($test[2..$($test.Length)]) --skipNonDeterministic true --skipTimeCritical true" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1])"
+        $global:portBase = $($global:portBase + 100)
         Start-Sleep 5
     }
     [array]$global:UPIDS = $null
@@ -565,7 +572,7 @@ Function launchClusterTests
 {
     noteStartAndRepoState
     Write-Host "Launching tests..."
-    $portBase = 10000
+    $global:portBase = 10000
 
     Function test1([array]$test)
     {
@@ -573,8 +580,8 @@ Function launchClusterTests
         {
             Write-Host "Launching $test"
         }
-        unittest "$($test[0]) --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort $($portBase + 99) $($test[2..$($test.Length)]) --skipNonDeterministic true --skipTimeCritical true" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1])"
-        $portBase = $($portBase + 100)
+        unittest "$($test[0]) --cluster false --storageEngine $STORAGEENGINE --minPort $global:portBase --maxPort $($global:portBase + 99) $($test[2..$($test.Length)]) --skipNonDeterministic true --skipTimeCritical true" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1])"
+        $global:portBase = $($global:portBase + 100)
         Start-Sleep 5
     }
 
@@ -584,8 +591,8 @@ Function launchClusterTests
         {
             Write-Host "Launching $test"
         }
-        unittest "$($test[0]) --test $($test[2]) --storageEngine $STORAGEENGINE --cluster true --minPort $portBase --maxPort $($portBase + 99) --skipNonDeterministic true" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1])"
-        $portBase = $($portBase + 100)
+        unittest "$($test[0]) --test $($test[2]) --storageEngine $STORAGEENGINE --cluster true --minPort $global:portBase --maxPort $($global:portBase + 99) --skipNonDeterministic true" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1])"
+        $global:portBase = $($global:portBase + 100)
         Start-Sleep 5
     }
     [array]$global:UPIDS = $null
@@ -677,7 +684,7 @@ Function createReport
             $global:result = "BAD"
             Write-Host "Bad result in $f"
             "Bad result in $f" | Add-Content testProtocol.txt
-            $badtests = $badtests + "Bad result in $f"
+            $badtests = $badtests + "Bad result in $f`r`n"
         }
     }
 
@@ -706,7 +713,7 @@ Function createReport
   Write-Host "Compress-Archive -Path testProtocol.txt -Update -DestinationPath `"$INNERWORKDIR\testreport-$d.zip`""
   Compress-Archive -Path testProtocol.txt -Update -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
   Write-Host "Remove-Item -Recurse -Force testProtocol.txt"
-  log "$d $TESTSUITE $global:result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE" $global:repoState $global:repoStateEnterprise $badtests ""
+  log "$d $TESTSUITE $global:result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE",$global:repoState,$global:repoStateEnterprise,$badtests
   comm
 }
 
@@ -722,7 +729,7 @@ Function runTests
     {
         New-Item -ItemType Directory -Path tmp
     }
-    $env:TMPDIR = "$INNERWORKDIR\tmp"
+    $env:TMP = "$INNERWORKDIR\tmp"
     Set-Location "$INNERWORKDIR\ArangoDB"
     ForEach($log in $(Get-ChildItem -Filter "*.log"))
     {
