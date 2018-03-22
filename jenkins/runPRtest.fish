@@ -4,7 +4,7 @@ source jenkins/helper.jenkins.fish ; prepareOskar
 lockDirectory ; updateOskar ; clearResults
 
 eval $EDITION ; eval $STORAGE_ENGINE ; eval $TEST_SUITE
-parallelism 12
+parallelism 20
 
 switchBranches $ARANGODB_BRANCH $ENTERPRISE_BRANCH
 and oskar1
