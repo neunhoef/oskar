@@ -729,7 +729,7 @@ Function runTests
     {
         New-Item -ItemType Directory -Path tmp
     }
-    $env:TMPDIR = "$INNERWORKDIR\tmp"
+    $env:TMP = "$INNERWORKDIR\tmp"
     Set-Location "$INNERWORKDIR\ArangoDB"
     ForEach($log in $(Get-ChildItem -Filter "*.log"))
     {
