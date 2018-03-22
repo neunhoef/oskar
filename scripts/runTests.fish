@@ -203,8 +203,8 @@ function createReport
   echo $result >> testProtocol.txt
   pushd $INNERWORKDIR
   and begin
-    echo tar czvf "$INNERWORKDIR/ArangoDB/innerlogs.tar.gz" tmp --exclude databases --exclude rocksdb --exclude journals
-    tar czvf "$INNERWORKDIR/ArangoDB/innerlogs.tar.gz" tmp --exclude databases --exclude rocksdb --exclude journals
+    echo tar czvf "$INNERWORKDIR/ArangoDB/innerlogs.tar.gz" --exclude databases --exclude rocksdb --exclude journals tmp
+    tar czvf "$INNERWORKDIR/ArangoDB/innerlogs.tar.gz" --exclude databases --exclude rocksdb --exclude journals tmp
     popd
   end
   
@@ -222,6 +222,13 @@ function createReport
   echo rm -rf $cores $archives testProtocol.txt
   rm -rf $cores $archives testProtocol.txt
   log "$d $TESTSUITE $result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE" $repoState $repoStateEnterprise $badtests ""
+
+  # And finally collect the testfailures.txt:
+  rm -rf $INNERWORKDIR/testfailures.txt
+  touch $INNERWORKDIR/testfailures.txt
+  for f in $INNDERWORKDIR/tmp/*/testfailures.txt
+    cat $f >> $INNERWORKDIR/testfailures.txt
+  end
 end
 
 cd $INNERWORKDIR
