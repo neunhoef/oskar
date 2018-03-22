@@ -424,7 +424,10 @@ Function buildWindows
     Set-Location "$INNERWORKDIR\ArangoDB\build"
     Write-Host "Build: cmake --build . --config `"$BUILDMODE`""
     proc -process "cmake" -argument "--build . --config `"$BUILDMODE`"" -logfile "$INNERWORKDIR\cmake-build"
-    Copy-Item "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\*" -Destination "$INNERWORKDIR\ArangoDB\build\bin\"; comm
+    If($global:ok)
+    {
+        Copy-Item "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\*" -Destination "$INNERWORKDIR\ArangoDB\build\bin\"; comm
+    }
 }
 
 Function buildArangoDB
@@ -435,7 +438,10 @@ Function buildArangoDB
        Remove-Item -Recurse -Force -Path "$INNERWORKDIR\ArangoDB\build"
     }
     configureWindows
-    buildWindows
+    If($global:ok)
+    {
+        buildWindows
+    }
 }
 
 Function moveResultsToWorkspace

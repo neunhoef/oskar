@@ -40,9 +40,16 @@ moveResultsToWorkspace
 unlockDirectory
 If($global:result -eq "BAD")
 {
-    Exit $false
+    Exit 1
 }
 Else
 {
-    Exit $global:ok
+    If($global:ok)
+    {
+        Exit 0
+    }
+    Else
+    {
+        Exit 1
+    } 
 }
