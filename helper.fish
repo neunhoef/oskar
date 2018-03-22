@@ -215,7 +215,7 @@ function moveResultsToWorkspace
   for f in $WORKDIR/work/*.deb ; echo "mv $f" ; mv $f $WORKSPACE ; end
   for f in $WORKDIR/work/*.tar.gz ; echo "mv $f" ; mv $f $WORKSPACE ; end
   if test -f $WORKDIR/work/testfailures.txt
-    echo "mv $f" ; mv $f $WORKSPACE
+    echo "mv $WORKDIR/work/testfailures.txt" ; mv $WORKDIR/work/testfailures.txt $WORKSPACE
   end
 end
 
