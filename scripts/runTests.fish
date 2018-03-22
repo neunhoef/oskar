@@ -205,12 +205,14 @@ function createReport
   set cores core*
   set archives *.tar.gz
   set logs *.log
-  set binary
   if test (count $cores) != 0
-    set binary build/bin/arangod build/bin/arangodbtests
+    set binaries build/bin/arangod build/bin/arangodbtests
+    echo tar czvf "$INNERWORKDIR/crashreport-$d.tar.gz" $cores $binaries
+    tar czvf "$INNERWORKDIR/crashreport-$d.tar.gz" $cores $binaries
   end
-  echo tar czvf "$INNERWORKDIR/testreport-$d.tar.gz" $logs testProtocol.txt $cores $archives $binary
-  tar czvf "$INNERWORKDIR/testreport-$d.tar.gz" $logs testProtocol.txt $cores $archives $binary
+  echo tar czvf "$INNERWORKDIR/testreport-$d.tar.gz" $logs testProtocol.txt $archives
+  tar czvf "$INNERWORKDIR/testreport-$d.tar.gz" $logs testProtocol.txt $archives
+
   echo rm -rf $cores $archives testProtocol.txt
   rm -rf $cores $archives testProtocol.txt
   log "$d $TESTSUITE $result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE" $repoState $repoStateEnterprise $badtests ""
