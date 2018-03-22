@@ -13,7 +13,7 @@ or begin
   exit 1
 end
 
-parallelism 15
+parallelism 20
 
 enterprise ; rocksdb ; cluster
 
