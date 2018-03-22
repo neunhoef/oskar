@@ -783,7 +783,10 @@ Function oskar1
 {
     showConfig
     buildArangoDB
-    oskar
+    if($global:ok)
+    {
+        oskar
+    }
 }
 
 Function oskar2
