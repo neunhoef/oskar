@@ -684,7 +684,7 @@ Function createReport
             $global:result = "BAD"
             Write-Host "Bad result in $f"
             "Bad result in $f" | Add-Content testProtocol.txt
-            $badtests = $badtests + "Bad result in $f"
+            $badtests = $badtests + "Bad result in $f`r`n"
         }
     }
 
@@ -713,7 +713,7 @@ Function createReport
   Write-Host "Compress-Archive -Path testProtocol.txt -Update -DestinationPath `"$INNERWORKDIR\testreport-$d.zip`""
   Compress-Archive -Path testProtocol.txt -Update -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
   Write-Host "Remove-Item -Recurse -Force testProtocol.txt"
-  log "$d $TESTSUITE $global:result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE",$global:repoState,$global:repoStateEnterprise,$badtests,"`r`n"
+  log "$d $TESTSUITE $global:result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE",$global:repoState,$global:repoStateEnterprise,$badtests
   comm
 }
 
