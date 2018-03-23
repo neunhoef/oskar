@@ -50,11 +50,11 @@ function launchSingleTests
     set -l t $argv[1]
     set -l tt $argv[2]
     set -e argv[1..2]
-    echo scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort (math $portBase + 99) $argv --skipNondeterministic true --skipTimeCritical true --testOutput $TMPDIR/"$t""$tt" --writeXmlReport false
+    echo scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort (math $portBase + 99) $argv --skipNondeterministic true --skipTimeCritical true --testOutput $TMPDIR/"$t""$tt".out --writeXmlReport false
     scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE \
       --minPort $portBase --maxPort (math $portBase + 99) $argv \
       --skipNondeterministic true --skipTimeCritical true \
-      --testOutput $TMPDIR/"$t""$tt" --writeXmlReport false \
+      --testOutput $TMPDIR/"$t""$tt".out --writeXmlReport false \
       >"$t""$tt".log ^&1 &
     set -g portBase (math $portBase + 100)
     sleep 1
@@ -95,11 +95,11 @@ function launchClusterTests
     set -l t $argv[1]
     set -l tt $argv[2]
     set -e argv[1..2]
-    echo scripts/unittest $t --cluster true --storageEngine $STORAGEENGINE --minPort $portBase --maxPort (math $portBase + 99) $argv --skipNonDeterministic true --skipTimeCritical true --testOutput $TMPDIR/"$t""$tt" --writeXmlReport false
+    echo scripts/unittest $t --cluster true --storageEngine $STORAGEENGINE --minPort $portBase --maxPort (math $portBase + 99) $argv --skipNonDeterministic true --skipTimeCritical true --testOutput $TMPDIR/"$t""$tt".out --writeXmlReport false
     scripts/unittest $t --cluster true --storageEngine $STORAGEENGINE \
       --minPort $portBase --maxPort (math $portBase + 99) $argv \
       --skipNonDeterministic true --skipTimeCritical true \
-      --testOutput $TMPDIR/"$t""$tt" --writeXmlReport false \
+      --testOutput $TMPDIR/"$t""$tt".out --writeXmlReport false \
       >"$t""$tt".log ^&1 &
     set -g portBase (math $portBase + 100)
     sleep 1
@@ -107,12 +107,12 @@ function launchClusterTests
 
   function test3
     if test $VERBOSEOSKAR = On ; echo Launching $argv ; end
-    echo scripts/unittest $argv[1] --test $argv[3] --storageEngine $STORAGEENGINE --cluster true --minPort $portBase --maxPort (math $portBase + 99) --skipNonDeterministic true --testOutput $TMPDIR/$argv[1]_$argv[2] --writeXmlReport false
+    echo scripts/unittest $argv[1] --test $argv[3] --storageEngine $STORAGEENGINE --cluster true --minPort $portBase --maxPort (math $portBase + 99) --skipNonDeterministic true --testOutput "$TMPDIR/$argv[1]_$argv[2].out" --writeXmlReport false
     scripts/unittest $argv[1] --test $argv[3] \
       --storageEngine $STORAGEENGINE --cluster true \
       --minPort $portBase --maxPort (math $portBase + 99) \
       --skipNonDeterministic true \
-      --testOutput $TMPDIR/$argv[1]_$argv[2] --writeXmlReport false \
+      --testOutput "$TMPDIR/$argv[1]_$argv[2].out" --writeXmlReport false \
       >$argv[1]_$argv[2].log ^&1 &
     set -g portBase (math $portBase + 100)
     sleep 1
@@ -192,14 +192,20 @@ function createReport
   echo
   set -g result GOOD
   set -l badtests
-  for f in *.log
-    if not tail -1 $f | grep Success > /dev/null
-      set -g result BAD
-      echo Bad result in $f
-      echo Bad result in $f >> testProtocol.txt
-      set badtests $badtests "Bad result in $f"
+  pushd $INNERWORKDIR/tmp
+  for d in *.out
+    echo Looking at directory $d
+    if test -f UNITTEST_RESULT_EXECUTIVE_SUMMARY.json
+      if not grep true UNITTEST_RESULT_EXECUTIVE_SUMMARY.json
+        set -g result BAD
+        set f (basename -s out $d)log
+        echo Bad result in $f
+        echo Bad result in $f >> testProtocol.txt
+        set badtests $badtests "Bad result in $f"
+      end
     end
   end
+  popd
   echo $result >> testProtocol.txt
   pushd $INNERWORKDIR
   and begin
