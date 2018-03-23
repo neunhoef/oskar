@@ -232,7 +232,7 @@ function createReport
   # And finally collect the testfailures.txt:
   rm -rf $INNERWORKDIR/testfailures.txt
   touch $INNERWORKDIR/testfailures.txt
-  for f in $INNDERWORKDIR/tmp/*/testfailures.txt
+  for f in "$INNERWORKDIR"/tmp/*.out/testfailures.txt
     cat $f >> $INNERWORKDIR/testfailures.txt
   end
 end
