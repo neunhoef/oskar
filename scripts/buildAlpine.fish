@@ -20,7 +20,7 @@ cd build
 
 echo cmake $argv -DCMAKE_BUILD_TYPE=$BUILDMODE -DCMAKE_CXX_COMPILER=$CCACHEBINPATH/g++ -DCMAKE_C_COMPILER=$CCACHEBINPATH/gcc -DUSE_MAINTAINER_MODE=$MAINTAINER -DUSE_ENTERPRISE=$ENTERPRISEEDITION -DUSE_JEMALLOC=Off -DCMAKE_INSTALL_PREFIX=/ -DSTATIC_EXECUTABLES=On ..
 
-echo cmake output in work/cmakeAlpine.log
+echo cmake output in work/cmakeArangoDB.log
 
 cmake $argv \
       -DCMAKE_BUILD_TYPE=$BUILDMODE \
@@ -31,14 +31,14 @@ cmake $argv \
       -DUSE_JEMALLOC=Off \
       -DCMAKE_INSTALL_PREFIX=/ \
       -DSTATIC_EXECUTABLES=On \
-      .. > $INNERWORKDIR/cmakeAlpine.log ^&1
+      .. > $INNERWORKDIR/cmakeArangoDB.log ^&1
 
 or exit $status
 
 mkdir install
 set -x DESTDIR (pwd)/install
-echo Running make for static build, output in work/buildAlpine.log
-nice make -j$PARALLELISM install > ../../buildAlpine.log ^&1
+echo Running make for static build, output in work/buildArangoDB.log
+nice make -j$PARALLELISM install > ../../buildArangoDB.log ^&1
 and cd install
 and if test -z "$NOSTRIP"
   echo Stripping executables...

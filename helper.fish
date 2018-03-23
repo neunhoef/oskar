@@ -91,7 +91,7 @@ end
 function clearResults
   cd $WORKDIR/work
   for f in testreport* ; rm -f $f ; end
-  rm -f test.log buildAlpine.log buildArangoDB.log cmakeAlpine.log cmakeArangoDB.log
+  rm -f test.log buildArangoDB.log cmakeArangoDB.log
 end
 
 function oskar1
@@ -208,7 +208,7 @@ function moveResultsToWorkspace
       for f in $WORKDIR/work/testreport* ; echo "rm $f" ; rm $f ; end
     end
   end
-  for x in buildAlpine.log buildArangoDB.log cmakeAlpine.log cmakeArangoDB.log buildAlpineEnterprise.log cmakeAlpineEnterprise.log
+  for x in buildArangoDB.log cmakeArangoDB.log
     if test -f "$WORKDIR/work/$x" ; mv $WORKDIR/work/$x $WORKSPACE ; end
   end
 

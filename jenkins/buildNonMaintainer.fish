@@ -17,8 +17,8 @@ or begin
 end
 
 cd $WORKDIR/work
-mv cmakeAlpine.log cmakeAlpineEnterprise.log
-mv buildAlpine.log buildAlpineEnterprise.log
+mv cmakeArangoDB.log cmakeArangoDBEnterprise.log
+mv buildArangoDB.log buildArangoDBEnterprise.log
 
 community
 buildStaticArangoDB
