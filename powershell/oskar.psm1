@@ -449,8 +449,6 @@ Function moveResultsToWorkspace
   Write-Host "Moving reports and logs to $env:WORKSPACE ..."
   If(Test-Path -PathType Leaf "$INNERWORKDIR\test.log")
   {
-    Write-Host "Move $INNERWORKDIR\test.log"
-    Move-Item -Path "$INNERWORKDIR\test.log" -Destination $env:WORKSPACE; comm
     If(Get-Content -Path "$INNERWORKDIR\test.log" -Head 1 | Select-String -Pattern "BAD" -CaseSensitive)
     {
         ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter testreport*))
@@ -468,6 +466,8 @@ Function moveResultsToWorkspace
         } 
     }
   }
+  Write-Host "Move $INNERWORKDIR\test.log"
+  Move-Item -Path "$INNERWORKDIR\test.log" -Destination $env:WORKSPACE; comm
   ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter "*.zip"))
   {
     Write-Host "Move $INNERWORKDIR\$file"
@@ -689,22 +689,22 @@ Function log([array]$log)
 
 Function createReport
 {
-    $d = $(Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH.mm.ssZ")
-    $d | Add-Content testProtocol.txt
+    $date = $(Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH.mm.ssZ")
+    $date | Add-Content testProtocol.txt
     $global:result = "GOOD"
     Push-Location "$INNERWORKDIR\tmp"
-        ForEach($d in (Get-ChildItem -Directory -Filter "*.out"))
+        ForEach($dir in (Get-ChildItem -Directory -Filter "*.out"))
         {
-            Write-Host "Looking at directory $($d.BaseName)"
-            If(Test-Path -PathType Leaf -Path "$($d.FullName)\UNITTEST_RESULT_EXECUTIVE_SUMMARY.json")
+            Write-Host "Looking at directory $($dir.BaseName)"
+            If(Test-Path -PathType Leaf -Path "$($dir.FullName)\UNITTEST_RESULT_EXECUTIVE_SUMMARY.json")
                 {
-                            If(-Not($(Get-Content "$($d.FullName)\UNITTEST_RESULT_EXECUTIVE_SUMMARY.json") -eq "true"))
+                            If(-Not($(Get-Content "$($dir.FullName)\UNITTEST_RESULT_EXECUTIVE_SUMMARY.json") -eq "true"))
                             {
                                 $global:result = "BAD"
-                                $f = "$($d.BaseName).stdout.log"
-                                Write-Host "Bad result in $f"
-                                "Bad result in $f" | Add-Content testProtocol.txt
-                                $badtests = $badtests + "Bad result in $f`r`n"
+                                $file = "$($dir.BaseName).stdout.log"
+                                Write-Host "Bad result in $file"
+                                "Bad result in $file" | Add-Content testProtocol.txt
+                                $badtests = $badtests + "Bad result in $file`r`n"
                             }   
                 }
         }
@@ -717,28 +717,28 @@ Function createReport
 
     If(Get-ChildItem -Path "$INNERWORKDIR\tmp" -Filter "core.dmp" -Recurse -ErrorAction SilentlyContinue -Force)
     {
-        Write-Host "Compress-Archive -Path `"$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\`" -Update -DestinationPath `"$INNERWORKDIR\crashreport-$d.zip`""
-        Compress-Archive -Path "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\" -Update -DestinationPath "$INNERWORKDIR\crashreport-$d.zip"
+        Write-Host "Compress-Archive -Path `"$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\`" -Update -DestinationPath `"$INNERWORKDIR\crashreport-$date.zip`""
+        Compress-Archive -Path "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\" -Update -DestinationPath "$INNERWORKDIR\crashreport-$date.zip"
         ForEach($core in (Get-ChildItem -Path "$INNERWORKDIR\tmp" -Filter "core.dmp" -Recurse -ErrorAction SilentlyContinue -Force).FullName)
         {
-            Write-Host "Compress-Archive -Path $core -Update -DestinationPath `"$INNERWORKDIR\crashreport-$d.zip`""
-            Compress-Archive -Path $core -Update -DestinationPath "$INNERWORKDIR\crashreport-$d.zip"
+            Write-Host "Compress-Archive -Path $core -Update -DestinationPath `"$INNERWORKDIR\crashreport-$date.zip`""
+            Compress-Archive -Path $core -Update -DestinationPath "$INNERWORKDIR\crashreport-$date.zip"
         }
     }
     ForEach($log in $(Get-ChildItem -Filter "*.log"))
     {
-        Write-Host "Compress-Archive -Path $log -Update -DestinationPath `"$INNERWORKDIR\testreport-$d.zip`""
-        Compress-Archive -Path $log -Update -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
+        Write-Host "Compress-Archive -Path $log -Update -DestinationPath `"$INNERWORKDIR\testreport-$date.zip`""
+        Compress-Archive -Path $log -Update -DestinationPath "$INNERWORKDIR\testreport-$date.zip"
     }
-    ForEach($archive in $(Get-ChildItem -Filter "*.zip" -Exclude "crashreport-$d.zip"))
+    ForEach($archive in $(Get-ChildItem -Filter "*.zip" | Where {$_.Name -ne "crashreport-$date.zip"}))
     {
-        Write-Host "Compress-Archive -Path $archive -Update -DestinationPath `"$INNERWORKDIR\testreport-$d.zip`""
-        Compress-Archive -Path $archive -Update -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
+        Write-Host "Compress-Archive -Path $archive -Update -DestinationPath `"$INNERWORKDIR\testreport-$date.zip`""
+        Compress-Archive -Path $archive -Update -DestinationPath "$INNERWORKDIR\testreport-$date.zip"
     }
-    Write-Host "Compress-Archive -Path testProtocol.txt -Update -DestinationPath `"$INNERWORKDIR\testreport-$d.zip`""
-    Compress-Archive -Path testProtocol.txt -Update -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
+    Write-Host "Compress-Archive -Path testProtocol.txt -Update -DestinationPath `"$INNERWORKDIR\testreport-$date.zip`""
+    Compress-Archive -Path testProtocol.txt -Update -DestinationPath "$INNERWORKDIR\testreport-$date.zip"
 
-    log "$d $TESTSUITE $global:result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE",$global:repoState,$global:repoStateEnterprise,$badtests
+    log "$date $TESTSUITE $global:result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE",$global:repoState,$global:repoStateEnterprise,$badtests
     Remove-Item -Force "$INNERWORKDIR\testfailures.txt"
     ForEach($file in (Get-ChildItem -Path "$INNERWORKDIR\tmp" -Filter "testfailures.txt" -Recurse -ErrorAction SilentlyContinue -Force).FullName)
     {
