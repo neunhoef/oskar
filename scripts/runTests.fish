@@ -195,8 +195,8 @@ function createReport
   pushd $INNERWORKDIR/tmp
   for d in *.out
     echo Looking at directory $d
-    if test -f UNITTEST_RESULT_EXECUTIVE_SUMMARY.json
-      if not grep true UNITTEST_RESULT_EXECUTIVE_SUMMARY.json
+    if test -f "$d/UNITTEST_RESULT_EXECUTIVE_SUMMARY.json"
+      if not grep true "$d/UNITTEST_RESULT_EXECUTIVE_SUMMARY.json"
         set -g result BAD
         set f (basename -s out $d)log
         echo Bad result in $f
