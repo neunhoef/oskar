@@ -473,12 +473,12 @@ Function moveResultsToWorkspace
     Write-Host "Move $INNERWORKDIR\$file"
     Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE; comm
   }
-  ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter "build-*"))
+  ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter "build*"))
   {
     Write-Host "Move $INNERWORKDIR\$file"
     Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE; comm
   }
-  ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter "cmake-*"))
+  ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter "cmake*"))
   {
     Write-Host "Move $INNERWORKDIR\$file"
     Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE; comm
