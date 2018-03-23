@@ -28,6 +28,7 @@ end
 cd $WORKDIR/work
 mv cmakeAlpine.log cmakeAlpineEnterprise.log
 mv buildAlpine.log buildAlpineEnterprise.log
+moveResultsToWorkspace
 
 community ; mmfiles ; single
 
