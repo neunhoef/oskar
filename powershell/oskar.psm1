@@ -739,10 +739,10 @@ Function createReport
     Compress-Archive -Path testProtocol.txt -Update -DestinationPath "$INNERWORKDIR\testreport-$date.zip"
 
     log "$date $TESTSUITE $global:result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE",$global:repoState,$global:repoStateEnterprise,$badtests
-    Remove-Item -Force "$INNERWORKDIR\testfailures.txt"
-    ForEach($file in (Get-ChildItem -Path "$INNERWORKDIR\tmp" -Filter "testfailures.txt" -Recurse -ErrorAction SilentlyContinue -Force).FullName)
+    Remove-Item -Force "$INNERWORKDIR\testfailures.log"
+    ForEach($file in (Get-ChildItem -Path "$INNERWORKDIR\tmp" -Filter "testfailures.txt" -Recurse).FullName)
     {
-        Get-Content $file | Add-Content "$INNERWORKDIR\testfailures.txt"; comm
+        Get-Content $file | Add-Content "$INNERWORKDIR\testfailures.log"; comm
     }
 }
 
