@@ -358,10 +358,6 @@ Function clearResults
     {
         Remove-Item -Recurse -Force $archive 
     }
-    ForEach($core in $(Get-ChildItem -Filter "core*"))
-    {
-        Remove-Item -Recurse -Force $core 
-    }
     If(Test-Path -PathType Leaf -Path test.log)
     {
         Remove-Item -Force test.log
@@ -369,6 +365,10 @@ Function clearResults
     If(Test-Path -PathType Leaf -Path testProtocol.txt)
     {
         Remove-Item -Force testProtocol.txt
+    }
+    If(Test-Path -PathType Leaf -Path testfailures.txt)
+    {
+        Remove-Item -Force testfailures.txt
     }
     comm
 }
@@ -411,7 +411,7 @@ Function configureWindows
     }
     Set-Location "$INNERWORKDIR\ArangoDB\build"
     Write-Host "Configure: cmake -G `"$GENERATOR`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES`" `"$INNERWORKDIR\ArangoDB`""
-    proc -process "cmake" -argument "-G `"$GENERATOR`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES`" `"$INNERWORKDIR\ArangoDB`"" -logfile "$INNERWORKDIR\cmake-configure"
+    proc -process "cmake" -argument "-G `"$GENERATOR`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES`" `"$INNERWORKDIR\ArangoDB`"" -logfile "$INNERWORKDIR\cmake"
 }
 
 Function buildWindows 
@@ -423,7 +423,7 @@ Function buildWindows
     }
     Set-Location "$INNERWORKDIR\ArangoDB\build"
     Write-Host "Build: cmake --build . --config `"$BUILDMODE`""
-    proc -process "cmake" -argument "--build . --config `"$BUILDMODE`"" -logfile "$INNERWORKDIR\cmake-build"
+    proc -process "cmake" -argument "--build . --config `"$BUILDMODE`"" -logfile "$INNERWORKDIR\build"
     If($global:ok)
     {
         Copy-Item "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\*" -Destination "$INNERWORKDIR\ArangoDB\build\bin\"; comm
@@ -447,17 +447,12 @@ Function buildArangoDB
 Function moveResultsToWorkspace
 {
   Write-Host "Moving reports and logs to $env:WORKSPACE ..."
-  ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter cmake-*))
-  {
-    Write-Host "Move $INNERWORKDIR\$file"
-    Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE; comm
-  }
   If(Test-Path -PathType Leaf "$INNERWORKDIR\test.log")
   {
+    Write-Host "Move $INNERWORKDIR\test.log"
+    Move-Item -Path "$INNERWORKDIR\test.log" -Destination $env:WORKSPACE; comm
     If(Get-Content -Path "$INNERWORKDIR\test.log" -Head 1 | Select-String -Pattern "BAD" -CaseSensitive)
     {
-        Write-Host "Move $INNERWORKDIR\test.log"
-        Move-Item -Path "$INNERWORKDIR\test.log" -Destination $env:WORKSPACE; comm
         ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter testreport*))
         {
             Write-Host "Move $INNERWORKDIR\$file"
@@ -466,12 +461,32 @@ Function moveResultsToWorkspace
     }
     Else
     {
-        ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter testreport*))
+        ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter "testreport*" -Exclude "*.zip"))
         {
             Write-Host "Remove $INNERWORKDIR\$file"
             Remove-Item -Force "$INNERWORKDIR\$file"; comm 
         } 
     }
+  }
+  ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter "*.zip"))
+  {
+    Write-Host "Move $INNERWORKDIR\$file"
+    Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE; comm
+  }
+  ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter "build-*"))
+  {
+    Write-Host "Move $INNERWORKDIR\$file"
+    Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE; comm
+  }
+  ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter "cmake-*"))
+  {
+    Write-Host "Move $INNERWORKDIR\$file"
+    Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE; comm
+  }
+  If(Test-Path -PathType Leaf "$INNERWORKDIR\testfailures.txt")
+  {
+    Write-Host "Move $INNERWORKDIR\testfailures.txt"
+    Move-Item -Path "$INNERWORKDIR\testfailures.txt" -Destination $env:WORKSPACE; comm 
   }
 }
 
@@ -538,7 +553,7 @@ Function launchSingleTests
         {
             Write-Host "Launching $test"
         }
-        unittest "$($test[0]) --cluster false --storageEngine $STORAGEENGINE --minPort $global:portBase --maxPort $($global:portBase + 99) $($test[2..$($test.Length)]) --skipNonDeterministic true --skipTimeCritical true" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1])"
+        unittest "$($test[0]) --cluster false --storageEngine $STORAGEENGINE --minPort $global:portBase --maxPort $($global:portBase + 99) $($test[2..$($test.Length)]) --skipNonDeterministic true --skipTimeCritical true --testOutput $env:TMP/$($test[0])$($test[1]).out --writeXmlReport false" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1])"
         $global:portBase = $($global:portBase + 100)
         Start-Sleep 5
     }
@@ -580,7 +595,7 @@ Function launchClusterTests
         {
             Write-Host "Launching $test"
         }
-        unittest "$($test[0]) --cluster false --storageEngine $STORAGEENGINE --minPort $global:portBase --maxPort $($global:portBase + 99) $($test[2..$($test.Length)]) --skipNonDeterministic true --skipTimeCritical true" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1])"
+        unittest "$($test[0]) --cluster false --storageEngine $STORAGEENGINE --minPort $global:portBase --maxPort $($global:portBase + 99) $($test[2..$($test.Length)]) --skipNonDeterministic true --skipTimeCritical true --testOutput $env:TMP/$($test[0])$($test[1]).out --writeXmlReport false" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1])"
         $global:portBase = $($global:portBase + 100)
         Start-Sleep 5
     }
@@ -591,7 +606,7 @@ Function launchClusterTests
         {
             Write-Host "Launching $test"
         }
-        unittest "$($test[0]) --test $($test[2]) --storageEngine $STORAGEENGINE --cluster true --minPort $global:portBase --maxPort $($global:portBase + 99) --skipNonDeterministic true" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1])"
+        unittest "$($test[0]) --test $($test[2]) --storageEngine $STORAGEENGINE --cluster true --minPort $global:portBase --maxPort $($global:portBase + 99) --skipNonDeterministic true --testOutput $env:TMP/$($test[0])_$($test[1]).out --writeXmlReport false" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1])"
         $global:portBase = $($global:portBase + 100)
         Start-Sleep 5
     }
@@ -677,44 +692,58 @@ Function createReport
     $d = $(Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH.mm.ssZ")
     $d | Add-Content testProtocol.txt
     $global:result = "GOOD"
-    ForEach($f in $(Get-ChildItem -Filter *.stdout.log))
-    {
-        If(-Not($(Get-Content $f -Tail 1) -eq "Success"))
+    Push-Location "$INNERWORKDIR\tmp"
+        ForEach($d in (Get-ChildItem -Directory))
         {
-            $global:result = "BAD"
-            Write-Host "Bad result in $f"
-            "Bad result in $f" | Add-Content testProtocol.txt
-            $badtests = $badtests + "Bad result in $f`r`n"
+            Write-Host "Looking at directory $($d.BaseName)"
+            If(Test-Path -PathType Leaf -Path "$($d.FullName)\UNITTEST_RESULT_EXECUTIVE_SUMMARY.json")
+                {
+                            If(-Not($(Get-Content "$($d.FullName)\UNITTEST_RESULT_EXECUTIVE_SUMMARY.json") -eq "true"))
+                            {
+                                $global:result = "BAD"
+                                $f = "$($d.BaseName).stdout.log"
+                                Write-Host "Bad result in $f"
+                                "Bad result in $f" | Add-Content testProtocol.txt
+                                $badtests = $badtests + "Bad result in $f`r`n"
+                            }   
+                }
+        }
+    Pop-Location
+    $global:result | Add-Content testProtocol.txt
+    Push-Location $INNERWORKDIR
+        Write-Host "Compress-Archive -Path `"$INNERWORKDIR\tmp\`" -Update -DestinationPath `"$INNERWORKDIR\ArangoDB\innerlogs.zip`""
+        Compress-Archive -Path "$INNERWORKDIR\tmp\" -Update -DestinationPath "$INNERWORKDIR\ArangoDB\innerlogs.zip"
+    Pop-Location
+
+    If(Get-ChildItem -Path "$INNERWORKDIR\tmp" -Filter "core.dmp" -Recurse -ErrorAction SilentlyContinue -Force)
+    {
+        Write-Host "Compress-Archive -Path `"$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\`" -Update -DestinationPath `"$INNERWORKDIR\crashreport-$d.zip`""
+        Compress-Archive -Path "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\" -Update -DestinationPath "$INNERWORKDIR\crashreport-$d.zip"
+        ForEach($core in (Get-ChildItem -Path "$INNERWORKDIR\tmp" -Filter "core.dmp" -Recurse -ErrorAction SilentlyContinue -Force).FullName)
+        {
+            Write-Host "Compress-Archive -Path $core -Update -DestinationPath `"$INNERWORKDIR\crashreport-$d.zip`""
+            Compress-Archive -Path $core -Update -DestinationPath "$INNERWORKDIR\crashreport-$d.zip"
         }
     }
+    ForEach($log in $(Get-ChildItem -Filter "*.log"))
+    {
+        Write-Host "Compress-Archive -Path $log -Update -DestinationPath `"$INNERWORKDIR\testreport-$d.zip`""
+        Compress-Archive -Path $log -Update -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
+    }
+    ForEach($archive in $(Get-ChildItem -Filter "*.zip" -Exclude "crashreport-$d.zip"))
+    {
+        Write-Host "Compress-Archive -Path $archive -Update -DestinationPath `"$INNERWORKDIR\testreport-$d.zip`""
+        Compress-Archive -Path $archive -Update -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
+    }
+    Write-Host "Compress-Archive -Path testProtocol.txt -Update -DestinationPath `"$INNERWORKDIR\testreport-$d.zip`""
+    Compress-Archive -Path testProtocol.txt -Update -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
 
-  $global:result | Add-Content testProtocol.txt
-  Push-Location
-    Set-Location $INNERWORKDIR
-    Write-Host "Compress-Archive -Path `"$INNERWORKDIR\tmp\`" -DestinationPath `"$INNERWORKDIR\ArangoDB\innerlogs.zip`""
-    Compress-Archive -Path "$INNERWORKDIR\tmp\" -DestinationPath "$INNERWORKDIR\ArangoDB\innerlogs.zip"
-  Pop-Location
-
-  ForEach($log in $(Get-ChildItem -Filter "*.log"))
-  {
-    Write-Host "Compress-Archive -Path $log -Update -DestinationPath `"$INNERWORKDIR\testreport-$d.zip`""
-    Compress-Archive -Path $log -Update -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
-  }
-  ForEach($archive in $(Get-ChildItem -Filter "*.zip"))
-  {
-    Write-Host "Compress-Archive -Path $archive -Update -DestinationPath `"$INNERWORKDIR\testreport-$d.zip`""
-    Compress-Archive -Path $archive -Update -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
-  }
-  ForEach($core in $(Get-ChildItem -Filter "core*"))
-  {
-    Write-Host "Compress-Archive -Path $core -Update -DestinationPath `"$INNERWORKDIR\testreport-$d.zip`""
-    Compress-Archive -Path $core -Update -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
-  }
-  Write-Host "Compress-Archive -Path testProtocol.txt -Update -DestinationPath `"$INNERWORKDIR\testreport-$d.zip`""
-  Compress-Archive -Path testProtocol.txt -Update -DestinationPath "$INNERWORKDIR\testreport-$d.zip"
-  Write-Host "Remove-Item -Recurse -Force testProtocol.txt"
-  log "$d $TESTSUITE $global:result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE",$global:repoState,$global:repoStateEnterprise,$badtests
-  comm
+    log "$d $TESTSUITE $global:result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE",$global:repoState,$global:repoStateEnterprise,$badtests
+    Remove-Item -Force "$INNERWORKDIR\testfailures.txt"
+    ForEach($file in (Get-ChildItem -Path "$INNERWORKDIR\tmp" -Filter "testfailures.txt" -Recurse -ErrorAction SilentlyContinue -Force).FullName)
+    {
+        Get-Content $file | Add-Content "$INNERWORKDIR\testfailures.txt"; comm
+    }
 }
 
 Function runTests
