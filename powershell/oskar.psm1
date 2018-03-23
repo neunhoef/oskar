@@ -693,7 +693,7 @@ Function createReport
     $d | Add-Content testProtocol.txt
     $global:result = "GOOD"
     Push-Location "$INNERWORKDIR\tmp"
-        ForEach($d in (Get-ChildItem -Directory))
+        ForEach($d in (Get-ChildItem -Directory -Filter "*.out"))
         {
             Write-Host "Looking at directory $($d.BaseName)"
             If(Test-Path -PathType Leaf -Path "$($d.FullName)\UNITTEST_RESULT_EXECUTIVE_SUMMARY.json")
