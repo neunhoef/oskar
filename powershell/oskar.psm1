@@ -39,13 +39,11 @@ Function proc($process,$argument,$logfile)
             Set-Variable -Name "ok" -Value $false -Scope global
         }
     }
-    #Write-Host "Debug Proc: $global:ok"
 }
 
 Function comm
 {
     Set-Variable -Name "ok" -Value $? -Scope global
-    #Write-Host "Debug Comm: $global:ok"
 }
 
 Function showConfig
@@ -104,6 +102,7 @@ Function unlockDirectory
     {
         Remove-Item LOCK
         Remove-Item LOCK.$pid
+        Write-Host "Removed lock"
     }
     comm   
 }
@@ -329,22 +328,6 @@ Function updateOskar
     }
 }
 
-Function disableDebugSymbols
-{
-    ForEach($file in (Get-ChildItem -Path "$INNERWORKDIR\ArangoDB" -Filter "CMakeLists.txt" -Recurse -ErrorAction SilentlyContinue -Force).FullName)
-    {
-        (Get-Content $file).Replace('/Zi','/Z7') | Set-Content $file; comm
-    }
-}
-
-Function enableDebugSymbols
-{
-    ForEach($file in (Get-ChildItem -Path "$INNERWORKDIR\ArangoDB" -Filter "CMakeLists.txt" -Recurse -ErrorAction SilentlyContinue -Force).FullName)
-    {
-        (Get-Content $file).Replace('/Z7','/Zi') | Set-Content $file; comm
-    }
-}
-
 Function clearResults
 {
     Set-Location $INNERWORKDIR
@@ -495,11 +478,11 @@ Function moveResultsToWorkspace
 Function getRepoState
 {
     Set-Location "$INNERWORKDIR\Arangodb"; comm
-    $global:repoState = $(git status -b -s | Select-String -Pattern "^[?]" -NotMatch)
+    $global:repoState = "$(git rev-parse HEAD)`r`n$(git status -b -s | Select-String -Pattern "^[?]" -NotMatch)"
     If($ENTERPRISEEDITION -eq "On")
     {
         Set-Location "$INNERWORKDIR\ArangoDB\enterprise"; comm
-        $global:repoStateEnterprise = $(git status -b -s | Select-String -Pattern "^[?]" -NotMatch)
+        $global:repoStateEnterprise = "$(git rev-parse HEAD)`r`n$(git status -b -s | Select-String -Pattern "^[?]" -NotMatch)"
         Set-Location "$INNERWORKDIR\Arangodb"; comm
     }
     Else
@@ -775,21 +758,21 @@ Function runTests
         "cluster"
         {
             launchClusterTests
-            waitOrKill 600
+            waitOrKill 1800
             createReport  
             Break
         }
         "single"
         {
             launchSingleTests
-            waitOrKill 600
+            waitOrKill 1800
             createReport
             Break
         }
         "resilience"
         {
             launchResilienceTests
-            waitOrKill 600
+            waitOrKill 1800
             createReport
             Break
         }
