@@ -190,6 +190,17 @@ function createReport
   set d (date -u +%F_%H.%M.%SZ)
   echo $d >> testProtocol.txt
   echo
+
+  set -l oldresult GOOD
+  set -l oldbadtests
+  for f in *.log
+    if not tail -1 $f | grep Success > /dev/null
+      set -g oldresult BAD
+      echo Bad result in $f
+      set oldbadtests $oldbadtests "Bad result in $f"
+    end
+  end
+
   set -g result GOOD
   set -l badtests
   pushd $INNERWORKDIR/tmp
@@ -227,7 +238,7 @@ function createReport
 
   echo rm -rf $cores $archives testProtocol.txt
   rm -rf $cores $archives testProtocol.txt
-  log "$d $TESTSUITE $result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE" $repoState $repoStateEnterprise $badtests ""
+  log "$d $TESTSUITE $result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE" $repoState $repoStateEnterprise $badtests $oldbadtests ""
 
   # And finally collect the testfailures.txt:
   rm -rf $INNERWORKDIR/testfailures.txt
