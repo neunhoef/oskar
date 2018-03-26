@@ -70,6 +70,7 @@ Function showConfig
 
 Function lockDirectory
 {
+    Set-Location $WORKDIR
     If(-Not(Test-Path -PathType Leaf LOCK.$pid))
     {
         $pid | Add-Content LOCK.$pid
@@ -98,6 +99,7 @@ Function lockDirectory
 
 Function unlockDirectory
 {
+    Set-Location $WORKDIR
     If(Test-Path -PathType Leaf LOCK.$pid)
     {
         Remove-Item LOCK
