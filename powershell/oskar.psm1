@@ -39,13 +39,13 @@ Function proc($process,$argument,$logfile)
             Set-Variable -Name "ok" -Value $false -Scope global
         }
     }
-    Write-Host "Debug Proc: $global:ok"
+    #Write-Host "Debug Proc: $global:ok"
 }
 
 Function comm
 {
     Set-Variable -Name "ok" -Value $? -Scope global
-    Write-Host "Debug Comm: $global:ok"
+    #Write-Host "Debug Comm: $global:ok"
 }
 
 Function showConfig
@@ -483,10 +483,10 @@ Function moveResultsToWorkspace
     Write-Host "Move $INNERWORKDIR\$file"
     Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE; comm
   }
-  If(Test-Path -PathType Leaf "$INNERWORKDIR\testfailures.txt")
+  If(Test-Path -PathType Leaf "$INNERWORKDIR\testfailures.log")
   {
-    Write-Host "Move $INNERWORKDIR\testfailures.txt"
-    Move-Item -Path "$INNERWORKDIR\testfailures.txt" -Destination $env:WORKSPACE; comm 
+    Write-Host "Move $INNERWORKDIR\testfailures.log"
+    Move-Item -Path "$INNERWORKDIR\testfailures.log" -Destination $env:WORKSPACE; comm 
   }
 }
 
@@ -739,7 +739,10 @@ Function createReport
     Compress-Archive -Path testProtocol.txt -Update -DestinationPath "$INNERWORKDIR\testreport-$date.zip"
 
     log "$date $TESTSUITE $global:result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE",$global:repoState,$global:repoStateEnterprise,$badtests
-    Remove-Item -Force "$INNERWORKDIR\testfailures.log"
+    If(Test-Path -PathType Leaf -Path "$INNERWORKDIR\testfailures.log")
+    {
+        Remove-Item -Force "$INNERWORKDIR\testfailures.log"
+    }
     ForEach($file in (Get-ChildItem -Path "$INNERWORKDIR\tmp" -Filter "testfailures.txt" -Recurse).FullName)
     {
         Get-Content $file | Add-Content "$INNERWORKDIR\testfailures.log"; comm
@@ -887,6 +890,3 @@ Function oskar8
     rocksdb
     comm
 }
-
-Clear
-showConfig
