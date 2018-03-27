@@ -588,18 +588,18 @@ Function launchClusterTests
         {
             Write-Host "Launching $test"
         }
-        unittest "$($test[0]) --test $($test[2]) --storageEngine $STORAGEENGINE --cluster true --minPort $global:portBase --maxPort $($global:portBase + 99) --skipNonDeterministic true --testOutput $env:TMP\$($test[0])_$($test[1]).out --writeXmlReport false" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1])"
+        unittest "$($test[0]) --test $($test[2]) --storageEngine $STORAGEENGINE --cluster true --minPort $global:portBase --maxPort $($global:portBase + 99) --skipNonDeterministic true --testOutput $env:TMP\$($test[0])_$($test[1]).out --writeXmlReport false --extremeVerbosity true" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1])"
         $global:portBase = $($global:portBase + 100)
         Start-Sleep 5
     }
     [array]$global:UPIDS = $null
-    test3 "resilience","move","$INNERWORKDIR/ArangoDB/js/server/tests/resilience/moving-shards-cluster.js"
-    test3 "resilience","failover","$INNERWORKDIR/ArangoDB/js/server/tests/resilience/resilience-synchronous-repl-cluster.js"
+    test3 "resilience","move","js/server/tests/resilience/moving-shards-cluster.js"
+    test3 "resilience","failover","js/server/tests/resilience/resilience-synchronous-repl-cluster.js"
     test1 "shell_client",""
     test1 "shell_server",""
     test1 "http_server",""
     test1 "ssl_server",""
-    test3 "resilience","sharddist","$INNERWORKDIR/ArangoDB/js/server/tests/resilience/shard-distribution-spec.js"
+    test3 "resilience","sharddist","js/server/tests/resilience/shard-distribution-spec.js"
     test1 "shell_server_aql","0","--testBuckets","5/0"
     test1 "shell_server_aql","1","--testBuckets","5/1"
     test1 "shell_server_aql","2","--testBuckets","5/2"
