@@ -340,10 +340,6 @@ Function clearResults
     {
         Remove-Item -Force $log 
     }
-    ForEach($archive in $(Get-ChildItem -Recurse -Filter "*.zip"))
-    {
-        Remove-Item -Force $archive 
-    }
     If(Test-Path -PathType Leaf -Path test.log)
     {
         Remove-Item -Force test.log
@@ -711,6 +707,10 @@ Function createReport
         Remove-Item -Force -Path "$INNERWORKDIR\core"
     }
     Push-Location "$env:TMP"
+        If(Test-Path -PathType Leaf -Path "$INNERWORKDIR\ArangoDB\innerlogs.zip")
+        {
+            Remove-Item -Force "$INNERWORKDIR\ArangoDB\innerlogs.zip"
+        }
         Write-Host "Compress-Archive -Path `"$env:TMP\`" -Update -DestinationPath `"$INNERWORKDIR\ArangoDB\innerlogs.zip`""
         Compress-Archive -Path "$env:TMP\" -Update -DestinationPath "$INNERWORKDIR\ArangoDB\innerlogs.zip"
     Pop-Location
