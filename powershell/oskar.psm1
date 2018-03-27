@@ -338,11 +338,11 @@ Function clearResults
     }
     ForEach($log in $(Get-ChildItem -Filter "*.log"))
     {
-        Remove-Item -Recurse -Force $log 
+        Remove-Item -Force $log 
     }
-    ForEach($archive in $(Get-ChildItem -Filter "*.zip"))
+    ForEach($archive in $(Get-ChildItem -Recurse -Filter "*.zip"))
     {
-        Remove-Item -Recurse -Force $archive 
+        Remove-Item -Force $archive 
     }
     If(Test-Path -PathType Leaf -Path test.log)
     {
