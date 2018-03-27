@@ -77,7 +77,7 @@ function runInContainer
   # from a regular user. Therefore we have to do some Eiertanz to stop it
   # if we receive a TERM outside the container. Note that this does not
   # cover SIGINT, since this will directly abort the whole function.
-  set c (docker run -d -v $WORKDIR/work:$INNERWORKDIR \
+  set c (docker run -d -v $WORKDIR/work:$INNERWORKDIR --rm \
              -v $SSH_AUTH_SOCK:/ssh-agent \
              -e SSH_AUTH_SOCK=/ssh-agent \
              -e UID=(id -u) \
@@ -262,7 +262,7 @@ function buildTarGzPackage
 end
 
 function interactiveContainer
-  docker run -it -v $WORKDIR/work:$INNERWORKDIR \
+  docker run -it -v $WORKDIR/work:$INNERWORKDIR --rm \
              -v $SSH_AUTH_SOCK:/ssh-agent \
              -e SSH_AUTH_SOCK=/ssh-agent \
              -e UID=(id -u) \
