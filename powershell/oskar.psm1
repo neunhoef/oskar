@@ -740,15 +740,14 @@ Function createReport
 
 Function runTests
 {
-    Set-Location $INNERWORKDIR
-    If(Test-Path -PathType Container -Path tmp)
+    If(Test-Path -PathType Container -Path $env:TMP)
     {
-        Remove-Item -Recurse -Force -Path tmp
-        New-Item -ItemType Directory -Path tmp
+        Remove-Item -Recurse -Force -Path $env:TMP
+        New-Item -ItemType Directory -Path $env:TMP
     }
     Else
     {
-        New-Item -ItemType Directory -Path tmp
+        New-Item -ItemType Directory -Path $env:TMP
     }
     Set-Location "$INNERWORKDIR\ArangoDB"
     ForEach($log in $(Get-ChildItem -Filter "*.log"))
