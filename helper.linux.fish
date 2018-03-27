@@ -306,6 +306,8 @@ function pushOskar
   pushAlpineBuildImage
   buildUbuntuPackagingImage
   pushUbuntuPackagingImage
+  buildCentosPackagingImage
+  pushCentosPackagingImage
 end
 
 function updateOskar

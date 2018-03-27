@@ -593,13 +593,13 @@ Function launchClusterTests
         Start-Sleep 5
     }
     [array]$global:UPIDS = $null
-    test3 "resilience","move","js/server/tests/resilience/moving-shards-cluster.js"
-    test3 "resilience","failover","js/server/tests/resilience/resilience-synchronous-repl-cluster.js"
+    test3 "resilience","move","moving-shards-cluster.js"
+    test3 "resilience","failover","resilience-synchronous-repl-cluster.js"
     test1 "shell_client",""
     test1 "shell_server",""
     test1 "http_server",""
     test1 "ssl_server",""
-    test3 "resilience","sharddist","js/server/tests/resilience/shard-distribution-spec.js"
+    test3 "resilience","sharddist","shard-distribution-spec.js"
     test1 "shell_server_aql","0","--testBuckets","5/0"
     test1 "shell_server_aql","1","--testBuckets","5/1"
     test1 "shell_server_aql","2","--testBuckets","5/2"
