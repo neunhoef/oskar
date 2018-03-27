@@ -8,6 +8,7 @@ $GENERATOR = "Visual Studio 15 2017 Win64"
 Import-Module VSSetup -ErrorAction Stop
 $env:GYP_MSVS_OVERRIDE_PATH= Split-Path -Parent $((Get-ChildItem (Get-VSSetupInstance).InstallationPath -Filter cl.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx64\\x64"}).FullName)
 $env:CLCACHE_DIR="$INNERWORKDIR\.clcache.windows"
+$env:TMP = "$INNERWORKDIR\tmp"
 
 Function proc($process,$argument,$logfile)
 {
@@ -695,21 +696,24 @@ Function createReport
         }
     Pop-Location
     $global:result | Add-Content testProtocol.txt
-    Push-Location $INNERWORKDIR
-        Write-Host "Compress-Archive -Path `"$INNERWORKDIR\tmp\`" -Update -DestinationPath `"$INNERWORKDIR\ArangoDB\innerlogs.zip`""
-        Compress-Archive -Path "$INNERWORKDIR\tmp\" -Update -DestinationPath "$INNERWORKDIR\ArangoDB\innerlogs.zip"
-    Pop-Location
-
-    If(Get-ChildItem -Path "$INNERWORKDIR\tmp" -Filter "core.dmp" -Recurse -ErrorAction SilentlyContinue -Force)
+    If(Get-ChildItem -Path "$env:TMP" -Filter "core.dmp" -Recurse -ErrorAction SilentlyContinue -Force)
     {
+        New-Item -ItemType Directory -Path "$env:TMP\core"
         Write-Host "Compress-Archive -Path `"$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\`" -Update -DestinationPath `"$INNERWORKDIR\crashreport-$date.zip`""
         Compress-Archive -Path "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\" -Update -DestinationPath "$INNERWORKDIR\crashreport-$date.zip"
-        ForEach($core in (Get-ChildItem -Path "$INNERWORKDIR\tmp" -Filter "core.dmp" -Recurse -ErrorAction SilentlyContinue -Force).FullName)
+        ForEach($core in ((Get-ChildItem -Path "$env:TMP" -Filter "core.dmp" -Recurse -ErrorAction SilentlyContinue).FullName).Replace(""))
         {
-            Write-Host "Compress-Archive -Path $core -Update -DestinationPath `"$INNERWORKDIR\crashreport-$date.zip`""
-            Compress-Archive -Path $core -Update -DestinationPath "$INNERWORKDIR\crashreport-$date.zip"
+            $newcore = "$($core.BaseName).$(Get-Random)" 
+            Move-Item $core  "$env:TMP\core\$newcore" -Force
+            Write-Host "Compress-Archive -Path `"$INNERWORKDIR\core\$newcore`" -Update -DestinationPath `"$INNERWORKDIR\crashreport-$date.zip`""
+            Compress-Archive -Path "$INNERWORKDIR\core\$newcore" -Update -DestinationPath "$INNERWORKDIR\crashreport-$date.zip"
         }
+        Remove-Item -Force -Path "$INNERWORKDIR\core"
     }
+    Push-Location "$env:TMP"
+        Write-Host "Compress-Archive -Path `"$env:TMP\`" -Update -DestinationPath `"$INNERWORKDIR\ArangoDB\innerlogs.zip`""
+        Compress-Archive -Path "$env:TMP\" -Update -DestinationPath "$INNERWORKDIR\ArangoDB\innerlogs.zip"
+    Pop-Location
     ForEach($log in $(Get-ChildItem -Filter "*.log"))
     {
         Write-Host "Compress-Archive -Path $log -Update -DestinationPath `"$INNERWORKDIR\testreport-$date.zip`""
@@ -746,7 +750,6 @@ Function runTests
     {
         New-Item -ItemType Directory -Path tmp
     }
-    $env:TMP = "$INNERWORKDIR\tmp"
     Set-Location "$INNERWORKDIR\ArangoDB"
     ForEach($log in $(Get-ChildItem -Filter "*.log"))
     {
