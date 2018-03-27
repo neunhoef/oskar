@@ -15,7 +15,7 @@ Else
     Set-Location "$OSKARDIR\oskar"
     git pull
 }
-Import-Module "$OSKARDIR\oskar\powershell\oskar.psm1"
+Import-Module "$OSKARDIR\oskar\helper.psm1"
 If(-Not($?))
 {
     Write-Host "Did not find oskar modul"
@@ -28,7 +28,7 @@ If($(Get-Module).Name -ccontains "oskar")
 {
     Remove-Module oskar
 }
-Import-Module "$OSKARDIR\oskar\powershell\oskar.psm1"
+Import-Module "$OSKARDIR\oskar\helper.psm1"
 clearResults
 
 switchBranches $env:ARANGODB_BRANCH $env:ENTERPRISE_BRANCH
@@ -47,4 +47,4 @@ If($s)
 Else
 {
     Exit 1
-}
+} 
