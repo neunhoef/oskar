@@ -475,7 +475,7 @@ Function moveResultsToWorkspace
 Function getRepoState
 {
     Set-Location "$INNERWORKDIR\Arangodb"; comm
-    $global:repoState = "$(git rev-parse HEAD)`r`n$(git status -b -s | Select-String -Pattern "^[?]" -NotMatch)"
+    $global:repoState = "$(git rev-parse HEAD)`r`n"+$(git status -b -s | Select-String -Pattern "^[?]" -NotMatch)
     If($ENTERPRISEEDITION -eq "On")
     {
         Set-Location "$INNERWORKDIR\ArangoDB\enterprise"; comm
@@ -711,11 +711,14 @@ Function createReport
         New-Item -ItemType Directory -Path "$INNERWORKDIR\core"
         ForEach($core in (Get-ChildItem -Path "$env:TMP" -Filter "core.dmp" -Recurse -ErrorAction SilentlyContinue))
         {
-            $newcore = "$($core.BaseName).$(Get-Random)" 
+            $newcore = "$($core.BaseName).$(Get-Random)"
+            Add-Content -Value "$($core.FullName) = $newcore" -Path "$INNERWORKDIR\core\corelocation.log"
             Move-Item $core.FullName  "$INNERWORKDIR\core\$newcore" -Force
             Write-Host "Compress-Archive -Path `"$INNERWORKDIR\core\$newcore`" -Update -DestinationPath `"$INNERWORKDIR\crashreport-$date.zip`""
             Compress-Archive -Path "$INNERWORKDIR\core\$newcore" -Update -DestinationPath "$INNERWORKDIR\crashreport-$date.zip"
         }
+        Write-Host "Compress-Archive -Path `"$INNERWORKDIR\core\corelocation.log`" -Update -DestinationPath `"$INNERWORKDIR\crashreport-$date.zip`""
+        Compress-Archive -Path "$INNERWORKDIR\core\corelocation.log" -Update -DestinationPath "$INNERWORKDIR\crashreport-$date.zip"
         Remove-Item -Force -Recurse -Path "$INNERWORKDIR\core"
     }
     Push-Location "$env:TMP"

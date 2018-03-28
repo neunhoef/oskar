@@ -26,7 +26,7 @@ lockDirectory
 updateOskar
 If($(Get-Module).Name -ccontains "oskar")
 {
-    Remove-Module oskar
+    Remove-Module helper
 }
 Import-Module "$OSKARDIR\oskar\helper.psm1"
 clearResults
