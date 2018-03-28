@@ -706,17 +706,17 @@ Function createReport
     $global:result | Add-Content testProtocol.txt
     If(Get-ChildItem -Path "$env:TMP" -Filter "core.dmp" -Recurse -ErrorAction SilentlyContinue -Force)
     {
-        New-Item -ItemType Directory -Path "$env:TMP\core"
         Write-Host "Compress-Archive -Path `"$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\`" -Update -DestinationPath `"$INNERWORKDIR\crashreport-$date.zip`""
         Compress-Archive -Path "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\" -Update -DestinationPath "$INNERWORKDIR\crashreport-$date.zip"
-        ForEach($core in (Get-ChildItem -Path "$env:TMP" -Filter "core.dmp" -Recurse -ErrorAction SilentlyContinue).FullName)
+        New-Item -ItemType Directory -Path "$env:TMP\core"
+        ForEach($core in (Get-ChildItem -Path "$env:TMP" -Filter "core.dmp" -Recurse -ErrorAction SilentlyContinue))
         {
             $newcore = "$($core.BaseName).$(Get-Random)" 
-            Move-Item $core  "$env:TMP\core\$newcore" -Force
-            Write-Host "Compress-Archive -Path `"$INNERWORKDIR\core\$newcore`" -Update -DestinationPath `"$INNERWORKDIR\crashreport-$date.zip`""
-            Compress-Archive -Path "$INNERWORKDIR\core\$newcore" -Update -DestinationPath "$INNERWORKDIR\crashreport-$date.zip"
+            Move-Item $core.FullName  "$env:TMP\core\$newcore" -Force
+            Write-Host "Compress-Archive -Path `"$env:TMP\core\$newcore`" -Update -DestinationPath `"$INNERWORKDIR\crashreport-$date.zip`""
+            Compress-Archive -Path "$env:TMP\core\$newcore" -Update -DestinationPath "$INNERWORKDIR\crashreport-$date.zip"
         }
-        Remove-Item -Force -Path "$INNERWORKDIR\core"
+        Remove-Item -Force -Path "$env:TMP\core"
     }
     Push-Location "$env:TMP"
         If(Test-Path -PathType Leaf -Path "$INNERWORKDIR\ArangoDB\innerlogs.zip")
