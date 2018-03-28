@@ -695,7 +695,7 @@ Function createReport
                             If(-Not($(Get-Content "$($dir.FullName)\UNITTEST_RESULT_EXECUTIVE_SUMMARY.json") -eq "true"))
                             {
                                 $global:result = "BAD"
-                                $file = "$($dir.BaseName).stdout.log"
+                                $file = "$(($dir.BaseName).Substring(0,$dir.Length-4)).stdout.log"
                                 Write-Host "Bad result in $file"
                                 "Bad result in $file" | Add-Content testProtocol.txt
                                 $badtests = $badtests + "Bad result in $file`r`n"
