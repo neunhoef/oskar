@@ -695,7 +695,7 @@ Function createReport
                             If(-Not($(Get-Content "$($dir.FullName)\UNITTEST_RESULT_EXECUTIVE_SUMMARY.json") -eq "true"))
                             {
                                 $global:result = "BAD"
-                                $file = "$(($dir.BaseName).Substring(0,$dir.Length-4)).stdout.log"
+                                $file = $($dir.BaseName).Substring(0,$($dir.BaseName).Length-4)+".stdout.log"
                                 Write-Host "Bad result in $file"
                                 "Bad result in $file" | Add-Content testProtocol.txt
                                 $badtests = $badtests + "Bad result in $file`r`n"
@@ -708,15 +708,15 @@ Function createReport
     {
         Write-Host "Compress-Archive -Path `"$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\`" -Update -DestinationPath `"$INNERWORKDIR\crashreport-$date.zip`""
         Compress-Archive -Path "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\" -Update -DestinationPath "$INNERWORKDIR\crashreport-$date.zip"
-        New-Item -ItemType Directory -Path "$env:TMP\core"
+        New-Item -ItemType Directory -Path "$INNERWORKDIR\core"
         ForEach($core in (Get-ChildItem -Path "$env:TMP" -Filter "core.dmp" -Recurse -ErrorAction SilentlyContinue))
         {
             $newcore = "$($core.BaseName).$(Get-Random)" 
-            Move-Item $core.FullName  "$env:TMP\core\$newcore" -Force
-            Write-Host "Compress-Archive -Path `"$env:TMP\core\$newcore`" -Update -DestinationPath `"$INNERWORKDIR\crashreport-$date.zip`""
-            Compress-Archive -Path "$env:TMP\core\$newcore" -Update -DestinationPath "$INNERWORKDIR\crashreport-$date.zip"
+            Move-Item $core.FullName  "$INNERWORKDIR\core\$newcore" -Force
+            Write-Host "Compress-Archive -Path `"$INNERWORKDIR\core\$newcore`" -Update -DestinationPath `"$INNERWORKDIR\crashreport-$date.zip`""
+            Compress-Archive -Path "$INNERWORKDIR\core\$newcore" -Update -DestinationPath "$INNERWORKDIR\crashreport-$date.zip"
         }
-        Remove-Item -Force -Path "$env:TMP\core"
+        Remove-Item -Force -Recurse -Path "$INNERWORKDIR\core"
     }
     Push-Location "$env:TMP"
         If(Test-Path -PathType Leaf -Path "$INNERWORKDIR\ArangoDB\innerlogs.zip")
