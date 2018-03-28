@@ -31,6 +31,10 @@ If($(Get-Module).Name -ccontains "oskar")
 Import-Module "$OSKARDIR\oskar\helper.psm1"
 clearResults
 
+. $env:EDITION
+. $env:STORAGE_ENGINE
+. $env:TEST_SUITE
+
 switchBranches $env:ARANGODB_BRANCH $env:ENTERPRISE_BRANCH
 If ($global:ok) 
 {
