@@ -615,7 +615,7 @@ Function launchClusterTests
         if (-not $ruby -eq "") {
           $ruby = "--ruby $ruby"
         }
-        $rspec = $(Get-Command rspec.bat -ErrorAction SilentlyContinue).Source
+        $rspec = $((Get-Command rspec.bat).Source).Substring(0,((Get-Command rspec.bat).Source).Length-4)
         if (-not $rspec -eq "") {
           $rspec = "--rspec $rspec"
         }
