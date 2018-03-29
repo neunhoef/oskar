@@ -592,11 +592,15 @@ Function launchClusterTests
         {
             Write-Host "Launching $test"
         }
-        $rspec = $(Get-Command rspec.bat -ErrorAction SilentlyContinue)
+        $ruby = $(Get-Command ruby.exe -ErrorAction SilentlyContinue).Source
+        if (-not $ruby -eq "") {
+          $ruby = "--ruby $ruby"
+        }
+        $rspec = $(Get-Command rspec.bat -ErrorAction SilentlyContinue).Source
         if (-not $rspec -eq "") {
           $rspec = "--rspec $rspec"
         }
-        unittest "$($test[0]) --cluster false --storageEngine $STORAGEENGINE --minPort $global:portBase --maxPort $($global:portBase + 99) $($test[2..$($test.Length)]) --skipNonDeterministic true --skipTimeCritical true --testOutput $env:TMP\$($test[0])$($test[1]).out --writeXmlReport false $rspec" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1])"
+        unittest "$($test[0]) --cluster false --storageEngine $STORAGEENGINE --minPort $global:portBase --maxPort $($global:portBase + 99) $($test[2..$($test.Length)]) --skipNonDeterministic true --skipTimeCritical true --testOutput $env:TMP\$($test[0])$($test[1]).out --writeXmlReport false $ruby $rspec" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1])"
         $global:portBase = $($global:portBase + 100)
         Start-Sleep 5
     }
@@ -607,11 +611,15 @@ Function launchClusterTests
         {
             Write-Host "Launching $test"
         }
-        $rspec = $(Get-Command rspec.bat -ErrorAction SilentlyContinue)
+        $ruby = $(Get-Command ruby.exe -ErrorAction SilentlyContinue).Source
+        if (-not $ruby -eq "") {
+          $ruby = "--ruby $ruby"
+        }
+        $rspec = $(Get-Command rspec.bat -ErrorAction SilentlyContinue).Source
         if (-not $rspec -eq "") {
           $rspec = "--rspec $rspec"
         }
-        unittest "$($test[0]) --test $($test[2]) --storageEngine $STORAGEENGINE --cluster true --minPort $global:portBase --maxPort $($global:portBase + 99) --skipNonDeterministic true --testOutput $env:TMP\$($test[0])_$($test[1]).out --writeXmlReport false --extremeVerbosity true $rspec" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1])"
+        unittest "$($test[0]) --test $($test[2]) --storageEngine $STORAGEENGINE --cluster true --minPort $global:portBase --maxPort $($global:portBase + 99) --skipNonDeterministic true --testOutput $env:TMP\$($test[0])_$($test[1]).out --writeXmlReport false $ruby $rspec" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1])"
         $global:portBase = $($global:portBase + 100)
         Start-Sleep 5
     }
