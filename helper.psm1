@@ -459,8 +459,11 @@ Function moveResultsToWorkspace
         } 
     }
   }
-  Write-Host "Move $INNERWORKDIR\test.log"
-  Move-Item -Path "$INNERWORKDIR\test.log" -Destination $env:WORKSPACE; comm
+  If(Test-Path -PathType Leaf "$INNERWORKDIR\test.log")
+  {
+    Write-Host "Move $INNERWORKDIR\test.log"
+    Move-Item -Path "$INNERWORKDIR\test.log" -Destination $env:WORKSPACE; comm
+  }
   ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter "*.zip"))
   {
     Write-Host "Move $INNERWORKDIR\$file"
