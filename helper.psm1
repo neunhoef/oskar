@@ -395,14 +395,14 @@ Function configureWindows
     $OPENSSLDIR = (Get-ItemProperty -Path Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\OpenSSL*).InstallLocation
     If($global:STATICEXECUTABLES -eq "On")
     {
-        $LIBEAY = $OPENSSLDIR+"lib\VC\static\libeay32MD.lib"
-        $SSLEAY = $OPENSSLDIR+"lib\VC\static\ssleay32MD.lib"
+        $LIBEAY = $OPENSSLDIR+"lib\VC\static\libeay32MT.lib"
+        $SSLEAY = $OPENSSLDIR+"lib\VC\static\ssleay32MT.lib"
         $STATICLIBS = "true"
     }
     Else
     {
-        $LIBEAY = $OPENSSLDIR+"lib\VC\libeay32MD.lib"
-        $SSLEAY = $OPENSSLDIR+"lib\VC\ssleay32MD.lib"
+        $LIBEAY = $OPENSSLDIR+"lib\VC\libeay32MT.lib"
+        $SSLEAY = $OPENSSLDIR+"lib\VC\ssleay32MT.lib"
         $STATICLIBS = "false"
     }
     Write-Host "Configure: cmake -G `"$GENERATOR`" -T `"v141,host=x64`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DUSE_FAILURE_TESTS=`"$SKIPPACKAGING`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES`" -DOPENSSL_USE_STATIC_LIBS=`"$STATICLIBS`" -DLIB_EAY_RELEASE_DLL=`"$LIBEAY`" -DSSL_EAY_RELEASE_DLL=`"$SSLEAY`" `"$INNERWORKDIR\ArangoDB`""
