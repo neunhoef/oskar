@@ -23,7 +23,6 @@ function Disable-InternetExplorerESC {
     Set-ItemProperty -Path $AdminKey -Name "IsInstalled" -Value 0 -Force
     Set-ItemProperty -Path $UserKey -Name "IsInstalled" -Value 0 -Force
     Stop-Process -Name Explorer -Force
-    Write-Host "IE Enhanced Security Configuration (ESC) has been disabled." -ForegroundColor Green
 }
 
 function DownloadFile($src,$dest)
@@ -79,16 +78,16 @@ $arguments = @'
 '@
 ExternalProcess -process Powershell -arguments $arguments -wait $true
 
-$arguments = @("choco install -y vcredist-all cmake.portable nsis python2 procdump windbg wget nuget.commandline vim notepadplusplus putty.install openssh","choco install -y git winflexbison3 ruby","choco install -y ruby2.devkit nodejs jdk8","gem install bundler persistent_httparty rspec rspec-core","npm install -g gitbook-cli","pip3.5 install git+https://github.com/frerich/clcache.git")
+$arguments = @("choco install -y dotnet4.7.1 vcredist-all cmake.portable nsis python2 procdump windbg wget nuget.commandline vim notepadplusplus putty.install openssh","choco install -y git winflexbison3 ruby","choco install -y ruby2.devkit nodejs jdk8","choco install visualstudio2017enterprise --package-parameters`"--add Microsoft.VisualStudio.Workload.Node --add Microsoft.VisualStudio.Workload.NativeCrossPlat --add Microsoft.VisualStudio.Workload.NativeDesktop --includeRecommended --includeOptional`"","gem install bundler persistent_httparty rspec rspec-core","npm install -g gitbook-cli","pip3.5 install git+https://github.com/frerich/clcache.git")
 ForEach($argument in $arguments)
 {
     ExternalProcess -process Powershell -arguments $argument -wait $true
 }
 
-DownloadFile -src 'https://aka.ms/vs/15/release/vs_community.exe' -dest "C:\Windows\Temp\vs_community.exe"
-$arguments = "--add Microsoft.VisualStudio.Workload.Node --add Microsoft.VisualStudio.Workload.NativeCrossPlat --add Microsoft.VisualStudio.Workload.NativeDesktop --includeRecommended --includeOptional --quiet"
-ExternalProcess -process "C:\Windows\Temp\vs_community.exe" -arguments $arguments -wait $true
-Remove-Item "C:\Windows\Temp\vs_community.exe"
+#DownloadFile -src 'https://aka.ms/vs/15/release/vs_community.exe' -dest "C:\Windows\Temp\vs_community.exe"
+#$arguments = "--add Microsoft.VisualStudio.Workload.Node --add Microsoft.VisualStudio.Workload.NativeCrossPlat --add Microsoft.VisualStudio.Workload.NativeDesktop --includeRecommended --includeOptional --quiet"
+#ExternalProcess -process "C:\Windows\Temp\vs_community.exe" -arguments $arguments -wait $true
+#Remove-Item "C:\Windows\Temp\vs_community.exe"
 
 DownloadFile -src 'https://github.com/frerich/clcache/releases/download/v4.1.0/clcache-4.1.0.zip' -dest "C:\Windows\Temp\clcache-4.1.0.zip"
 $clpath = $(Split-Path -Parent $(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter cl.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx64\\x64"}).FullName) 
