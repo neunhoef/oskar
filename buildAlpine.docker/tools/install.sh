@@ -5,6 +5,7 @@ apk update
 apk add groff g++ bison flex make cmake ccache python libldap openssl-dev git linux-vanilla-dev linux-headers vim boost-dev ctags man gdb fish openssh db-dev libexecinfo-dev libexecinfo
 
 # Compile openssl1.1 library:
+cd /tmp
 wget https://www.openssl.org/source/openssl-1.1.0h.tar.gz
 tar xzvf openssl-1.1.0h.tar.gz
 cd openssl-1.1.0h
