@@ -83,6 +83,7 @@ function launchSingleTests
     case 19 ; test1 shell_replication ""
     case 20 ; test1 http_replication ""
     case 21 ; test1 catch ""
+    case 22 ; test1 authentication ""
     case '*' ; return 0
   end
   set -g launchCount (math $launchCount + 1)
