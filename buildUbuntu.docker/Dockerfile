@@ -1,7 +1,7 @@
 FROM ubuntu:17.10
 MAINTAINER Max Neunhoeffer <max@arangodb.com>
 
-RUN apt-get update && apt-get install -y build-essential g++ cmake make bison flex python ccache git libjemalloc-dev vim exuberant-ctags gdb fish ruby ruby-httparty ruby-rspec psmisc sudo debhelper debconf jq libltdl-dev file && gem install persistent_httparty && apt-get clean
+RUN apt-get update && apt-get install -y build-essential g++ cmake make bison flex python ccache git libjemalloc-dev vim exuberant-ctags gdb fish ruby ruby-httparty ruby-rspec psmisc sudo debhelper debconf jq wget && gem install persistent_httparty && apt-get clean
 
 COPY ./tools/* /tools/
 
