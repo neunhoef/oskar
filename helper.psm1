@@ -47,6 +47,11 @@ Function comm
     Set-Variable -Name "ok" -Value $? -Scope global
 }
 
+Function 7zip($Path,$DestinationPath)
+{
+    7za.exe a -mx9 $DestinationPath $Path 
+}
+
 Function showConfig
 {
     Write-Host "System User           :"$env:USERDOMAIN\$env:USERNAME
@@ -734,19 +739,19 @@ Function createReport
     $global:result | Add-Content testProtocol.txt
     If(Get-ChildItem -Path "$env:TMP" -Filter "core.dmp" -Recurse -ErrorAction SilentlyContinue -Force)
     {
-        Write-Host "Compress-Archive -Path `"$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\`" -Update -DestinationPath `"$INNERWORKDIR\crashreport-$date.zip`""
-        Compress-Archive -Path "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\" -Update -DestinationPath "$INNERWORKDIR\crashreport-$date.zip"
+        Write-Host "7zip -Path `"$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\`" -DestinationPath `"$INNERWORKDIR\crashreport-$date.zip`""
+        7zip -Path "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\" -DestinationPath "$INNERWORKDIR\crashreport-$date.zip"
         New-Item -ItemType Directory -Path "$INNERWORKDIR\core"
         ForEach($core in (Get-ChildItem -Path "$env:TMP" -Filter "core.dmp" -Recurse -ErrorAction SilentlyContinue))
         {
             $newcore = "$($core.BaseName).$(Get-Random)"
             Add-Content -Value "$($core.FullName) = $newcore" -Path "$INNERWORKDIR\core\corelocation.log"
             Move-Item $core.FullName  "$INNERWORKDIR\core\$newcore" -Force
-            Write-Host "Compress-Archive -Path `"$INNERWORKDIR\core\$newcore`" -Update -DestinationPath `"$INNERWORKDIR\crashreport-$date.zip`""
-            Compress-Archive -Path "$INNERWORKDIR\core\$newcore" -Update -DestinationPath "$INNERWORKDIR\crashreport-$date.zip"
+            Write-Host "7zip -Path `"$INNERWORKDIR\core\$newcore`" -DestinationPath `"$INNERWORKDIR\crashreport-$date.zip`""
+            7zip -Path "$INNERWORKDIR\core\$newcore" -DestinationPath "$INNERWORKDIR\crashreport-$date.zip"
         }
-        Write-Host "Compress-Archive -Path `"$INNERWORKDIR\core\corelocation.log`" -Update -DestinationPath `"$INNERWORKDIR\crashreport-$date.zip`""
-        Compress-Archive -Path "$INNERWORKDIR\core\corelocation.log" -Update -DestinationPath "$INNERWORKDIR\crashreport-$date.zip"
+        Write-Host "7zip -Path `"$INNERWORKDIR\core\corelocation.log`" -DestinationPath `"$INNERWORKDIR\crashreport-$date.zip`""
+        7zip -Path "$INNERWORKDIR\core\corelocation.log" -DestinationPath "$INNERWORKDIR\crashreport-$date.zip"
         Remove-Item -Force -Recurse -Path "$INNERWORKDIR\core"
     }
     Push-Location "$env:TMP"
@@ -754,21 +759,21 @@ Function createReport
         {
             Remove-Item -Force "$INNERWORKDIR\ArangoDB\innerlogs.zip"
         }
-        Write-Host "Compress-Archive -Path `"$env:TMP\`" -Update -DestinationPath `"$INNERWORKDIR\ArangoDB\innerlogs.zip`""
-        Compress-Archive -Path "$env:TMP\" -Update -DestinationPath "$INNERWORKDIR\ArangoDB\innerlogs.zip"
+        Write-Host "7zip -Path `"$env:TMP\`" -DestinationPath `"$INNERWORKDIR\ArangoDB\innerlogs.zip`""
+        7zip -Path "$env:TMP\" -DestinationPath "$INNERWORKDIR\ArangoDB\innerlogs.zip"
     Pop-Location
     ForEach($log in $(Get-ChildItem -Filter "*.log"))
     {
-        Write-Host "Compress-Archive -Path $log -Update -DestinationPath `"$INNERWORKDIR\testreport-$date.zip`""
-        Compress-Archive -Path $log -Update -DestinationPath "$INNERWORKDIR\testreport-$date.zip"
+        Write-Host "7zip -Path $log  -DestinationPath `"$INNERWORKDIR\testreport-$date.zip`""
+        7zip -Path $log  -DestinationPath "$INNERWORKDIR\testreport-$date.zip"
     }
     ForEach($archive in $(Get-ChildItem -Filter "*.zip" | Where {$_.Name -ne "crashreport-$date.zip"}))
     {
-        Write-Host "Compress-Archive -Path $archive -Update -DestinationPath `"$INNERWORKDIR\testreport-$date.zip`""
-        Compress-Archive -Path $archive -Update -DestinationPath "$INNERWORKDIR\testreport-$date.zip"
+        Write-Host "7zip -Path $archive -DestinationPath `"$INNERWORKDIR\testreport-$date.zip`""
+        7zip -Path $archive -DestinationPath "$INNERWORKDIR\testreport-$date.zip"
     }
-    Write-Host "Compress-Archive -Path testProtocol.txt -Update -DestinationPath `"$INNERWORKDIR\testreport-$date.zip`""
-    Compress-Archive -Path testProtocol.txt -Update -DestinationPath "$INNERWORKDIR\testreport-$date.zip"
+    Write-Host "7zip -Path testProtocol.txt -DestinationPath `"$INNERWORKDIR\testreport-$date.zip`""
+    7zip -Path testProtocol.txt -DestinationPath "$INNERWORKDIR\testreport-$date.zip"
 
     log "$date $TESTSUITE $global:result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE",$global:repoState,$global:repoStateEnterprise,$badtests
     If(Test-Path -PathType Leaf -Path "$INNERWORKDIR\testfailures.log")
