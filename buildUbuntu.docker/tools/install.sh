@@ -5,7 +5,7 @@ cd /tmp
 wget https://www.openssl.org/source/openssl-1.1.0h.tar.gz
 tar xzvf openssl-1.1.0h.tar.gz
 cd openssl-1.1.0h
-./config --prefix=/usr no-shared no-async
+./config --prefix=/usr no-async
 make
 make test
 make install
@@ -23,6 +23,3 @@ make depend && make -j64
 make install
 cd /tmp
 rm -rf openldap-2.4.46.tgz openldap-2.4.46
-
-# Make some warnings go away:
-echo "#include <poll.h>" > /usr/include/sys/poll.h
