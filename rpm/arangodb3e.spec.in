@@ -231,6 +231,7 @@ fi
 %preun
 echo preun:
 if rpm -q --quiet systemd ; then
+  systemctl stop arangodb3
   rm %{_sysconfdir}/systemd/system/arangodb3.service
   systemctl daemon-reload
 else
