@@ -153,7 +153,7 @@ Function staticExecutablesOn
 Function staticExecutablesOff
 {
     $global:STATICEXECUTABLES = "Off"
-    $global:STATICLIBS = "falseSweiS39Gw"
+    $global:STATICLIBS = "false"
 }
 If(-Not($STATICEXECUTABLES))
 {
