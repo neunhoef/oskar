@@ -189,7 +189,7 @@ function makeRelease
   community
   buildStaticArangoDB -DTARGET_ARCHITECTURE=nehalem
   and downloadStarter
-  and buildPackage $v
+  and buildPackage
 
   if test $status != 0
     echo Building community release failed.
