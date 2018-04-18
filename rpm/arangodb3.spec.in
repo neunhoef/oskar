@@ -121,9 +121,6 @@ echo check: We assume that there is nothing to check.
 %{_mandir}/*/*
 %{_datadir}/arangodb3
 
-/etc/logrotate.d/arangodb3
-
-
 %files client
 %defattr(-,root,root,0755)
 
