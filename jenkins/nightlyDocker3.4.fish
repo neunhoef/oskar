@@ -7,7 +7,7 @@ community
 
 switchBranches 3.4 3.4
 and findArangoDBVersion
-and buildStaticArangoDB
+and buildStaticArangoDB -DTARGET_ARCHITECTURE=nehalem
 and downloadStarter
 and makeDockerImage arangodb/arangodb-preview:3.4
 and docker push arangodb/arangodb-preview:3.4
@@ -24,7 +24,7 @@ enterprise
 
 switchBranches 3.4 3.4
 and findArangoDBVersion
-and buildStaticArangoDB
+and buildStaticArangoDB -DTARGET_ARCHITECTURE=nehalem
 and downloadStarter
 and downloadSyncer
 and makeDockerImage registry.arangodb.biz:5000/arangodb/arangodb-preview:3.4-$KEY

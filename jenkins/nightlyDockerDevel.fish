@@ -7,7 +7,7 @@ community
 
 switchBranches devel devel
 and findArangoDBVersion
-and buildStaticArangoDB
+and buildStaticArangoDB -DTARGET_ARCHITECTURE=nehalem
 and downloadStarter
 and makeDockerImage arangodb/arangodb-preview:devel
 and docker push arangodb/arangodb-preview:devel
@@ -24,7 +24,7 @@ enterprise
 
 switchBranches devel devel
 and findArangoDBVersion
-and buildStaticArangoDB
+and buildStaticArangoDB -DTARGET_ARCHITECTURE=nehalem
 and downloadStarter
 and downloadSyncer
 and makeDockerImage registry.arangodb.biz:5000/arangodb/arangodb-preview:devel-$KEY
