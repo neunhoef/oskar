@@ -30,7 +30,7 @@ Function proc($process,$argument,$logfile)
     }
     Else
     {
-        $p = Start-Process $process -ArgumentList $argument -RedirectStandardOutput "$logfile.log" -RedirectStandardError "$logfile.log" -PassThru
+        $p = Start-Process $process -ArgumentList $argument -RedirectStandardOutput "$logfile.stdout.log" -RedirectStandardError "$logfile.stderr.log" -PassThru
         $h = $p.Handle
         $p.WaitForExit()
         If($p.ExitCode -eq 0)
