@@ -30,7 +30,7 @@ Function proc($process,$argument,$logfile)
     }
     Else
     {
-        $p = Start-Process $process -ArgumentList $argument -RedirectStandardOutput "$logfile.stdout.log" -RedirectStandardError "$logfile.stderr.log" -PassThru
+        $p = Start-Process $process -ArgumentList $argument -RedirectStandardOutput "$logfile.log" -RedirectStandardError "$logfile.log" -PassThru
         $h = $p.Handle
         $p.WaitForExit()
         If($p.ExitCode -eq 0)
@@ -403,7 +403,7 @@ Function configureWindows
         New-Item -ItemType Directory -Path "$INNERWORKDIR\ArangoDB\build"
     }
     Set-Location "$INNERWORKDIR\ArangoDB\build"
-    Write-Host "Configure: cmake -G `"$GENERATOR`" -T `"v141,host=x64`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DUSE_FAILURE_TESTS=`"$USEFAILURETESTS`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES`" -DOPENSSL_USE_STATIC_LIBS=`"$STATICLIBS`" `"$INNERWORKDIR\ArangoDB`""
+    Write-Host "Configure: cmake -G `"$GENERATOR`" -T `"v141,host=x64`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DUSE_FAILURE_TESTS=`"$USEFAILURETESTS`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES`" -DOPENSSL_USE_STATIC_LIBS=`"$STATICLIBS`" -DLIB_EAY_RELEASE_DLL=`"$EAYDLL`" -DSSL_EAY_RELEASE_DLL=`"$SSLDLL`" `"$INNERWORKDIR\ArangoDB`""
     proc -process "cmake" -argument "-G `"$GENERATOR`" -T `"v141,host=x64`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DUSE_FAILURE_TESTS=`"$USEFAILURETESTS`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES`" -DOPENSSL_USE_STATIC_LIBS=`"$STATICLIBS`" -DLIB_EAY_RELEASE_DLL=`"$EAYDLL`" -DSSL_EAY_RELEASE_DLL=`"$SSLDLL`" `"$INNERWORKDIR\ArangoDB`"" -logfile "$INNERWORKDIR\cmake"
 }
 
