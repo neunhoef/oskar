@@ -147,7 +147,6 @@ echo check: We assume that there is nothing to check.
 %{_datadir}/arangodb3/js/node
 
 %files debuginfo
-/usr/lib/debug
 
 ## -----------------------------------------------------------------------------
 ## --SECTION--                                                              post
