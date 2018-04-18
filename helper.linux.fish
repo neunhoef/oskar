@@ -230,6 +230,9 @@ function buildRPMPackage
   else
     transformSpec rpm/arangodb3.spec.in $WORKDIR/work/arangodb3.spec
   end
+  cp rpm/arangodb3.initd $WORKDIR/work
+  cp rpm/arangodb3.service $WORKDIR/work
+  cp rpm/arangodb3.logrotate $WORKDIR/work
   and runInContainer -e ARANGODB_VERSION=$ARANGODB_VERSION -e ARANGODB_PACKAGE_REVISION=$ARANGODB_PACKAGE_REVISION -e ARANGODB_FULL_VERSION=$ARANGODB_FULL_VERSION $CENTOSPACKAGINGIMAGE $SCRIPTSDIR/buildRPMPackage.sh
 end
 

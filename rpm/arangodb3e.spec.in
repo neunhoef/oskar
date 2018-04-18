@@ -1,0 +1,250 @@
+#
+# spec file for package arangodb3
+#
+# Copyright (c) 2018 info@arangodb.org
+#
+# All modifications and additions to the file contributed by third parties
+# remain the property of their copyright owners, unless otherwise agreed
+# upon. The license for this file, and modifications and additions to the
+# file, is the same license as for the pristine package itself (unless the
+# license for the pristine package is not an Open Source License, in which
+# case the license is the MIT License). An "Open Source License" is a
+# license that conforms to the Open Source Definition (Version 1.9)
+# published by the Open Source Initiative.
+
+# Please submit bugfixes or comments via http://bugs.opensuse.org/
+
+## -----------------------------------------------------------------------------
+## --SECTION--                                                  global variables
+## -----------------------------------------------------------------------------
+
+%define _cfgdir %{_sysconfdir}/arangodb3
+%define _databasedir %{_localstatedir}/lib/arangodb3
+%define _appdir %{_localstatedir}/lib/arangodb3-apps
+%define _logdir %{_localstatedir}/log/arangodb3
+%define _piddir %{_localstatedir}/run/arangodb
+
+## -----------------------------------------------------------------------------
+## --SECTION--                                                      package data
+## -----------------------------------------------------------------------------
+
+Name:           arangodb3e
+Version:        @PACKAGE_VERSION@
+Release:        @PACKAGE_REVISION@
+Summary:        The open-source, multi-model NoSQL database
+License:        Apache-2.0
+Group:          Productivity/Databases/Servers
+Conflicts:	arangodb3, arangodb3-client, arangodb3e-client
+Url:            https://www.arangodb.com
+Vendor:         ArangoDB
+
+%package client
+Summary:        ArangoDB shell as stand-alone package
+Group:          Productivity/Databases/Servers
+Conflicts:	arangodb3e, arangodb3, arangodb3e-client
+
+%package debuginfo
+Summary:        ArangoDB debug symbols
+Group:          Productivity/Databases/Servers
+
+## -----------------------------------------------------------------------------
+## --SECTION--                                                       description
+## -----------------------------------------------------------------------------
+
+%description
+ArangoDB is a durable, reliable, transactional multi-model database. Its key-features are: joins, transaction, and flexible data modelling.
+
+The ArangoDB consists of a server, a separate shell, which allows you to administrate the server, and a set of client APIs for various languages.
+
+It is written in C/C++.
+
+
+%description client
+The ArangoDB shell as stand-alone program. It also contains the utility programs: arangobench (benchmark), arangorestore & arangodump (backup), arangoimp (import).
+
+%description debuginfo
+Debug symbols for the ArangoDB database
+
+## -----------------------------------------------------------------------------
+## --SECTION--                                                              prep
+## -----------------------------------------------------------------------------
+
+%prep
+echo prep: We assume that all is prepared.
+
+## -----------------------------------------------------------------------------
+## --SECTION--                                                             build
+## -----------------------------------------------------------------------------
+
+%build
+echo build: We assume that all is already built.
+
+## -----------------------------------------------------------------------------
+## --SECTION--                                                           install
+## -----------------------------------------------------------------------------
+
+%install
+echo install:
+mkdir -p %{buildroot}%{_databasedir}
+mkdir -p %{buildroot}%{_appdir}
+mkdir -p %{buildroot}%{_logdir}
+mkdir -p %{buildroot}%{_piddir}
+cp -a $INNERWORKDIR/ArangoDB/build/install/* %{buildroot}
+
+#- -----------------------------------------------------------------------------
+## --SECTION--                                                             check
+## -----------------------------------------------------------------------------
+
+%check
+echo check: We assume that there is nothing to check.
+
+## -----------------------------------------------------------------------------
+## --SECTION--                                                             files
+## -----------------------------------------------------------------------------
+
+%files
+%defattr(-,root,root,0755)
+/usr/share/doc/arangodb3/LICENSE.txt
+/usr/share/doc/arangodb3/LICENSES-OTHER-COMPONENTS.md
+/usr/share/doc/arangodb3/README.md
+/usr/share/doc/arangodb3/README.txt
+
+%attr(0755,arangodb,arangodb) %{_databasedir}
+%attr(0755,arangodb,arangodb) %{_appdir}
+%attr(0755,arangodb,arangodb) %{_logdir}
+
+%ghost %attr(0755,arangodb,arangodb) %{_piddir}
+
+%config(noreplace) %attr(-,arangodb,arangodb) %{_cfgdir}
+%{_bindir}/*
+%{_sbindir}/*
+%{_mandir}/*/*
+%{_datadir}/arangodb3
+
+/etc/logrotate.d/arangodb3
+
+
+%files client
+%defattr(-,root,root,0755)
+
+%config(noreplace) %attr(-,arangodb,arangodb) %{_cfgdir}/arangosh.conf
+%config(noreplace) %attr(-,arangodb,arangodb) %{_cfgdir}/arangoimp.conf
+%config(noreplace) %attr(-,arangodb,arangodb) %{_cfgdir}/arangodump.conf
+%config(noreplace) %attr(-,arangodb,arangodb) %{_cfgdir}/arangorestore.conf
+%config(noreplace) %attr(-,arangodb,arangodb) %{_cfgdir}/arangobench.conf
+%config(noreplace) %attr(-,arangodb,arangodb) %{_cfgdir}/foxx-manager.conf
+%{_bindir}/arangosh
+%{_bindir}/arangoimp
+%{_bindir}/arangodump
+%{_bindir}/arangorestore
+%{_bindir}/arangobench
+%{_bindir}/foxx-manager
+%{_mandir}/*/arangosh*
+%{_mandir}/*/arangorestore*
+%{_mandir}/*/arangobench*
+%{_mandir}/*/arangodump*
+%{_mandir}/*/arangoimp*
+%{_datadir}/arangodb3/js/common
+%{_datadir}/arangodb3/js/client
+%{_datadir}/arangodb3/js/node
+
+%files debuginfo
+/usr/lib/debug
+
+## -----------------------------------------------------------------------------
+## --SECTION--                                                              post
+## -----------------------------------------------------------------------------
+
+%post
+if rpm -q --quiet systemd ; then
+  cp /usr/share/arangodb3/arangodb3.service %{_sysconfdir}/systemd/system/arangodb3.service
+  systemctl daemon-reload
+else
+  cp /usr/share/arangodb3/arangodb3.initd %{_sysconfdir}/init.d/arangodb3
+  chkconfig --level 2345 arangodb3 on
+fi
+cp /usr/share/arangodb3/arangodb3.logrotate %{_sysconfdir}/logrotate.d/arangodb3
+
+echo "
+ArangoDB 3 (https://www.arangodb.com)
+  The multi-model NoSQL database: distributed free and open-source database
+  with a flexible data model for documents, graphs, and key-values. Build
+  high performance applications using a convenient SQL-like query language
+  or JavaScript extensions.
+
+First Steps with ArangoDB:
+  https://docs.arangodb.com/latest/Manual/GettingStarted/
+
+Configuring the storage Engine:
+  https://docs.arangodb.com/latest/Manual/Administration/Configuration/GeneralArangod.html#storage-engine
+
+Configuration file:
+  /etc/arangodb3/arangod.conf
+
+Start ArangoDB shell client:
+  > %{_bindir}/arangosh
+"
+
+echo "Start ArangoDB service:
+  > systemctl start arangodb3.service
+
+Enable ArangoDB service:
+  > systemctl enable arangodb3.service
+"
+
+export ARANGODB_DEFAULT_ROOT_PASSWORD=`(uname -a ; cat /etc/hostname) | md5sum | awk '{print $1}'`
+
+echo "SECURITY HINT:"
+echo "run 'arango-secure-installation' to set a root password"
+echo "the current password is '$ARANGODB_DEFAULT_ROOT_PASSWORD'"
+echo "(You should do this for a FRESH install! For an UPGRADE the password does not need to be changed)"
+
+/usr/sbin/arango-init-database --uid arangodb --gid arangodb --server.rest-server false --server.statistics false --foxx.queues false || true
+
+exit 0
+
+## -----------------------------------------------------------------------------
+## --SECTION--                                                            postun
+## -----------------------------------------------------------------------------
+
+%postun
+echo postun
+
+## -----------------------------------------------------------------------------
+## --SECTION--                                                               pre
+## -----------------------------------------------------------------------------
+
+%pre
+echo pre
+# create arangodb group only if it doesn't already exist
+if ! getent group arangodb >/dev/null 2>&1; then
+        /usr/sbin/groupadd -r arangodb
+fi
+
+# create arangodb user only if it doesn't already exist
+if ! getent passwd arangodb >/dev/null 2>&1; then
+        /usr/sbin/useradd -r -g arangodb --home %{_localstatedir}/arangodb arangodb
+        /usr/sbin/usermod -c "Arango Server" arangodb
+fi
+
+## -----------------------------------------------------------------------------
+## --SECTION--                                                             preun
+## -----------------------------------------------------------------------------
+
+%preun
+echo preun:
+if rpm -q --quiet systemd ; then
+  rm %{_sysconfdir}/systemd/system/arangodb3.service
+  systemctl daemon-reload
+else
+  chkconfig --level 2345 arangodb3 off
+  rm %{_sysconfdir}/init.d/arangodb3
+fi
+rm %{_sysconfdir}/logrotate.d/arangodb3
+
+## -----------------------------------------------------------------------------
+## --SECTION--                                                         changelog
+## -----------------------------------------------------------------------------
+
+%changelog
+
