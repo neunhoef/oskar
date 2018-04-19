@@ -127,14 +127,15 @@ echo check: We assume that there is nothing to check.
 %defattr(-,root,root,0755)
 
 %config(noreplace) %attr(-,arangodb,arangodb) %{_cfgdir}/arangosh.conf
-%config(noreplace) %attr(-,arangodb,arangodb) %{_cfgdir}/arangoexport.conf
-%config(noreplace) %attr(-,arangodb,arangodb) %{_cfgdir}/arangoimport.conf
+%config(noreplace) %attr(-,arangodb,arangodb) %{_cfgdir}/arangoexp*
+%config(noreplace) %attr(-,arangodb,arangodb) %{_cfgdir}/arangoimp*
 %config(noreplace) %attr(-,arangodb,arangodb) %{_cfgdir}/arangodump.conf
 %config(noreplace) %attr(-,arangodb,arangodb) %{_cfgdir}/arangorestore.conf
 %config(noreplace) %attr(-,arangodb,arangodb) %{_cfgdir}/arangobench.conf
 %config(noreplace) %attr(-,arangodb,arangodb) %{_cfgdir}/foxx-manager.conf
 %{_bindir}/arangosh
-%{_bindir}/arangoimp
+%{_bindir}/arangoimp*
+%{_bindir}/arangoexp*
 %{_bindir}/arangodump
 %{_bindir}/arangorestore
 %{_bindir}/arangobench
