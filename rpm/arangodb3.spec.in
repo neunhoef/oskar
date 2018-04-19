@@ -38,7 +38,7 @@ Conflicts:	arangodb3e, arangodb3-client, arangodb3e-client
 Url:            https://www.arangodb.com
 Vendor:         ArangoDB
 
-%define debug_package 1
+%define debug_package %{nil}
 
 %package client
 Summary:        ArangoDB shell as stand-alone package
