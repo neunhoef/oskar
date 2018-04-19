@@ -42,10 +42,10 @@ function pullAlpineBuildImage ; docker pull $ALPINEBUILDIMAGE ; end
 
 function buildCentosPackagingImage
   cd $WORKDIR
-  cp -a scripts/buildRPMPackage.sh buildCentos7Packaging.docker/scripts
+  cp -a scripts/buildRPMPackage.fish buildCentos7Packaging.docker/scripts
   cd $WORKDIR/buildCentos7Packaging.docker
   docker build -t $CENTOSPACKAGINGIMAGE .
-  rm -f $WORKDIR/buildCentos7Packaging.docker/scripts/*.sh
+  rm -f $WORKDIR/buildCentos7Packaging.docker/scripts/*.fish
   cd $WORKDIR
 end
 function pushCentosPackagingImage ; docker push $CENTOSPACKAGINGIMAGE ; end
@@ -233,7 +233,7 @@ function buildRPMPackage
   cp rpm/arangodb3.initd $WORKDIR/work
   cp rpm/arangodb3.service $WORKDIR/work
   cp rpm/arangodb3.logrotate $WORKDIR/work
-  and runInContainer -e ARANGODB_VERSION=$ARANGODB_VERSION -e ARANGODB_PACKAGE_REVISION=$ARANGODB_PACKAGE_REVISION -e ARANGODB_FULL_VERSION=$ARANGODB_FULL_VERSION $CENTOSPACKAGINGIMAGE $SCRIPTSDIR/buildRPMPackage.sh
+  and runInContainer -e ARANGODB_VERSION=$ARANGODB_VERSION -e ARANGODB_PACKAGE_REVISION=$ARANGODB_PACKAGE_REVISION -e ARANGODB_FULL_VERSION=$ARANGODB_FULL_VERSION $CENTOSPACKAGINGIMAGE $SCRIPTSDIR/buildRPMPackage.fish
 end
 
 function buildTarGzPackage
