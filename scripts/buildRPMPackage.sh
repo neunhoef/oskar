@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env fish
 mkdir -p /root/SPECS
 cd $INNERWORKDIR
 cp arangodb3.spec /root/SPECS
