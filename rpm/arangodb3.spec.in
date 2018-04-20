@@ -38,16 +38,12 @@ Conflicts:	arangodb3e, arangodb3-client, arangodb3e-client
 Url:            https://www.arangodb.com
 Vendor:         ArangoDB
 
-%define debug_package %{nil}
-
 %package client
 Summary:        ArangoDB shell as stand-alone package
 Group:          Productivity/Databases/Servers
 Conflicts:	arangodb3e, arangodb3, arangodb3e-client
 
-%package debuginfo
-Summary:        ArangoDB debug symbols
-Group:          Productivity/Databases/Servers
+%debug_package
 
 ## -----------------------------------------------------------------------------
 ## --SECTION--                                                       description
@@ -63,9 +59,6 @@ It is written in C/C++.
 
 %description client
 The ArangoDB shell as stand-alone program. It also contains the utility programs: arangobench (benchmark), arangorestore & arangodump (backup), arangoimp (import).
-
-%description debuginfo
-Debug symbols for the ArangoDB database
 
 ## -----------------------------------------------------------------------------
 ## --SECTION--                                                              prep
@@ -92,6 +85,11 @@ mkdir -p %{buildroot}%{_appdir}
 mkdir -p %{buildroot}%{_logdir}
 mkdir -p %{buildroot}%{_piddir}
 cp -a $INNERWORKDIR/ArangoDB/build/install/* %{buildroot}
+# Move go executables out of the way to prevent debug info from being stripped:
+mv %{buildroot}/usr/bin/arangodb /tmp
+if [ -x %{buildroot}/usr/bin/arangosync ] ; then
+  mv %{buildroot}/usr/bin/arangosync /tmp
+fi
 
 #- -----------------------------------------------------------------------------
 ## --SECTION--                                                             check
@@ -99,6 +97,11 @@ cp -a $INNERWORKDIR/ArangoDB/build/install/* %{buildroot}
 
 %check
 echo check: We assume that there is nothing to check.
+# Move go executables back to where they belong:
+mv /tmp/arangodb %{buildroot}/usr/bin/arangodb
+if [ -x /tmp/arangosync ] ; then
+  mv /tmp/arangosync %{buildroot}/usr/bin/arangosync
+fi
 
 ## -----------------------------------------------------------------------------
 ## --SECTION--                                                             files
@@ -148,8 +151,6 @@ echo check: We assume that there is nothing to check.
 %{_datadir}/arangodb3/js/common
 %{_datadir}/arangodb3/js/client
 %{_datadir}/arangodb3/js/node
-
-%files debuginfo
 
 ## -----------------------------------------------------------------------------
 ## --SECTION--                                                              post
