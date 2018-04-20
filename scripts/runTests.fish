@@ -60,6 +60,23 @@ function launchSingleTests
     sleep 1
   end
 
+  function test1MoreLogs
+    if test $VERBOSEOSKAR = On ; echo Launching $argv ; end
+
+    set -l t $argv[1]
+    set -l tt $argv[2]
+    set -e argv[1..2]
+    echo scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort (math $portBase + 99) $argv --skipNondeterministic true --skipTimeCritical true --testOutput $TMPDIR/"$t""$tt".out --writeXmlReport false --extraArgs:log.level replication=trace
+    scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE \
+      --minPort $portBase --maxPort (math $portBase + 99) $argv \
+      --skipNondeterministic true --skipTimeCritical true \
+      --testOutput $TMPDIR/"$t""$tt".out --writeXmlReport false \
+      --extraArgs:log.level replication=trace \
+      >"$t""$tt".log ^&1 &
+    set -g portBase (math $portBase + 100)
+    sleep 1
+  end
+
   switch $launchCount
     case 0 ; test1 shell_server ""
     case 1 ; test1 shell_client ""
@@ -67,9 +84,9 @@ function launchSingleTests
     case 3 ; test1 recovery 1 --testBuckets 4/1
     case 4 ; test1 recovery 2 --testBuckets 4/2
     case 5 ; test1 recovery 3 --testBuckets 4/3
-    case 6 ; test1 replication_sync ""
-    case 7 ; test1 replication_static ""
-    case 8 ; test1 replication_ongoing ""
+    case 6 ; test1MoreLogs replication_sync ""
+    case 7 ; test1MoreLogs replication_static ""
+    case 8 ; test1MoreLogs replication_ongoing ""
     case 9 ; test1 http_server ""
     case 10 ; test1 ssl_server ""
     case 11 ; test1 shell_server_aql 0 --testBuckets 5/0
