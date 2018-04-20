@@ -73,11 +73,6 @@ If (-NOT((Get-ItemPropertyValue -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Mic
     }
 }
 
-DownloadFile -src 'https://www.npcglib.org/~stathis/downloads/openssl-1.1.0f-vs2017.7z' -dest "C:\Windows\Temp\openssl-1.1.0f-vs2017.7z"
-ExternalProcess -process 7za -arguments "x C:\Windows\Temp\openssl-1.1.0f-vs2017.7z -oC:\" -wait $true
-Rename-Item "C:\openssl-1.1.0f-vs2017" "C:\OpenSSL-Win64"
-[Environment]::SetEnvironmentVariable("OPENSSLDIR", "C:\OpenSSL-Win64", "Machine")
-Remove-Item "C:\Windows\Temp\openssl-1.1.0f-vs2017.7z"
 
 DownloadFile -src 'https://github.com/Microsoft/vssetup.powershell/releases/download/2.0.1/VSSetup.zip' -dest "C:\Windows\Temp\VSSetup.zip"
 Expand-Archive -Force "C:\Windows\Temp\VSSetup.zip" "$env:ProgramFiles\WindowsPowerShell\Modules\VSSetup"
@@ -96,6 +91,12 @@ ForEach($argument in $arguments)
 {
     ExternalProcess -process Powershell -arguments $argument -wait $true
 }
+
+DownloadFile -src 'https://www.npcglib.org/~stathis/downloads/openssl-1.1.0f-vs2017.7z' -dest "C:\Windows\Temp\openssl-1.1.0f-vs2017.7z"
+ExternalProcess -process 7za -arguments "x C:\Windows\Temp\openssl-1.1.0f-vs2017.7z -oC:\" -wait $true
+Rename-Item "C:\openssl-1.1.0f-vs2017" "C:\OpenSSL-Win64"
+[Environment]::SetEnvironmentVariable("OPENSSLDIR", "C:\OpenSSL-Win64", "Machine")
+Remove-Item "C:\Windows\Temp\openssl-1.1.0f-vs2017.7z"
 
 DownloadFile -src 'https://github.com/frerich/clcache/releases/download/v4.1.0/clcache-4.1.0.zip' -dest "C:\Windows\Temp\clcache-4.1.0.zip"
 $clpath = $(Split-Path -Parent $(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter cl.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx64\\x64"}).FullName) 
