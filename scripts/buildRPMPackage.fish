@@ -6,5 +6,3 @@ cp arangodb3.initd arangodb3.service arangodb3.logrotate $INNERWORKDIR/ArangoDB/
 rpmbuild -bb /root/SPECS/arangodb3.spec ; or exit 1
 cp /root/rpmbuild/RPMS/*/*.rpm $INNERWORKDIR ; or exit 1
 chown -R $UID.$GID $INNERWORKDIR
-echo Sleeping
-sleep 60
