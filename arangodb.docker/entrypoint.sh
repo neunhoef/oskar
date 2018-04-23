@@ -5,8 +5,6 @@ if [ -z "$ARANGO_INIT_PORT" ] ; then
     ARANGO_INIT_PORT=8999
 fi
 
-foxx server set default http://127.0.0.1:$ARANGO_INIT_PORT
-
 AUTHENTICATION="true"
 export GLIBCXX_FORCE_NEW=1
 
@@ -100,6 +98,8 @@ if [ "$1" = 'arangod' ]; then
                     > /dev/null 2>&1 || ARANGO_UP=0
         done
 
+        foxx server set default http://127.0.0.1:$ARANGO_INIT_PORT
+
         for f in /docker-entrypoint-initdb.d/*; do
             case "$f" in
             *.sh)
@@ -129,6 +129,8 @@ if [ "$1" = 'arangod' ]; then
                         ;;
             esac
         done
+
+        foxx server remove default
 
         if ! kill -s TERM "$pid" || ! wait "$pid"; then
                 echo >&2 'ArangoDB Init failed.'
