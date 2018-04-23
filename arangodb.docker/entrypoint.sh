@@ -1,6 +1,10 @@
 #!/bin/sh
 set -e
 
+if [ -z "$INITIALIZATIONPORT" ] ; then
+    INITIALIZATIONPORT=8999
+fi
+
 AUTHENTICATION="true"
 export GLIBCXX_FORCE_NEW=1
 
@@ -66,7 +70,7 @@ if [ "$1" = 'arangod' ]; then
 
         echo "Initializing database...Hang on..."
 
-        arangod --server.endpoint tcp://127.0.0.1:8529 \
+        arangod --server.endpoint tcp://127.0.0.1:$INITIALIZATIONPORT \
                 --server.authentication false \
 		--log.file /tmp/init-log \
 		--log.foreground-tty false &
@@ -88,7 +92,7 @@ if [ "$1" = 'arangod' ]; then
             let counter=counter+1
             ARANGO_UP=1
                 arangosh \
-                    --server.endpoint=tcp://127.0.0.1:8529 \
+                    --server.endpoint=tcp://127.0.0.1:$INITIALIZATIONPORT \
                     --server.authentication false \
                     --javascript.execute-string "db._version()" \
                     > /dev/null 2>&1 || ARANGO_UP=0
@@ -103,7 +107,7 @@ if [ "$1" = 'arangod' ]; then
             *.js)
                         echo "$0: running $f"
                         arangosh ${ARANGOSH_ARGS} \
-                                --server.endpoint=tcp://127.0.0.1:8529 \
+                                --server.endpoint=tcp://127.0.0.1:$INITIALIZATIONPORT \
                                 --javascript.execute "$f"
                         ;;
             */dumps)
@@ -113,7 +117,7 @@ if [ "$1" = 'arangod' ]; then
                             echo "restoring $d into ${DBName}";
                             arangorestore \
                                 ${ARANGOSH_ARGS} \
-                                --server.endpoint=tcp://127.0.0.1:8529 \
+                                --server.endpoint=tcp://127.0.0.1:$INITIALIZATIONPORT \
                                 --create-database true \
                                 --include-system-collections true \
                                 --server.database "$DBName" \
