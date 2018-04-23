@@ -5,6 +5,8 @@ if [ -z "$INITIALIZATIONPORT" ] ; then
     INITIALIZATIONPORT=8999
 fi
 
+foxx server set default http://127.0.0.1:$INITIALIZATIONPORT
+
 AUTHENTICATION="true"
 export GLIBCXX_FORCE_NEW=1
 
