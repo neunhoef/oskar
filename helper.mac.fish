@@ -46,7 +46,7 @@ end
 
 function buildArangoDB
   checkoutIfNeeded
-  runLocal $SCRIPTSDIR/buildArangoDB.fish $argv
+  runLocal $SCRIPTSDIR/buildMacOs.fish $argv
   set -l s $status
   if test $s != 0
     echo Build error!
@@ -65,7 +65,7 @@ end
 
 function buildStaticArangoDB
   checkoutIfNeeded
-  runLocal $SCRIPTSDIR/buildArangoDB.fish $argv
+  runLocal $SCRIPTSDIR/buildMacOs.fish $argv
 #  runLocal $SCRIPTSDIR/buildAlpine.fish $argv
   set -l s $status
   if test $s != 0
@@ -110,8 +110,22 @@ function downloadSyncer
 end
 
 function buildMacPackage
-  echo Not yet implemented
-  return 1
+  # This assumes that a build has already happened
+  # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
+  # ARANGODB_FULL_VERSION, for example by running findArangoDBVersion.
+  set -l v "$ARANGODB_FULL_VERSION"
+  if test -z "$v"
+    echo Need one version argument in the form 3.3.3-1.
+    return 1
+  end
+
+  and if test "$ENTERPRISEEDITION" = "On"
+    echo Building enterprise edition MacOs bundle...
+  else
+    echo Building community edition MacOs bundle...
+  end
+
+  and runLocal $SCRIPTSDIR/buildMacOsPackage.fish
 end
 
 function buildPackage
