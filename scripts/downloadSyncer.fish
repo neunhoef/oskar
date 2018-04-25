@@ -39,7 +39,9 @@ if test $status != 0
   exit 1
 end
 echo Downloading: Asset with ID $asset_id
+set -l SYNCER_PATH $INNERWORKDIR/ArangoDB/build/install/usr/bin/arangosync
 
-curl -s -L -H "Accept: application/octet-stream" "https://$DOWNLOAD_SYNC_USER@api.github.com/repos/arangodb/arangosync/releases/assets/$asset_id" -o "$INNERWORKDIR/ArangoDB/build/install/usr/bin/arangosync"
+curl -s -L -H "Accept: application/octet-stream" "https://$DOWNLOAD_SYNC_USER@api.github.com/repos/arangodb/arangosync/releases/assets/$asset_id" -o "$SYNCER_PATH"
 
-and chmod 755 "$INNERWORKDIR/ArangoDB/build/install/usr/bin/arangosync"
+and chmod 755 "$SYNCER_PATH"
+and echo Syncer ready for build $SYNCER_PATH
