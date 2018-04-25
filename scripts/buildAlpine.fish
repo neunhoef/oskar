@@ -41,6 +41,7 @@ set -x DESTDIR (pwd)/install
 echo Running make for static build, output in work/buildArangoDB.log
 nice make -j$PARALLELISM install > ../../buildArangoDB.log ^&1
 and cd install
+and env
 and if test -z "$NOSTRIP"
   echo Stripping executables...
   strip usr/sbin/arangod usr/bin/arangoimp usr/bin/arangosh usr/bin/arangovpack usr/bin/arangoexport usr/bin/arangobench usr/bin/arangodump usr/bin/arangorestore
