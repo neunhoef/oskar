@@ -1,0 +1,32 @@
+#!/usr/bin/env fish
+cd $INNERWORKDIR
+mkdir -p .ccache.mac
+set -x CCACHE_DIR $INNERWORKDIR/.ccache.mac
+if test "$CCACHEBINPATH" = ""
+  set -xg CCACHEBINPATH /usr/lib/ccache
+end
+ccache -M 30G
+cd $INNERWORKDIR/ArangoDB
+
+rm -rf build
+mkdir -p build
+cd build
+
+echo cmake $argv -DCMAKE_BUILD_TYPE=$BUILDMODE -DCMAKE_CXX_COMPILER=$CCACHEBINPATH/g++ -DCMAKE_C_COMPILER=$CCACHEBINPATH/gcc -DUSE_MAINTAINER_MODE=$MAINTAINER -DUSE_ENTERPRISE=$ENTERPRISEEDITION -DUSE_JEMALLOC=Off -DCMAKE_SKIP_RPATH=On -DPACKAGING=Bundle -DPACKAGE_TARGET_DIR=$INNERWORKDIR -DOPENSSL_USE_STATIC_LIBS=On ..
+
+echo cmake output in $INNERWORKDIR/cmakeArangoDB.log
+
+cmake $argv \
+      -DCMAKE_BUILD_TYPE=$BUILDMODE \
+      -DCMAKE_CXX_COMPILER=$CCACHEBINPATH/g++ \
+      -DCMAKE_C_COMPILER=$CCACHEBINPATH/gcc \
+      -DUSE_MAINTAINER_MODE=$MAINTAINER \
+      -DUSE_ENTERPRISE=$ENTERPRISEEDITION \
+      -DUSE_JEMALLOC=Off \
+      -DCMAKE_SKIP_RPATH=On \
+      -DPACKAGING=Bundle \
+      -DPACKAGE_TARGET_DIR=$INNERWORKDIR \
+      -DOPENSSL_USE_STATIC_LIBS=On \
+      .. > $INNERWORKDIR/cmakeArangoDB.log ^&1
+and echo Running make, output in work/buildArangoDB.log
+and nice make -j$PARALLELISM > $INNERWORKDIR/buildArangoDB.log ^&1
