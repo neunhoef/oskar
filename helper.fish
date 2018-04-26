@@ -175,7 +175,7 @@ function makeRelease
   releaseMode
 
   enterprise
-  set -x NOSTRIP dont
+  set -xg NOSTRIP dont
   buildStaticArangoDB -DTARGET_ARCHITECTURE=nehalem
   and downloadStarter
   and downloadSyncer
