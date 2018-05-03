@@ -434,6 +434,18 @@ Function buildArangoDB
     If($global:ok)
     {
         buildWindows
+        if($global:ok)
+        {
+            Write-Host "Build OK."
+        }
+        Else
+        {
+            Write-Host "Build error, see $INNERWORKDIR\build.* for details."
+        }
+    }
+    Else
+    {
+        Write-Host "cmake error, see $INNERWORKDIR\cmake.* for details."
     }
 }
 
