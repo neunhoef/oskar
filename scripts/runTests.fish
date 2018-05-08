@@ -172,7 +172,7 @@ function waitForProcesses
       return 1
     end
 
-    echo (count (jobs -p)) jobs still running, remaining $i "seconds..."
+    echo (date) (count (jobs -p)) jobs still running, remaining $i "seconds..."
 
     set i (math $i - 5)
     if test $i -lt 0
