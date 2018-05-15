@@ -1,6 +1,4 @@
 #!/bin/sh
-set -e
-
 if [ -z "$ARANGO_INIT_PORT" ] ; then
     ARANGO_INIT_PORT=8999
 fi
@@ -35,7 +33,7 @@ if [ "$1" = 'arangod' ]; then
         echo "choosing MMFiles storage engine"
         sed -i /tmp/arangod.conf -e "s;storage-engine = auto;storage-engine = mmfiles;"
     else
-        echo "automaticaly choosing storage engine"
+        echo "automatically choosing storage engine"
     fi
     if [ ! -f /var/lib/arangodb3/SERVER ] && [ "$SKIP_DATABASE_INIT" != "1" ]; then
         if [ -f "$ARANGO_ROOT_PASSWORD_FILE" ]; then
