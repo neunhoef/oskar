@@ -1,4 +1,4 @@
-#!/usr/bin/fish
+#!/usr/bin/env fish
 source jenkins/helper.jenkins.fish ; prepareOskar
 
 lockDirectory ; updateOskar ; clearResults
