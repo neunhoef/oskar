@@ -8,6 +8,7 @@ brew install cmake
 brew install node
 brew install python@2
 brew install ruby
+brew install jq
 
 gem install rspec
 gem install httparty
