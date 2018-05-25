@@ -19,6 +19,7 @@ if test "$STARTER_REV" = latest
 end
 echo Using STARTER_REV "$STARTER_REV"
 
+mkdir -p $INNERWORKDIR/ArangoDB/build/install/usr/bin
 set -l STARTER_PATH $INNERWORKDIR/ArangoDB/build/install/usr/bin/arangodb
 curl -s -L -o "$STARTER_PATH" "https://github.com/arangodb-helper/arangodb/releases/download/$STARTER_REV/arangodb-$PLATFORM-amd64"
 
