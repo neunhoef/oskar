@@ -32,6 +32,8 @@ cmake $argv \
       -DCMAKE_INSTALL_PREFIX=/ \
       -DSTATIC_EXECUTABLES=On \
       -DCMAKE_EXE_LINKER_FLAGS=-Wl,--build-id \
+      -DCMAKE_C_FLAGS=-fno-stack-protector \
+      -DCMAKE_CXX_FLAGS=-fno-stack-protector \
       .. > $INNERWORKDIR/cmakeArangoDB.log ^&1
 
 or exit $status
