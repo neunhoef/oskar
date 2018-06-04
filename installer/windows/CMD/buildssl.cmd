@@ -3,16 +3,16 @@ git clone -b "OpenSSL_1_1_0h" https://github.com/openssl/openssl C:\Windows\Temp
 call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\vsdevcmd" -arch=x64
 call :cleanup
 set installdir=C:\OpenSSL-ArangoDB\2017\shared-release
-perl Configure shared --release --prefix="%installdir%" --openssldir="%installdir%\ssl" VC-WIN64A && echo "##### conf ok" && nmake && echo "##### make ok" && nmake install && echo "##### install ok" || exit 1
+perl Configure shared --release --prefix="%installdir%" --openssldir="%installdir%\ssl" VC-WIN64A && echo "##### conf ok" && nmake && echo "##### make ok" && nmake install && echo "##### install ok" || pause
 call :cleanup
 set installdir=C:\OpenSSL-ArangoDB\2017\static-release
-perl  Configure no-dynamic-engine no-shared --release --prefix="%installdir%" --openssldir="%installdir%\ssl" VC-WIN64A && echo "##### conf ok" && nmake && echo "##### make ok" && nmake install && echo "##### install ok" || exit 1
+perl  Configure no-dynamic-engine no-shared --release --prefix="%installdir%" --openssldir="%installdir%\ssl" VC-WIN64A && echo "##### conf ok" && nmake && echo "##### make ok" && nmake install && echo "##### install ok" || pause
 call :cleanup
 set installdir=C:\OpenSSL-ArangoDB\2017\static-debug
-perl  Configure no-shared --prefix="%installdir%" --openssldir="%installdir%\ssl" VC-WIN64A && echo "##### conf ok" && nmake && echo "##### make ok" && nmake install && echo "##### install ok" || exit 1
+perl  Configure no-shared --prefix="%installdir%" --openssldir="%installdir%\ssl" VC-WIN64A && echo "##### conf ok" && nmake && echo "##### make ok" && nmake install && echo "##### install ok" || pause
 call :cleanup
 set installdir=C:\OpenSSL-ArangoDB\2017\shared-debug
-perl  Configure shared --prefix="%installdir%" --openssldir="%installdir%\ssl" VC-WIN64A && echo "##### conf ok" && nmake && echo "##### make ok" && nmake install && echo "##### install ok" || exit 1
+perl  Configure shared --prefix="%installdir%" --openssldir="%installdir%\ssl" VC-WIN64A && echo "##### conf ok" && nmake && echo "##### make ok" && nmake install && echo "##### install ok" || pause
 if exist "C:\Windows\Temp\openssl" rmdir /s /q "C:\Windows\Temp\openssl"
 
 :cleanup
