@@ -6,13 +6,13 @@ set installdir=C:\OpenSSL-ArangoDB\2017\shared-release
 perl Configure shared --release --prefix="%installdir%" --openssldir="%installdir%\ssl" VC-WIN64A && echo "##### conf ok" && nmake && echo "##### make ok" && nmake install && echo "##### install ok" || pause
 call :cleanup
 set installdir=C:\OpenSSL-ArangoDB\2017\static-release
-perl  Configure no-dynamic-engine no-shared --release --prefix="%installdir%" --openssldir="%installdir%\ssl" VC-WIN64A && echo "##### conf ok" && nmake && echo "##### make ok" && nmake install && echo "##### install ok" || pause
+perl  Configure no-shared --release --prefix="%installdir%" --openssldir="%installdir%\ssl" VC-WIN64A && echo "##### conf ok" && nmake && echo "##### make ok" && nmake install && echo "##### install ok" || pause
 call :cleanup
 set installdir=C:\OpenSSL-ArangoDB\2017\static-debug
-perl  Configure no-shared --prefix="%installdir%" --openssldir="%installdir%\ssl" VC-WIN64A && echo "##### conf ok" && nmake && echo "##### make ok" && nmake install && echo "##### install ok" || pause
+perl  Configure no-shared --debug --prefix="%installdir%" --openssldir="%installdir%\ssl" VC-WIN64A && echo "##### conf ok" && nmake && echo "##### make ok" && nmake install && echo "##### install ok" || pause
 call :cleanup
 set installdir=C:\OpenSSL-ArangoDB\2017\shared-debug
-perl  Configure shared --prefix="%installdir%" --openssldir="%installdir%\ssl" VC-WIN64A && echo "##### conf ok" && nmake && echo "##### make ok" && nmake install && echo "##### install ok" || pause
+perl  Configure shared --debug --prefix="%installdir%" --openssldir="%installdir%\ssl" VC-WIN64A && echo "##### conf ok" && nmake && echo "##### make ok" && nmake install && echo "##### install ok" || pause
 if exist "C:\Windows\Temp\openssl" rmdir /s /q "C:\Windows\Temp\openssl"
 
 :cleanup
