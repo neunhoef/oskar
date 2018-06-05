@@ -13,7 +13,9 @@ function ExternalProcess($process,$arguments,$wait)
     if($wait -eq $true)
     {
         UpdatePath
-        Start-Process $process -Verb runAs -ArgumentList $arguments -PassThru | Wait-Process
+        $p = Start-Process $process -Verb runAs -ArgumentList $arguments -PassThru
+        $h = $p.Handle
+        $p.WaitForExit()
     }
 }
 
@@ -93,8 +95,11 @@ ForEach($argument in $arguments)
 }
 
 DownloadFile -src 'https://aka.ms/vs/15/release/vs_community.exe' -dest "C:\Windows\Temp\vs_community.exe"
-$arguments = "--add Microsoft.VisualStudio.Workload.Node --add Microsoft.VisualStudio.Workload.NativeCrossPlat --add Microsoft.VisualStudio.Workload.NativeDesktop --includeRecommended --includeOptional -p"
-ExternalProcess -process "C:\Windows\Temp\vs_community.exe" -arguments $arguments -wait $true
+ExternalProcess -process "C:\Windows\Temp\vs_community.exe" -arguments "--add Microsoft.VisualStudio.Workload.Node --add Microsoft.VisualStudio.Workload.NativeCrossPlat --add Microsoft.VisualStudio.Workload.NativeDesktop --includeRecommended --includeOptional -p" -wait $true
+While((Get-WmiObject win32_process | Where {$_.Name -eq "vs_installer.exe"}) -or (Get-WmiObject win32_process | Where {$_.Name -eq "vs_installershell.exe"}))
+{
+    Sleep 30
+}
 Remove-Item "C:\Windows\Temp\vs_community.exe"
 
 ExternalProcess -process cmd -arguments "/c $PSScriptRoot\..\CMD\buildssl.cmd" -wait $true
