@@ -97,7 +97,7 @@ $arguments = "--add Microsoft.VisualStudio.Workload.Node --add Microsoft.VisualS
 ExternalProcess -process "C:\Windows\Temp\vs_community.exe" -arguments $arguments -wait $true
 Remove-Item "C:\Windows\Temp\vs_community.exe"
 
-ExternalProcess -process cmd -arguments "/c " -wait $true
+ExternalProcess -process cmd -arguments "/c $PSScriptRoot\..\CMD\buildssl.cmd" -wait $true
 
 #$clpath = $(Split-Path -Parent $(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter cl.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx64\\x64"}).FullName) 
 #DownloadFile -src 'https://github.com/frerich/clcache/releases/download/v4.1.0/clcache-4.1.0.zip' -dest "C:\Windows\Temp\clcache-4.1.0.zip"
