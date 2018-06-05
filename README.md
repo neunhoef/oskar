@@ -14,7 +14,7 @@ first if it is not your login shell):
 
     cd oskar
     source helper.fish
-    cloneEnterprise             (or cloneArangoDB if you do not have access)
+    checkoutEnterprise             (or checkoutArangoDB if you do not have access)
     
 This will pull the Docker image, start up a build and test container
 and clone the ArangoDB source (optionally including the enterprise code)
