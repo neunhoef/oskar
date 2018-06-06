@@ -9,6 +9,7 @@ brew install node
 brew install python@2
 brew install ruby
 brew install jq
+brew install git
 
 gem install rspec
 gem install httparty
