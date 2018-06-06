@@ -102,9 +102,7 @@ While((Get-WmiObject win32_process | Where {$_.Name -eq "vs_installer.exe"}) -or
 }
 Remove-Item "C:\Windows\Temp\vs_community.exe"
 
-DownloadFile -src 'https://raw.githubusercontent.com/arangodb-helper/openssl/master/FindOpenSSL.cmake' -dest $(Get-ChildItem C:\ -Recurse -Filter FindOpenSSL.cmake -ErrorAction SilentlyContinue | Select FullName).FullName
 ExternalProcess -process cmd -arguments "/c $PSScriptRoot\..\CMD\buildssl.cmd" -wait $true
-
 
 #$clpath = $(Split-Path -Parent $(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter cl.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx64\\x64"}).FullName) 
 #DownloadFile -src 'https://github.com/frerich/clcache/releases/download/v4.1.0/clcache-4.1.0.zip' -dest "C:\Windows\Temp\clcache-4.1.0.zip"
