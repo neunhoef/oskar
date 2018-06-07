@@ -245,7 +245,6 @@ function createReport
 
   echo rm -rf $cores $archives testProtocol.txt
   rm -rf $cores $archives testProtocol.txt
-  log "$d $TESTSUITE $result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE" $repoState $repoStateEnterprise $badtests ""
 
   # And finally collect the testfailures.txt:
   rm -rf $INNERWORKDIR/testfailures.txt
@@ -253,6 +252,11 @@ function createReport
   for f in "$INNERWORKDIR"/tmp/*.out/testfailures.txt
     cat $f >> $INNERWORKDIR/testfailures.txt
   end
+  if grep "unclean shutdown" "$INNERWORKDIR/testfailures.txt"
+    set -g result BAD
+  end
+  log "$d $TESTSUITE $result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE" $repoState $repoStateEnterprise $badtests ""
+
 end
 
 cd $INNERWORKDIR
