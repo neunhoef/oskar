@@ -262,6 +262,10 @@ set -xg TMPDIR $INNERWORKDIR/tmp
 cd $INNERWORKDIR/ArangoDB
 for f in *.log ; rm -f $f ; end
 
+# Switch off jemalloc background threads for the tests since this seems
+# to overload our systems and is not needed.
+set -x MALLOC_CONF background_thread:false
+
 switch $TESTSUITE
   case "cluster"
     resetLaunch 4
