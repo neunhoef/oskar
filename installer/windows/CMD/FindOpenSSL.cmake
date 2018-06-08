@@ -130,7 +130,7 @@ set(LIB_EAY_LIBRARY_RELEASE "${LIB_EAY_RELEASE}")
 set(SSL_EAY_LIBRARY_DEBUG "${SSL_EAY_DEBUG}")
 set(SSL_EAY_LIBRARY_RELEASE "${SSL_EAY_RELEASE}")
 
-include(${CMAKE_CURRENT_LIST_DIR}/SelectLibraryConfigurations.cmake)
+include(SelectLibraryConfigurations)
 select_library_configurations(LIB_EAY)
 select_library_configurations(SSL_EAY)
 
@@ -206,7 +206,7 @@ if(OPENSSL_INCLUDE_DIR AND EXISTS "${OPENSSL_INCLUDE_DIR}/openssl/opensslv.h")
   endif ()
 endif ()
 
-include(${CMAKE_CURRENT_LIST_DIR}/FindPackageHandleStandardArgs.cmake)
+include(FindPackageHandleStandardArgs)
 
 set(OPENSSL_LIBRARIES ${OPENSSL_SSL_LIBRARY} ${OPENSSL_CRYPTO_LIBRARY} )
 
