@@ -56,12 +56,15 @@ else()
     message(FATAL_ERROR "Generator not supported")
 endif()
 
+#store original suffixes
+set(_openssl_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
 
 ## find includes
 set(ssl_base_path "C:/OpenSSL-ArangoDB/")
 set(BUILD_MODE "release")
 set(path_part "${VS_VERSION}/${BUILD_TYPE}-${BUILD_MODE}")
 set(ssl_search_path "${ssl_base_path}/${path_part}/")
+set(CMAKE_FIND_LIBRARY_SUFFIXES .lib ${CMAKE_FIND_LIBRARY_SUFFIXES} )
 
 find_path(OPENSSL_INCLUDE_DIR
   NAMES "openssl/ssl.h"
@@ -72,9 +75,10 @@ find_path(OPENSSL_INCLUDE_DIR
 
 
 ## find libs
-set(CMAKE_FIND_LIBRARY_SUFFIXES .lib ${CMAKE_FIND_LIBRARY_SUFFIXES} )
 set(_OPENSSL_PATH_SUFFIXES "bin" "lib")
 
+
+# release
 find_library(LIB_EAY_RELEASE
   NAMES
 	libcrypto
@@ -99,36 +103,39 @@ find_library(SSL_EAY_RELEASE
 )
 
 if(NOT OPENSSL_USE_STATIC_LIBS)
-#libssl-1_1-x64.dll
-#libcrypto-1_1-x64.dll
-set(CMAKE_FIND_LIBRARY_SUFFIXES_STORED ${CMAKE_FIND_LIBRARY_SUFFIXES} )
-set(CMAKE_FIND_LIBRARY_SUFFIXES .dll ${CMAKE_FIND_LIBRARY_SUFFIXES} )
+  set(CMAKE_FIND_LIBRARY_SUFFIXES_STORED ${CMAKE_FIND_LIBRARY_SUFFIXES} )
+  set(CMAKE_FIND_LIBRARY_SUFFIXES .dll ${CMAKE_FIND_LIBRARY_SUFFIXES} )
 
-find_library(LIB_EAY_RELEASE_DLL
-  NAMES
-    libcrypto-1_1-x64
-	libcrypto
-	crypto
-  NAMES_PER_DIR
-	PATHS ${ssl_search_path}
-  PATH_SUFFIXES
-	${_OPENSSL_PATH_SUFFIXES}
-  NO_DEFAULT_PATH
-)
+  #libcrypto-1_1-x64.dll
+  find_library(LIB_EAY_RELEASE_DLL
+    NAMES
+      libcrypto-1_1-x64
+  	  libcrypto
+  	  crypto
+    NAMES_PER_DIR
+  	  PATHS ${ssl_search_path}
+    PATH_SUFFIXES
+  	  ${_OPENSSL_PATH_SUFFIXES}
+    NO_DEFAULT_PATH
+  )
 
-find_library(SSL_EAY_RELEASE_DLL
-  NAMES
-    libssl-1_1-x64
-	libssl
-	ssl
-  NAMES_PER_DIR
-	PATHS ${ssl_search_path}
-  PATH_SUFFIXES
-	${_OPENSSL_PATH_SUFFIXES}
-  NO_DEFAULT_PATH
-)
+  #libssl-1_1-x64.dll
+  find_library(SSL_EAY_RELEASE_DLL
+    NAMES
+      libssl-1_1-x64
+  	  libssl
+  	  ssl
+    NAMES_PER_DIR
+  	  PATHS ${ssl_search_path}
+    PATH_SUFFIXES
+  	  ${_OPENSSL_PATH_SUFFIXES}
+    NO_DEFAULT_PATH
+  )
 
-set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES_STORED} )
+  # THIS WILL COLLIDE WITH DEBUG
+  install (FILES "${LIB_EAY_RELEASE_DLL}" DESTINATION "${CMAKE_INSTALL_BINDIR}/" COMPONENT Libraries)
+  install (FILES "${SSL_EAY_RELEASE_DLL}" DESTINATION "${CMAKE_INSTALL_BINDIR}/" COMPONENT Libraries)
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES_STORED} )
 endif()
 
 # update search path
@@ -160,38 +167,39 @@ find_library(SSL_EAY_DEBUG
 )
 
 if(NOT OPENSSL_USE_STATIC_LIBS)
-#libssl-1_1-x64.dll
-#libcrypto-1_1-x64.dll
-set(CMAKE_FIND_LIBRARY_SUFFIXES_STORED ${CMAKE_FIND_LIBRARY_SUFFIXES} )
-set(CMAKE_FIND_LIBRARY_SUFFIXES .dll ${CMAKE_FIND_LIBRARY_SUFFIXES} )
+  set(CMAKE_FIND_LIBRARY_SUFFIXES_STORED ${CMAKE_FIND_LIBRARY_SUFFIXES} )
+  set(CMAKE_FIND_LIBRARY_SUFFIXES .dll ${CMAKE_FIND_LIBRARY_SUFFIXES} )
 
-find_library(LIB_EAY_DEBUG_DLL
-  NAMES
-    libcrypto-1_1-x64
-	libcrypto
-	crypto
-  NAMES_PER_DIR
-	PATHS ${ssl_search_path}
-  PATH_SUFFIXES
-	${_OPENSSL_PATH_SUFFIXES}
-  NO_DEFAULT_PATH
-)
+  #libcrypto-1_1-x64.dll
+  find_library(LIB_EAY_DEBUG_DLL
+    NAMES
+      libcrypto-1_1-x64
+  	  libcrypto
+  	  crypto
+    NAMES_PER_DIR
+  	  PATHS ${ssl_search_path}
+    PATH_SUFFIXES
+  	  ${_OPENSSL_PATH_SUFFIXES}
+    NO_DEFAULT_PATH
+  )
 
-find_library(SSL_EAY_DEBUG_DLL
-  NAMES
-    libssl-1_1-x64
-	libssl
-	ssl
-  NAMES_PER_DIR
-	PATHS ${ssl_search_path}
-  PATH_SUFFIXES
-	${_OPENSSL_PATH_SUFFIXES}
-  NO_DEFAULT_PATH
-)
+  #libssl-1_1-x64.dll
+  find_library(SSL_EAY_DEBUG_DLL
+    NAMES
+      libssl-1_1-x64
+  	  libssl
+  	  ssl
+    NAMES_PER_DIR
+  	  PATHS ${ssl_search_path}
+    PATH_SUFFIXES
+   	  ${_OPENSSL_PATH_SUFFIXES}
+    NO_DEFAULT_PATH
+  )
 
-set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES_STORED} )
-  install (FILES "${LIB_EAY_DEBUG_DLL}" DESTINATION "${CMAKE_INSTALL_BINDIR}/" COMPONENT Libraries)  
-  install (FILES "${SSL_EAY_DEBUG_DLL}" DESTINATION "${CMAKE_INSTALL_BINDIR}/" COMPONENT Libraries)  
+  # THIS WILL COLLIDE WITH RELEASE
+  install (FILES "${LIB_EAY_DEBUG_DLL}" DESTINATION "${CMAKE_INSTALL_BINDIR}/" COMPONENT Libraries)
+  install (FILES "${SSL_EAY_DEBUG_DLL}" DESTINATION "${CMAKE_INSTALL_BINDIR}/" COMPONENT Libraries)
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES_STORED})
 endif()
 
 
@@ -206,6 +214,7 @@ select_library_configurations(SSL_EAY)
 
 mark_as_advanced(LIB_EAY_LIBRARY_DEBUG LIB_EAY_LIBRARY_RELEASE
 				 SSL_EAY_LIBRARY_DEBUG SSL_EAY_LIBRARY_RELEASE)
+
 set(OPENSSL_SSL_LIBRARY ${SSL_EAY_LIBRARY} )
 set(OPENSSL_CRYPTO_LIBRARY ${LIB_EAY_LIBRARY} )
 
