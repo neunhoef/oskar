@@ -62,6 +62,7 @@ set(ssl_base_path "C:/OpenSSL-ArangoDB/")
 set(BUILD_MODE "release")
 set(path_part "${VS_VERSION}/${BUILD_TYPE}-${BUILD_MODE}")
 set(ssl_search_path "${ssl_base_path}/${path_part}/")
+
 find_path(OPENSSL_INCLUDE_DIR
   NAMES "openssl/ssl.h"
   PATHS ${ssl_search_path}
@@ -97,6 +98,39 @@ find_library(SSL_EAY_RELEASE
   NO_DEFAULT_PATH
 )
 
+if(NOT OPENSSL_USE_STATIC_LIBS)
+#libssl-1_1-x64.dll
+#libcrypto-1_1-x64.dll
+set(CMAKE_FIND_LIBRARY_SUFFIXES_STORED ${CMAKE_FIND_LIBRARY_SUFFIXES} )
+set(CMAKE_FIND_LIBRARY_SUFFIXES .dll ${CMAKE_FIND_LIBRARY_SUFFIXES} )
+
+find_library(LIB_EAY_RELEASE_DLL
+  NAMES
+    libcrypto-1_1-x64
+	libcrypto
+	crypto
+  NAMES_PER_DIR
+	PATHS ${ssl_search_path}
+  PATH_SUFFIXES
+	${_OPENSSL_PATH_SUFFIXES}
+  NO_DEFAULT_PATH
+)
+
+find_library(SSL_EAY_RELEASE_DLL
+  NAMES
+    libssl-1_1-x64
+	libssl
+	ssl
+  NAMES_PER_DIR
+	PATHS ${ssl_search_path}
+  PATH_SUFFIXES
+	${_OPENSSL_PATH_SUFFIXES}
+  NO_DEFAULT_PATH
+)
+
+set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES_STORED} )
+endif()
+
 # update search path
 set(BUILD_MODE "debug")
 set(path_part "${VS_VERSION}/${BUILD_TYPE}-${BUILD_MODE}")
@@ -124,6 +158,42 @@ find_library(SSL_EAY_DEBUG
 	${_OPENSSL_PATH_SUFFIXES}
   NO_DEFAULT_PATH
 )
+
+if(NOT OPENSSL_USE_STATIC_LIBS)
+#libssl-1_1-x64.dll
+#libcrypto-1_1-x64.dll
+set(CMAKE_FIND_LIBRARY_SUFFIXES_STORED ${CMAKE_FIND_LIBRARY_SUFFIXES} )
+set(CMAKE_FIND_LIBRARY_SUFFIXES .dll ${CMAKE_FIND_LIBRARY_SUFFIXES} )
+
+find_library(LIB_EAY_DEBUG_DLL
+  NAMES
+    libcrypto-1_1-x64
+	libcrypto
+	crypto
+  NAMES_PER_DIR
+	PATHS ${ssl_search_path}
+  PATH_SUFFIXES
+	${_OPENSSL_PATH_SUFFIXES}
+  NO_DEFAULT_PATH
+)
+
+find_library(SSL_EAY_DEBUG_DLL
+  NAMES
+    libssl-1_1-x64
+	libssl
+	ssl
+  NAMES_PER_DIR
+	PATHS ${ssl_search_path}
+  PATH_SUFFIXES
+	${_OPENSSL_PATH_SUFFIXES}
+  NO_DEFAULT_PATH
+)
+
+set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES_STORED} )
+  install (FILES "${LIB_EAY_DEBUG_DLL}" DESTINATION "${CMAKE_INSTALL_BINDIR}/" COMPONENT Libraries)  
+  install (FILES "${SSL_EAY_DEBUG_DLL}" DESTINATION "${CMAKE_INSTALL_BINDIR}/" COMPONENT Libraries)  
+endif()
+
 
 set(LIB_EAY_LIBRARY_DEBUG "${LIB_EAY_DEBUG}")
 set(LIB_EAY_LIBRARY_RELEASE "${LIB_EAY_RELEASE}")
