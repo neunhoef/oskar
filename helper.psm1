@@ -723,6 +723,7 @@ Function createReport
     $date = $(Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH.mm.ssZ")
     $date | Add-Content testProtocol.txt
     $global:result = "GOOD"
+    $global:badtests = $null
     Push-Location "$INNERWORKDIR\tmp"
         ForEach($dir in (Get-ChildItem -Directory -Filter "*.out"))
         {
@@ -735,8 +736,15 @@ Function createReport
                                 $file = $($dir.BaseName).Substring(0,$($dir.BaseName).Length-4)+".stdout.log"
                                 Write-Host "Bad result in $file"
                                 "Bad result in $file" | Add-Content testProtocol.txt
-                                $badtests = $badtests + "Bad result in $file`r`n"
+                                $global:badtests = $global:badtests + "Bad result in $file`r`n"
                             }   
+                }
+            Else
+                {
+                    Write-Host "No Testresult found at directory $($dir.BaseName)"
+                    $global:result = "BAD"
+                    "No Testresult found at directory $($dir.BaseName)" | Add-Content testProtocol.txt
+                    $global:badtests = $global:badtests + "No Testresult found at directory $($dir.BaseName)`r`n"   
                 }
         }
     Pop-Location
