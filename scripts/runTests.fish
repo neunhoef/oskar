@@ -113,10 +113,10 @@ function launchClusterTests
     set -l t $argv[1]
     set -l tt $argv[2]
     set -e argv[1..2]
-    echo scripts/unittest $t --cluster true --storageEngine $STORAGEENGINE --minPort $portBase --maxPort (math $portBase + 99) $argv --skipNonDeterministic true --skipTimeCritical true --testOutput $TMPDIR/"$t""$tt".out --writeXmlReport false
+    echo scripts/unittest $t --cluster true --storageEngine $STORAGEENGINE --minPort $portBase --maxPort (math $portBase + 99) $argv --skipNondeterministic true --skipTimeCritical true --testOutput $TMPDIR/"$t""$tt".out --writeXmlReport false
     scripts/unittest $t --cluster true --storageEngine $STORAGEENGINE \
       --minPort $portBase --maxPort (math $portBase + 99) $argv \
-      --skipNonDeterministic true --skipTimeCritical true \
+      --skipNondeterministic true --skipTimeCritical true \
       --testOutput $TMPDIR/"$t""$tt".out --writeXmlReport false \
       >"$t""$tt".log ^&1 &
     set -g portBase (math $portBase + 100)
@@ -125,11 +125,11 @@ function launchClusterTests
 
   function test3
     if test $VERBOSEOSKAR = On ; echo Launching $argv ; end
-    echo scripts/unittest $argv[1] --test $argv[3] --storageEngine $STORAGEENGINE --cluster true --minPort $portBase --maxPort (math $portBase + 99) --skipNonDeterministic true --testOutput "$TMPDIR/$argv[1]_$argv[2].out" --writeXmlReport false
+    echo scripts/unittest $argv[1] --test $argv[3] --storageEngine $STORAGEENGINE --cluster true --minPort $portBase --maxPort (math $portBase + 99) --skipNondeterministic true --testOutput "$TMPDIR/$argv[1]_$argv[2].out" --writeXmlReport false
     scripts/unittest $argv[1] --test $argv[3] \
       --storageEngine $STORAGEENGINE --cluster true \
       --minPort $portBase --maxPort (math $portBase + 99) \
-      --skipNonDeterministic true \
+      --skipNondeterministic true \
       --testOutput "$TMPDIR/$argv[1]_$argv[2].out" --writeXmlReport false \
       >$argv[1]_$argv[2].log ^&1 &
     set -g portBase (math $portBase + 100)
