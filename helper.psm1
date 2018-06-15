@@ -454,6 +454,7 @@ Function buildArangoDB
 
 Function buildStaticArangoDB
 {
+    staticExecutablesOn
     buildArangoDB
 }
 
