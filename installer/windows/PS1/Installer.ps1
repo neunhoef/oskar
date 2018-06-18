@@ -75,6 +75,7 @@ If (-NOT((Get-ItemPropertyValue -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Mic
     }
 }
 
+Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False
 
 DownloadFile -src 'https://github.com/Microsoft/vssetup.powershell/releases/download/2.0.1/VSSetup.zip' -dest "C:\Windows\Temp\VSSetup.zip"
 Expand-Archive -Force "C:\Windows\Temp\VSSetup.zip" "$env:ProgramFiles\WindowsPowerShell\Modules\VSSetup"
@@ -88,7 +89,7 @@ $arguments = @'
 '@
 ExternalProcess -process Powershell -arguments $arguments -wait $true
 
-$arguments = @("choco install -y dotnet4.7.1","choco install -y vcredist-all","choco install -y winscp","choco install -y sysinternals","choco install -y emacs64","choco install -y cmake.portable","choco install -y nsis","choco install -y python2","choco install -y procdump","choco install -y windbg","choco install -y wget","choco install -y nuget.commandline","choco install -y vim","choco install -y notepadplusplus","choco install -y putty.install","choco install -y openssh","choco install -y git","choco install -y winflexbison3","choco install -y ruby","choco install -y ruby2.devkit","choco install -y nodejs","choco install -y jdk8","choco install -y strawberryperl","choco install -y nasm","gem install bundler","gem install persistent_httparty","gem install rspec","gem install rspec-core","npm install -g gitbook-cli","pip3.5 install git+https://github.com/frerich/clcache.git")
+$arguments = @("choco install -y dotnet4.7.1","choco install -y vcredist-all","choco install -y winscp","choco install -y sysinternals","choco install -y emacs64","choco install -y cmake.portable","choco install -y nsis","choco install -y python2","choco install -y procdump","choco install -y windbg","choco install -y wget","choco install -y nuget.commandline","choco install -y vim","choco install -y curl","choco install -y notepadplusplus","choco install -y putty.install","choco install -y openssh","choco install -y git","choco install -y winflexbison3","choco install -y ruby","choco install -y ruby2.devkit","choco install -y nodejs","choco install -y jdk8","choco install -y strawberryperl","choco install -y nasm","gem install bundler","gem install persistent_httparty","gem install rspec","gem install rspec-core","npm install -g gitbook-cli","pip3.5 install git+https://github.com/frerich/clcache.git")
 ForEach($argument in $arguments)
 {
     ExternalProcess -process Powershell -arguments $argument -wait $true
