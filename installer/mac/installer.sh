@@ -8,6 +8,7 @@ brew update
 brew install ccache
 brew install fish
 brew install cmake
+brew install htop
 brew install node
 brew install python@2
 brew install ruby
