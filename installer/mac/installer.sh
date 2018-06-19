@@ -2,8 +2,8 @@
 
 /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 
+brew tap caskroom/versions
 brew update
-brew tap caskroom/cask
 
 brew install ccache
 brew install fish
@@ -14,7 +14,7 @@ brew install ruby
 brew install jq
 brew install git
 
-brew install Caskroom/cask/java
+brew cask install java8
 
 gem install rspec
 gem install httparty
