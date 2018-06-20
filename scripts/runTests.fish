@@ -191,7 +191,7 @@ function waitOrKill
     kill (jobs -p)
     if waitForProcesses 30 ""
       kill -9 (jobs -p)
-      waitForProcesses 15 ""   # give jobs some time to finish
+      waitForProcesses 60 ""   # give jobs some time to finish
     end
   end
   return 0
