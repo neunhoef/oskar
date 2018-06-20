@@ -2,7 +2,7 @@
 source jenkins/helper.jenkins.fish ; prepareOskar
 
 lockDirectory ; updateOskar ; clearResults
-rocksdb ; cluster ; maintainerOff
+rocksdb ; cluster ; maintainerOn
 
 eval $EDITION
 
@@ -14,7 +14,8 @@ and buildStaticArangoDB
 
 set -l s $status
 if test $s != 0
-  echo Build failure with maintainer mode off in $EDITION.
+  echo Build failure with maintainer mode on in community.
 end
 cd "$HOME/$NODE_NAME/oskar" ; moveResultsToWorkspace ; unlockDirectory 
 exit $s
+

@@ -21,6 +21,16 @@ and clone the ArangoDB source (optionally including the enterprise code)
 into a subdirectory `work` in the current directory. It will also show
 its current configuration.
 
+## Initial setup (Windows)
+
+Once you have cloned this repo and have set up `C:\Users\#USERNAME#\.ssh` with a
+private key that has access to https://github.com/arangodb/enterprise, 
+the initial setup is as follows (in `powershell`, so start a `powershell`):
+
+	Set-Location oskar
+	Import-Module helper.psm1
+	checkoutEnterprise
+
 ## Choosing branches
 
 Use
@@ -50,6 +60,19 @@ first time you can do
 
 which does not throw away the `build` directory and should be even
 faster.
+
+## Building ArangoDB (Windows)
+
+You can then do
+
+    buildStaticArangoDB
+
+for a static build or
+
+	buildArangoDB
+	
+for a non-static build.
+
  
 ## Choices for the tests
 
