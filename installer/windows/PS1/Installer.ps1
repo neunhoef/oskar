@@ -103,7 +103,15 @@ While((Get-WmiObject win32_process | Where {$_.Name -eq "vs_installer.exe"}) -or
 }
 Remove-Item "C:\Windows\Temp\vs_community.exe"
 
-ExternalProcess -process cmd -arguments "/c $PSScriptRoot\..\CMD\buildssl.cmd" -wait $true
+ExternalProcess -process cmd -arguments "/c $PSScriptRoot\..\CMD\buildssl.bat" -wait $true
+
+Expand-Archive -Force "$PSScriptRoot\..\FILES\zabbix*" "C:\Zabbix"
+ExternalProcess -process cmd -arguments "/c C:\zabbix\install.bat" -wait $true
+
+ExternalProcess -process cmd -arguments '/c dism.exe /online /enable-feature /featurename:"SNMP" /featurename:"WMISnmpProvider"' -wait $true
+New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\SNMP\Parameters\ValidCommunities' -Name 'zabbix' -PropertyType DWord  -Value '00000004'
+Remove-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\SNMP\Parameters\PermittedManagers' -Name
+Restart-Service -Name SNMP -Force 
 
 #$clpath = $(Split-Path -Parent $(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter cl.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx64\\x64"}).FullName) 
 #DownloadFile -src 'https://github.com/frerich/clcache/releases/download/v4.1.0/clcache-4.1.0.zip' -dest "C:\Windows\Temp\clcache-4.1.0.zip"
