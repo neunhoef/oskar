@@ -110,7 +110,7 @@ ExternalProcess -process cmd -arguments "/c C:\zabbix\install.bat" -wait $true
 
 ExternalProcess -process cmd -arguments '/c dism.exe /online /enable-feature /featurename:"SNMP" /featurename:"WMISnmpProvider"' -wait $true
 New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\SNMP\Parameters\ValidCommunities' -Name 'zabbix' -PropertyType DWord  -Value '00000004'
-Remove-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\SNMP\Parameters\PermittedManagers' -Name
+Remove-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\SNMP\Parameters\PermittedManagers' -Name '1'
 Restart-Service -Name SNMP -Force 
 
 #$clpath = $(Split-Path -Parent $(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter cl.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx64\\x64"}).FullName) 
