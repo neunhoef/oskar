@@ -13,8 +13,7 @@ perl  Configure no-shared --debug --prefix="%installdir%" --openssldir="%install
 call :cleanup
 set installdir=C:\OpenSSL-ArangoDB\2017\shared-debug
 perl  Configure shared --debug --prefix="%installdir%" --openssldir="%installdir%\ssl" VC-WIN64A && echo "##### conf ok" && nmake && echo "##### make ok" && nmake install && echo "##### install ok" || pause
-wget "https://raw.githubusercontent.com/neunhoef/oskar/master/installer/windows/CMD/FindOpenSSL.cmake" -O "%~dp0\FindOpenSSL.cmake"
-copy "%~dp0\FindOpenSSL.cmake" "C:\OpenSSL-ArangoDB\FindOpenSSL.cmake"
+copy "%~dp0\..\FILES\FindOpenSSL.cmake" "C:\OpenSSL-ArangoDB\FindOpenSSL.cmake"
 if exist "C:\Windows\Temp\openssl" rmdir /s /q "C:\Windows\Temp\openssl"
 
 :cleanup
