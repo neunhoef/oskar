@@ -21,6 +21,7 @@ if [ "$1" = 'arangod' ]; then
     # Make a copy of the configuration file to patch it, note that this
     # must work regardless under which user we run:
     cp /etc/arangodb3/arangod.conf /tmp/arangod.conf
+    cp /etc/arangodb3/arango-init-database.conf /tmp/arango-init-database.conf
 
     if [ ! -z "$ARANGO_ENCRYPTION_KEYFILE" ]; then
         echo "Using encrypted database"
