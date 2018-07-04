@@ -24,4 +24,5 @@ gem install persistent_httparty
 brew upgrade
 brew link --overwrite python@2
 
-sudo security add-trusted-cert -d -r trustRoot -k "/Library/Keychains/System.keychain" "./MacBuildCertificates.p12"
+echo import .p12 manually
+#sudo security import ./MacBuildCertificates.p12 -k "/Library/Keychains/System.keychain" -P #PASS#
