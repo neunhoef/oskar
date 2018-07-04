@@ -101,6 +101,7 @@ function launchSingleTests
     case 20 ; test1 http_replication ""
     case 21 ; test1 catch ""
     case 22 ; test1 authentication ""
+    case 23 ; test1 dump_authentication ""
     case '*' ; return 0
   end
   set -g launchCount (math $launchCount + 1)
@@ -150,8 +151,9 @@ function launchClusterTests
     case 10 ; test1 shell_server_aql 3 --testBuckets 5/3
     case 11 ; test1 shell_server_aql 4 --testBuckets 5/4
     case 12 ; test1 dump ""
-    case 13 ; test1 server_http ""
-    case 14 ; test1 agency ""
+    case 13 ; test1 dump_authentication ""
+    case 14 ; test1 server_http ""
+    case 15 ; test1 agency ""
     case '*' ; return 0
   end
   set -g launchCount (math $launchCount + 1)
