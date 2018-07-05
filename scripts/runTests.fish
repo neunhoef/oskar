@@ -50,14 +50,18 @@ function launchSingleTests
     set -l t $argv[1]
     set -l tt $argv[2]
     set -e argv[1..2]
-    echo scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort (math $portBase + 99) $argv --skipNondeterministic true --skipTimeCritical true --testOutput $TMPDIR/"$t""$tt".out --writeXmlReport false
-    scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE \
-      --minPort $portBase --maxPort (math $portBase + 99) $argv \
-      --skipNondeterministic true --skipTimeCritical true \
-      --testOutput $TMPDIR/"$t""$tt".out --writeXmlReport false \
-      >"$t""$tt".log ^&1 &
-    set -g portBase (math $portBase + 100)
-    sleep 1
+    if grep $t UnitTests/OskarTestSuitesBlackList
+      echo Test suite $t skipped by UnitTests/OskarTestSuitesBlackList
+    else
+      echo scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort (math $portBase + 99) $argv --skipNondeterministic true --skipTimeCritical true --testOutput $TMPDIR/"$t""$tt".out --writeXmlReport false
+      scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE \
+        --minPort $portBase --maxPort (math $portBase + 99) $argv \
+        --skipNondeterministic true --skipTimeCritical true \
+        --testOutput $TMPDIR/"$t""$tt".out --writeXmlReport false \
+        >"$t""$tt".log ^&1 &
+      set -g portBase (math $portBase + 100)
+      sleep 1
+    end
   end
 
   function test1MoreLogs
@@ -66,15 +70,19 @@ function launchSingleTests
     set -l t $argv[1]
     set -l tt $argv[2]
     set -e argv[1..2]
-    echo scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort (math $portBase + 99) $argv --skipNondeterministic true --skipTimeCritical true --testOutput $TMPDIR/"$t""$tt".out --writeXmlReport false --extraArgs:log.level replication=trace
-    scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE \
-      --minPort $portBase --maxPort (math $portBase + 99) $argv \
-      --skipNondeterministic true --skipTimeCritical true \
-      --testOutput $TMPDIR/"$t""$tt".out --writeXmlReport false \
-      --extraArgs:log.level replication=trace \
-      >"$t""$tt".log ^&1 &
-    set -g portBase (math $portBase + 100)
-    sleep 1
+    if grep $t UnitTests/OskarTestSuitesBlackList
+      echo Test suite $t skipped by UnitTests/OskarTestSuitesBlackList
+    else
+      echo scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort (math $portBase + 99) $argv --skipNondeterministic true --skipTimeCritical true --testOutput $TMPDIR/"$t""$tt".out --writeXmlReport false --extraArgs:log.level replication=trace
+      scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE \
+        --minPort $portBase --maxPort (math $portBase + 99) $argv \
+        --skipNondeterministic true --skipTimeCritical true \
+        --testOutput $TMPDIR/"$t""$tt".out --writeXmlReport false \
+        --extraArgs:log.level replication=trace \
+        >"$t""$tt".log ^&1 &
+      set -g portBase (math $portBase + 100)
+      sleep 1
+    end
   end
 
   switch $launchCount
@@ -114,27 +122,35 @@ function launchClusterTests
     set -l t $argv[1]
     set -l tt $argv[2]
     set -e argv[1..2]
-    echo scripts/unittest $t --cluster true --storageEngine $STORAGEENGINE --minPort $portBase --maxPort (math $portBase + 99) $argv --skipNondeterministic true --skipTimeCritical true --testOutput $TMPDIR/"$t""$tt".out --writeXmlReport false
-    scripts/unittest $t --cluster true --storageEngine $STORAGEENGINE \
-      --minPort $portBase --maxPort (math $portBase + 99) $argv \
-      --skipNondeterministic true --skipTimeCritical true \
-      --testOutput $TMPDIR/"$t""$tt".out --writeXmlReport false \
-      >"$t""$tt".log ^&1 &
-    set -g portBase (math $portBase + 100)
-    sleep 1
+    if grep $t UnitTests/OskarTestSuitesBlackList
+      echo Test suite $t skipped by UnitTests/OskarTestSuitesBlackList
+    else
+      echo scripts/unittest $t --cluster true --storageEngine $STORAGEENGINE --minPort $portBase --maxPort (math $portBase + 99) $argv --skipNondeterministic true --skipTimeCritical true --testOutput $TMPDIR/"$t""$tt".out --writeXmlReport false
+      scripts/unittest $t --cluster true --storageEngine $STORAGEENGINE \
+        --minPort $portBase --maxPort (math $portBase + 99) $argv \
+        --skipNondeterministic true --skipTimeCritical true \
+        --testOutput $TMPDIR/"$t""$tt".out --writeXmlReport false \
+        >"$t""$tt".log ^&1 &
+      set -g portBase (math $portBase + 100)
+      sleep 1
+    end
   end
 
   function test3
     if test $VERBOSEOSKAR = On ; echo Launching $argv ; end
-    echo scripts/unittest $argv[1] --test $argv[3] --storageEngine $STORAGEENGINE --cluster true --minPort $portBase --maxPort (math $portBase + 99) --skipNondeterministic true --testOutput "$TMPDIR/$argv[1]_$argv[2].out" --writeXmlReport false
-    scripts/unittest $argv[1] --test $argv[3] \
-      --storageEngine $STORAGEENGINE --cluster true \
-      --minPort $portBase --maxPort (math $portBase + 99) \
-      --skipNondeterministic true \
-      --testOutput "$TMPDIR/$argv[1]_$argv[2].out" --writeXmlReport false \
-      >$argv[1]_$argv[2].log ^&1 &
-    set -g portBase (math $portBase + 100)
-    sleep 1
+    if grep $argv[1] UnitTests/OskarTestSuitesBlackList
+      echo Test suite $t skipped by UnitTests/OskarTestSuitesBlackList
+    else
+      echo scripts/unittest $argv[1] --test $argv[3] --storageEngine $STORAGEENGINE --cluster true --minPort $portBase --maxPort (math $portBase + 99) --skipNondeterministic true --testOutput "$TMPDIR/$argv[1]_$argv[2].out" --writeXmlReport false
+      scripts/unittest $argv[1] --test $argv[3] \
+        --storageEngine $STORAGEENGINE --cluster true \
+        --minPort $portBase --maxPort (math $portBase + 99) \
+        --skipNondeterministic true \
+        --testOutput "$TMPDIR/$argv[1]_$argv[2].out" --writeXmlReport false \
+        >$argv[1]_$argv[2].log ^&1 &
+      set -g portBase (math $portBase + 100)
+      sleep 1
+    end
   end
 
   switch $launchCount
