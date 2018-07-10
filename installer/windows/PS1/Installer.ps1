@@ -113,6 +113,9 @@ New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Se
 Remove-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\SNMP\Parameters\PermittedManagers' -Name '1'
 Restart-Service -Name SNMP -Force 
 
+ExternalProcess -process "git" -arguments 'config --global user.email "jenkins@arangodb.com"'
+ExternalProcess -process "git" -arguments 'config --global user.name "Jenkins"'
+
 #$clpath = $(Split-Path -Parent $(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter cl.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx64\\x64"}).FullName) 
 #DownloadFile -src 'https://github.com/frerich/clcache/releases/download/v4.1.0/clcache-4.1.0.zip' -dest "C:\Windows\Temp\clcache-4.1.0.zip"
 #DownloadFile -src 'https://github.com/arangodb-helper/clcheat/raw/master/clcheat.exe' -dest "$clpath\clcheat.exe"
