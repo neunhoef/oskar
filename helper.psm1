@@ -570,9 +570,16 @@ Function launchSingleTests
         {
             Write-Host "Launching $test"
         }
-        unittest "$($test[0]) --cluster false --storageEngine $STORAGEENGINE --minPort $global:portBase --maxPort $($global:portBase + 99) $($test[2..$($test.Length)]) --skipNondeterministic true --skipTimeCritical true --testOutput $env:TMP\$($test[0])$($test[1]).out --writeXmlReport false" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1])"
-        $global:portBase = $($global:portBase + 100)
-        Start-Sleep 5
+        If(-Not(Select-String -Path $INNERWORKDIR\ArangoDB\UnitTests\OskarTestSuitesBlackList -pattern $test[0]))
+        {
+            unittest "$($test[0]) --cluster false --storageEngine $STORAGEENGINE --minPort $global:portBase --maxPort $($global:portBase + 99) $($test[2..$($test.Length)]) --skipNondeterministic true --skipTimeCritical true --testOutput $env:TMP\$($test[0])$($test[1]).out --writeXmlReport false" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1])"
+            $global:portBase = $($global:portBase + 100)
+            Start-Sleep 5
+        }
+        Else
+        {
+            Write-Host "Test suite" $test[0] "skipped by UnitTests/OskarTestSuitesBlackList"
+        }
     }
     [array]$global:UPIDS = $null
     test1 "shell_server",""
@@ -591,6 +598,11 @@ Function launchSingleTests
     test1 "shell_server_aql","2","--testBuckets","5/2"
     test1 "shell_server_aql","3","--testBuckets","5/3"
     test1 "shell_server_aql","4","--testBuckets","5/4"
+    test1 "shell_client_aql","0","--testBuckets","5/0"
+    test1 "shell_client_aql","1","--testBuckets","5/1"
+    test1 "shell_client_aql","2","--testBuckets","5/2"
+    test1 "shell_client_aql","3","--testBuckets","5/3"
+    test1 "shell_client_aql","4","--testBuckets","5/4"
     test1 "dump",""
     test1 "server_http",""
     test1 "agency",""
@@ -612,36 +624,49 @@ Function launchClusterTests
         {
             Write-Host "Launching $test"
         }
-        $ruby = $(Get-Command ruby.exe -ErrorAction SilentlyContinue).Source
-        if (-not $ruby -eq "") {
-          $ruby = "--ruby $ruby"
+        If(-Not(Select-String -Path $INNERWORKDIR\ArangoDB\UnitTests\OskarTestSuitesBlackList -pattern $test[0]))
+        {
+            $ruby = $(Get-Command ruby.exe -ErrorAction SilentlyContinue).Source
+            if (-not $ruby -eq "") {
+              $ruby = "--ruby $ruby"
+            }
+            $rspec = $((Get-Command rspec.bat).Source).Substring(0,((Get-Command rspec.bat).Source).Length-4)
+            if (-not $rspec -eq "") {
+              $rspec = "--rspec $rspec"
+            }
+            unittest "$($test[0]) --cluster false --storageEngine $STORAGEENGINE --minPort $global:portBase --maxPort $($global:portBase + 99) $($test[2..$($test.Length)]) --skipNondeterministic true --skipTimeCritical true --testOutput $env:TMP\$($test[0])$($test[1]).out --writeXmlReport false $ruby $rspec" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1])"
+            $global:portBase = $($global:portBase + 100)
+            Start-Sleep 5
         }
-        $rspec = $((Get-Command rspec.bat).Source).Substring(0,((Get-Command rspec.bat).Source).Length-4)
-        if (-not $rspec -eq "") {
-          $rspec = "--rspec $rspec"
+        Else
+        {
+            Write-Host "Test suite" $test[0] "skipped by UnitTests/OskarTestSuitesBlackList"
         }
-        unittest "$($test[0]) --cluster false --storageEngine $STORAGEENGINE --minPort $global:portBase --maxPort $($global:portBase + 99) $($test[2..$($test.Length)]) --skipNondeterministic true --skipTimeCritical true --testOutput $env:TMP\$($test[0])$($test[1]).out --writeXmlReport false $ruby $rspec" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1])"
-        $global:portBase = $($global:portBase + 100)
-        Start-Sleep 5
     }
-
     Function test3([array]$test)
     {
         If($VERBOSEOSKAR -eq "On")
         {
             Write-Host "Launching $test"
         }
-        $ruby = $(Get-Command ruby.exe -ErrorAction SilentlyContinue).Source
-        if (-not $ruby -eq "") {
-          $ruby = "--ruby $ruby"
+        If(-Not(Select-String -Path $INNERWORKDIR\ArangoDB\UnitTests\OskarTestSuitesBlackList -pattern $test[0]))
+        {
+            $ruby = $(Get-Command ruby.exe -ErrorAction SilentlyContinue).Source
+            if (-not $ruby -eq "") {
+              $ruby = "--ruby $ruby"
+            }
+            $rspec = $((Get-Command rspec.bat).Source).Substring(0,((Get-Command rspec.bat).Source).Length-4)
+            if (-not $rspec -eq "") {
+              $rspec = "--rspec $rspec"
+            }
+            unittest "$($test[0]) --test $($test[2]) --storageEngine $STORAGEENGINE --cluster true --minPort $global:portBase --maxPort $($global:portBase + 99) --skipNondeterministic true --testOutput $env:TMP\$($test[0])_$($test[1]).out --writeXmlReport false $ruby $rspec" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1])"
+            $global:portBase = $($global:portBase + 100)
+            Start-Sleep 5
         }
-        $rspec = $((Get-Command rspec.bat).Source).Substring(0,((Get-Command rspec.bat).Source).Length-4)
-        if (-not $rspec -eq "") {
-          $rspec = "--rspec $rspec"
+        Else
+        {
+            Write-Host "Test suite" $test[0] "skipped by UnitTests/OskarTestSuitesBlackList"
         }
-        unittest "$($test[0]) --test $($test[2]) --storageEngine $STORAGEENGINE --cluster true --minPort $global:portBase --maxPort $($global:portBase + 99) --skipNondeterministic true --testOutput $env:TMP\$($test[0])_$($test[1]).out --writeXmlReport false $ruby $rspec" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1])"
-        $global:portBase = $($global:portBase + 100)
-        Start-Sleep 5
     }
     [array]$global:UPIDS = $null
     test3 "resilience","move","moving-shards-cluster.js"
@@ -656,6 +681,11 @@ Function launchClusterTests
     test1 "shell_server_aql","2","--testBuckets","5/2"
     test1 "shell_server_aql","3","--testBuckets","5/3"
     test1 "shell_server_aql","4","--testBuckets","5/4"
+    test1 "shell_client_aql","0","--testBuckets","5/0"
+    test1 "shell_client_aql","1","--testBuckets","5/1"
+    test1 "shell_client_aql","2","--testBuckets","5/2"
+    test1 "shell_client_aql","3","--testBuckets","5/3"
+    test1 "shell_client_aql","4","--testBuckets","5/4"
     test1 "dump",""
     test1 "server_http",""
     test1 "agency",""

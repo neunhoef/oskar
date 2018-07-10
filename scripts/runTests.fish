@@ -102,14 +102,19 @@ function launchSingleTests
     case 13 ; test1 shell_server_aql 2 --testBuckets 5/2
     case 14 ; test1 shell_server_aql 3 --testBuckets 5/3
     case 15 ; test1 shell_server_aql 4 --testBuckets 5/4
-    case 16 ; test1 dump ""
-    case 17 ; test1 server_http ""
-    case 18 ; test1 agency ""
-    case 19 ; test1 shell_replication ""
-    case 20 ; test1 http_replication ""
-    case 21 ; test1 catch ""
-    case 22 ; test1 authentication ""
-    case 23 ; test1 dump_authentication ""
+    case 16 ; test1 shell_client_aql 0 --testBuckets 5/0
+    case 17 ; test1 shell_client_aql 1 --testBuckets 5/1
+    case 18 ; test1 shell_client_aql 2 --testBuckets 5/2
+    case 19 ; test1 shell_client_aql 3 --testBuckets 5/3
+    case 20 ; test1 shell_client_aql 4 --testBuckets 5/4
+    case 21 ; test1 dump ""
+    case 22 ; test1 server_http ""
+    case 23 ; test1 agency ""
+    case 24 ; test1 shell_replication ""
+    case 25 ; test1 http_replication ""
+    case 26 ; test1 catch ""
+    case 27 ; test1 authentication ""
+    case 28 ; test1 dump_authentication ""
     case '*' ; return 0
   end
   set -g launchCount (math $launchCount + 1)
@@ -166,10 +171,15 @@ function launchClusterTests
     case 9 ; test1 shell_server_aql 2 --testBuckets 5/2
     case 10 ; test1 shell_server_aql 3 --testBuckets 5/3
     case 11 ; test1 shell_server_aql 4 --testBuckets 5/4
-    case 12 ; test1 dump ""
-    case 13 ; test1 dump_authentication ""
-    case 14 ; test1 server_http ""
-    case 15 ; test1 agency ""
+    case 12 ; test1 shell_client_aql 0 --testBuckets 5/0
+    case 13 ; test1 shell_client_aql 1 --testBuckets 5/1
+    case 14 ; test1 shell_client_aql 2 --testBuckets 5/2
+    case 15 ; test1 shell_client_aql 3 --testBuckets 5/3
+    case 16 ; test1 shell_client_aql 4 --testBuckets 5/4
+    case 17 ; test1 dump ""
+    case 18 ; test1 dump_authentication ""
+    case 19 ; test1 server_http ""
+    case 20 ; test1 agency ""
     case '*' ; return 0
   end
   set -g launchCount (math $launchCount + 1)
