@@ -116,6 +116,11 @@ Restart-Service -Name SNMP -Force
 ExternalProcess -process "git" -arguments 'config --global user.email "jenkins@arangodb.com"'
 ExternalProcess -process "git" -arguments 'config --global user.name "Jenkins"'
 
+$arguments = @'
+-NoProfile -ExecutionPolicy Bypass -Command "Invoke-Expression -Command '.\iResearch.ps1'"
+'@
+ExternalProcess -process Powershell -arguments $arguments -wait $true
+
 #$clpath = $(Split-Path -Parent $(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter cl.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx64\\x64"}).FullName) 
 #DownloadFile -src 'https://github.com/frerich/clcache/releases/download/v4.1.0/clcache-4.1.0.zip' -dest "C:\Windows\Temp\clcache-4.1.0.zip"
 #DownloadFile -src 'https://github.com/arangodb-helper/clcheat/raw/master/clcheat.exe' -dest "$clpath\clcheat.exe"
