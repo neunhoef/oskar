@@ -209,14 +209,13 @@ exit 0
 ## -----------------------------------------------------------------------------
 
 %postun
-echo postun
+# Nothing here
 
 ## -----------------------------------------------------------------------------
 ## --SECTION--                                                               pre
 ## -----------------------------------------------------------------------------
 
 %pre
-echo pre
 # create arangodb group only if it doesn't already exist
 if ! getent group arangodb >/dev/null 2>&1; then
         /usr/sbin/groupadd -r arangodb
@@ -233,7 +232,6 @@ fi
 ## -----------------------------------------------------------------------------
 
 %preun
-echo preun:
 if rpm -q --quiet systemd ; then
   systemctl stop arangodb3
   rm %{_sysconfdir}/systemd/system/arangodb3.service
