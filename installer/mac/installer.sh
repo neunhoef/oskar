@@ -25,4 +25,5 @@ brew upgrade
 brew link --overwrite python@2
 
 echo import .p12 manually
-#sudo security import ./MacBuildCertificates.p12 -k "/Library/Keychains/System.keychain" -P #PASS#
+#security import ./MacBuildCertificates.p12 -P $PASSWD
+ 
