@@ -426,6 +426,20 @@ Function buildWindows
     Pop-Location
 }
 
+Function packageWindows
+{
+    If(-Not(Test-Path -PathType Container -Path "$INNERWORKDIR\ArangoDB\build"))
+    {
+        buildWindows
+    }
+    Push-Location $pwd
+    Set-Location "$INNERWORKDIR\ArangoDB\build"
+    Write-Host "Time: $((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH.mm.ssZ'))"
+    Write-Host "Package: cpack -C `"$BUILDMODE`""
+    proc -process "cpack" -argument "-C `"$BUILDMODE`"" -logfile "$INNERWORKDIR\package"
+    Pop-Location
+}
+
 Function buildArangoDB
 {
     checkoutIfNeeded
@@ -440,6 +454,18 @@ Function buildArangoDB
         if($global:ok)
         {
             Write-Host "Build OK."
+            if($SKIPPACKAGING -eq "Off")
+            {
+                packageWindows
+                if($global:ok)
+                {
+                    Write-Host "Package OK."
+                }
+                Else
+                {
+                    Write-Host "Package error, see $INNERWORKDIR\package.* for details."
+                }
+            }
         }
         Else
         {
@@ -496,6 +522,11 @@ Function moveResultsToWorkspace
     Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE; comm
   }
   ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter "cmake*"))
+  {
+    Write-Host "Move $INNERWORKDIR\$file"
+    Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE; comm
+  }
+  ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter "package*"))
   {
     Write-Host "Move $INNERWORKDIR\$file"
     Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE; comm
