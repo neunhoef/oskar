@@ -1,3 +1,4 @@
+ - add documentation on how to obtain build dependencies (ssl / nsis / ...)
  - routines to create universal rpm package
  - routines to create .tar.gz distribution
  - look into compiler architecture optimizations
