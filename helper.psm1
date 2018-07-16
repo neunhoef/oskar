@@ -526,6 +526,11 @@ Function moveResultsToWorkspace
     Write-Host "Move $INNERWORKDIR\$file"
     Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE; comm
   }
+  ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter "package*"))
+  {
+    Write-Host "Move $INNERWORKDIR\$file"
+    Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE; comm
+  }
   If(Test-Path -PathType Leaf "$INNERWORKDIR\testfailures.log")
   {
     Write-Host "Move $INNERWORKDIR\testfailures.log"
