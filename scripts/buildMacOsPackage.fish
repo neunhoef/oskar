@@ -6,7 +6,7 @@ if test -z "$MACOS_ADMIN_KEYCHAIN_PASS"
   exit 1
 end
 
-security unlock-keychain -p $MACOS_ADMIN_KEYCHAIN_PASS ~/Library/Keychains/login.keychain-db
+security unlock-keychain -p $MACOS_ADMIN_KEYCHAIN_PASS
 
 ## NOTE: This script can obly ba called on an existing Build directory
 cd $INNERWORKDIR/ArangoDB/build
