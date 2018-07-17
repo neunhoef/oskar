@@ -108,7 +108,7 @@ If (-Not ((Get-ItemPropertyValue -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\Curr
 If (-NOT((Get-ItemPropertyValue -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\PathSet' -Name '(default)' -ErrorAction SilentlyContinue ) -eq 1))
 {
     $oldpath = (Get-ItemProperty -Path ‘Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment’ -Name PATH).path
-    $newpath = “$oldpath;$((Get-ChildItem -Path C:\ProgramData\chocolatey\lib\ -Recurse -Filter cmake.exe).DirectoryName);%ALLUSERSPROFILE%\chocolatey\bin;%PROGRAMFILES%\NASM;C:\Strawberry\perl\bin;C:\tools\DevKit2\bin;C:\tools\DevKit2\mingw\bin;%PROGRAMFILES(x86)%\Windows Kits\10\Debuggers\x64”
+    $newpath = “$oldpath;$((Get-ChildItem -Path C:\ProgramData\chocolatey\lib\ -Recurse -Filter cmake.exe).DirectoryName);%ALLUSERSPROFILE%\chocolatey\bin;%PROGRAMFILES%\NASM;C:\Strawberry\perl\bin;C:\tools\DevKit2\bin;C:\tools\DevKit2\mingw\bin;%PROGRAMFILES(x86)%\Windows Kits\10\bin\x64;%PROGRAMFILES(x86)%\Windows Kits\10\Debuggers\x64”
     Set-ItemProperty -Path ‘Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment’ -Name PATH -Value $newPath
 
     If(Get-ItemPropertyValue -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\PathSet' -Name '(default)' -ErrorAction SilentlyContinue)
