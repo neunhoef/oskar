@@ -531,6 +531,11 @@ Function moveResultsToWorkspace
     Write-Host "Move $INNERWORKDIR\$file"
     Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE; comm
   }
+  If(Test-Path -PathType Leaf "$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB3-*.exe")
+  {
+    Write-Host "Move $INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB3-*.exe"
+    Move-Item -Path "$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB3-*.exe" -Destination $env:WORKSPACE; comm 
+  }
   If(Test-Path -PathType Leaf "$INNERWORKDIR\testfailures.log")
   {
     Write-Host "Move $INNERWORKDIR\testfailures.log"
