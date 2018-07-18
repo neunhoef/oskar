@@ -19,7 +19,7 @@ function startClusterStarter
   set -l ARANGOD_PATH "$LOCALWORKDIR/ArangoDB/build/bin/arangod"
   set -l STARTER "$LOCALWORKDIR/ArangoDB/build/install/usr/bin/arangodb"
   # Tell jenkins to not kill this job.
-  set -xg BUILD_ID=dontKillMe
+  set -xg BUILD_ID dontKillMe
   eval ($STARTER start --starter.wait --starter.data-dir $DATA_PATH --server.js-dir $JS_PATH --server.arangod $ARANGOD_PATH $ENTERPRISE_JS_PATH $JOIN_PART)
 end
 
