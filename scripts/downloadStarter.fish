@@ -24,4 +24,4 @@ set -l STARTER_PATH $INNERWORKDIR/ArangoDB/build/install/usr/bin/arangodb
 curl -s -L -o "$STARTER_PATH" "https://github.com/arangodb-helper/arangodb/releases/download/$STARTER_REV/arangodb-$PLATFORM-amd64"
 
 and chmod 755 "$STARTER_PATH"
-and echo Starter ready for build $STARTERPATH
+and echo Starter ready for build $STARTER_PATH
