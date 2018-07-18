@@ -8,7 +8,7 @@ set -g JOIN_PART "--starter.join $argv[1] --starter.join $argv[2] --starter.join
 
 function startClusterStarter
   set -l LOCALWORKDIR "$WORKDIR/$INNERWORKDIR"
-  set -l DATA_PATH "$LOCALWORKD/perfCluster"
+  set -l DATA_PATH "$LOCALWORKDIR/perfCluster"
   rm -rf DATA_PATH
   if test "$ENTERPRISEEDITION" = "On"
     set -l ENTERPRISE_JS_PATH "--all.javascript.module-path $LOCALWORKDIR/ArangoDB/enterprise/js"
