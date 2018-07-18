@@ -5,7 +5,10 @@ if test (count $argv) -lt 3
 end
 
 # Hard kill all running processes.
-killall -9 arangod arangodb
+# First kill any starter running to stop respawning
+killall -9 arangodb
+# Then kill all arangodb
+killall -9 arangod
 
 set -g JOIN_PART "--starter.join $argv[1] --starter.join $argv[2] --starter.join $argv[3]"
 
