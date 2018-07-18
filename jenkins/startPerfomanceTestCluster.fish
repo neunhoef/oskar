@@ -4,7 +4,7 @@ if test (count $argv) -lt 3
   exit 1
 end
 
-set -g JOIN_PART "--join $argv[1] --join $argv[2] --join $argv[3]"
+set -g JOIN_PART "--starter.join $argv[1] --starter.join $argv[2] --starter.join $argv[3]"
 
 function startClusterStarter
   set -l LOCALWORKDIR "$WORKDIR/$INNERWORKDIR"
