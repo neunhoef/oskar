@@ -11,7 +11,7 @@ function startClusterStarter
   set -l DATA_PATH "$LOCALWORKDIR/perfCluster"
   rm -rf DATA_PATH
   if test "$ENTERPRISEEDITION" = "On"
-    set -l ENTERPRISE_JS_PATH "--all.javascript.module-path $LOCALWORKDIR/ArangoDB/enterprise/js"
+    set -l ENTERPRISE_JS_PATH "--all.javascript.module-directory $LOCALWORKDIR/ArangoDB/enterprise/js"
   else
     set -l ENTERPRISE_JS_PATH ""
   end
