@@ -4,11 +4,13 @@ if test (count $argv) -lt 3
   exit 1
 end
 
-# Hard kill all running processes.
-# First kill any starter running to stop respawning
-killall -9 arangodb
-# Then kill all arangodb
-killall -9 arangod
+function cleanup
+  # Hard kill all running processes.
+  # First kill any starter running to stop respawning
+  killall -9 arangodb
+  # Then kill all arangodb
+  killall -9 arangod
+end
 
 set -g JOIN_PART "--starter.join $argv[1] --starter.join $argv[2] --starter.join $argv[3]"
 
@@ -30,6 +32,7 @@ function startClusterStarter
   or begin ; echo "Failed to start the cluster" ; exit 1 ; end
 end
 
+cleanup
 source jenkins/helper.jenkins.fish ; prepareOskar
 
 lockDirectory ; updateOskar ; clearResults
