@@ -4,6 +4,9 @@ if test (count $argv) -lt 3
   exit 1
 end
 
+# Hard kill all running processes.
+killall -9 arangod arangodb
+
 set -g JOIN_PART "--starter.join $argv[1] --starter.join $argv[2] --starter.join $argv[3]"
 
 function startClusterStarter
@@ -20,9 +23,7 @@ function startClusterStarter
   set -l STARTER "$LOCALWORKDIR/ArangoDB/build/install/usr/bin/arangodb"
   # Tell jenkins to not kill this job.
   set -xg BUILD_ID dontKillMe
-  # Hard kill all running processes.
-  killall -9 arangod arangodb
-  eval $STARTER start --starter.wait --starter.data-dir $DATA_PATH --server.js-dir $JS_PATH --server.arangod $ARANGOD_PATH $ENTERPRISE_JS_PATH $JOIN_PART --server.threads 512
+  eval $STARTER start --starter.wait --starter.data-dir $DATA_PATH --server.js-dir $JS_PATH --server.arangod $ARANGOD_PATH $ENTERPRISE_JS_PATH $JOIN_PART --server.threads 512 --server.storage-engine $STORAGE_ENGINE
   or begin ; echo "Failed to start the cluster" ; exit 1 ; end
 end
 
