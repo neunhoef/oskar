@@ -17,7 +17,9 @@ function startClusterStarter
   set -l JS_PATH "$INNERWORKDIR/ArangoDB/js"
   set -l ARANGOD_PATH "$INNERWORKDIR/ArangoDB/build/bin/arangod"
   set -l STARTER "$INNERWORKDIR/ArangoDB/build/install/usr/bin/arangodb"
-  eval $STARTER --starter.data-dir $DATA_PATH --server.js-dir $JS_PATH --server.arangod $ARANGOD_PATH $ENTERPRISE_JS_PATH $JOIN_PART
+  # Tell jenkins to not kill this job.
+  set -xg BUILD_ID=dontKillMe
+  eval (runInContainer $STARTER --starter.data-dir $DATA_PATH --server.js-dir $JS_PATH --server.arangod $ARANGOD_PATH $ENTERPRISE_JS_PATH $JOIN_PART) &
 end
 
 source jenkins/helper.jenkins.fish ; prepareOskar
