@@ -685,7 +685,7 @@ Function launchSingleTests
     test1 "shell_replication",""
     test1 "http_replication",""
     test1 "catch",""
-    test1 "endpoints",""
+    test1 "endpoints","--skipEndpointsIpv6","true"
     comm
 }
 
