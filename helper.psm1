@@ -686,6 +686,7 @@ Function launchSingleTests
     test1 "http_replication",""
     test1 "catch",""
     test1 "version",""
+    test1 "endpoints",""
     comm
 }
 
