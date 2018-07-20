@@ -28,7 +28,7 @@ function startClusterStarter
   set -l STARTER "$LOCALWORKDIR/ArangoDB/build/install/usr/bin/arangodb"
   # Tell jenkins to not kill this job.
   set -xg BUILD_ID dontKillMe
-  eval $STARTER start --starter.wait --starter.data-dir $DATA_PATH --server.js-dir $JS_PATH --server.arangod $ARANGOD_PATH $ENTERPRISE_JS_PATH $JOIN_PART --server.storage-engine $STORAGE_ENGINE --all.server.maximal-threads 512
+  eval $STARTER start --starter.wait --starter.data-dir $DATA_PATH --server.js-dir $JS_PATH --server.arangod $ARANGOD_PATH $ENTERPRISE_JS_PATH $JOIN_PART --server.storage-engine $STORAGE_ENGINE --all.server.maximal-threads 512 --all.log.level "THREADS=DEBUG"
   or begin ; echo "Failed to start the cluster" ; exit 1 ; end
 end
 
