@@ -111,7 +111,8 @@ function launchSingleTests
     case 22 ; test1 catch ""
     case 23 ; test1 authentication ""
     case 24 ; test1 dump_authentication ""
-    case 25 ; test1 endpoints "" --skipEndpointsIpv6 true
+    case 25 ; test1 version ""
+    case 26 ; test1 endpoints "" --skipEndpointsIpv6 true
     case '*' ; return 0
   end
   set -g launchCount (math $launchCount + 1)
