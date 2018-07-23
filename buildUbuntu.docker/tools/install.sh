@@ -1,5 +1,21 @@
 #!/bin/sh
 
+# Set links for GCC
+GCC=6
+
+update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-$GCC 10 \
+	--slave /usr/bin/gcc-ar gcc-ar /usr/bin/gcc-ar-$GCC \
+	--slave /usr/bin/gcc-nm gcc-nm /usr/bin/gcc-nm-$GCC \
+	--slave /usr/bin/gcc-ranlib gcc-ranlib /usr/bin/gcc-ranlib-$GCC
+
+update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-$GCC 10
+
+update-alternatives --install /usr/bin/cc cc /usr/bin/gcc 30
+update-alternatives --set cc /usr/bin/gcc
+
+update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++ 30
+update-alternatives --set c++ /usr/bin/g++
+
 # Compile openssl1.1 library:
 export OPENSSLVERSION=1.1.0h
 cd /tmp
