@@ -2,10 +2,10 @@ set -gx INNERWORKDIR /work
 set -gx SCRIPTSDIR /scripts
 set -gx PLATFORM linux
 set -gx ARCH (uname -m)
-set -gx UBUNTUBUILDIMAGE neunhoef/ubuntubuildarangodb-$ARCH
-set -gx UBUNTUPACKAGINGIMAGE neunhoef/ubuntupackagearangodb-$ARCH
-set -gx ALPINEBUILDIMAGE neunhoef/alpinebuildarangodb-$ARCH
-set -gx CENTOSPACKAGINGIMAGE neunhoef/centospackagearangodb-$ARCH
+set -gx UBUNTUBUILDIMAGE arangodb/ubuntubuildarangodb-$ARCH
+set -gx UBUNTUPACKAGINGIMAGE arangodb/ubuntupackagearangodb-$ARCH
+set -gx ALPINEBUILDIMAGE arangodb/alpinebuildarangodb-$ARCH
+set -gx CENTOSPACKAGINGIMAGE arangodb/centospackagearangodb-$ARCH
 
 function buildUbuntuBuildImage
   cd $WORKDIR

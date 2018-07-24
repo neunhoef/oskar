@@ -7,7 +7,7 @@ $OSKARDIR = "$HDD\$env:NODE_NAME"
 Set-Location $OSKARDIR
 If(-Not(Test-Path -PathType Container -Path "$OSKARDIR\oskar"))
 {
-    git clone https://github.com/neunhoef/oskar
+    git clone https://github.com/arangodb/oskar
     Set-Location "$OSKARDIR\oskar"
 }
 Else
