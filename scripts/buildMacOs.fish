@@ -5,7 +5,7 @@ set -x CCACHE_DIR $INNERWORKDIR/.ccache.mac
 if test "$CCACHEBINPATH" = ""
   set -xg CCACHEBINPATH /usr/lib/ccache
 end
-ccache -M 30G
+ccache -M 100G
 cd $INNERWORKDIR/ArangoDB
 
 rm -rf build
