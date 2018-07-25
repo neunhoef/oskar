@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Set links for GCC
-GCC=6
+GCC=7
 
 update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-$GCC 10 \
 	--slave /usr/bin/gcc-ar gcc-ar /usr/bin/gcc-ar-$GCC \
