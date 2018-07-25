@@ -5,6 +5,9 @@ lockDirectory ; updateOskar ; clearResults
 
 eval $EDITION ; eval $STORAGE_ENGINE ; eval $TEST_SUITE
 
+echo "--------------------------------------------------------------------------------"
+showConfig
+
 echo Working on branch $ARANGODB_BRANCH of main repository and
 echo on branch $ENTERPRISE_BRANCH of enterprise repository.
 

@@ -7,6 +7,7 @@ rocksdb ; cluster ; maintainerOn
 eval $EDITION
 parallelism 8
 
+echo "--------------------------------------------------------------------------------"
 showConfig
 
 echo Working on branch $ARANGODB_BRANCH of main repository and
