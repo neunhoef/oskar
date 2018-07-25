@@ -41,3 +41,6 @@ make depend && make -j64
 make install
 cd /tmp
 rm -rf openldap-$OPENLDAPVERSION.tgz openldap-$OPENLDAPVERSION
+
+# clean up any strange cores
+rm -rf /core.*
