@@ -299,6 +299,12 @@ function oskar
   runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/runTests.fish
 end
 
+function oskarFull
+  checkoutIfNeeded
+  runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/runFullTests.fish
+end
+
+
 function pushOskar
   cd $WORKDIR
   source helper.fish
