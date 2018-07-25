@@ -105,7 +105,7 @@ function oskar1Full
   showConfig
   set -x NOSTRIP 1
   buildStaticArangoDB -DUSE_FAILURE_TESTS=On -DDEBUG_SYNC_REPLICATION=On ; or return $status
-  oskar
+  oskarFull
 end
 
 function oskar2
