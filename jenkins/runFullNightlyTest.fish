@@ -4,16 +4,10 @@ source jenkins/helper.jenkins.fish ; prepareOskar
 lockDirectory ; updateOskar ; clearResults
 
 eval $EDITION ; eval $STORAGE_ENGINE ; eval $TEST_SUITE
-parallelism 24
-
-echo "--------------------------------------------------------------------------------"
-showConfig
-
-echo Working on branch $ARANGODB_BRANCH of main repository and
-echo on branch $ENTERPRISE_BRANCH of enterprise repository.
+parallelism 20
 
 switchBranches $ARANGODB_BRANCH $ENTERPRISE_BRANCH
-and oskar1
+and oskar1Full
 
 set -l s $status
 cd "$HOME/$NODE_NAME/oskar" ; moveResultsToWorkspace ; unlockDirectory 
