@@ -20,7 +20,7 @@ cd build
 
 echo cmake $argv -DCMAKE_BUILD_TYPE=$BUILDMODE -DCMAKE_CXX_COMPILER=$CCACHEBINPATH/g++ -DCMAKE_C_COMPILER=$CCACHEBINPATH/gcc -DUSE_MAINTAINER_MODE=$MAINTAINER -DUSE_ENTERPRISE=$ENTERPRISEEDITION -DUSE_JEMALLOC=On -DCMAKE_INSTALL_PREFIX=/ -DSTATIC_EXECUTABLES=On -DCMAKE_EXE_LINKER_FLAGS=-Wl,--build-id ..
 
-echo cmake output in work/cmakeArangoDB.log
+echo cmake output in $INNERWORKDIR/cmakeArangoDB.log
 
 cmake $argv \
       -DCMAKE_BUILD_TYPE=$BUILDMODE \
@@ -41,7 +41,7 @@ or exit $status
 mkdir install
 set -x DESTDIR (pwd)/install
 echo Running make for static build, output in work/buildArangoDB.log
-nice make -j$PARALLELISM install > ../../buildArangoDB.log ^&1
+nice make -j$PARALLELISM install > $INNERWORKDIR/buildArangoDB.log ^&1
 and cd install
 and if test -z "$NOSTRIP"
   echo Stripping executables...
