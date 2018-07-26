@@ -22,7 +22,7 @@ cd /tmp
 curl -O https://www.openssl.org/source/openssl-$OPENSSLVERSION.tar.gz
 tar xzvf openssl-$OPENSSLVERSION.tar.gz
 cd openssl-$OPENSSLVERSION
-./config --prefix=/usr no-async
+./config --prefix=/usr no-async no-dso
 make
 make test
 make install
