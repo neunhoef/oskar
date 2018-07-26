@@ -12,8 +12,8 @@ provided(){
     echo " <in_name'$4'> <repo_name'$5'> <arch'$5'> <package_type'$7'>"
 }
 
-#(($# < 7)) && usage
-#provided()
+(($# < 7)) && usage
+#provided "$@"
 
 ### incoming structure
 ## /mnt/data/fileserver/CO$ ls
@@ -45,18 +45,20 @@ provided(){
 ## 2 directories, 61 files
 
 ## . `dirname $0`/../config/default.inc
-boobs(){
-    echo "(.x.)"
+
+ferr(){
+    echo "fatal error: $@"
+    exit 1
 }
 
 setup_gpg(){
-    echo "ulf"
+    exec 3</tmp/createRepoFd3
     export KEYNAME=115E1684
     export GPG_TTY="$(tty)"
 
-    /usr/bin/gpg-agent --homedir=~/.gnupg --daemon --use-standard-socket --allow-loopback-pinentry
-    gpg2 --import -v -v ~/.gnupg/secring.gpg
-    gpg2 --import -v -v ~/.gnupg/pubring.gpg
+    /usr/bin/gpg-agent --homedir=~/.gnupg --daemon --use-standard-socket --allow-loopback-pinentry 2>&3
+    gpg2 --import -v -v ~/.gnupg/secring.gpg 2>&3 || ferr "failed to import secret"
+    gpg2 --import -v -v ~/.gnupg/pubring.gpg 2>&3 || ferr "faild to import public key"
 
      ## wozu? - add key to gpg one time (willi - script)
      cd /tmp/
@@ -64,8 +66,9 @@ setup_gpg(){
      gpg2 --pinentry-mode=loopback --digest-algo SHA512 \
           --passphrase-fd 0 --yes -abs \
           -u "$KEYNAME" \
-          -o Release.gpg Release <<<"arangodb"
-     (( $? != 0 )) && { echo "failed test signing"; exit 1; }
+          -o Release.gpg Release <<<"arangodb" 2>&3
+     (( $? != 0 )) && { echo "failed test signing"; cat /tmp/createRepoFd3  exit 1; }
+     exec 3<&-
 }
 
 create_repo(){
@@ -92,7 +95,6 @@ create_repo(){
 
     #set +x
 
-    boobs
     setup_gpg
 
 ##  echo "community #################################"
@@ -142,7 +144,7 @@ create_repo_edition_deb(){
     for file in "$in"/*"$version"*; do
         fbase="${file%.deb}"
         noext="${fbase##*/}"
-        echo "sign_deb $file" # TODO
+        echo "sign_deb $file" || ferr "failed to sign $file" # TODO
         cp "$file" "$repo/${noext}-obi.deb" \
             || { echo "could not move $file" to "$repo"; exit 1;  }
     done
@@ -154,21 +156,22 @@ create_repo_edition_deb(){
 
     # create Packages content for all archs
     echo "apt-ftparchive packages (TODO)"
-    apt-ftparchive packages $arch > Packages ##handle multiple archs -- all must be in Package
+    # TODO handle multiple archs -- all must be in Package
+    apt-ftparchive packages $arch > Packages || ferr "failed"
 
     # update Packages.bz2
     echo "update Packages.bz2"
-    rm -f Packages.bz2; bzip2 -kf Packages
+    rm -f Packages.bz2; bzip2 -kf Packages || ferr "failed"
 
     # add release information
     echo "apt-ftparchive release"
-    apt-ftparchive release . > Release
+    apt-ftparchive release . > Release || ferr "failed"
 
     #sign release
     echo "sign release"
         gpg2 --pinentry-mode=loopback --digest-algo SHA512 \
          --passphrase-fd 0 --yes -abs -u $KEYNAME \
-         -o Release.gpg Release <<<"arangodb"
+         -o Release.gpg Release <<<"arangodb" || ferr "failed"
 
 }
 create_repo_edition_rpm(){
@@ -181,6 +184,7 @@ create_repo_edition_rpm(){
     local repo="$6"
     local url="$7"
 }
+
 create_repo "$@"
 
 exit 0
