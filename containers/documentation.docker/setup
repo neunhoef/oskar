@@ -1,0 +1,11 @@
+#!/bin/bash
+export NVM_DIR=/usr/local/nvm
+. $NVM_DIR/nvm.sh
+nvm use stable
+
+# work around broken binfmt_misc support:
+rm -f /usr/bin/ditaa
+printf '#!/bin/bash
+java -jar /usr/share/ditaa/ditaa.jar $@
+' > /usr/bin/ditaa
+chmod a+x /usr/bin/ditaa

@@ -1,0 +1,6 @@
+#!/bin/bash
+script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+. "$script_dir/lib/oskar.bash"
+
+containerdir="$script_dir/../containers/documentation.docker"
+docker build -t "$arango_doc_container_default" --build-arg CACHE_DATE=$(date --iso-8601=seconds) "$containerdir"

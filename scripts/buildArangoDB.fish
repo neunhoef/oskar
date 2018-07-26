@@ -40,13 +40,15 @@ cmake $argv \
       -DCMAKE_CXX_FLAGS=-fno-stack-protector \
       $GOLD \
       .. > $INNERWORKDIR/cmakeArangoDB.log ^&1
-
+and echo "configure done"  >> $INNERWORKDIR/cmakeArangoDB.log
 or exit $status
 
 mkdir install
 set -x DESTDIR (pwd)/install
-echo Running make for static build, output in work/buildArangoDB.log
+
+echo "Running make for static build, output in work/buildArangoDB.log"
 nice make -j$PARALLELISM install > $INNERWORKDIR/buildArangoDB.log ^&1
+and echo "build and install done"  >> $INNERWORKDIR/buildArangoDB.log
 and cd install
 and if test -z "$NOSTRIP"
   echo Stripping executables...

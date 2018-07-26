@@ -1,0 +1,33 @@
+#!/bin/bash
+export NVM_DIR=/usr/local/nvm
+. $NVM_DIR/nvm.sh
+nvm use stable
+
+type gitbook &>/dev/null || { echo "gitbook not installed"; exit; }
+type ditaa &>/dev/null || { echo "dittaa not installed"; exit; }
+
+ARANGO_SOURCE=/arangodb  ## this dir contains the source directory and finished build in .build
+OUTDIR=/arangoidb-doc
+
+cd "$ARANGO_SOURCE" || { echo "could not change in arangodb source directroy"; exit 1; }
+echo $(pwd)
+ls -lisah ./build &>/dev/null || echo "no build directory"
+ls -lisah ./build/bin &>/dev/null || echo "unable to access source/bild/bin"
+
+[[ -e ./build/bin/arangod ]] || { echo "no arangod installed"; exit 1; }
+
+./utils/generateExamples.sh || { echo "failed to generate examples!"; exit 1; }
+./utils/generateSwagger.sh || { echo "failed to generate swagger"; exit 1; }
+
+cd Documentation/Books
+
+# get gitbook version
+INSTALLED_GITBOOK_VERSION=$(gitbook ls |grep '*'|sed "s;.*\* ;;")
+if test -z "${INSTALLED_GITBOOK_VERSION}"; then
+    echo "your container doesn't come with a preloaded version of gitbook, please update it."
+    exit 1
+fi
+export GITBOOK_ARGS="--gitbook ${INSTALLED_GITBOOK_VERSION}"
+
+#./build.sh build-dist-books --outputDir /build/build-docu --nodeModulesDir "${NODE_MODULES_DIR}"
+#./build.sh build-book --name "$TARGET" --outputDir /build/build-docu  --nodeModulesDir "${NODE_MODULES_DIR}" $@

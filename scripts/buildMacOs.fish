@@ -6,7 +6,13 @@ if test "$CCACHEBINPATH" = ""
   set -xg CCACHEBINPATH /usr/lib/ccache
 end
 ccache -M 100G
+ccache -o log_file=$INNERWORKDIR/.ccache.log
+ccache -o cache_dir_levels=6
 cd $INNERWORKDIR/ArangoDB
+
+echo "Starting build at "(date)" on "(hostname)
+rm -f $INNERWORKDIR/.ccache.log
+ccache --zero-stats
 
 rm -rf build
 mkdir -p build
@@ -28,5 +34,9 @@ cmake $argv \
       -DPACKAGE_TARGET_DIR=$INNERWORKDIR \
       -DOPENSSL_USE_STATIC_LIBS=On \
       .. > $INNERWORKDIR/cmakeArangoDB.log ^&1
-and echo Running make, output in work/buildArangoDB.log
+and echo "Finished cmake at "(date)", now starting build"
+and echo Running make, output in $INNERWORKDIR/buildArangoDB.log
 and nice make -j$PARALLELISM > $INNERWORKDIR/buildArangoDB.log ^&1
+
+echo "Finished at "(date)
+ccache --show-stats

@@ -9,10 +9,10 @@ set -gx CENTOSPACKAGINGIMAGE neunhoef/centospackagearangodb-$ARCH
 
 function buildUbuntuBuildImage
   cd $WORKDIR
-  cp -a scripts/{makeArangoDB,buildArangoDB,checkoutArangoDB,checkoutEnterprise,clearWorkDir,downloadStarter,downloadSyncer,runTests,switchBranches,recursiveChown}.fish buildUbuntu.docker/scripts
-  cd $WORKDIR/buildUbuntu.docker
+  cp -a scripts/{makeArangoDB,buildArangoDB,checkoutArangoDB,checkoutEnterprise,clearWorkDir,downloadStarter,downloadSyncer,runTests,switchBranches,recursiveChown}.fish containers/buildUbuntu.docker/scripts
+  cd $WORKDIR/containers/buildUbuntu.docker
   docker build -t $UBUNTUBUILDIMAGE .
-  rm -f $WORKDIR/buildUbuntu.docker/scripts/*.fish
+  rm -f $WORKDIR/containers/buildUbuntu.docker/scripts/*.fish
   cd $WORKDIR
 end
 function pushUbuntuBuildImage ; docker push $UBUNTUBUILDIMAGE ; end
@@ -20,10 +20,10 @@ function pullUbuntuBuildImage ; docker pull $UBUNTUBUILDIMAGE ; end
 
 function buildUbuntuPackagingImage
   cd $WORKDIR
-  cp -a scripts/buildDebianPackage.fish buildUbuntuPackaging.docker/scripts
-  cd $WORKDIR/buildUbuntuPackaging.docker
+  cp -a scripts/buildDebianPackage.fish containers/buildUbuntuPackaging.docker/scripts
+  cd $WORKDIR/containers/buildUbuntuPackaging.docker
   docker build -t $UBUNTUPACKAGINGIMAGE .
-  rm -f $WORKDIR/buildUbuntuPackaging.docker/scripts/*.fish
+  rm -f $WORKDIR/containers/buildUbuntuPackaging.docker/scripts/*.fish
   cd $WORKDIR
 end
 function pushUbuntuPackagingImage ; docker push $UBUNTUPACKAGINGIMAGE ; end
@@ -31,10 +31,10 @@ function pullUbuntuPackagingImage ; docker pull $UBUNTUPACKAGINGIMAGE ; end
 
 function buildAlpineBuildImage
   cd $WORKDIR
-  cp -a scripts/makeAlpine.fish scripts/buildAlpine.fish buildAlpine.docker/scripts
-  cd $WORKDIR/buildAlpine.docker
+  cp -a scripts/makeAlpine.fish scripts/buildAlpine.fish containers/buildAlpine.docker/scripts
+  cd $WORKDIR/containers/buildAlpine.docker
   docker build -t $ALPINEBUILDIMAGE .
-  rm -f $WORKDIR/buildAlpine.docker/scripts/*.fish
+  rm -f $WORKDIR/containers/buildAlpine.docker/scripts/*.fish
   cd $WORKDIR
 end
 function pushAlpineBuildImage ; docker push $ALPINEBUILDIMAGE ; end
@@ -42,10 +42,10 @@ function pullAlpineBuildImage ; docker pull $ALPINEBUILDIMAGE ; end
 
 function buildCentosPackagingImage
   cd $WORKDIR
-  cp -a scripts/buildRPMPackage.fish buildCentos7Packaging.docker/scripts
-  cd $WORKDIR/buildCentos7Packaging.docker
+  cp -a scripts/buildRPMPackage.fish containers/buildCentos7Packaging.docker/scripts
+  cd $WORKDIR/containers/buildCentos7Packaging.docker
   docker build -t $CENTOSPACKAGINGIMAGE .
-  rm -f $WORKDIR/buildCentos7Packaging.docker/scripts/*.fish
+  rm -f $WORKDIR/containers/buildCentos7Packaging.docker/scripts/*.fish
   cd $WORKDIR
 end
 function pushCentosPackagingImage ; docker push $CENTOSPACKAGINGIMAGE ; end
@@ -350,13 +350,13 @@ function makeDockerImage
   set -l imagename $argv[1]
 
   cd $WORKDIR/work/ArangoDB/build/install
-  and tar czvf $WORKDIR/arangodb.docker/install.tar.gz *
+  and tar czvf $WORKDIR/containers/arangodb.docker/install.tar.gz *
   if test $status != 0
     echo Could not create install tarball!
     return 1
   end
 
-  cd $WORKDIR/arangodb.docker
+  cd $WORKDIR/containers/arangodb.docker
   docker build -t $imagename .
 end
 
