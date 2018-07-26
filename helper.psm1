@@ -312,6 +312,10 @@ Function switchBranches($branch_c,$branch_e)
         }
         If ($global:ok) 
         {
+            proc -process "git" -argument "reset --hard origin/$branch_c" -logfile $false
+        }
+        If ($global:ok) 
+        {
             proc -process "git" -argument "pull" -logfile $false
         }
         If($ENTERPRISEEDITION -eq "On")
@@ -328,6 +332,10 @@ Function switchBranches($branch_c,$branch_e)
             If ($global:ok) 
             {
                 proc -process "git" -argument "checkout $branch_e" -logfile $false
+            }
+            If ($global:ok) 
+            {
+                proc -process "git" -argument "reset --hard origin/$branch_e" -logfile $false
             }
             If ($global:ok) 
             {
