@@ -93,19 +93,18 @@ create_repo(){
     url_community="$url_base/arangodb${version_fs}/$repo_name/"
     url_enterprise="$url_base/$url_secret/arangodb${version_fs}/$repo_name/"
 
-    #set +x
-
     setup_gpg
 
 ##  echo "community #################################"
 ##  create_repo_edition "$version" "$major_minor" "$arch" "$package_type" \
-##                      "$in_path/$in_community/$in_name" "$repo_path/$repo_community/$repo_name" \
+##                      "$in_path/$in_community/$in_name" \
+##                      "$repo_path/$repo_community/arangodb$version_fs/$repo_name" \
 ##                      "$url_community"
 ##  echo "enterprise #################################"
     create_repo_edition "$version" "$major_minor" "$arch" "$package_type"\
                         "$in_path/$in_enterprise/$in_name" \
                         "$repo_path/$repo_enterprise/arangodb$version_fs/$repo_name" \
-                         "$url_enterprise"
+                        "$url_enterprise"
 }
 
 create_repo_edition(){
@@ -155,23 +154,24 @@ create_repo_edition_deb(){
     echo
 
     # create Packages content for all archs
-    echo "apt-ftparchive packages (TODO)"
+    echo "apt-ftparchive packages (TODO) - this may take some time (~ 1 minute)"
     # TODO handle multiple archs -- all must be in Package
-    apt-ftparchive packages $arch > Packages || ferr "failed"
+    #time -p apt-ftparchive packages $arch > Packages || ferr "failed"
+    apt-ftparchive packages $arch > Packages || ferr "failed to scan packages"
 
     # update Packages.bz2
     echo "update Packages.bz2"
-    rm -f Packages.bz2; bzip2 -kf Packages || ferr "failed"
+    rm -f Packages.bz2; bzip2 -kf Packages || ferr "failed to uppdate Packages.bz2"
 
     # add release information
     echo "apt-ftparchive release"
-    apt-ftparchive release . > Release || ferr "failed"
+    apt-ftparchive release . > Release || ferr "failed to create Release file"
 
     #sign release
     echo "sign release"
         gpg2 --pinentry-mode=loopback --digest-algo SHA512 \
          --passphrase-fd 0 --yes -abs -u $KEYNAME \
-         -o Release.gpg Release <<<"arangodb" || ferr "failed"
+         -o Release.gpg Release <<<"arangodb" || ferr "failed to sign Release"
 
 }
 create_repo_edition_rpm(){
