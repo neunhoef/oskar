@@ -1,0 +1,3 @@
+#!/bin/bash
+export KEYNAME=115E1684
+debsigs --sign=origin -k $KEYNAME "$@"

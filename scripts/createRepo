@@ -1,0 +1,221 @@
+#!/bin/bash
+set +x
+
+usage(){
+	echo "you did not provide enough arguemnts"
+	echo "createRepo <version> <in_path> <repo_path> <in_name> <repo_name> <arch> <package_type>"
+	exit 1
+}
+
+provided(){
+	echo -n "createRepo <version:'$1'> <in_path'$2'> <repo_path'$3'>"
+	echo " <in_name'$4'> <repo_name'$5'> <arch'$5'> <package_type'$7'>"
+}
+
+#(($# < 7)) && usage
+#provided()
+
+### incoming structure
+## /mnt/data/fileserver/CO$ ls
+## centoseven  debianjessie         debianstretch     macos             opensusethirteen     ubuntuseventeenofour  ubuntusixteenofour
+## centosix    debianjessiearmhfxc  fedoratwentyfive  opensusefortytwo  ubuntufourteenofour  ubuntusixteenarmhfxc  windows
+
+### repository structure
+## jenkins@MA-h2652267:/mnt/data/localstage/enterprise/arangodb32/Debian_9.0$ tree | grep -v deb
+## .
+## ├── amd64
+## ├── Packages
+## ├── Packages.bz2
+## ├── Release
+## ├── Release.gpg
+## └── Release.key
+
+## /mnt/data/localstage/enterprise/arangodb32/Fedora_25$ tree | grep -v rpm                         
+## .
+## ├── arangodb.repo
+## ├── repodata
+## │   ├── 09060a4d836de11483fecb7865ba179bbd56b29fb4eb1b36f3cbd0ffb7b5dc75-other.sqlite.bz2                                                                     
+## │   ├── 31c716629757f29a18cd1823c1e513fe5e0e62943ec4f0910cc3bbf75d2f8efc-other.xml.gz
+## │   ├── 3ae4c0351878b2cc61c9d2810008180fc0169f2871f2894c918a3d819687de4f-filelists.sqlite.bz2                                                                             ## │   ├── 6dc10e2a7f213006b68884a2e649aa1316dfd7cdda03441583d28b6f5a7aa038-primary.sqlite.bz2                                                                               
+## │   ├── 82db29d7499f86a4263d30e26f7380302870def0c8789c2c9172e0c6e6e663a4-primary.xml.gz                                                                                   ## │   ├── b04d376ecbc7bd2715a8ea77bff7ee72d7454e4122bc3026da5c9bc79cfdd4f0-filelists.xml.gz                                                                                 ## │   ├── repomd.xml
+## │   ├── repomd.xml.asc
+## │   └── repomd.xml.key
+## └── x86_64
+## 
+## 2 directories, 61 files
+
+## . `dirname $0`/../config/default.inc
+boobs(){
+	echo "(.x.)" 
+}
+
+setup_gpg(){
+	echo "ulf"
+	export KEYNAME=115E1684
+	export GPG_TTY="$(tty)"
+
+	/usr/bin/gpg-agent --homedir=~/.gnupg --daemon --use-standard-socket --allow-loopback-pinentry
+	gpg2 --import -v -v ~/.gnupg/secring.gpg 
+	gpg2 --import -v -v ~/.gnupg/pubring.gpg
+
+	 ## wozu? - add key to gpg one time (willi - script)
+	 cd /tmp/
+	 echo "bla"> Release
+	 gpg2 --pinentry-mode=loopback --digest-algo SHA512 \
+	      --passphrase-fd 0 --yes -abs \
+	      -u "$KEYNAME" \
+	      -o Release.gpg Release <<<"arangodb"
+	 (( $? != 0 )) && { echo "failed test signing"; exit 1; }
+}
+
+create_repo(){
+	#set -x
+	local version="$1"  	   	         # 3.4.12
+	local major_minor="${version%.*}"        # 3.4
+	local version_fs="${major_minor/./}"     # 34
+	local in_path="$2" 		         # /mnt/data/fileserver
+	local repo_path="$3"		         # /mnt/data/localstage
+	local in_name="$4"                       # debianjessie
+	local repo_name="$5"		         # Debian_8.0
+	local arch="$6"			         # amd64 -- we might need a archlist like "amd64:armhf"
+	local package_type="${7:-deb}"		 # package_type
+	local in_community="CO"                  # CO
+	local repo_community="community" 
+	local in_enterprise="EP"                 # community
+	local repo_enterprise="enterprise"       # enterprise
+	local url_base="https://download.arangodb.com" # (rpm only)
+	local url_secret="9c169fe900ff79790395784287bfa82f0dc0059375a34a2881b9b745c8efd42e"
+	
+
+	url_community="$url_base/arangodb${version_fs}/$repo_name/"
+	url_enterprise="$url_base/$url_secret/arangodb${version_fs}/$repo_name/"
+	
+	#set +x
+	
+	boobs
+	setup_gpg
+
+##	echo "community #################################"	
+##	create_repo_edition "$version" "$major_minor" "$arch" "$package_type" \
+##			    "$in_path/$in_community/$in_name" "$repo_path/$repo_community/$repo_name" \
+##			    "$url_community"
+##	echo "enterprise #################################"	
+	create_repo_edition "$version" "$major_minor" "$arch" "$package_type"\
+			    "$in_path/$in_enterprise/$in_name" \
+			    "$repo_path/$repo_enterprise/arangodb$version_fs/$repo_name" \
+			    "$url_enterprise"
+}
+
+create_repo_edition(){
+	#set -x
+	local version="$1"
+	local major_minor="$2"
+	local arch="$3"
+	local package_type="$4"
+	local in="$5"
+	local repo="$6"
+	local url="$7"
+	#set +x
+
+	case $package_type in
+		deb)
+			create_repo_edition_deb "$@"
+		;;
+		rpm)
+			create_repo_edition_rpm "$@"
+		;;
+	esac
+
+}
+create_repo_edition_deb(){
+	echo "create deb packages ########################"
+	local version="$1"
+	local major_minor="$2"
+	local arch="$3"
+	local package_type="$4"
+	local in="$5"
+	local repo="$6"
+	local url="$7"
+
+	# sign files
+	cd "$in" || { echo "can not enter source dir"; exit 1; }
+	for file in "$in"/*"$version"*; do
+		fbase="${file%.deb}"
+		noext="${fbase##*/}"
+		echo "sign_deb $file" # TODO
+		cp "$file" "$repo/${noext}-obi.deb" \
+			|| { echo "could not move $file" to "$repo"; exit 1;  }
+	done
+	
+	cd "$repo" || { echo "can not enter repo"; exit 1; }
+	echo
+	echo "now building reop"
+	echo
+	
+	# create Packages content for all archs
+	echo "apt-ftparchive packages (TODO)"
+	apt-ftparchive packages $arch > Packages ##handle multiple archs -- all must be in Package
+	
+	# update Packages.bz2
+	echo "update Packages.bz2"
+	rm -f Packages.bz2; bzip2 -kf Packages
+	
+	# add release information
+	echo "apt-ftparchive release"
+	apt-ftparchive release . > Release
+	
+	#sign release
+	echo "sign release"
+        gpg2 --pinentry-mode=loopback --digest-algo SHA512 \
+	     --passphrase-fd 0 --yes -abs -u $KEYNAME \
+	     -o Release.gpg Release <<<"arangodb"
+
+}
+create_repo_edition_rpm(){
+	echo "create rpm packages ########################"
+	local version="$1"
+	local major_minor="$2"
+	local arch="$3"
+	local package_type="$4"
+	local in="$5"
+	local repo="$6"
+	local url="$7"
+}
+create_repo "$@"
+
+
+
+
+
+exit 1
+
+
+
+#step 3 - update packages
+        
+#setp 7 - create asc for each deb               
+                ( cd "${destdir}/"
+                  pwd
+                  c=0
+                  for file in *${RELEASE}*.deb; do
+                      asc="$file.asc"
+                      if test -s "$asc" -a "$asc" -nt "$file";  then
+                          echo "using old $asc file"
+                      else
+                          echo "signing file $file"
+                          rm -f "$asc"
+                          (
+                              echo 'arangodb' \
+                                  | gpg2 --pinentry-mode=loopback --digest-algo SHA512 --passphrase-fd 0 --armor --detach-sign -u "$KEYNAME" "$file") &
+                          c=$(($c + 1))
+                      fi
+                
+                      if test "$c" -gt 10;  then
+                          c=0
+                          wait
+                      fi
+                  done
+                )
+                # backwards compatibility for docker builds:
+                gpg2 --armor --export info@arangodb.com  > Release.key
+                ;;
