@@ -3,6 +3,19 @@ set +x
 script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 . "$script_dir/.OskarLib.bash"
 
+# Task:
+
+# Preconditions:
+# - Necessary directories MUST exist before calling this script
+# - There should be some new files in the incoming directory
+
+# Postconditions (on success):
+# - Processed files are moved from incoming to the repository
+# - Processed files have been singed
+# - Repositories are build and updated
+# - THERE IS NO GUARANTEE that all necessary files have been
+#   processed and are present in the release (we would need a release description)
+
 usage(){
     echo "you did not provide enough arguemnts"
     echo "createRepo <version> <in_path> <repo_path> <in_name> <repo_name> <arch> <package_type>"
