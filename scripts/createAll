@@ -7,4 +7,38 @@ ensureOskar 3.3.3 /mnt/data/fileserver /mnt/data/localstage obitest obitest amd6
 exit 0
 
 version=3.3.13
-ensureOskar "$version" "/mnt/data/fileserver" "/mnt/data/localstage" "debianjessie" "Debian_8.0" "amd64" "deb"
+#centos
+ensureOskar "$version" "/mnt/data/fileserver" "/mnt/data/localstage" \
+            "centos6" "CentOS_6" \
+            "x86_64" "rpm"
+ensureOskar "$version" "/mnt/data/fileserver" "/mnt/data/localstage" \
+            "centos7" "CentOS_7" \
+            "x86_64" "rpm"
+#fedora
+ensureOskar "$version" "/mnt/data/fileserver" "/mnt/data/localstage" \
+            "fedoratwentyfive" "Fedora_25" \
+            "x86_64" "rpm"
+
+#open Suse
+ensureOskar "$version" "/mnt/data/fileserver" "/mnt/data/localstage" \
+            "opensusefortytwo" "openSuse_13.2" \
+            "x86_64" "rpm"
+
+#debian
+ensureOskar "$version" "/mnt/data/fileserver" "/mnt/data/localstage" \
+            "debianstretch" "Debian_8.0" \
+            "amd64:armhf" "deb"
+ensureOskar "$version" "/mnt/data/fileserver" "/mnt/data/localstage" \
+            "debianjessie" "Debian_9.0"
+            "amd64:armhf" "deb" \
+
+#ubuntu
+ensureOskar "$version" "/mnt/data/fileserver" "/mnt/data/localstage" \
+            "ubuntufourteenfour" "xUbuntu_14.04" \
+            "amd64:armhf" "deb"
+ensureOskar "$version" "/mnt/data/fileserver" "/mnt/data/localstage" \
+            "ubuntusixteenfour" "xUbuntu_16.04" \
+            "amd64:armhf" "deb"
+ensureOskar "$version" "/mnt/data/fileserver" "/mnt/data/localstage" \
+            "ubuntuseventeenfour" "xUbuntu_17.04" \
+            "amd64:armhf" "deb"

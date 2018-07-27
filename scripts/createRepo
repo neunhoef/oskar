@@ -85,6 +85,7 @@ create_repo(){
 }
 
 create_repo_edition(){
+    #create one editon community or enterprise for a given version
     #set -x
     local version="$1"
     local major_minor="$2"
@@ -97,15 +98,15 @@ create_repo_edition(){
 
     case $package_type in
         deb)
-            create_repo_edition_deb "$@"
+            create_repo_deb "$@"
         ;;
         rpm)
-            create_repo_edition_rpm "$@"
+            create_repo_rpm "$@"
         ;;
     esac
 }
 
-create_repo_edition_deb(){
+create_repo_deb(){
     echo "create deb packages ########################"
     local version="$1"
     local major_minor="$2"
@@ -162,7 +163,7 @@ create_repo_edition_deb(){
          -o Release.gpg Release <<<"arangodb" || ferr "failed to sign Release"
 
 }
-create_repo_edition_rpm(){
+create_repo_rpm(){
     echo "create rpm packages ########################"
     local version="$1"
     local major_minor="$2"
@@ -183,8 +184,8 @@ create_repo_edition_rpm(){
         "$script_dir"/rpmSign.exp "$file" || ferr "failed to sign $file"
         cp "$file" "$repo/${noext}.rpm" \
             || { echo "could not move $file" to "$repo"; exit 1;  }
-        mv "$file.asc" "$repo/${noext}.rpm" \
-            || { echo "could not move $file" to "$repo"; exit 1;  }
+        #mv "$file.asc" "$repo/${noext}.rpm" \
+        #    || { echo "could not move $file" to "$repo"; exit 1;  }
         update=true
     done
 
