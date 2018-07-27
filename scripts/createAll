@@ -1,14 +1,10 @@
 #!/bin/bash
+source .OskarLib.bash
 echo "run test"
 
-ensure(){
-	./createRepo "$@" && return
-	echo "failed to run: createRepo $@"
-	exit 1
-}
 
-ensure 3.3.3 /mnt/data/fileserver /mnt/data/localstage obitest obitest amd64 deb
+ensureOskar 3.3.3 /mnt/data/fileserver /mnt/data/localstage obitest obitest amd64 deb
 exit 0
 
 version=3.3.13
-ensure "$version" "/mnt/data/fileserver" "/mnt/data/localstage" "debianjessie" "Debian_8.0" "amd64" "deb"
+ensureOskar "$version" "/mnt/data/fileserver" "/mnt/data/localstage" "debianjessie" "Debian_8.0" "amd64" "deb"

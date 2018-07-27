@@ -1,3 +1,36 @@
 #!/bin/bash
-export KEYNAME=115E1684
-debsigs --sign=origin -k $KEYNAME "$@"
+script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+. "$script_dir/.OskarLib.bash" || exit 1
+
+#setup_gpg #should have already been called
+
+#debsigs --sign=origin -k $KEYNAME "$@"
+#setp 7 - create asc for each deb
+
+debSign(){
+    local file="$1"
+    asc="$file.asc"
+    if test -s "$asc" -a "$asc" -nt "$file";  then
+        echo "using old $asc file"
+    else
+        echo "signing file $file"
+        rm -f "$asc"
+
+        if gpg2 --pinentry-mode=loopback --digest-algo SHA512 --passphrase-fd 0 --armor --detach-sign -u "$KEYNAME" "$file" <<<"arangodb"; then
+            return 0
+        else
+            echo "retry"
+            setup_gpg
+            file="$1"
+            gpg2 --pinentry-mode=loopback --digest-algo SHA512 --passphrase-fd 0 --armor --detach-sign -u "$KEYNAME" "$file" <<<"arangodb"
+        fi
+    fi
+    return $?
+}
+
+debSign "$@"
+exit $?
+
+
+# backwards compatibility for docker builds:
+#gpg2 --armor --export info@arangodb.com  > Release.key
