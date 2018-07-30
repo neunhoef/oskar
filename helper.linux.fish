@@ -79,21 +79,25 @@ function runInContainer
   # cover SIGINT, since this will directly abort the whole function.
   set c (docker run -d -v $WORKDIR/work:$INNERWORKDIR \
              -v $SSH_AUTH_SOCK:/ssh-agent \
-             -e SSH_AUTH_SOCK=/ssh-agent \
-             -e UID=(id -u) \
+             -e ASAN="$ASAN" \
+             -e BUILDMODE="$BUILDMODE" \
+             -e CCACHEBINPATH="$CCACHEBINPATH" \
+             -e ENTERPRISEEDITION="$ENTERPRISEEDITION" \
              -e GID=(id -g) \
-             -e NOSTRIP="$NOSTRIP" \
              -e GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no" \
-             -e INNERWORKDIR=$INNERWORKDIR \
-             -e MAINTAINER=$MAINTAINER \
-             -e BUILDMODE=$BUILDMODE \
-             -e PARALLELISM=$PARALLELISM \
-             -e STORAGEENGINE=$STORAGEENGINE \
-             -e TESTSUITE=$TESTSUITE \
-             -e VERBOSEOSKAR=$VERBOSEOSKAR \
-             -e ENTERPRISEEDITION=$ENTERPRISEEDITION \
-             -e SCRIPTSDIR=$SCRIPTSDIR \
-             -e PLATFORM=$PLATFORM \
+             -e INNERWORKDIR="$INNERWORKDIR" \
+             -e MAINTAINER="$MAINTAINER" \
+             -e NOSTRIP="$NOSTRIP" \
+             -e NO_RM_BUILD="$NO_RM_BUILD" \
+             -e PARALLELISM="$PARALLELISM" \
+             -e PLATFORM="$PLATFORM" \
+             -e SCRIPTSDIR="$SCRIPTSDIR" \
+             -e SSH_AUTH_SOCK=/ssh-agent \
+             -e STORAGEENGINE="$STORAGEENGINE" \
+             -e TESTSUITE="$TESTSUITE" \
+             -e UID=(id -u) \
+             -e VERBOSEBUILD="$VERBOSEBUILD" \
+             -e VERBOSEOSKAR="$VERBOSEOSKAR" \
              $argv)
   function termhandler --on-signal TERM --inherit-variable c
     if test -n "$c" ; docker stop $c >/dev/null ; end

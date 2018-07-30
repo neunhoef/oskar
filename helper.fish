@@ -29,15 +29,17 @@ function unlockDirectory
 end
 
 function showConfig
-  echo "Workdir           : $WORKDIR"
-  echo "Inner workdir     : $INNERWORKDIR"
-  echo "Maintainer        : $MAINTAINER"
-  echo "Buildmode         : $BUILDMODE"
-  echo "Parallelism       : $PARALLELISM"
-  echo "Enterpriseedition : $ENTERPRISEEDITION"
-  echo "Storage engine    : $STORAGEENGINE"
-  echo "Test suite        : $TESTSUITE"
-  echo "Verbose           : $VERBOSEOSKAR"
+  echo "Workdir            : $WORKDIR"
+  echo "Inner workdir      : $INNERWORKDIR"
+  echo "Maintainer         : $MAINTAINER"
+  echo "Asan               : $ASAN"
+  echo "Buildmode          : $BUILDMODE"
+  echo "Parallelism        : $PARALLELISM"
+  echo "Enterprise edition : $ENTERPRISEEDITION"
+  echo "Storage engine     : $STORAGEENGINE"
+  echo "Test suite         : $TESTSUITE"
+  echo "Verbose oskar      : $VERBOSEOSKAR"
+  echo "Verbose build      : $VERBOSEBUILD"
 end
 
 function single ; set -gx TESTSUITE single ; end
@@ -50,6 +52,11 @@ function maintainerOn ; set -gx MAINTAINER On ; end
 function maintainerOff ; set -gx MAINTAINER Off ; end
 if test -z "$MAINTAINER" ; maintainerOn
 else ; set -gx MAINTAINER $MAINTAINER ; end
+
+function asanOn ; set -gx ASAN On ; end
+function asanOff ; set -gx ASAN Off ; end
+if test -z "$ASAN" ; asanOff
+else ; set -gx ASAN $ASAN ; end
 
 function debugMode ; set -gx BUILDMODE Debug ; end
 function releaseMode ; set -gx BUILDMODE RelWithDebInfo ; end
@@ -74,6 +81,14 @@ function verbose ; set -gx VERBOSEOSKAR On ; end
 function silent ; set -gx VERBOSEOSKAR Off ; end
 if test -z "$VERBOSEOSKAR" ; verbose
 else ; set -gx VERBOSEOSKAR $VERBOSEOSKAR ; end
+
+function verboseBuild ; set -gx VERBOSEBUILD On ; end
+function silentBuild ; set -gx VERBOSEBUILD Off ; end
+if test -z "$VERBOSEBUILD"; silentBuild
+else ; set -gx VERBOSEBUILD $VERBOSEBUILD ; end
+
+function keepBuild ; set -gx NO_RM_BUILD 1 ; end
+function clearBuild ; set -gx NO_RM_BUILD ; end
 
 set -gx WORKDIR (pwd)
 if test ! -d work ; mkdir work ; end
@@ -178,6 +193,7 @@ function makeRelease
     set -xg ARANGODB_PACKAGE_REVISION "$argv[2]"
     set -xg ARANGODB_FULL_VERSION "$argv[1]-$argv[2]"
   end
+  asanOff
   maintainerOff
   releaseMode
 
