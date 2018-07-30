@@ -2,6 +2,7 @@
 if test "$PARALLELISM" = ""
     set -xg PARALLELISM 64
 end
+echo "Using parallelism $PARALLELISM"
 
 cd $INNERWORKDIR
 mkdir -p .ccache.ubuntu
@@ -13,40 +14,58 @@ ccache -M 30G
 
 cd $INNERWORKDIR/ArangoDB
 if test -z "$NO_RM_BUILD"
-    rm -rf build
-    mkdir -p build
+  echo "Cleaning build directory"
+  rm -rf build
 end
+mkdir -p build
 cd build
 
-set -l GOLD
+set -g FULLARGS $argv \
+ -DCMAKE_BUILD_TYPE=$BUILDMODE \
+ -DCMAKE_CXX_COMPILER=$CCACHEBINPATH/g++ \
+ -DCMAKE_C_COMPILER=$CCACHEBINPATH/gcc \
+ -DCMAKE_INSTALL_PREFIX=/ \
+ -DSTATIC_EXECUTABLES=On \
+ -DUSE_ENTERPRISE=$ENTERPRISEEDITION \
+ -DUSE_MAINTAINER_MODE=$MAINTAINER \
+
 if test "$PLATFORM" = "linux"
-  set GOLD -DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=gold  -DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=gold
+  set -g FULLARGS $FULLARGS \
+   -DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=gold \
+   -DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=gold
 end
 
-echo cmake $argv -DCMAKE_BUILD_TYPE=$BUILDMODE -DCMAKE_CXX_COMPILER=$CCACHEBINPATH/g++ -DCMAKE_C_COMPILER=$CCACHEBINPATH/gcc -DUSE_MAINTAINER_MODE=$MAINTAINER -DUSE_ENTERPRISE=$ENTERPRISEEDITION -DUSE_JEMALLOC=On $GOLD -DCMAKE_INSTALL_PREFIX=/ -DSTATIC_EXECUTABLES=On ..
+if test "$ASAN" = "On"
+  echo "Building with ASAN"
+  set -g FULLARGS $FULLARGS \
+   -DUSE_JEMALLOC=Off \
+   -DCMAKE_C_FLAGS="-fsanitize=address -fsanitize=undefined -fsanitize=leak -fno-sanitize=alignment" \
+   -DCMAKE_CXX_FLAGS=-"fsanitize=address -fsanitize=undefined -fsanitize=leak -fno-sanitize=vptr -fno-sanitize=alignment"
+else
+  set -g FULLARGS $FULLARGS \
+   -DUSE_JEMALLOC=On \
+   -DCMAKE_C_FLAGS=-fno-stack-protector \
+   -DCMAKE_CXX_FLAGS=-fno-stack-protector
+end
 
+echo cmake $FULLARGS ..
 echo cmake output in $INNERWORKDIR/cmakeArangoDB.log
 
-cmake $argv \
-      -DCMAKE_BUILD_TYPE=$BUILDMODE \
-      -DCMAKE_CXX_COMPILER=$CCACHEBINPATH/g++ \
-      -DCMAKE_C_COMPILER=$CCACHEBINPATH/gcc \
-      -DUSE_MAINTAINER_MODE=$MAINTAINER \
-      -DUSE_ENTERPRISE=$ENTERPRISEEDITION \
-      -DUSE_JEMALLOC=On \
-      -DCMAKE_INSTALL_PREFIX=/ \
-      -DSTATIC_EXECUTABLES=On \
-      -DCMAKE_C_FLAGS=-fno-stack-protector \
-      -DCMAKE_CXX_FLAGS=-fno-stack-protector \
-      $GOLD \
-      .. > $INNERWORKDIR/cmakeArangoDB.log ^&1
-
+cmake $FULLARGS .. > $INNERWORKDIR/cmakeArangoDB.log ^&1
 or exit $status
 
-mkdir install
+set -g MAKEFLAGS -j$PARALLELISM 
+if test "$VERBOSEBUILD" = "On"
+  echo "Building verbosely"
+  set -g MAKEFLAGS $MAKEFLAGS V=1 VERBOSE=1 Verbose=1
+end
+
+rm -rf install
+and mkdir install
+
 set -x DESTDIR (pwd)/install
 echo Running make for static build, output in work/buildArangoDB.log
-nice make -j$PARALLELISM install > $INNERWORKDIR/buildArangoDB.log ^&1
+nice make $MAKEFLAGS install > $INNERWORKDIR/buildArangoDB.log ^&1
 and cd install
 and if test -z "$NOSTRIP"
   echo Stripping executables...
