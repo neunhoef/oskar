@@ -11,6 +11,8 @@ if test "$CCACHEBINPATH" = ""
   set -xg CCACHEBINPATH /usr/lib/ccache
 end
 ccache -M 100G
+ccache -o log_file=$INNERWORKDIR/.ccache.log
+ccache -o cache_dir_levels=6
 cd $INNERWORKDIR/ArangoDB
 
 cd $INNERWORKDIR/ArangoDB
@@ -20,6 +22,10 @@ if test -z "$NO_RM_BUILD"
 end
 mkdir -p build
 cd build
+
+echo "Starting build at "(date)" on "(hostname)
+rm -f $INNERWORKDIR/.ccache.log
+ccache --zero-stats
 
 echo "Starting build at "(date)" on "(hostname)
 ccache --zero-stats

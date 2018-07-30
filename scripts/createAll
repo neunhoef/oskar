@@ -1,5 +1,7 @@
 #!/bin/bash
-source .OskarLib.bash
+script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+. "$script_dir/lib/oskar.bash"
+
 echo "run test"
 
 ensureOskar 3.3.3 /mnt/data/fileserver /mnt/data/localstage obitest obitest amd64 deb
