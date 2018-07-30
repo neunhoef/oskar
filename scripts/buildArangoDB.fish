@@ -20,6 +20,9 @@ end
 mkdir -p build
 cd build
 
+echo "Starting build at "(date)" on "(hostname)
+ccache --zero-stats
+
 set -g FULLARGS $argv \
  -DCMAKE_BUILD_TYPE=$BUILDMODE \
  -DCMAKE_CXX_COMPILER=$CCACHEBINPATH/g++ \
@@ -27,7 +30,7 @@ set -g FULLARGS $argv \
  -DCMAKE_INSTALL_PREFIX=/ \
  -DSTATIC_EXECUTABLES=On \
  -DUSE_ENTERPRISE=$ENTERPRISEEDITION \
- -DUSE_MAINTAINER_MODE=$MAINTAINER \
+ -DUSE_MAINTAINER_MODE=$MAINTAINER
 
 if test "$PLATFORM" = "linux"
   set -g FULLARGS $FULLARGS \
@@ -54,6 +57,8 @@ echo cmake output in $INNERWORKDIR/cmakeArangoDB.log
 cmake $FULLARGS .. > $INNERWORKDIR/cmakeArangoDB.log ^&1
 or exit $status
 
+echo "Finished cmake at "(date)", now starting build"
+
 set -g MAKEFLAGS -j$PARALLELISM 
 if test "$VERBOSEBUILD" = "On"
   echo "Building verbosely"
@@ -71,3 +76,6 @@ and if test -z "$NOSTRIP"
   echo Stripping executables...
   strip usr/sbin/arangod usr/bin/arangoimp usr/bin/arangosh usr/bin/arangovpack usr/bin/arangoexport usr/bin/arangobench usr/bin/arangodump usr/bin/arangorestore
 end
+
+echo "Finished at "(date)
+ccache --show-stats
