@@ -7,6 +7,7 @@ if test "$CCACHEBINPATH" = ""
 end
 ccache -M 100G
 ccache -o log_file=$INNERWORKDIR/.ccache.log
+ccache -o cache_dir_levels=6
 cd $INNERWORKDIR/ArangoDB
 
 echo "Starting build at "(date)" on "(hostname)
