@@ -8,7 +8,7 @@ end
 ccache -M 100G
 cd $INNERWORKDIR/ArangoDB
 
-echo "Starting build at `date` on `hostname`"
+echo "Starting build at "(date)" on "(hostname)
 ccache --zero-stats
 
 rm -rf build
@@ -31,9 +31,9 @@ cmake $argv \
       -DPACKAGE_TARGET_DIR=$INNERWORKDIR \
       -DOPENSSL_USE_STATIC_LIBS=On \
       .. > $INNERWORKDIR/cmakeArangoDB.log ^&1
-and "Finished cmake at `date`, now starting build"
+and "Finished cmake at "(date)", now starting build"
 and echo Running make, output in $INNERWORKDIR/buildArangoDB.log
 and nice make -j$PARALLELISM > $INNERWORKDIR/buildArangoDB.log ^&1
 
-echo "Finished at `date`"
+echo "Finished at "(date)
 ccache --show-stats
