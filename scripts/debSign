@@ -1,6 +1,6 @@
 #!/bin/bash
 script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
-. "$script_dir/.OskarLib.bash" || exit 1
+. "$script_dir/lib/oskar.bash" || exit 1
 
 #setup_gpg #should have already been called
 
