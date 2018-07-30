@@ -1,5 +1,20 @@
 #!/bin/bash
 set +x
+script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+. "$script_dir/.OskarLib.bash"
+
+# Task:
+
+# Preconditions:
+# - Necessary directories MUST exist before calling this script
+# - There should be some new files in the incoming directory
+
+# Postconditions (on success):
+# - Processed files are moved from incoming to the repository
+# - Processed files have been singed
+# - Repositories are build and updated
+# - THERE IS NO GUARANTEE that all necessary files have been
+#   processed and are present in the release (we would need a release description)
 
 usage(){
     echo "you did not provide enough arguemnts"
@@ -12,8 +27,8 @@ provided(){
     echo " <in_name'$4'> <repo_name'$5'> <arch'$5'> <package_type'$7'>"
 }
 
-#(($# < 7)) && usage
-#provided()
+(($# < 7)) && usage
+#provided "$@"
 
 ### incoming structure
 ## /mnt/data/fileserver/CO$ ls
@@ -45,28 +60,6 @@ provided(){
 ## 2 directories, 61 files
 
 ## . `dirname $0`/../config/default.inc
-boobs(){
-    echo "(.x.)"
-}
-
-setup_gpg(){
-    echo "ulf"
-    export KEYNAME=115E1684
-    export GPG_TTY="$(tty)"
-
-    /usr/bin/gpg-agent --homedir=~/.gnupg --daemon --use-standard-socket --allow-loopback-pinentry
-    gpg2 --import -v -v ~/.gnupg/secring.gpg
-    gpg2 --import -v -v ~/.gnupg/pubring.gpg
-
-     ## wozu? - add key to gpg one time (willi - script)
-     cd /tmp/
-     echo "bla"> Release
-     gpg2 --pinentry-mode=loopback --digest-algo SHA512 \
-          --passphrase-fd 0 --yes -abs \
-          -u "$KEYNAME" \
-          -o Release.gpg Release <<<"arangodb"
-     (( $? != 0 )) && { echo "failed test signing"; exit 1; }
-}
 
 create_repo(){
     #set -x
@@ -90,23 +83,22 @@ create_repo(){
     url_community="$url_base/arangodb${version_fs}/$repo_name/"
     url_enterprise="$url_base/$url_secret/arangodb${version_fs}/$repo_name/"
 
-    #set +x
-
-    boobs
     setup_gpg
 
 ##  echo "community #################################"
 ##  create_repo_edition "$version" "$major_minor" "$arch" "$package_type" \
-##                      "$in_path/$in_community/$in_name" "$repo_path/$repo_community/$repo_name" \
+##                      "$in_path/$in_community/$in_name" \
+##                      "$repo_path/$repo_community/arangodb$version_fs/$repo_name" \
 ##                      "$url_community"
 ##  echo "enterprise #################################"
     create_repo_edition "$version" "$major_minor" "$arch" "$package_type"\
                         "$in_path/$in_enterprise/$in_name" \
                         "$repo_path/$repo_enterprise/arangodb$version_fs/$repo_name" \
-                         "$url_enterprise"
+                        "$url_enterprise"
 }
 
 create_repo_edition(){
+    #create one editon community or enterprise for a given version
     #set -x
     local version="$1"
     local major_minor="$2"
@@ -119,19 +111,21 @@ create_repo_edition(){
 
     case $package_type in
         deb)
-            create_repo_edition_deb "$@"
+            create_repo_deb "$@"
         ;;
         rpm)
-            create_repo_edition_rpm "$@"
+            create_repo_rpm "$@"
         ;;
     esac
 }
 
-create_repo_edition_deb(){
+create_repo_deb(){
     echo "create deb packages ########################"
     local version="$1"
     local major_minor="$2"
     local arch="$3"
+    local -a arch_array
+    IFS=':' read -r -a arch_array <<<"$arch"
     local package_type="$4"
     local in="$5"
     local repo="$6"
@@ -139,13 +133,19 @@ create_repo_edition_deb(){
 
     # sign files
     cd "$in" || { echo "can not enter source dir"; exit 1; }
-    for file in "$in"/*"$version"*; do
+    local update=false
+    for file in "$in"/*"$version"*.deb; do
         fbase="${file%.deb}"
         noext="${fbase##*/}"
-        echo "sign_deb $file" # TODO
-        cp "$file" "$repo/${noext}-obi.deb" \
+        "$script_dir"/debSign "$file" || ferr "failed to sign $file"
+        cp "$file" "$repo/${noext}.deb" \
             || { echo "could not move $file" to "$repo"; exit 1;  }
+        mv "$file.asc" "$repo/${noext}.deb" \
+            || { echo "could not move $file" to "$repo"; exit 1;  }
+        update=true
     done
+
+    $update || { echo "nothing to do"; return; }
 
     cd "$repo" || { echo "can not enter repo"; exit 1; }
     echo
@@ -153,61 +153,78 @@ create_repo_edition_deb(){
     echo
 
     # create Packages content for all archs
-    echo "apt-ftparchive packages (TODO)"
-    apt-ftparchive packages $arch > Packages ##handle multiple archs -- all must be in Package
+    echo "apt-ftparchive packages - this may take some time (~ 1 minute)"
+    #time -p apt-ftparchive packages $arch > Packages || ferr "failed"
+    rm -fr Packages
+    for arch in "${arch_array[@]}"; do
+        echo "working on arch: $arch"
+        apt-ftparchive packages $arch >> Packages || ferr "failed to scan packages for $arch"
+    done
 
     # update Packages.bz2
     echo "update Packages.bz2"
-    rm -f Packages.bz2; bzip2 -kf Packages
+    rm -f Packages.bz2; bzip2 -kf Packages || ferr "failed to uppdate Packages.bz2"
 
     # add release information
     echo "apt-ftparchive release"
-    apt-ftparchive release . > Release
+    apt-ftparchive release . > Release || ferr "failed to create Release file"
 
     #sign release
     echo "sign release"
         gpg2 --pinentry-mode=loopback --digest-algo SHA512 \
-         --passphrase-fd 0 --yes -abs -u $KEYNAME \
-         -o Release.gpg Release <<<"arangodb"
+         --passphrase-fd 0 --yes -abs -u "$KEYNAME" \
+         -o Release.gpg Release <<<"arangodb" || ferr "failed to sign Release"
 
 }
-create_repo_edition_rpm(){
+create_repo_rpm(){
     echo "create rpm packages ########################"
     local version="$1"
     local major_minor="$2"
     local arch="$3"
+    local -a arch_array
+    IFS=':' read -r -a arch_array <<<"$arch"
     local package_type="$4"
     local in="$5"
     local repo="$6"
     local url="$7"
-}
-create_repo "$@"
 
+    # sign files
+    cd "$in" || { echo "can not enter source dir"; exit 1; }
+    local update=false
+    for file in "$in"/*"$version"*.rpm; do
+        fbase="${file%.rpm}"
+        noext="${fbase##*/}"
+        "$script_dir"/rpmSign.exp "$file" || ferr "failed to sign $file"
+        cp "$file" "$repo/${noext}.rpm" \
+            || { echo "could not move $file" to "$repo"; exit 1;  }
+        #mv "$file.asc" "$repo/${noext}.rpm" \
+        #    || { echo "could not move $file" to "$repo"; exit 1;  }
+        update=true
+    done
+
+    $update || { echo "nothing to do"; return; }
+
+    cd "$repo" || { echo "can not enter repo"; exit 1; }
+    echo
+    echo "now building reop"
+    echo
+
+    createrepo "$repo" || ferr "failed to create repo"
+    gpg2 --armor --export info@arangodb.com  > "$repo/repodata/repomd.xml.key" || ferr "failed to export repomd.xml.key"
+    gpg2 -a --detach-sign "$repo/repodata/repomd.xml" || ferr "failed to export repomd.xml"
+
+    cat <<EOF > "${baseTargetPath}/${targetPath}/arangodb.repo"
+[arangodb]
+name=ArangoDB Project
+type=rpm-md
+baseurl=$url
+gpgcheck=1
+gpgkey=$url/repodata/repomd.xml.key
+enabled=1
+EOF
+
+}
+
+create_repo "$@"
 exit 0
 
-#setp 7 - create asc for each deb
-                ( cd "${destdir}/"
-                  pwd
-                  c=0
-                  for file in *${RELEASE}*.deb; do
-                      asc="$file.asc"
-                      if test -s "$asc" -a "$asc" -nt "$file";  then
-                          echo "using old $asc file"
-                      else
-                          echo "signing file $file"
-                          rm -f "$asc"
-                          (
-                              echo 'arangodb' \
-                                  | gpg2 --pinentry-mode=loopback --digest-algo SHA512 --passphrase-fd 0 --armor --detach-sign -u "$KEYNAME" "$file") &
-                          c=$(($c + 1))
-                      fi
-
-                      if test "$c" -gt 10;  then
-                          c=0
-                          wait
-                      fi
-                  done
-                )
-                # backwards compatibility for docker builds:
-                gpg2 --armor --export info@arangodb.com  > Release.key
-                ;;
