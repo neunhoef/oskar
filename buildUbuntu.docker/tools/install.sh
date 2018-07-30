@@ -1,14 +1,12 @@
 #!/bin/sh
 
 # Set links for GCC
-GCC=7
+update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${COMPILER_VERSION} 10 \
+	--slave /usr/bin/gcc-ar gcc-ar /usr/bin/gcc-ar-${COMPILER_VERSION} \
+	--slave /usr/bin/gcc-nm gcc-nm /usr/bin/gcc-nm-${COMPILER_VERSION} \
+	--slave /usr/bin/gcc-ranlib gcc-ranlib /usr/bin/gcc-ranlib-${COMPILER_VERSION}
 
-update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-$GCC 10 \
-	--slave /usr/bin/gcc-ar gcc-ar /usr/bin/gcc-ar-$GCC \
-	--slave /usr/bin/gcc-nm gcc-nm /usr/bin/gcc-nm-$GCC \
-	--slave /usr/bin/gcc-ranlib gcc-ranlib /usr/bin/gcc-ranlib-$GCC
-
-update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-$GCC 10
+update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${COMPILER_VERSION} 10
 
 update-alternatives --install /usr/bin/cc cc /usr/bin/gcc 30
 update-alternatives --set cc /usr/bin/gcc
