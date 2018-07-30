@@ -8,6 +8,9 @@ end
 ccache -M 100G
 cd $INNERWORKDIR/ArangoDB
 
+echo "Starting at `date`"
+ccache --zero-stats
+
 rm -rf build
 mkdir -p build
 cd build
@@ -30,3 +33,6 @@ cmake $argv \
       .. > $INNERWORKDIR/cmakeArangoDB.log ^&1
 and echo Running make, output in work/buildArangoDB.log
 and nice make -j$PARALLELISM > $INNERWORKDIR/buildArangoDB.log ^&1
+
+echo "Finished at `date`"
+ccache --show-stats
