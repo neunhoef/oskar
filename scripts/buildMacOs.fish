@@ -6,12 +6,12 @@ if test "$CCACHEBINPATH" = ""
   set -xg CCACHEBINPATH /usr/lib/ccache
 end
 ccache -M 100G
-ccache -o log_file=$INNERWORKDIR/.ccache.log
-ccache -o cache_dir_levels=6
+ccache -o log_file=$INNERWORKDIR/.ccache.mac.log
+ccache -o cache_dir_levels=1
 cd $INNERWORKDIR/ArangoDB
 
 echo "Starting build at "(date)" on "(hostname)
-rm -f $INNERWORKDIR/.ccache.log
+test -f $INNERWORKDIR/.ccache.mac.log or mv $INNERWORKDIR/.ccache.log $INNERWORKDIR/.ccache.mac.log.old
 ccache --zero-stats
 
 rm -rf build
