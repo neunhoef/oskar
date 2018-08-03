@@ -6,7 +6,7 @@ if test "$CCACHEBINPATH" = ""
   set -xg CCACHEBINPATH /usr/lib/ccache
 end
 ccache -M 100G
-ccache -o log_file=$INNERWORKDIR/.ccache.mac.log
+#ccache -o log_file=$INNERWORKDIR/.ccache.mac.log
 ccache -o cache_dir_levels=1
 cd $INNERWORKDIR/ArangoDB
 
