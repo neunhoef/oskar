@@ -1,4 +1,6 @@
 #!/usr/bin/env fish
+set TS (which ts; and echo -- -s [\\%.T]; or echo /usr/bin/cat)
+
 cd $INNERWORKDIR
 mkdir -p .ccache.mac
 set -x CCACHE_DIR $INNERWORKDIR/.ccache.mac
@@ -34,10 +36,10 @@ cmake $argv \
       -DPACKAGING=Bundle \
       -DPACKAGE_TARGET_DIR=$INNERWORKDIR \
       -DOPENSSL_USE_STATIC_LIBS=On \
-      .. > $INNERWORKDIR/cmakeArangoDB.log ^&1
+      .. ^&1 | eval $TS > $INNERWORKDIR/cmakeArangoDB.log
 and echo "Finished cmake at "(date)", now starting build"
 and echo Running make, output in $INNERWORKDIR/buildArangoDB.log
-and nice make -j$PARALLELISM > $INNERWORKDIR/buildArangoDB.log ^&1
+and nice make -j$PARALLELISM ^&1 | eval $TS > $INNERWORKDIR/buildArangoDB.log
 
 echo "Finished at "(date)
 ccache --show-stats
