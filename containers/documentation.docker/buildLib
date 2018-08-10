@@ -7,13 +7,6 @@ OTHER_MIME="pdf epub mobi"
 
 # shellcheck disable=SC2016
 TRIPPLETICS='```'
-declare -A COLORS
-declare -A C
-COLORS[RESET]='\033[0m'
-COLORS[Red]='\033[0;31m'          # Red
-COLORS[Green]='\033[0;32m'        # Green
-COLORS[Yellow]='\033[0;33m'       # Yellow
-COLORS[White]='\033[0;37m'        # White
 
 for i in "${!COLORS[@]}"; do
     # shellcheck disable=SC2086
@@ -21,12 +14,8 @@ for i in "${!COLORS[@]}"; do
 done
 
 # shellcheck disable=SC2034
-WRN_COLOR="${C[Yellow]}"
-ERR_COLOR="${C[Red]}"
-STD_COLOR="${C[White]}"
-OK_COLOR="${C[Green]}"
-RESET="${C[RESET]}"
 
+echo "path $(pwd)"
 newVersionNumber=$( tr -d '\r\n' < ../../VERSION)
 
 declare -A ALL_GSEARCH_ID
@@ -162,7 +151,6 @@ function ppbook-check-directory-link()
                     grep -v node_modules | \
                     grep -v node_modules | \
                     grep -v '\.md')
-    set -e
     nERRORS=$(echo -n "${ERRORS}" | wc -l)
     if test "$nERRORS" -gt 0; then
         echo "${ERR_COLOR}"
@@ -209,7 +197,6 @@ function ppbook-check-html-link()
         grep -v 'https://' | \
         grep -v 'header.css' | \
         grep -v -f /tmp/books.regex > /tmp/relative_html_links.txt
-    set -e
 
     if test "$(wc -l < /tmp/relative_html_links.txt)" -gt 0; then
         echo "${ERR_COLOR}"
@@ -236,7 +223,6 @@ function book-check-markdown-leftovers()
 
     set +e
     ERRORS=$(find "books/${NAME}" -name '*.html' -exec grep -- '&amp;gt;' {} \; -print)
-    set -e
     if test "$(echo -n "${ERRORS}" | wc -l)" -gt 0; then
         echo "${ERR_COLOR}"
         echo "found these double converted > signs: "
@@ -247,7 +233,6 @@ function book-check-markdown-leftovers()
 
     set +e
     ERRORS=$(find "books/${NAME}" -name '*.html' -exec grep '"[a-zA-Z/\.]*\.md\"[ />]' {} \; -print | grep -v data-filepath)
-    set -e
     if test "$(echo -n "${ERRORS}" | wc -l)" -gt 0; then
         echo "${ERR_COLOR}"
         echo "${ERRORS}"
@@ -258,7 +243,6 @@ function book-check-markdown-leftovers()
 
     set +e
     ERRORS=$(find "books/${NAME}" -name '*.html' -exec grep '"[a-zA-Z/\.]*\.md#' {} \; -print)
-    set -e
     if test "$(echo -n "${ERRORS}" | wc -l)" -gt 0; then
         echo "${ERR_COLOR}"
         echo "found dangling markdown links: "
@@ -269,7 +253,6 @@ function book-check-markdown-leftovers()
 
     set +e
     ERRORS=$(find "books/${NAME}" -name '*.html' -exec grep "${TRIPPLETICS}" {} \; -print)
-    set -e
     if test "$(echo -n "${ERRORS}" | wc -l)" -gt 0; then
         echo "${ERR_COLOR}"
         echo "found dangling markdown code sections: "
@@ -280,7 +263,6 @@ function book-check-markdown-leftovers()
 
     set +e
     ERRORS=$(find "books/${NAME}" -name '*.html' -exec grep '\]<a href' {} \; -print)
-    set -e
     if test "$(echo -n "${ERRORS}" | wc -l)" -gt 0; then
         echo "${ERR_COLOR}"
         echo "found unconverted markdown links: "
@@ -291,7 +273,6 @@ function book-check-markdown-leftovers()
 
     set +e
     ERRORS=$(find "books/${NAME}" -name '*.html' -exec grep '\[.*\](.*[\.html|\.md|http|#.*])' {} \; -print)
-    set -e
     if test "$(echo -n "${ERRORS}" | wc -l)" -gt 0; then
         echo "${ERR_COLOR}"
         echo "found unconverted markdown links: "
@@ -454,7 +435,6 @@ function check-docublocks()
     for file in ../Examples/*.json ; do
         echo "$file" |sed -e "s;.*/;Generated: @startDocuBlock program_options_;" -e "s;.json;;" >> /tmp/rawinprog.txt
     done
-    set -e
     echo "Generated: startDocuBlockInline errorCodes">> /tmp/rawinprog.txt
 
     sed -e "s;\r$;;" -e "s;.*ck ;;" -e "s;.*ne ;;" < /tmp/rawinprog.txt  |sort > /tmp/inprog_raw.txt

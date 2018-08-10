@@ -1,4 +1,5 @@
 #!/bin/bash
+script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 export NVM_DIR=/usr/local/nvm
 . $NVM_DIR/nvm.sh
 nvm use stable
@@ -10,12 +11,21 @@ skip_swagger=true;
 type gitbook &>/dev/null || { echo "gitbook not installed"; exit; }
 type ditaa &>/dev/null || { echo "dittaa not installed"; exit; }
 
-export ARANGO_WORK=/work  ## this dir contains the source directory and finished build in .build
-export ARANGO_SOURCE="$ARANGO_WORK/ArangoDB"  ## this dir contains the source directory and finished build in .build
-export ARANGO_OUTDIR="$ARANGO_WORK/documentation"
-export OUTDIR="$ARANGO_WORK/documentation"
+# oskar work dir - or a directory that contains a checkout in a sub folder
+export ARANGO_WORK=${ARANGO_WORK:-"/work"}
 
-mkdir -p "$ARANGO_OUTDIR"
+# path to arangodb source
+export ARANGO_SOURCE="$ARANGO_WORK/ArangoDB"
+export ARANGO_SOURCE_BOOKS="$ARANGO_SOURCE/Documentation/Books"
+
+# path to documentation build
+export ARANGO_BUILD="$ARANGO_WORK/build-documentation"
+export ARANGO_BUILD_PPDIR="$ARANGO_BUILD/ppdir"
+export ARANGO_BUILD_BOOKS="$ARANGO_BUILD/books"
+
+export ARANGO_BUILD="$ARANGO_SOURCE_BOOKS"
+export ARANGO_BUILD_PPDIR="$ARANGO_BUILD/ppbooks"
+export ARANGO_BUILD_BOOKS="$ARANGO_BUILD/books"
 
 cd "$ARANGO_SOURCE" || { echo "could not change in arangodb source directroy"; exit 1; }
 echo $(pwd)
@@ -36,8 +46,7 @@ else
   ./utils/generateSwagger.sh || { echo "failed to generate swagger"; exit 1; }
 fi
 
-cd Documentation/Books
-
+cd "$ARANGO_SOURCE_BOOKS"
 # get gitbook version
 export INSTALLED_GITBOOK_VERSION=$(gitbook ls |grep '*'|sed "s;.*\* ;;")
 if test -z "${INSTALLED_GITBOOK_VERSION}"; then
@@ -45,7 +54,6 @@ if test -z "${INSTALLED_GITBOOK_VERSION}"; then
     exit 1
 fi
 
+"$script_dir/build_documentation" build-books
 
-
-
-/root/build_documentation build-books
+exit $?

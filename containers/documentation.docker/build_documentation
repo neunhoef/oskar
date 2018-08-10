@@ -1,13 +1,51 @@
 #!/bin/bash
+script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 
-GITBOOK_ARGS=(--gitbook "${INSTALLED_GITBOOK_VERSION}")
-
-. /root/bash_lib || { echo "could not source bash_lib"; exit 1; }
+if . "/$script_dir/bash_lib"; then
+    ferr(){ _o_ferr "$@"; }
+    section(){ _o_section "$@"; }
+    say(){ _o_say "$@"; }
+else
+    echo "could not source bash_lib"
+    ferr(){ echo "$@"; exit 1; }
+    section(){ echo "$@"; }
+    say(){ echo "$@"; }
+    exit 1
+fi
 
 # . /root/oskar.bash || _o_ferr "failed to source oskar bash helper"
 
-ferr(){ _o_ferr "$@"; }
-section(){ _o_section "$@"; }
+
+# variables that MUST be set befor invoking the script
+
+[[ $ARANGO_WORK ]] || ferr "path to work dir not set"
+
+# variables that SHOULD be set befor invoking the script
+
+# path to arangodb source
+export ARANGO_SOURCE="${ARANGO_SOURCE:-"$ARANGO_WORK/ArangoDB"}"
+export ARANGO_SOURCE_BOOKS="${ARANGO_SOURCE_BOOKS:-"$ARANGO_SOURCE/Documentation/Books"}"
+
+# path to documentation build
+export ARANGO_BUILD="${ARANGO_BUILD:-"$ARANGO_WORK/build-documentation"}"
+export ARANGO_BUILD_PPDIR="${ARANGO_BUILD_PPDIR:-"$ARANGO_BUILD/ppdir"}"
+export ARANGO_BUILD_BOOKS="${ARANGO_BUILD_BOOKS:-"$ARANGO_BUILD/books"}"
+
+echo "Arango documentation build configuration"
+echo "work:        $ARANGO_WORK"
+echo "source:      $ARANGO_SOURCE"
+echo "books:       $ARANGO_SOURCE_BOOKS"
+echo "build:       $ARANGO_BUILD"
+echo "build ppdir: $ARANGO_BUILD_PPDIR"
+echo "build books: $ARANGO_BUILD_BOOKS"
+
+echo "passed arguments: '$@'"
+
+
+##################
+
+GITBOOK_ARGS=(--gitbook "${INSTALLED_GITBOOK_VERSION}")
+
 
 echo "enter willi script"
 
@@ -18,86 +56,77 @@ echo "build lib sourced"
 
 function build-book()
 {
-    python ../Scripts/codeBlockReader.py || ferr "can not run codeBlockReader.py"
+
+    section "Generating book ${name}"
     export NAME="$1"
     local name="$1"
-    local books_dir="$(pwd)"
-    section "Generating book ${name}"
+    local book_source="$ARANGO_SOURCE_BOOKS/${name}"
+    local book_ppdir="$ARANGO_BUILD_PPDIR/${name}"
+    local book_out="$ARANGO_BUILD_BOOKS/${name}"
+
+    echo "book source:       $book_source"
+    echo "preprocessing dir: $book_ppdir"
+    echo "output dir:        $book_out"
+
+    python ../Scripts/codeBlockReader.py || ferr "can not run codeBlockReader.py"
 
     ppbook-precheck-bad-code-sections "${name}" #fix function
     ppbook-precheck-bad-headings "${name}" #fix function
 
 
-    ## re-create structure of arangodb/Documentation/Books/${name}
-    ## in ppdirectory
-
-    local ppdir="ppbooks"
-    local pptarget="ppbooks/${name}"
-    if ! [[ -d "$pptarget" ]]; then
-        mkdir -p "$pptarget"
-        cd "$pptarget" || ferr "cound not enter '$pptarget'"
-            while IFS= read -r dir; do
-            [[ -d "${dir}" ]] || mkdir -p "${dir}" && echo "created $dir" || ferr "failed to create $dir"
-        done < <(find "${books_dir}/${name}" -type d)
-    fi
+    ## copy directroy structure of
+    ## arangodb/Documentation/Books/${name}
+    ## to ppdir
+    cd "$book_source"
+    find . -type d -exec mkdir -p "$book_ppdir/'{}'" \;
 
 
-    #check if ditaa is installed
+    #create ditaa images
+    cd "$book_source"
     if ditaa --help > /dev/null; then
-        echo "${STD_COLOR} - generating ditaa images${RESET}"
-        find "${NAME}" -name "*.ditaa" | while IFS= read -r image; do
-            mkdir -p $(dirname "ppbooks/${image//ditaa/png}")
-            ditaa "${image}" "ppbooks/${image//ditaa/png}"
-        done
+        say " - generating ditaa images"
+        find . -name "*.ditaa" -exec \
+            bash -xc 'ditaa "$1" "$2/${1//ditaa/png}" || ferr "ditaa failed "' \
+            -- '{}' "$book_ppdir" \;
     else
-        echo "${ERR_COLOR} - generating FAKE ditaa images - no ditaa installed${RESET}"
-        find "${NAME}" -name "*.ditaa" | while IFS= read -r image; do
-            mkdir -p $(dirname "ppbooks/${image//ditaa/png}")
-            cp "../../js/node/node_modules/mocha/images/error.png" \
-               "ppbooks/${image//ditaa/png}"
-        done
+        say "- generating FAKE ditaa images - no ditaa installed"
+        find . -name "*.ditaa" -exec \
+            bash -xc 'cp "$1" "$2/${1//ditaa/png}" || ferr "fake ditaa failed "' \
+            -- '{}' "$book_ppdir" \;
     fi
 
-    echo "#####"
-    pwd
-    ls -lisah
-    echo "#####"
 
-    echo "${STD_COLOR} - preparing environment${RESET}"
-    (
-        cd "ppbooks/${NAME}"
-        if ! test -L SUMMARY.md; then
-            ln -s "../../${NAME}/SUMMARY.md" .
-        fi
-        if ! test -f FOOTER.html ; then
-            cp "../../${NAME}/FOOTER.html" .
-        fi
-    )
+    say " - preparing environment"
+    # copy / link SUMMARY.md and FOOTER.html
+    [[ -L "$book_ppdir/SUMMARY.md" ]] || ln -s "$book_source/SUMMARY.md" "$book_ppdir"
+    [[ -f "$book_ppdir/FOOTER.html" ]] || ln -s "$book_source/FOOTER.html" "$book_ppdir"
 
+    # copy styles
+    cd "$book_ppdir"
+    rsync -ah "$book_source/styles" "$book_ppdir" || ferr "failed to rsync styles"
 
-    (
-        cd "ppbooks/${NAME}"
-        mkdir -p styles
-        cp -a "../../${NAME}/styles/"* styles/
-    )
-    WD=$(pwd)
-
+    # generateMdFiles
+    cd "$ARANGO_SOURCE_BOOKS"
     echo "${STD_COLOR} - generating MD-Files${RESET}"
-    python ../Scripts/generateMdFiles.py \
-           "${NAME}" \
-           ppbooks/ \
-           ../../js/apps/system/_admin/aardvark/APP/api-docs.json \
-           "${FILTER}" || exit 1
+    python ${ARANGO_SOURCE}/Documentation/Scripts/generateMdFiles.py \
+           "${name}" \
+           "$ARANGO_BUILD_PPDIR" \
+           "$ARANGO_SOURCE/js/apps/system/_admin/aardvark/APP/api-docs.json" \
+           "${FILTER}" || ferr "failed to generate md files"
 
-    test -d "books/${NAME}" || mkdir -p "books/${NAME}"
+    test -d "$ARANGO_BUILD_BOOKS" || mkdir -p "$ARANGO_BUILD_BOOKS"
 
     echo "${STD_COLOR} - Checking integrity ${VERSION}${RESET}"
-    check-summary "${NAME}"
-    book-check-leftover-docublocks "${NAME}"
-    book-check-restheader-leftovers "${NAME}"
-    ppbook-check-two-links "${NAME}"
-    ppbook-check-directory-link "${NAME}"
-    book-check-images-referenced "${NAME}"
+
+    # run checks
+    check-summary "${name}"
+    book-check-leftover-docublocks "${name}"
+    book-check-restheader-leftovers "${name}"
+    ppbook-check-two-links "${name}"
+    ppbook-check-directory-link "${name}"
+    book-check-images-referenced "${name}"
+
+    echo "building for version: ${newVersionNumber}"
 
     if echo "${newVersionNumber}" | grep -q devel; then
         VERSION="${newVersionNumber} $(date +' %d. %b %Y ')"
@@ -107,6 +136,9 @@ function build-book()
         RELEASE_DIRECTORY=$(sed "s;\\.[0-9]*$;;" <<< "${newVersionNumber}")
     fi
     export VERSION
+    echo "VERSION: ${VERSION}"
+
+    exit 1
 
     if ! test -f "ppbooks/${NAME}/book.json" ; then
         cp "${NAME}/book.json" "ppbooks/${NAME}"
