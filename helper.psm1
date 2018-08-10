@@ -314,10 +314,6 @@ Function switchBranches($branch_c,$branch_e)
         {
             proc -process "git" -argument "reset --hard origin/$branch_c" -logfile $false
         }
-        If ($global:ok) 
-        {
-            proc -process "git" -argument "fetch" -logfile $false
-        }
         If($ENTERPRISEEDITION -eq "On")
         {
             Set-Location "$INNERWORKDIR\ArangoDB\enterprise";comm
@@ -337,10 +333,6 @@ Function switchBranches($branch_c,$branch_e)
             {
                 proc -process "git" -argument "reset --hard origin/$branch_e" -logfile $false
             }
-            If ($global:ok) 
-            {
-                proc -process "git" -argument "fetch" -logfile $false
-            }
         }
     }
 }
@@ -354,7 +346,7 @@ Function updateOskar
     }
     If ($global:ok) 
     {
-        proc -process "git" -argument "pull" -logfile $false
+        proc -process "git" -argument "reset --hard origin/master" -logfile $false
     }
 }
 
