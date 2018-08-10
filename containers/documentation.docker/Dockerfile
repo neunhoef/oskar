@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y -q --no-install-recommends \
         libssl-dev \
         wget \
         rsync \
+        tree \
         && apt-get clean
 
 #python
@@ -42,6 +43,7 @@ RUN curl https://raw.githubusercontent.com/creationix/nvm/master/install.sh | ba
     && nvm use default
 
 WORKDIR /root
+RUN wget https://raw.githubusercontent.com/ObiWahn/config/add3758b5437802d89241363c4f78547ed93304e/etc/skel.obi/.bashrc.d/all/bash_lib
 
 ENV NODE_PATH $NVM_DIR/versions/node/v$NODE_VERSION/lib/node_modules
 ENV PATH      $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
@@ -54,8 +56,12 @@ RUN /setup_gitbook
 COPY setup /setup
 RUN /setup
 
-COPY entrypoint /entrypoint
-ENTRYPOINT [ "/entrypoint" ]
+COPY entrypoint /root/entrypoint
+COPY build_documentation /root/build_documentation
+COPY oskar.bash /root/oskar.bash
+COPY buildLib /root/buildLib
+
+ENTRYPOINT [ "/root/entrypoint" ]
 
 #EXPOSE 8529
 #CMD [ "arangod" ]
