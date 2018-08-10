@@ -1,0 +1,405 @@
+#!/bin/bash
+
+GITBOOK_ARGS=(--gitbook "${INSTALLED_GITBOOK_VERSION}")
+
+. /root/bash_lib || { echo "could not source bash_lib"; exit 1; }
+
+# . /root/oskar.bash || _o_ferr "failed to source oskar bash helper"
+
+ferr(){ _o_ferr "$@"; }
+section(){ _o_section "$@"; }
+
+echo "enter willi script"
+
+. /root/buildLib
+
+echo "build lib sourced"
+
+
+function build-book()
+{
+    python ../Scripts/codeBlockReader.py || ferr "can not run codeBlockReader.py"
+    export NAME="$1"
+    local name="$1"
+    local books_dir="$(pwd)"
+    section "Generating book ${name}"
+
+    ppbook-precheck-bad-code-sections "${name}" #fix function
+    ppbook-precheck-bad-headings "${name}" #fix function
+
+
+    ## re-create structure of arangodb/Documentation/Books/${name}
+    ## in ppdirectory
+
+    local ppdir="ppbooks"
+    local pptarget="ppbooks/${name}"
+    if ! [[ -d "$pptarget" ]]; then
+        mkdir -p "$pptarget"
+        cd "$pptarget" || ferr "cound not enter '$pptarget'"
+            while IFS= read -r dir; do
+            [[ -d "${dir}" ]] || mkdir -p "${dir}" && echo "created $dir" || ferr "failed to create $dir"
+        done < <(find "${books_dir}/${name}" -type d)
+    fi
+
+
+    #check if ditaa is installed
+    if ditaa --help > /dev/null; then
+        echo "${STD_COLOR} - generating ditaa images${RESET}"
+        find "${NAME}" -name "*.ditaa" | while IFS= read -r image; do
+            mkdir -p $(dirname "ppbooks/${image//ditaa/png}")
+            ditaa "${image}" "ppbooks/${image//ditaa/png}"
+        done
+    else
+        echo "${ERR_COLOR} - generating FAKE ditaa images - no ditaa installed${RESET}"
+        find "${NAME}" -name "*.ditaa" | while IFS= read -r image; do
+            mkdir -p $(dirname "ppbooks/${image//ditaa/png}")
+            cp "../../js/node/node_modules/mocha/images/error.png" \
+               "ppbooks/${image//ditaa/png}"
+        done
+    fi
+
+    echo "#####"
+    pwd
+    ls -lisah
+    echo "#####"
+
+    echo "${STD_COLOR} - preparing environment${RESET}"
+    (
+        cd "ppbooks/${NAME}"
+        if ! test -L SUMMARY.md; then
+            ln -s "../../${NAME}/SUMMARY.md" .
+        fi
+        if ! test -f FOOTER.html ; then
+            cp "../../${NAME}/FOOTER.html" .
+        fi
+    )
+
+
+    (
+        cd "ppbooks/${NAME}"
+        mkdir -p styles
+        cp -a "../../${NAME}/styles/"* styles/
+    )
+    WD=$(pwd)
+
+    echo "${STD_COLOR} - generating MD-Files${RESET}"
+    python ../Scripts/generateMdFiles.py \
+           "${NAME}" \
+           ppbooks/ \
+           ../../js/apps/system/_admin/aardvark/APP/api-docs.json \
+           "${FILTER}" || exit 1
+
+    test -d "books/${NAME}" || mkdir -p "books/${NAME}"
+
+    echo "${STD_COLOR} - Checking integrity ${VERSION}${RESET}"
+    check-summary "${NAME}"
+    book-check-leftover-docublocks "${NAME}"
+    book-check-restheader-leftovers "${NAME}"
+    ppbook-check-two-links "${NAME}"
+    ppbook-check-directory-link "${NAME}"
+    book-check-images-referenced "${NAME}"
+
+    if echo "${newVersionNumber}" | grep -q devel; then
+        VERSION="${newVersionNumber} $(date +' %d. %b %Y ')"
+        RELEASE_DIRECTORY=devel
+    else
+        VERSION="${newVersionNumber}"
+        RELEASE_DIRECTORY=$(sed "s;\\.[0-9]*$;;" <<< "${newVersionNumber}")
+    fi
+    export VERSION
+
+    if ! test -f "ppbooks/${NAME}/book.json" ; then
+        cp "${NAME}/book.json" "ppbooks/${NAME}"
+    fi
+
+    for facilityfile in book.json styles/header.js README.md; do
+        export facilityfile
+        export RELEASE_DIRECTORY
+        (
+            cd "ppbooks/${NAME}"
+            sed -e "s/VERSION_NUMBER/v${VERSION}/g" \
+                -e "s;/devel;/${RELEASE_DIRECTORY};" \
+                -e "s;@GSEARCH_ID@;${ALL_GSEARCH_ID[${NAME}]};" \
+                -e "s;@GCHANGE_FREQ@;${GCHANGE_FREQ};" \
+                -e "s;@GPRIORITY@;${GPRIORITY};" \
+                -e "s;@BROWSEABLE_VERSIONS@;${BROWSEABLE_VERSIONS};" \
+                \
+                -i "${facilityfile}"
+        )
+    done
+
+    echo "${STD_COLOR} - Building Version ${VERSION}${RESET}"
+
+    ## #plugins should be installed
+    ## if test -d "${NODE_MODULES_DIR}"; then
+    ##     echo "${STD_COLOR}#### Installing plugins from ${NODE_MODULES_DIR}${RESET}"
+    ##     cp -a "${NODE_MODULES_DIR}" "ppbooks/${NAME}"
+    ## else
+    ##     echo "${STD_COLOR}#### Downloading plugins from ${NODE_MODULES_DIR}${RESET}"
+    ##     (cd "ppbooks/${NAME}"; gitbook install -g)
+    ## fi
+    cache="/root/gitbook_cache/$i"
+
+    echo "${STD_COLOR} - Building Book ${NAME} ${RESET}"
+    echo "(cd \"ppbooks/${NAME}\" && gitbook \"${GITBOOK_ARGS[@]}\" build \"./\" \"./../../books/${NAME}\")"
+    echo "gitbookargs: '${GITBOOK_ARGS[@]}'"
+    echo "###"
+    gitbook "${GITBOOK_ARGS[@]}" --help
+    echo "###"
+    cd "ppbooks/${NAME}" && gitbook "${GITBOOK_ARGS[@]}" build "./" "./../../books/${NAME}"
+    exit $?
+    echo "###"
+    echo "past command"
+    echo "###"
+
+    exit 1
+
+    rm -f "./books/${NAME}/FOOTER.html"
+    echo "${STD_COLOR} - deleting markdown files in output (gitbook 3.x bug)"
+    find "./books/${NAME}/" -type f -name "*.md" -delete
+
+    book-check-markdown-leftovers "${NAME}"
+}
+
+function build-book-symlinks()
+{
+    echo "${STD_COLOR}##### generate backwards compatibility symlinks for ${NAME}${RESET}"
+    cd "books/${NAME}"
+    pwd
+    find . -name "README.md" |\
+        sed -e 's:README\.md$::' |\
+        awk '{print "ln -s index.html " "$1" "README.html"}' |\
+        bash
+}
+
+
+function build-book-dist()
+{
+    NAME="$1"
+    export DISPLAY="$2"
+    cd "ppbooks/${NAME}"
+    for ext in ${OTHER_MIME}; do
+        OUTPUT="${OUTPUT_DIR}/ArangoDB_${NAME}_${newVersionNumber}.${ext}"
+        if gitbook "${GITBOOK_ARGS[@]}" "${ext}" ./ "${OUTPUT}"; then
+            echo "success building ${OUTPUT}"
+        else
+            exit 1
+        fi
+    done
+}
+
+function clean-book()
+{
+    NAME="$1"
+    rm -rf "books/${NAME}"
+    if test -z "${FILTER}"; then
+        rm -rf "ppbooks/${NAME}"
+    fi
+}
+
+function clean-book-intermediate()
+{
+    NAME="$1"
+    if test -z "${FILTER}"; then
+        rm -rf "ppbooks/${NAME}"
+    fi
+
+}
+
+################################################################################
+# Global targets
+
+
+function clean-intermediate()
+{
+    NAME=$1
+    FILTER=$2
+    clean-book-intermediate "${NAME}" "${FILTER}"
+}
+
+function clean()
+{
+    NAME=$1
+    clean-intermediate "${NAME}"
+    rm -f allComments.txt
+}
+
+function build-book-keep-md()
+{
+    NAME="$1"
+    test -d books || mkdir books
+    build-book "${NAME}"
+}
+
+function build-books()
+{
+    ## totally broken error checking
+    rm -rf /tmp/tags
+    #ALLBOOKS="HTTP AQL Manual Cookbook Drivers"
+    for book in ${ALLBOOKS}; do
+        clean-intermediate "${book}"
+    done
+
+    for book in ${ALLBOOKS}; do
+        build-book-keep-md "${book}"
+    done
+
+    for book in ${ALLBOOKS}; do
+        ppbook-check-html-link "${book}" ""
+    done
+
+    check-docublocks ""
+    check-dangling-anchors ""
+    echo "${STD_COLOR}##### Generating redirect index.html${RESET}"; \
+    echo '<html><head><meta http-equiv="refresh" content="0; url=Manual/"></head><body></body></html>' > books/index.html
+}
+
+function build-dist-books()
+{
+    if test -z "${OUTPUT_DIR}"; then
+        echo "please specify --outputDir"
+        exit 1
+    fi
+    rm -rf books ppbooks
+    PIDFILE=/tmp/xvfb_20_0.pid
+    if test "${isCygwin}" -eq 0 -a -z "${DISPLAY}"; then
+        DISPLAY=:20.0
+        start_X11_display "${PIDFILE}" "${DISP}"
+        trap 'stop_X11_display "${PIDFILE}"' 0
+    fi
+    export DISPLAY
+
+    WD=$(pwd)
+    build-books
+    mkdir -p "${OUTPUT_DIR}"
+    (
+        mv books "ArangoDB-${newVersionNumber}"
+        pwd
+        tar -czf "${OUTPUT_DIR}/ArangoDB-${newVersionNumber}.tar.gz" "ArangoDB-${newVersionNumber}"
+        mv "ArangoDB-${newVersionNumber}" books
+    )
+    for book in $ALLBOOKS; do
+        cd "$WD"; build-book-dist "${book}"
+    done
+}
+
+function printHelp()
+{
+    cat <<EOF
+Usage: VERB arguments
+Available Verbs:
+    build-dist-books - build all books in all representations (HTML(+tarball)/PDF/...) - takes some time.
+    build-books - builds the HTML representation of all books
+    build-book - build one book specified with --name, optionally specify --filter to limit the md files to be regenerated.
+    build-book-keep-md - don't flush pregenerated files while building a book - shortcut version.
+    clean - clean the working directory
+
+If ../../VERSION contains the string "devel" the current date will be added to all pages containing the version.
+
+Available Arguments:
+    name - if a single book is to be built its name - one of [ ${ALLBOOKS} ]
+    filter - if only one file should be processed (speedup) specify its md filename
+    outputDir - [dist target only] where to put all generated files to
+    nodeModulesDir - directory pre-loaded with the required gitbook plugins so we don't need to download them
+
+EOF
+}
+
+VERB=$1
+shift
+
+if test -z "$VERB"; then
+    VERB=build-books
+fi
+
+while [ $# -gt 0 ];  do
+    case "$1" in
+        --name)
+            shift
+            NAME=$1
+            shift
+            ;;
+        --filter)
+            shift
+            FILTER=$1
+            export FILTER
+            shift
+            ;;
+        --outputDir)
+            shift
+            OUTPUT_DIR=$1
+            shift
+            ;;
+        --cookBook)
+            shift
+            shift
+            ;;
+        --nodeModulesDir)
+            shift
+            NODE_MODULES_DIR=$1
+            export NODE_MODULES_DIR
+            shift
+            ;;
+        *)
+            printHelp
+            exit 1
+            ;;
+
+    esac
+done
+
+case "$VERB" in
+    build-books)
+        build-books
+        ;;
+    build-book)
+        if test -z "$NAME"; then
+            echo "you need to specify the name!"
+            printHelp
+            exit 1
+        fi
+        build-book "$NAME"
+        check-docublocks "some of the above errors may be because of referenced books weren't rebuilt."
+        check-dangling-anchors "some of the above errors may be because of referenced books weren't rebuilt."
+        ppbook-check-html-link "${NAME}" "some of the above errors may be because of referenced books weren't rebuilt."
+        ;;
+    check-book)
+        check-summary "${NAME}"
+        book-check-leftover-docublocks "${NAME}"
+        book-check-restheader-leftovers "${NAME}"
+        ppbook-check-two-links "${NAME}"
+        ppbook-check-directory-link "${NAME}"
+        book-check-images-referenced "${NAME}"
+        book-check-markdown-leftovers "${NAME}"
+        check-dangling-anchors "${NAME}" "some of the above errors may be because of referenced books weren't rebuilt."
+        ;;
+    build-dist-books)
+        build-dist-books
+        ;;
+    build-book-keep-md)
+        if test -z "$NAME"; then
+            echo "you need to specify the name!"
+            printHelp
+            exit 1
+        fi
+        build-book-keep-md "$NAME"
+        ;;
+    clean)
+        clean "$@"
+        ;;
+    *)
+        if test -d "${VERB}"; then
+            guessBookName="${VERB/\/}"
+            if [[ $ALLBOOKS = *"${guessBookName}"* ]]; then
+                build-book "$guessBookName"
+                check-docublocks "some of the above errors may be because of referenced books weren't rebuilt."
+                check-dangling-anchors "some of the above errors may be because of referenced books weren't rebuilt."
+                exit 0
+            fi
+        fi
+        printHelp
+        exit 1
+        ;;
+esac
+
+echo "${OK_COLOR}Well done!${RESET}"

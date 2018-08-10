@@ -2,13 +2,13 @@
 script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 . "$script_dir/lib/oskar.bash"
 
-build_path="${1:-"$script_dir/../work/ArangoDB"}" #contains source including a build directory
+oskar_work="${1:-"$script_dir/../work"}"
 
-[[ -n $build_path ]] || ferr "no source dir given"
+[[ -n $oskar_work ]] || ferr "no source dir given"
 
 cmd=( docker
       run
-      -v "$build_path:/arangodb"
+      -v "$oskar_work:/work"
       -t "$arango_doc_container_default"
     )
     #--uid $UID
