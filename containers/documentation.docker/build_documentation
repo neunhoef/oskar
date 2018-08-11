@@ -56,9 +56,9 @@ echo "build lib sourced"
 
 function build-book()
 {
+    cd "$ARANGO_SOURCE_BOOKS"
 
     section "Generating book ${name}"
-    export NAME="$1"
     local name="$1"
     local book_source="$ARANGO_SOURCE_BOOKS/${name}"
     local book_ppdir="$ARANGO_BUILD_PPDIR/${name}"
@@ -68,7 +68,11 @@ function build-book()
     echo "preprocessing dir: $book_ppdir"
     echo "output dir:        $book_out"
 
-    python ../Scripts/codeBlockReader.py || ferr "can not run codeBlockReader.py"
+
+    mkdir -p "$book_ppdir"
+    mkdir -p "$book_out"
+
+    python $ARANGO_SOURCE/Documentation/Scripts/codeBlockReader.py || ferr "can not run codeBlockReader.py"
 
     ppbook-precheck-bad-code-sections "${name}" #fix function
     ppbook-precheck-bad-headings "${name}" #fix function
@@ -77,7 +81,7 @@ function build-book()
     ## copy directroy structure of
     ## arangodb/Documentation/Books/${name}
     ## to ppdir
-    cd "$book_source"
+    cd "$book_source" || ferr "could not enter book source dir: $book_source"
     find . -type d -exec mkdir -p "$book_ppdir/'{}'" \;
 
 
@@ -105,9 +109,12 @@ function build-book()
     cd "$book_ppdir"
     rsync -ah "$book_source/styles" "$book_ppdir" || ferr "failed to rsync styles"
 
+    # copy book template
+    [[ -f "$book_ppdir/book.json" ]] || cp "${book_source}/book.json" "$book_ppdir"
+
     # generateMdFiles
     cd "$ARANGO_SOURCE_BOOKS"
-    echo "${STD_COLOR} - generating MD-Files${RESET}"
+    echo " - generating MD-Files"
     python ${ARANGO_SOURCE}/Documentation/Scripts/generateMdFiles.py \
            "${name}" \
            "$ARANGO_BUILD_PPDIR" \
@@ -116,8 +123,7 @@ function build-book()
 
     test -d "$ARANGO_BUILD_BOOKS" || mkdir -p "$ARANGO_BUILD_BOOKS"
 
-    echo "${STD_COLOR} - Checking integrity ${VERSION}${RESET}"
-
+    echo " - Checking integrity ${VERSION}"
     # run checks
     check-summary "${name}"
     book-check-leftover-docublocks "${name}"
@@ -126,8 +132,9 @@ function build-book()
     ppbook-check-directory-link "${name}"
     book-check-images-referenced "${name}"
 
+    # create versuion string in VERSION
+    # and set BUILD_DIRECTORY -- TODO what is the build directory good for
     echo "building for version: ${newVersionNumber}"
-
     if echo "${newVersionNumber}" | grep -q devel; then
         VERSION="${newVersionNumber} $(date +' %d. %b %Y ')"
         RELEASE_DIRECTORY=devel
@@ -136,19 +143,14 @@ function build-book()
         RELEASE_DIRECTORY=$(sed "s;\\.[0-9]*$;;" <<< "${newVersionNumber}")
     fi
     export VERSION
-    echo "VERSION: ${VERSION}"
+    echo "versionstring: ${VERSION}"
 
-    exit 1
 
-    if ! test -f "ppbooks/${NAME}/book.json" ; then
-        cp "${NAME}/book.json" "ppbooks/${NAME}"
-    fi
-
-    for facilityfile in book.json styles/header.js README.md; do
-        export facilityfile
-        export RELEASE_DIRECTORY
-        (
-            cd "ppbooks/${NAME}"
+    # expand versions in files
+    cd "$book_ppdir"
+    for file in book.json styles/header.js README.md; do
+        if [[ -f $file ]]; then
+            echo "running sed on $file"
             sed -e "s/VERSION_NUMBER/v${VERSION}/g" \
                 -e "s;/devel;/${RELEASE_DIRECTORY};" \
                 -e "s;@GSEARCH_ID@;${ALL_GSEARCH_ID[${NAME}]};" \
@@ -156,45 +158,54 @@ function build-book()
                 -e "s;@GPRIORITY@;${GPRIORITY};" \
                 -e "s;@BROWSEABLE_VERSIONS@;${BROWSEABLE_VERSIONS};" \
                 \
-                -i "${facilityfile}"
-        )
+                -i "${file}" || ferr "failed to run sed to subsitute variables"
+        else
+            echo "there is no file: $file in $book_ppdir"
+        fi
     done
 
-    echo "${STD_COLOR} - Building Version ${VERSION}${RESET}"
 
-    ## #plugins should be installed
-    ## if test -d "${NODE_MODULES_DIR}"; then
-    ##     echo "${STD_COLOR}#### Installing plugins from ${NODE_MODULES_DIR}${RESET}"
-    ##     cp -a "${NODE_MODULES_DIR}" "ppbooks/${NAME}"
-    ## else
-    ##     echo "${STD_COLOR}#### Downloading plugins from ${NODE_MODULES_DIR}${RESET}"
-    ##     (cd "ppbooks/${NAME}"; gitbook install -g)
-    ## fi
-    cache="/root/gitbook_cache/$i"
+    echo " - Building Version"
 
-    echo "${STD_COLOR} - Building Book ${NAME} ${RESET}"
-    echo "(cd \"ppbooks/${NAME}\" && gitbook \"${GITBOOK_ARGS[@]}\" build \"./\" \"./../../books/${NAME}\")"
-    echo "gitbookargs: '${GITBOOK_ARGS[@]}'"
-    echo "###"
-    gitbook "${GITBOOK_ARGS[@]}" --help
-    echo "###"
-    cd "ppbooks/${NAME}" && gitbook "${GITBOOK_ARGS[@]}" build "./" "./../../books/${NAME}"
-    exit $?
-    echo "###"
-    echo "past command"
-    echo "###"
+    #copy gitbook modules form cache in build image
+    i="3.4" #TODO get versiont
+    i="devel" #TODO get versiont
+    cache="/root/gitbook_cache/$i/$name"
+    modules="$cache/node_modules"
+    cp -r "$modules" "$book_ppdir" || ferr "failed to copy node modules"
 
-    exit 1
+    echo " - Building Book ${name}"
+    cd "$book_ppdir"
+    if ! gitbook "${GITBOOK_ARGS[@]}" build "$book_ppdir" "$book_out" ; then
+        echo "## install log  ###########################################"
+        cat "$cache/book_install.log"
+        echo "## book.json at install###########################################"
+        cat "$cache/book.json_at_install"
+        echo "## diff ###########################################"
+        diff book.json "$cache/book.json_at_install"
+        echo "## book.json ###########################################"
+        cat book.json
+        echo "## modules ###########################################"
+        ls -lisah node_modules
+        ferr "running gitbook failed"
+    fi
 
-    rm -f "./books/${NAME}/FOOTER.html"
-    echo "${STD_COLOR} - deleting markdown files in output (gitbook 3.x bug)"
-    find "./books/${NAME}/" -type f -name "*.md" -delete
+    # clean up env
+    rm -f "$book_ppdir/FOOTER.html"
 
-    book-check-markdown-leftovers "${NAME}"
+    # work around bug
+    echo " - deleting markdown files in output (gitbook 3.x bug)"
+    find "$book_out" -type f -name "*.md" -delete
+    echo "done deleting files"
+
+    cd $ARANGO_SOURCE_BOOKS
+    book_check_post_build_markdown_leftovers "${name}" "$book_out"
 }
 
 function build-book-symlinks()
 {
+    # probaly - find md files and create a symlink from index to readme.html
+
     echo "${STD_COLOR}##### generate backwards compatibility symlinks for ${NAME}${RESET}"
     cd "books/${NAME}"
     pwd

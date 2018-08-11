@@ -141,7 +141,6 @@ function ppbook-check-directory-link()
 {
     NAME="$1"
     echo "${STD_COLOR}##### 7 checking for invalid md links in ${NAME}${RESET}"
-    set +e
     ERRORS=$(grep -r -E '\[.*\]\(.*\)' "ppbooks/${NAME}" | \
                     grep '\.md:' | \
                     grep -v html | \
@@ -190,7 +189,6 @@ function ppbook-check-html-link()
     echo "${STD_COLOR}##### zzz checking for invalid HTML links in ${NAME}${RESET}"
     echo "${ALLBOOKS}" | tr " " "\n" | sed -e 's;^;/;' -e 's;$;/;' > /tmp/books.regex
 
-    set +e
     grep -r -E '\[.*\]\(.*\)' "ppbooks/${NAME}"| \
         grep '\.md:'| grep 'html'| \
         grep -v 'http://' | \
@@ -208,77 +206,51 @@ function ppbook-check-html-link()
     fi
 }
 
-function book-check-markdown-leftovers()
-{
-    NAME="$1"
-    echo "${STD_COLOR}##### checking for remaining markdown snippets in the HTML output of ${NAME}${RESET}"
-    ERRORS=$(find "books/${NAME}" -name '*.html' -exec grep -- '^##' {} \; -print)
-    if test "$(echo -n "${ERRORS}" | wc -l)" -gt 0; then
-        echo "${ERR_COLOR}";
-        echo "found these unconverted markdown titles: "
+book_check_post_build_markdown_leftovers() {
+    local name="$1"
+    local book_out="$2"
+    echo "##### checking for remaining markdown snippets in the HTML output of ${name} in $book_out"
+
+    ERRORS=$(find "$book_out" -name '*.html' -exec grep -- '^##' {} \; -print)
+    if [[ -n "${ERRORS}" ]]; then
         echo "${ERRORS}"
-        echo "${RESET}";
-        exit 1;
+        ferr "found these unconverted markdown titles"
     fi
 
-    set +e
-    ERRORS=$(find "books/${NAME}" -name '*.html' -exec grep -- '&amp;gt;' {} \; -print)
-    if test "$(echo -n "${ERRORS}" | wc -l)" -gt 0; then
-        echo "${ERR_COLOR}"
-        echo "found these double converted > signs: "
+    ERRORS=$(find "$book_out" -name '*.html' -exec grep -- '&amp;gt;' {} \; -print)
+    if [[ -n "${ERRORS}" ]]; then
         echo "${ERRORS}"
-        echo "${RESET}"
-        exit 1;
+        ferr "found these double converted > signs"
     fi
 
-    set +e
-    ERRORS=$(find "books/${NAME}" -name '*.html' -exec grep '"[a-zA-Z/\.]*\.md\"[ />]' {} \; -print | grep -v data-filepath)
-    if test "$(echo -n "${ERRORS}" | wc -l)" -gt 0; then
-        echo "${ERR_COLOR}"
+    ERRORS=$(find "$book_out" -name '*.html' -exec grep '"[a-zA-Z/\.]*\.md\"[ />]' {} \; -print | grep -v data-filepath)
+    if [[ -n "${ERRORS}" ]]; then
         echo "${ERRORS}"
-        echo "found dangling markdown links; see the list above "
-        echo "${RESET}"
-        exit 1
+        ferr "found dangling markdown links; see the list above "
     fi
 
-    set +e
-    ERRORS=$(find "books/${NAME}" -name '*.html' -exec grep '"[a-zA-Z/\.]*\.md#' {} \; -print)
-    if test "$(echo -n "${ERRORS}" | wc -l)" -gt 0; then
-        echo "${ERR_COLOR}"
-        echo "found dangling markdown links: "
+    ERRORS=$(find "$book_out" -name '*.html' -exec grep '"[a-zA-Z/\.]*\.md#' {} \; -print)
+    if [[ -n "${ERRORS}" ]]; then
         echo "${ERRORS}"
-        echo "${RESET}"
-        exit 1
+        ferr "found dangling markdown links: "
     fi
 
-    set +e
-    ERRORS=$(find "books/${NAME}" -name '*.html' -exec grep "${TRIPPLETICS}" {} \; -print)
-    if test "$(echo -n "${ERRORS}" | wc -l)" -gt 0; then
-        echo "${ERR_COLOR}"
-        echo "found dangling markdown code sections: "
+    ERRORS=$(find "$book_out" -name '*.html' -exec grep "${TRIPPLETICS}" {} \; -print)
+    if [[ -n "${ERRORS}" ]]; then
         echo "${ERRORS}"
-        echo "${RESET}"
-        exit 1
+        ferr "found dangling markdown code sections: "
     fi
 
-    set +e
-    ERRORS=$(find "books/${NAME}" -name '*.html' -exec grep '\]<a href' {} \; -print)
-    if test "$(echo -n "${ERRORS}" | wc -l)" -gt 0; then
-        echo "${ERR_COLOR}"
-        echo "found unconverted markdown links: "
+    ERRORS=$(find "$book_out" -name '*.html' -exec grep '\]<a href' {} \; -print)
+    if [[ -n "${ERRORS}" ]]; then
         echo "${ERRORS}"
-        echo "${RESET}"
-        exit 1
+        ferr "found unconverted markdown links: "
     fi
 
-    set +e
-    ERRORS=$(find "books/${NAME}" -name '*.html' -exec grep '\[.*\](.*[\.html|\.md|http|#.*])' {} \; -print)
-    if test "$(echo -n "${ERRORS}" | wc -l)" -gt 0; then
-        echo "${ERR_COLOR}"
-        echo "found unconverted markdown links: "
+    ERRORS=$(find "$book_out" -name '*.html' -exec grep '\[.*\](.*[\.html|\.md|http|#.*])' {} \; -print)
+    if [[ -n "${ERRORS}" ]]; then
         echo "${ERRORS}"
-        echo "${RESET}"
-        exit 1
+        ferr "found unconverted markdown links: "
     fi
 }
 
@@ -419,7 +391,6 @@ function check-docublocks()
 
     sed  -e "s;\r$;;" -e "s;.*ck ;;" -e "s;.*ne ;;" < /tmp/rawindoc.txt |sort -u > /tmp/indoc.txt
 
-    set +e
     grep -R '^@startDocuBlock' ../DocuBlocks --include "*.md" |grep -v aardvark > /tmp/rawinprog.txt
     # searching the Inline docublocks needs some more blacklisting:
     grep -R '@startDocuBlockInline' --include "*.h" --include "*.cpp" --include "*.js" --include "*.md" . |\
