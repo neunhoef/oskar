@@ -1,7 +1,14 @@
 #!/bin/bash
 # Author - Jan Christoph Uhde
 # Based on scripts by Willi and Simran
-echo "enter build_documentation"
+
+# get script dir
+script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+## set options for safety
+# fail on unset variables
+set -u
+# "prevent failing_cmd | echo "still exit status 0 ` from succeeding"
+set -o pipefail
 
 #### VARIABLES CONTROLLING THE BUILD ######################################
 # The Variables are usually set by the docker entry point
@@ -16,41 +23,36 @@ ARANGO_DEBUG=true
 #
 # path to "arangodb" source
 export ARANGO_SOURCE="${ARANGO_SOURCE:-"$ARANGO_WORK/ArangoDB"}"
-export ARANGO_SOURCE_BOOKS="${ARANGO_SOURCE_BOOKS:-"$ARANGO_SOURCE/Documentation/Books"}"
+export ARANGO_SOURCE_DOC="${ARANGO_SOURCE_DOC:-"$ARANGO_SOURCE/Documentation"}"
+export ARANGO_SOURCE_DOC_BOOKS="${ARANGO_SOURCE_DOC_BOOKS:-"$ARANGO_SOURCE_DOC/Documentation/Books"}"
 
 # path to documentation build
-export ARANGO_BUILD="${ARANGO_BUILD:-"$ARANGO_WORK/build-documentation"}"
-export ARANGO_BUILD_PPDIR="${ARANGO_BUILD_PPDIR:-"$ARANGO_BUILD/ppdir"}"
-export ARANGO_BUILD_BOOKS="${ARANGO_BUILD_BOOKS:-"$ARANGO_BUILD/books"}"
+export ARANGO_BUILD_DOC="${ARANGO_BUILD_DOC:-"$ARANGO_WORK/build-documentation"}"
+export ARANGO_BUILD_DOC_PPDIR="${ARANGO_BUILD_DOC_PPDIR:-"$ARANGO_BUILD_DOC/ppdir"}"
+export ARANGO_BUILD_DOC_BOOKS="${ARANGO_BUILD_DOC_BOOKS:-"$ARANGO_BUILD_DOC/books"}"
 
 #### VARIABLES CONTROLLING THE BUILD - END ######################################
 
 #### GOBAL SETUP ################################################################
-# get script dir
-script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
-
-## set options for safety
-# fail on unset variables
-set -u
-# "prevent failing_cmd | echo "still exit status 0 ` from succeeding"
-set -o pipefail
 
 # pull in bash_lib or create replacement functions
-if . "/$script_dir/bash_lib"; then
+if . "/root/bash_lib"; then
     ferr(){ _o_ferr "$@"; }
+    err(){ _o_err "$@"; }
     section(){ _o_section "$@"; }
     say(){ _o_say "$@"; }
     success(){ _o_success "$@"; }
 
 else
     echo "could not source bash_lib"
-    ferr(){ echo "$@"; exit 1; }
+    ferr(){ echo "Error: $@"; exit 1; }
+    err(){ echo "Error: $@";  }
     section(){ echo "$@"; }
     say(){ echo "$@"; }
-    success(){ echo "$@"; }
+    success(){ echo "Success $@"; }
 fi
 
-success(){ say "$@"; }
+success(){ echo "Success: $@"; }
 
 # define global functions
 debug(){ say "#-# DEBUG #-# " "$@"; }
@@ -65,6 +67,15 @@ TRIPPLETICS='```'
 
 newVersionNumber="$( tr -d '\r\n' < "$ARANGO_SOURCE/VERSION" )"
 #If ../../VERSION contains the string "devel" the current date will be added to all pages containing the version.
+
+if echo "${newVersionNumber}" | grep -q devel; then
+    VERSION="${newVersionNumber} $(date +' %d. %b %Y ')"
+    RELEASE_DIRECTORY=devel
+else
+    VERSION="${newVersionNumber}"
+    RELEASE_DIRECTORY=$(sed "s;\\.[0-9]*$;;" <<< "${newVersionNumber}")
+fi
+export VERSION
 
 declare -A ALL_GSEARCH_ID
 for book in ${ALLBOOKS}; do
@@ -84,15 +95,15 @@ GITBOOK_ARGS=(--gitbook "${INSTALLED_GITBOOK_VERSION}")
 #### GLOBAL VARS THAT SHOULD NOT BE MODIFIED BY USERS - END ########################################################
 
 # pull in build lib
-. /root/buildLib || ferr "failed to source buildLib"
+. /$script_dir/buildLib || ferr "failed to source buildLib"
 # builds a single book
 function build_book() {
-    cd "$ARANGO_SOURCE_BOOKS" #TODO remove
+    cd "$ARANGO_SOURCE_DOC_BOOKS" #TODO remove
 
     local name="$1"
-    local book_source="$ARANGO_SOURCE_BOOKS/${name}"
-    local book_ppdir="$ARANGO_BUILD_PPDIR/${name}"
-    local book_out="$ARANGO_BUILD_BOOKS/${name}"
+    local book_source="$ARANGO_SOURCE_DOC_BOOKS/${name}"
+    local book_ppdir="$ARANGO_BUILD_DOC_PPDIR/${name}"
+    local book_out="$ARANGO_BUILD_DOC_BOOKS/${name}"
 
     section "Generating book ${name}"
     echo "book source:       $book_source"
@@ -106,8 +117,8 @@ function build_book() {
     python $ARANGO_SOURCE/Documentation/Scripts/codeBlockReader.py || ferr "can not run codeBlockReader.py"
 
     section " Pre Checks - Book ${name} "
-    ppbook-precheck-bad-code-sections "${name}" #fix function
-    ppbook-precheck-bad-headings "${name}" #fix function
+    source_check_bad_code_sections "${name}" "$book_source" "$book_ppdir" "$book_out"  #fix function
+    source_check_bad_headings      "${name}" "$book_source" "$book_ppdir" "$book_out"  #fix function
 
 
     ## copy directroy structure of
@@ -160,41 +171,26 @@ function build_book() {
 
     # generateMdFiles
     section " Generate Markdown - Book ${name} "
-    cd "$ARANGO_SOURCE_BOOKS"
+    cd "$ARANGO_SOURCE_DOC_BOOKS"
     #echo " - generating MD-Filedds"
     python ${ARANGO_SOURCE}/Documentation/Scripts/generateMdFiles.py \
            "${name}" \
-           "$ARANGO_BUILD_PPDIR" \
+           "$ARANGO_BUILD_DOC_PPDIR" \
            "$ARANGO_SOURCE/js/apps/system/_admin/aardvark/APP/api-docs.json" \
            "${FILTER:-""}" || ferr "failed to generate md files"
 
-    test -d "$ARANGO_BUILD_BOOKS" || mkdir -p "$ARANGO_BUILD_BOOKS"
+    test -d "$ARANGO_BUILD_DOC_BOOKS" || mkdir -p "$ARANGO_BUILD_DOC_BOOKS"
 
     section " Checking Integrity - Book ${name}"
     # run checks
-    check_summary "${name}" "$book_ppdir"
-    book-check-leftover-docublocks "${name}"
-    book-check-restheader-leftovers "${name}"
-    ppbook-check-two-links "${name}"
-    ppbook-check-directory-link "${name}"
-    book-check-images-referenced "${name}"
+    pp_check_summary                "${name}" "$book_source" "$book_ppdir" "$book_out"
+    book-check-leftover-docublocks  "${name}" "$book_source" "$book_ppdir" "$book_out"
+    book-check-restheader-leftovers "${name}" "$book_source" "$book_ppdir" "$book_out"
+    ppbook-check-two-links          "${name}" "$book_source" "$book_ppdir" "$book_out"
+    ppbook-check-directory-link     "${name}" "$book_source" "$book_ppdir" "$book_out"
+    book-check-images-referenced    "${name}" "$book_source" "$book_ppdir" "$book_out"
 
     section " Fill in Templates - Book ${name}"
-    # create versuion string in VERSION
-    # and set BUILD_DIRECTORY -- TODO what is the build directory good for
-    say " - find out versions"
-    echo "building for version: ${newVersionNumber}"
-    if echo "${newVersionNumber}" | grep -q devel; then
-        VERSION="${newVersionNumber} $(date +' %d. %b %Y ')"
-        RELEASE_DIRECTORY=devel
-    else
-        VERSION="${newVersionNumber}"
-        RELEASE_DIRECTORY=$(sed "s;\\.[0-9]*$;;" <<< "${newVersionNumber}")
-    fi
-    export VERSION
-    echo "versionstring: ${VERSION}"
-
-
     # expand versions in files
     say " - replace placeholders"
     cd "$book_ppdir"
@@ -263,9 +259,9 @@ function build_books()
     local flushout=true
 
     for book in ${ALLBOOKS}; do
-        local book_source="$ARANGO_SOURCE_BOOKS/${book}"
-        local book_ppdir="$ARANGO_BUILD_PPDIR/${book}"
-        local book_out="$ARANGO_BUILD_BOOKS/${book}"
+        local book_source="$ARANGO_SOURCE_DOC_BOOKS/${book}"
+        local book_ppdir="$ARANGO_BUILD_DOC_PPDIR/${book}"
+        local book_out="$ARANGO_BUILD_DOC_BOOKS/${book}"
 
         if $flushout; then
             rm -fr "$book_out"
@@ -280,7 +276,7 @@ function build_books()
 
 
         section "check links $book"
-        cd "$ARANGO_SOURCE_BOOKS"
+        cd "$ARANGO_SOURCE_DOC_BOOKS"
         ppbook-check-html-link "${book}" ""
     done
 
@@ -293,7 +289,11 @@ function build_books()
 
 function main(){
     show_config
-    cd "$ARANGO_SOURCE_BOOKS" # TODO remove
+    cd "$ARANGO_SOURCE_DOC_BOOKS" # TODO remove
+    rm -fr "$ARANGO_BUILD_DOC_BOOKS" || ferr "could not delete books output dir"
+    rm -fr "$ARANGO_BUILD_DOC_PPDIR" || ferr "could not delete ppdir dir"
+    mkdir -p "$ARANGO_BUILD_DOC_BOOKS" || ferr "could not create books output dir"
+    mkdir -p "$ARANGO_BUILD_DOC_PPDIR" || ferr "could not create ppdir dir"
     build_books
     echo
     success "building documentation"

@@ -1,76 +1,94 @@
 #!/bin/bash
 
-function ppbook-precheck-bad-code-sections()
-{
-    NAME="$1"
-    echo "##### 1 checking for bad code sections in ${NAME}"
-    if grep -qR  "^${TRIPPLETICS} *.* " "${NAME}"; then
-        echo ""
-        echo "tripple tics with blanks afterwards found: "
-        grep -R  "^${TRIPPLETICS} *.* " "${NAME}"
-        echo ""
+source_check_bad_code_sections() {
+    # checks for ``` followd by a blank
+    local name="$1"
+    local book_source="$2"
+    local book_ppdir="$3"
+    local book_out="$4"
+
+    echo "##### 1 checking for bad code sections in ${name}"
+    if grep -qR  "^${TRIPPLETICS} *.* " "${book_source}"; then
+        err "tripple tics with blanks afterwards found: "
+        grep -R  "^${TRIPPLETICS} *.* " "${book_source}"
         exit 1
     fi
 }
 
-function ppbook-precheck-bad-headings()
-{
-    NAME="$1"
-    echo "##### 2 checking for headers that won't proper display on github in ${NAME}"
-    if grep -qRI  '^##*[a-zA-Z]' "${NAME}"; then
-        echo ""
-        echo "Headlines broken on github found: "
-        grep -RI  '^##*[a-zA-Z]' "${NAME}"
-        echo ""
+source_check_bad_headings() {
+    # TODO description
+    local name="$1"
+    local book_source="$2"
+    local book_ppdir="$3"
+    local book_out="$4"
+
+    echo "##### 2 checking for headers that won't proper display on github in ${name}"
+    if grep -qRI  '^##*[a-zA-Z]' "${book_source}"; then
+        err "Headlines broken on github found: "
+        grep -RI  '^##*[a-zA-Z]' "${source}"
         exit 1
     fi
 }
 
-function check_summary() {
-    #TODO add error checking
-    cd "$ARANGO_SOURCE_BOOKS"
-    echo "###$(pwd)"
-    find "ppbooks/${NAME}" -name \*.md
-    find "$2" -name \*.md
-    NAME="$1"
-    echo "##### 3 checking summary for ${NAME}"
-    find "ppbooks/${NAME}" -name \*.md | \
-        sed -e "s;ppbooks/${NAME}/;;" | \
+pp_check_summary() {
+    # check if all md files are included in the SUMMARY.md in the books source
+    local name="$1"
+    local book_source="$2"
+    local book_ppdir="$3"
+    local book_out="$4"
+
+    # in pp
+    find "$book_ppdir" -name '*.md' | \
+        sed -e "s;$book_ppdir/;;" | \
         grep -vf SummaryBlacklist.txt | \
         grep -v gitbook-plugin | \
         grep -v node_modules/ | \
-        sort > /tmp/is_md.txt
+        sort > /tmp/is_md.txt || ferr "is_md.txt generation failed"
 
-    grep -v '^ *# '< "${NAME}/SUMMARY.md" | \
-        grep '(' |sed -e "s;.*(;;" -e "s;).*;;" | \
-        sort  > /tmp/is_summary.txt
+    # in source
+    # remove comments
+    # remove everything before and after the braces
+    grep -v '^ *# '< "${book_source}/SUMMARY.md" | \
+        grep '(' | sed -e "s;.*(;;" -e "s;).*;;" |\
+        sort  > /tmp/is_summary.txt || ferr "is_summary generation failed"
 
+    #compare both files
     if test "$(comm -3 /tmp/is_md.txt /tmp/is_summary.txt|wc -l)" -ne 0; then
-        echo ""
-        echo "not all files of ${NAME} are mapped to the summary!"
-        echo " files found       |    files in summary"
+        err "not all files of ${name} are mapped to the summary!"
+        err "files found       |    files in summary"
         comm -3 /tmp/is_md.txt /tmp/is_summary.txt
-        echo ""
         exit 1
     fi
 }
 
 function book-check-leftover-docublocks()
 {
-    NAME="$1"
-    echo "##### 4 checking for left over docublocks in ${NAME}"
-    ERRORS=$(grep -rl "startDocuBlock" --include "*.md" "ppbooks/${NAME}" | sed -e "s/^/- /g")
-    if test "$(echo -n "${ERRORS}" | wc -l)" -gt 0; then
-        echo ""
+    # TODO description
+    local name="$1"
+    local book_source="$2"
+    local book_ppdir="$3"
+    local book_out="$4"
+    set -x
+
+    grep -rl "startDocuBlock" --include "*.md" "$book_source"
+
+    echo "##### 4 checking for left over docublocks in ${name}"
+    ERRORS="$(grep -rl "startDocuBlock" --include "*.md" "$book_ppdir" | sed -e "s/^/- /g")" || ferr "Failed running chek for leftover DocuBlocks"
+    if [[ -n "${ERRORS}" ]]; then
         echo "startDocuBlock markers still found in generated output files:"
         echo "${ERRORS}"
-        echo ""
         exit 1
     fi
+    exit
 }
 
 function book-check-restheader-leftovers()
 {
+    # TODO description
+    local name="$1"
+    local book_source="$2"
+    local book_ppdir="$3"
+    local book_out="$4"
     NAME="$1"
     echo "##### 5 checking for restheader leftovers in ${NAME}"
     ERRORS=$(find "ppbooks/${NAME}" -not \( -path "ppbooks/Drivers/SpringData/*" -prune \) -name "*.md" -exec grep -- '^@[A-Z]*' {} \; -print)
@@ -85,6 +103,11 @@ function book-check-restheader-leftovers()
 
 function ppbook-check-two-links()
 {
+    # TODO description
+    local name="$1"
+    local book_source="$2"
+    local book_ppdir="$3"
+    local book_out="$4"
     NAME="$1"
     echo "##### 6 checking for two links in a single line in ${NAME}"
     ERRORS=$(find "ppbooks/${NAME}" \
@@ -109,6 +132,11 @@ function ppbook-check-two-links()
 
 function ppbook-check-directory-link()
 {
+    # TODO description
+    local name="$1"
+    local book_source="$2"
+    local book_ppdir="$3"
+    local book_out="$4"
     NAME="$1"
     echo "##### 7 checking for invalid md links in ${NAME}"
     ERRORS=$(grep -r -E '\[.*\]\(.*\)' "ppbooks/${NAME}" | \
@@ -132,6 +160,11 @@ function ppbook-check-directory-link()
 
 function book-check-images-referenced()
 {
+    # TODO description
+    local name="$1"
+    local book_source="$2"
+    local book_ppdir="$3"
+    local book_out="$4"
     NAME="$1"
     echo "##### 8 checking for unused image files ${NAME}"
     ERRORS=$(find "${NAME}" -name '*.png' | while IFS= read -r image; do
@@ -154,6 +187,7 @@ function book-check-images-referenced()
 
 function ppbook-check-html-link()
 {
+    # TODO description
     set -o pipefail
     NAME="$1"
     MSG="$2"
@@ -178,6 +212,7 @@ function ppbook-check-html-link()
 }
 
 book_check_post_build_markdown_leftovers() {
+    # TODO description
     local name="$1"
     local book_out="$2"
     echo "##### checking for remaining markdown snippets in the HTML output of ${name} in $book_out"
@@ -228,6 +263,7 @@ book_check_post_build_markdown_leftovers() {
 
 function check-dangling-anchors()
 {
+    # TODO description
     rm -rf /tmp/tags/
     echo "##### checking for dangling anchors"
     find books/ -name '*.html' | while IFS= read -r htmlf; do
@@ -337,6 +373,7 @@ function check-dangling-anchors()
 #
 function check-docublocks()
 {
+    # TODO description
     # set -o pipefail
     # #set -e
     # pwd
@@ -439,17 +476,20 @@ show_config(){
     echo
     section "ArangoDB documentation build configuration"
     echo "directories:"
+    echo "  script dir:  $script_dir"
     echo "  work:         $ARANGO_WORK"
     echo "  source:       $ARANGO_SOURCE"
-    echo "  books:        $ARANGO_SOURCE_BOOKS"
-    echo "  build:        $ARANGO_BUILD"
-    echo "  build ppdir:  $ARANGO_BUILD_PPDIR"
-    echo "  build books:  $ARANGO_BUILD_BOOKS"
+    echo "  books:        $ARANGO_SOURCE_DOC_BOOKS"
+    echo "  build:        $ARANGO_BUILD_DOC"
+    echo "  build ppdir:  $ARANGO_BUILD_DOC_PPDIR"
+    echo "  build books:  $ARANGO_BUILD_DOC_BOOKS"
     echo
     echo "versions:"
-    echo "  newVersionNumber: $newVersionNumber"
+    echo "  newVersionNumber: $newVersionNumber - from : arangodb/VERSION"
+    echo "  VERSION: $VERSION"
     echo "  BROWSEABLE_VERSIONS: $BROWSEABLE_VERSIONS"
     echo "  INSTALLED_GITBOOK_VERSION: $INSTALLED_GITBOOK_VERSION"
+    echo "  RELEASE_DIRECTORY: $RELEASE_DIRECTORY"
     echo
     echo "google:"
     echo "  GCHANGE_FREQ: $GCHANGE_FREQ"
