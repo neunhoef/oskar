@@ -5,8 +5,8 @@ export NVM_DIR=/usr/local/nvm
 nvm use stable
 
 #add options
-skip_examples=true;
-skip_swagger=true;
+skip_examples=true
+skip_swagger=true
 
 type gitbook &>/dev/null || { echo "gitbook not installed"; exit; }
 type ditaa &>/dev/null || { echo "dittaa not installed"; exit; }
@@ -20,12 +20,10 @@ export ARANGO_SOURCE_BOOKS="$ARANGO_SOURCE/Documentation/Books"
 
 # path to documentation build
 export ARANGO_BUILD="$ARANGO_WORK/build-documentation"
+export ARANGO_BUILD="$ARANGO_SOURCE_BOOKS" ## TODO FIXME - we can not freely select the output dir
 export ARANGO_BUILD_PPDIR="$ARANGO_BUILD/ppdir"
 export ARANGO_BUILD_BOOKS="$ARANGO_BUILD/books"
 
-export ARANGO_BUILD="$ARANGO_SOURCE_BOOKS"
-export ARANGO_BUILD_PPDIR="$ARANGO_BUILD/ppbooks"
-export ARANGO_BUILD_BOOKS="$ARANGO_BUILD/books"
 
 cd "$ARANGO_SOURCE" || { echo "could not change in arangodb source directroy"; exit 1; }
 echo $(pwd)
@@ -48,12 +46,7 @@ fi
 
 cd "$ARANGO_SOURCE_BOOKS"
 # get gitbook version
-export INSTALLED_GITBOOK_VERSION=$(gitbook ls |grep '*'|sed "s;.*\* ;;")
-if test -z "${INSTALLED_GITBOOK_VERSION}"; then
-    echo "your container doesn't come with a preloaded version of gitbook, please update it."
-    exit 1
-fi
-
+echo "calling build_documenation"
 "$script_dir/build_documentation" build-books
 
 exit $?

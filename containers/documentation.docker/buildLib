@@ -1,28 +1,5 @@
 #!/bin/bash
 
-## this must go
-
-ALLBOOKS="HTTP AQL Manual Cookbook Drivers"
-OTHER_MIME="pdf epub mobi"
-# shellcheck disable=SC2016
-TRIPPLETICS='```'
-
-# shellcheck disable=SC2034
-
-echo "path $(pwd)"
-newVersionNumber=$( tr -d '\r\n' < ../../VERSION)
-
-declare -A ALL_GSEARCH_ID
-for book in ${ALLBOOKS}; do
-    ALL_GSEARCH_ID[$book]=$(  grep "GSEARCH_ID_${book}" ../../VERSIONS |sed 's;.*"\([0-9a-zA-Z:_-]*\)".*;\1;')
-done
-
-GCHANGE_FREQ=$(grep "GCHANGE_FREQ" ../../VERSIONS |sed 's;.*"\([0-9a-zA-Z:]*\)".*;\1;')
-GPRIORITY=$(grep "GPRIORITY" ../../VERSIONS |sed 's;.*"\([0-9a-zA-Z.]*\)".*;\1;')
-BROWSEABLE_VERSIONS=$(grep "BROWSEABLE_VERSIONS" ../../VERSIONS |sed -e 's;" *$;;' -e 's;.*";;')
-
-
-
 function ppbook-precheck-bad-code-sections()
 {
     NAME="$1"
@@ -360,6 +337,24 @@ function check-dangling-anchors()
 #
 function check-docublocks()
 {
+    # set -o pipefail
+    # #set -e
+    # pwd
+    # ls -lisahd ./ppbooks/Summary.md
+    # ls -lisah ./ppbooks/*md
+    # debug "not found 1"
+
+    # grep -R '@startDocuBlock' \
+    #      --include "*.h" \
+    #      --include "*.cpp" \
+    #      --include "*.js" \
+    #      --include "*.md" \
+    #      . \
+    #      1>/dev/null || ferr "grep failed"
+
+
+
+
     grep -R '@startDocuBlock' --include "*.h" --include "*.cpp" --include "*.js" --include "*.md" . |\
         grep -v '@startDocuBlockInline' |\
         grep -v stash |\
@@ -369,7 +364,9 @@ function check-docublocks()
         grep -v '.*~:.*' |\
         grep -v '.*#.*:.*' \
              > /tmp/rawindoc.txt
+    debug "not found 1 - end"
 
+    debug "not found 2"
     grep -R '@startDocuBlockInline' --include "*.h" --include "*.cpp" --include "*.js" --include "*.md" . |\
         grep -v ppbook |\
         grep -v stash |\
@@ -378,9 +375,10 @@ function check-docublocks()
         grep -v '.*~:.*' |\
         grep -v '.*#.*:.*' \
              >> /tmp/rawindoc.txt
-
+    debug "not found 2 - end"
     sed  -e "s;\r$;;" -e "s;.*ck ;;" -e "s;.*ne ;;" < /tmp/rawindoc.txt |sort -u > /tmp/indoc.txt
 
+    debug "not found 3"
     grep -R '^@startDocuBlock' ../DocuBlocks --include "*.md" |grep -v aardvark > /tmp/rawinprog.txt
     # searching the Inline docublocks needs some more blacklisting:
     grep -R '@startDocuBlockInline' --include "*.h" --include "*.cpp" --include "*.js" --include "*.md" . |\
@@ -391,6 +389,7 @@ function check-docublocks()
         grep -v '.*~:.*' |\
         grep -v '.*#.*:.*' \
              >> /tmp/rawinprog.txt
+    debug "not found 3 - end"
 
     # These files are converted to docublocks on the fly and only live in memory.
     for file in ../Examples/*.json ; do
@@ -400,7 +399,6 @@ function check-docublocks()
 
     sed -e "s;\r$;;" -e "s;.*ck ;;" -e "s;.*ne ;;" < /tmp/rawinprog.txt  |sort > /tmp/inprog_raw.txt
     sort -u < /tmp/inprog_raw.txt > /tmp/inprog.txt
-
     if test "$(wc -l < /tmp/inprog.txt)" -ne "$(wc -l < /tmp/inprog_raw.txt)"; then
         echo ""
         echo "Duplicate entry found in the source trees:"
@@ -434,6 +432,38 @@ function check-docublocks()
         exit 1
     fi
 }
+
+show_config(){
+    echo "  build lib sourced"
+    echo "  passed arguments: '$@'"
+    echo
+    section "ArangoDB documentation build configuration"
+    echo "directories:"
+    echo "  work:         $ARANGO_WORK"
+    echo "  source:       $ARANGO_SOURCE"
+    echo "  books:        $ARANGO_SOURCE_BOOKS"
+    echo "  build:        $ARANGO_BUILD"
+    echo "  build ppdir:  $ARANGO_BUILD_PPDIR"
+    echo "  build books:  $ARANGO_BUILD_BOOKS"
+    echo
+    echo "versions:"
+    echo "  newVersionNumber: $newVersionNumber"
+    echo "  BROWSEABLE_VERSIONS: $BROWSEABLE_VERSIONS"
+    echo "  INSTALLED_GITBOOK_VERSION: $INSTALLED_GITBOOK_VERSION"
+    echo
+    echo "google:"
+    echo "  GCHANGE_FREQ: $GCHANGE_FREQ"
+    echo "  GPRIORITY: $GPRIORITY"
+    echo "  ALL_GSEARCH_ID:"
+    for id in  "${ALL_GSEARCH_ID[@]}"; do
+        echo "    $id"
+    done
+    echo
+
+    #sleep 3
+}
+
+
 #### Snippets to be replaced
 
 ## build non html books
@@ -451,41 +481,3 @@ function check-docublocks()
 ##         fi
 ##     done
 ## }
-
-#### GOOD FUNCTIONS
-
-
-# not required anymore
-build_book_symlinks(){
-    local build_out="$1"
-
-    section "generate backwards compatibility symlinks for ${NAME}"
-    cd "$build_out" || ferr "could not change into out dir: $build_out"
-
-    # find all README, then cd into the dir containing the file and create a symlink
-    find -iname README.md -exedir ln -s index.html README.html +
-
-    ## # probably - find md files and create a symlink from index.html to readme.html
-    ## pwd
-    ## find . -name "README.md" |\
-    ##     sed -e 's:README\.md$::' |\
-    ##     awk '{print "ln -s index.html " "$1" "README.html"}' |\
-    ##     bash
-}
-
-#start_X11_display() {
-#    local pidfile="$1"
-#
-#    if test -f "${pidfile}"; then
-#        stop_X11_display "${pidfile}"
-#    fi
-#    #start xvfb
-#    /usr/bin/daemon "--pidfile=${pidfile}" --name=xvfb --inherit --output=/tmp/xvfb.log --  Xvfb "${DISPLAY}" -screen 0 800x600x16  -ac -pn -noreset
-#}
-#
-#stop_X11_display() {
-#    local pidfile=$1
-#    kill "$(cat "${pidfile}")"
-#    rm -f "${pidfile}"
-#}
-
