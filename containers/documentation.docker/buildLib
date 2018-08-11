@@ -49,7 +49,7 @@ pp_check_summary() {
     # remove comments
     # remove everything before and after the braces
     grep -v '^ *# '< "${book_source}/SUMMARY.md" | \
-        grep '(' | sed -e "s;.*(;;" -e "s;).*;;" |\
+        grep '(' | sed -e "s;.*(;;" -e "s;).*;;" | \
         sort  > /tmp/is_summary.txt || ferr "is_summary generation failed"
 
     #compare both files
@@ -61,38 +61,42 @@ pp_check_summary() {
     fi
 }
 
-function book-check-leftover-docublocks()
-{
-    # TODO description
+pp_check_leftover_docublocks() {
     local name="$1"
     local book_source="$2"
     local book_ppdir="$3"
     local book_out="$4"
-    set -x
 
-    grep -rl "startDocuBlock" --include "*.md" "$book_source"
-
+    #in ppdir
     echo "##### 4 checking for left over docublocks in ${name}"
-    ERRORS="$(grep -rl "startDocuBlock" --include "*.md" "$book_ppdir" | sed -e "s/^/- /g")" || ferr "Failed running chek for leftover DocuBlocks"
+    ERRORS="$(grep -rl "startDocuBlock" --include "*.md" "$book_ppdir")"
+    (( $? > 1)) && ferr "Failed running chek for leftover DocuBlocks"
     if [[ -n "${ERRORS}" ]]; then
         echo "startDocuBlock markers still found in generated output files:"
-        echo "${ERRORS}"
+        echo "${ERRORS}" | sed -e "s/^/- /g"
         exit 1
     fi
-    exit
 }
 
-function book-check-restheader-leftovers()
-{
+pp_check_restheader_leftovers() {
     # TODO description
     local name="$1"
     local book_source="$2"
     local book_ppdir="$3"
     local book_out="$4"
-    NAME="$1"
-    echo "##### 5 checking for restheader leftovers in ${NAME}"
-    ERRORS=$(find "ppbooks/${NAME}" -not \( -path "ppbooks/Drivers/SpringData/*" -prune \) -name "*.md" -exec grep -- '^@[A-Z]*' {} \; -print)
-    if test "$(echo -n "${ERRORS}" | wc -l)" -gt 0; then
+
+    ## original script:
+    ## what is this supposed to do?
+    ## - bad use of prune!
+    ## - how can the expression match without `-E`
+    # ERRORS=$(find "ppbooks/${NAME}" -not \( -path "ppbooks/Drivers/SpringData/*" -prune \) -name "*.md" -exec grep -- '^@[A-Z]*' {} \; -print) || failed "check for restheader leftovers"
+
+    #in ppdir
+    #TODO FIXME why is the spring data driver excluded??
+    # what is that for "^@[A-Z]*"
+    echo "##### 5 checking for restheader leftovers in ${name}"
+    ERRORS="$(find "$book_ppdir"  -path "*/Drivers/SpringData/*" -prune  -o -name "*.md" -exec bash -c 'grep -E -q -- "^@[A-Z]*" "$1" && echo $1' -- '{}' \; )" || failed "check for restheader leftovers"
+    if [[ -n "${ERRORS}" ]]; then
         echo ""
         echo "found these unconverted Swagger Restapi tags: "
         echo "${ERRORS}"

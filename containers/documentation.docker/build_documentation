@@ -184,8 +184,10 @@ function build_book() {
     section " Checking Integrity - Book ${name}"
     # run checks
     pp_check_summary                "${name}" "$book_source" "$book_ppdir" "$book_out"
-    book-check-leftover-docublocks  "${name}" "$book_source" "$book_ppdir" "$book_out"
-    book-check-restheader-leftovers "${name}" "$book_source" "$book_ppdir" "$book_out"
+    pp_check_leftover_docublocks    "${name}" "$book_source" "$book_ppdir" "$book_out"
+
+    # to fix
+    pp_check_restheader_leftovers   "${name}" "$book_source" "$book_ppdir" "$book_out"
     ppbook-check-two-links          "${name}" "$book_source" "$book_ppdir" "$book_out"
     ppbook-check-directory-link     "${name}" "$book_source" "$book_ppdir" "$book_out"
     book-check-images-referenced    "${name}" "$book_source" "$book_ppdir" "$book_out"
