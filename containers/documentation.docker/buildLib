@@ -5,8 +5,8 @@ grep_ignore_empty(){
     local rv=$?
 
     # grep exit status is 1 if nothing is matched
-    (( rv == 1 )) && { echo "echo no match found via 'grep $@'" >&2; return 0; }
-    return rv
+    (( rv == 1 )) &&  { false && debug "echo no match found via 'grep $@'" >&2; return 0; }
+    return $rv
 }
 # make it available for sub-shells
 export -f grep_ignore_empty
@@ -300,6 +300,7 @@ out_markdown_leftovers() {
 
 function cross_check_dangling_anchors()
 {
+    ##TODO FIXME
     # TODO description
     rm -rf /tmp/tags/
     echo "##### checking for dangling anchors"
@@ -312,6 +313,8 @@ function cross_check_dangling_anchors()
             sed -e 's;.*id=";;' -e 's;".*;;' > "/tmp/tags/${dir}/${fn}"
     done
 
+    debug "one"
+
     fail=0
     rm -f /tmp/failduplicatetags.txt
     find /tmp/tags -type f | while IFS= read -r htmlf; do
@@ -323,6 +326,7 @@ function cross_check_dangling_anchors()
             touch /tmp/failduplicatetags.txt
         fi
     done
+    debug "two"
 
     rm -f /tmp/sorted.txt /tmp/sortedunique.txt
     if test -f /tmp/failduplicatetags.txt; then
@@ -332,23 +336,29 @@ function cross_check_dangling_anchors()
     fi
 
     rm -f /tmp/anchorlist.txt
+    debug "three"
 
     echo "##### fetching anchors from generated http files"
-    for file in $(find books -name \*.html); do
+    for file in $(find "$ARANGO_BUILD_DOC_OUT" -name \*.html); do
         # - strip of the menu
         # - then the page tail.
         # - remove links to external pages
         cat $file | \
             sed -r -n -e '/normal markdown-section/,${p}'| \
             sed -r -n -e '/.*id="page-footer".*/q;p' | \
-            grep '<a href="' | \
-            grep -v 'target="_blank"' | \
-            sed -e 's;.*href=";;' -e 's;".*;;' > /tmp/thisdoc.txt
-        # Links with anchors:
-        cat /tmp/thisdoc.txt |grep '#' | sed "s;\(.*\)#\(.*\);${file},\1,\2;" >> /tmp/anchorlist.txt
-        # links without anchors:
-        cat /tmp/thisdoc.txt |grep -v '#' | sed "s;\(.*\);${file},\1,;" >> /tmp/anchorlist.txt
+            grep_ignore_empty '<a href="' | \
+            grep_ignore_empty -v 'target="_blank"' | \
+            sed -e 's;.*href=";;' -e 's;".*;;' > /tmp/thisdoc.txt || { ls -lisah "$file"; ferr "fail cat $file"; }
+
+        if [[ -f /tmp/thisdoc.txt ]]; then
+            # Links with anchors:
+            cat /tmp/thisdoc.txt | grep_ignore_empty '#' | sed "s;\(.*\)#\(.*\);${file},\1,\2;" >> /tmp/anchorlist.txt || ferr "fail 1 cat thisdoc.txt for: $file"
+            # links without anchors:
+            cat /tmp/thisdoc.txt | grep_ignore_empty -v '#' | sed "s;\(.*\);${file},\1,;" >> /tmp/anchorlist.txt || ferr "fail 2 cat thisdoc.txt for file: $file"
+        fi
     done
+    ## why do we create anchorlist above, when we delete it in the next lines?
+    debug "four"
 
     echo "##### cross checking anchors"
     NO=0
@@ -391,14 +401,11 @@ function cross_check_dangling_anchors()
     done
     NO="$(cat /tmp/anchorlistcount.txt)"
     if test "${NO}" -gt 0; then
-        echo ""
         echo "${NO} Dangling anchors found!"
-        echo ""
-        echo "${1}"
-        echo ""
         exit 1
     fi
     rm -rf /tmp/anchorlist.txt /tmp/tags
+    debug "five"
 }
 
 #************************************************************

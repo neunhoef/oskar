@@ -336,6 +336,12 @@ main(){
             --all-formats)
                 all_formats=true
             ;;
+            --cross-check)
+                echo "==============================================================================="
+                section " cross book checks "
+                # cross_check_docublocks #TODO FIXME
+                cross_check_dangling_anchors
+            ;;
             *)
             ;;
         esac
