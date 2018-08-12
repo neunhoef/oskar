@@ -163,14 +163,13 @@ run_ditaa() {
 }
 
 function build_book() {
-    section " Build Book - $book " | sed 's/-/=/g' | sed 's/ = / - /'
-
     local book_name="$1"
     local book_src="$ARANGO_SOURCE_DOC_BOOKS/${book_name}"
     local book_pre="$ARANGO_BUILD_DOC_PRE/${book_name}"
     local book_out="$ARANGO_BUILD_DOC_OUT/${book_name}"
 
-    section " Generating book ${book_name} "
+
+    section " Build Book - ${book_name} " | sed 's/-/=/g' | sed 's/ = / - /'
     echo "book source:       $book_src"
     echo "preprocessing dir: $book_pre"
     echo "output dir:        $book_out"
@@ -178,6 +177,7 @@ function build_book() {
 
     mkdir -p "$book_pre"
     mkdir -p "$book_out"
+
 
     # codeBlockReader creates the file AllComments.txt in the source dir `Documentation/Books`
     # TODO
@@ -188,8 +188,8 @@ function build_book() {
 
 
     section " Pre Checks - Book ${book_name} "
-    source_check_bad_code_sections "${book_name}" "$book_src" "$book_pre" "$book_out"
-    source_check_bad_headings      "${book_name}" "$book_src" "$book_pre" "$book_out"
+    source_check_bad_code_sections "${book_name}" "$book_src" "$book_pre" "$book_out" || ferr "fail"
+    source_check_bad_headings      "${book_name}" "$book_src" "$book_pre" "$book_out" || ferr "fail"
 
 
     ## copy directroy structure of
@@ -236,12 +236,12 @@ function build_book() {
 
     section " Checking Integrity - Book ${book_name}"
     # run checks
-    pp_check_summary              "${book_name}" "$book_src" "$book_pre" "$book_out"
-    pp_check_leftover_docublocks  "${book_name}" "$book_src" "$book_pre" "$book_out"
-    pp_check_restheader_leftovers "${book_name}" "$book_src" "$book_pre" "$book_out"
-    pp_check_two_links            "${book_name}" "$book_src" "$book_pre" "$book_out"
-    pp_check_directory_link       "${book_name}" "$book_src" "$book_pre" "$book_out"
-    src_check_images_referenced   "${book_name}" "$book_src" "$book_pre" "$book_out"
+    pp_check_summary              "${book_name}" "$book_src" "$book_pre" "$book_out" || ferr "fail"
+    pp_check_leftover_docublocks  "${book_name}" "$book_src" "$book_pre" "$book_out" || ferr "fail"
+    pp_check_restheader_leftovers "${book_name}" "$book_src" "$book_pre" "$book_out" || ferr "fail"
+    pp_check_two_links            "${book_name}" "$book_src" "$book_pre" "$book_out" || ferr "fail"
+    pp_check_directory_link       "${book_name}" "$book_src" "$book_pre" "$book_out" || ferr "fail"
+    src_check_images_referenced   "${book_name}" "$book_src" "$book_pre" "$book_out" || ferr "fail"
 
 
     section " Fill in Templates - Book ${book_name}"
@@ -274,7 +274,7 @@ function build_book() {
     cp -r "$cache/node_modules" "$book_pre" || ferr "failed to copy node modules"
 
     say " - run gitbook"
-    run_gitbook build "$book_pre" "$book_out"
+    run_gitbook build "$book_pre" "$book_out" || ferr "fail"
 
 
     section " Clean Up - Book ${book_name} "
@@ -285,7 +285,7 @@ function build_book() {
     echo " - deleting markdown files in output (gitbook 3.x bug)"
     find "$book_out" -type f -name "*.md" -delete
 
-    out_markdown_leftovers "${book_name}" "$book_src" "$book_pre" "$book_out"
+    out_markdown_leftovers "${book_name}" "$book_src" "$book_pre" "$book_out" || ferr "fail"
     #pp_check_html_link     "${book_name}" "$book_src" "$book_pre" "$book_out"
 }
 
@@ -350,14 +350,14 @@ main(){
     fi
 
     #build html and run checks
-    build_books "$@"
+    build_books "$@" || ferr "fail"
 
     # build other formats
     if $all_formats; then
         for book_name in $ALLBOOKS; do
             for format in $OTHER_MIME; do
                 local out="${ARANGO_BUILD_DOC}/ArangoDB_${book_name}_${newVersionNumber}.${format}"
-                run_gitbook "${GITBOOK_ARGS[@]}" "${format}" "$ARANGO_BUILD_DOC_PRE/$book_name" "${out}"
+                run_gitbook "${GITBOOK_ARGS[@]}" "${format}" "$ARANGO_BUILD_DOC_PRE/$book_name" "${out}" || ferr "fail"
             done
         done
     fi

@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 grep_ignore_empty(){
     grep "$@"
     local rv=$?
@@ -11,7 +10,6 @@ grep_ignore_empty(){
 }
 # make it available for sub-shells
 export -f grep_ignore_empty
-
 
 source_check_bad_code_sections() {
     # checks for ``` followd by a blank
@@ -194,6 +192,7 @@ function src_check_images_referenced()
         fi
     done < <(find "${book_name}" -name '*.png')
     $found && exit 1;
+    return 0
 }
 
 # checks we do not reach yet
@@ -229,7 +228,7 @@ pp_check_html_link() {
     fi
 }
 
-out_build_markdown_leftovers() {
+out_markdown_leftovers() {
     # TODO description
     local book_name="$1"
     local book_src="$2"
