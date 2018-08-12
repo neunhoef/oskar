@@ -21,9 +21,6 @@ for arg in "$@"; do
     esac
 done
 
-
-#TODO add options
-
 type gitbook &>/dev/null || { echo "gitbook not installed"; exit; }
 type ditaa &>/dev/null || { echo "dittaa not installed"; exit; }
 
@@ -41,13 +38,7 @@ export ARANGO_BUILD_DOC="$ARANGO_WORK/build-documentation"
 export ARANGO_BUILD_DOC_PRE="$ARANGO_BUILD_DOC/pre_processec"
 export ARANGO_BUILD_DOC_OUT="$ARANGO_BUILD_DOC/book_html"
 
-# # THIS MUST GO
-# export ARANGO_BUILD_DOC="$ARANGO_SOURCE_DOC_BOOKS" ## TODO FIXME - we can not freely select the output dir
-# export ARANGO_BUILD_DOC_PRE="$ARANGO_BUILD_DOC/ppbooks"
-# export ARANGO_BUILD_DOC_OUT="$ARANGO_BUILD_DOC/books"
-
 cd "$ARANGO_SOURCE" || { echo "could not change in arangodb source directroy"; exit 1; }
-echo $(pwd)
 ls -lisah ./build &>/dev/null || echo "no build directory"
 ls -lisah ./build/bin &>/dev/null || echo "unable to access source/bild/bin"
 
@@ -65,7 +56,5 @@ else
   ./utils/generateSwagger.sh || { echo "failed to generate swagger"; exit 1; }
 fi
 
-cd "$ARANGO_SOURCE_DOC_BOOKS"
-# get gitbook version
 echo "calling build_documenation"
 "$ARANGO_OSKAR/containers/documentation.docker/build_documentation" "$@"
