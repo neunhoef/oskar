@@ -185,12 +185,12 @@ function build_book() {
     # run checks
     pp_check_summary                "${name}" "$book_source" "$book_ppdir" "$book_out"
     pp_check_leftover_docublocks    "${name}" "$book_source" "$book_ppdir" "$book_out"
+    pp_check_restheader_leftovers   "${name}" "$book_source" "$book_ppdir" "$book_out"
+    pp_check_two_links              "${name}" "$book_source" "$book_ppdir" "$book_out"
+    pp_check_directory_link         "${name}" "$book_source" "$book_ppdir" "$book_out"
 
     # to fix
-    pp_check_restheader_leftovers   "${name}" "$book_source" "$book_ppdir" "$book_out"
-    ppbook-check-two-links          "${name}" "$book_source" "$book_ppdir" "$book_out"
-    ppbook-check-directory-link     "${name}" "$book_source" "$book_ppdir" "$book_out"
-    book-check-images-referenced    "${name}" "$book_source" "$book_ppdir" "$book_out"
+    src_check_images_referenced    "${name}" "$book_source" "$book_ppdir" "$book_out"
 
     section " Fill in Templates - Book ${name}"
     # expand versions in files
@@ -201,7 +201,7 @@ function build_book() {
             say "   - running sed on $file"
             sed -e "s/VERSION_NUMBER/v${VERSION}/g" \
                 -e "s;/devel;/${RELEASE_DIRECTORY};" \
-                -e "s;@GSEARCH_ID@;${ALL_GSEARCH_ID[${NAME}]};" \
+                -e "s;@GSEARCH_ID@;${ALL_GSEARCH_ID[${name}]};" \
                 -e "s;@GCHANGE_FREQ@;${GCHANGE_FREQ};" \
                 -e "s;@GPRIORITY@;${GPRIORITY};" \
                 -e "s;@BROWSEABLE_VERSIONS@;${BROWSEABLE_VERSIONS};" \
@@ -214,7 +214,6 @@ function build_book() {
 
     section " Building Book - ${name} "
     #copy gitbook modules form cache in build image
-    i="3.4" #TODO get versiont
     i="devel" #TODO get versiont
 
     #TODO FIXME
@@ -250,12 +249,12 @@ function build_book() {
     echo " - deleting markdown files in output (gitbook 3.x bug)"
     find "$book_out" -type f -name "*.md" -delete
 
-    book_check_post_build_markdown_leftovers "${name}" "$book_out"
+    book_check_post_build_markdown_leftovers "${name}" "$book_source" "$book_ppdir" "$book_out"
+    pp_check_html_link                       "${name}" "$book_source" "$book_ppdir" "$book_out"
 }
 
 
-function build_books()
-{
+build_books() {
     section " Build All Books "
     local flushpp=true
     local flushout=true
@@ -276,37 +275,33 @@ function build_books()
         section "build book $book"
         build_book "${book}"
 
-
-        section "check links $book"
-        cd "$ARANGO_SOURCE_DOC_BOOKS"
-        ppbook-check-html-link "${book}" ""
     done
 
     section "cross book checks"
-    check-docublocks ""
-    check-dangling-anchors ""
+    cross_check_docublocks ""
+    cross_check_dangling_anchors ""
     echo "##### Generating redirect index.html"; \
     echo '<html><head><meta http-equiv="refresh" content="0; url=Manual/"></head><body></body></html>' > books/index.html
 }
 
-function main(){
+main(){
     show_config
     cd "$ARANGO_SOURCE_DOC_BOOKS" # TODO remove
-    rm -fr "$ARANGO_BUILD_DOC_BOOKS" || ferr "could not delete books output dir"
-    rm -fr "$ARANGO_BUILD_DOC_PPDIR" || ferr "could not delete ppdir dir"
-    mkdir -p "$ARANGO_BUILD_DOC_BOOKS" || ferr "could not create books output dir"
-    mkdir -p "$ARANGO_BUILD_DOC_PPDIR" || ferr "could not create ppdir dir"
+
+    #rm -fr "$ARANGO_BUILD_DOC_BOOKS" || ferr "could not delete books output dir"
+    #rm -fr "$ARANGO_BUILD_DOC_PPDIR" || ferr "could not delete ppdir dir"
+    #mkdir -p "$ARANGO_BUILD_DOC_BOOKS" || ferr "could not create books output dir"
+    #mkdir -p "$ARANGO_BUILD_DOC_PPDIR" || ferr "could not create ppdir dir"
+
     build_books
+
     echo
     success "building documentation"
     echo
-    exit $?
 }
 main "$@"
 
-
-
-
+exit $?
 
 
 function build-dist-books()

@@ -7,8 +7,8 @@ nvm use stable
 set -u
 
 #TODO add options
-skip_examples=true
-skip_swagger=true
+skip_examples=false
+skip_swagger=false
 
 type gitbook &>/dev/null || { echo "gitbook not installed"; exit; }
 type ditaa &>/dev/null || { echo "dittaa not installed"; exit; }
@@ -55,5 +55,3 @@ cd "$ARANGO_SOURCE_DOC_BOOKS"
 # get gitbook version
 echo "calling build_documenation"
 "$ARANGO_OSKAR/containers/documentation.docker/build_documentation"
-
-exit $?
