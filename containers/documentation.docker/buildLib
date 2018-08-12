@@ -1,29 +1,42 @@
 #!/bin/bash
 
+
+grep_ignore_empty(){
+    grep "$@"
+    local rv=$?
+
+    # grep exit status is 1 if nothing is matched
+    (( rv == 1 )) && { echo "echo no match found via 'grep $@'" >&2; return 0; }
+    return rv
+}
+# make it available for sub-shells
+export -f grep_ignore_empty
+
+
 source_check_bad_code_sections() {
     # checks for ``` followd by a blank
-    local name="$1"
-    local book_source="$2"
-    local book_ppdir="$3"
+    local book_name="$1"
+    local book_src="$2"
+    local book_pre="$3"
     local book_out="$4"
 
-    echo "##### 1 checking for bad code sections in ${name}"
-    if grep -qR  "^${TRIPPLETICS} *.* " "${book_source}"; then
+    echo "##### 1 checking for bad code sections in ${book_name}"
+    if grep -qR  "^${TRIPPLETICS} *.* " "${book_src}"; then
         err "tripple tics with blanks afterwards found: "
-        grep -R  "^${TRIPPLETICS} *.* " "${book_source}"
+        grep -R  "^${TRIPPLETICS} *.* " "${book_src}"
         exit 1
     fi
 }
 
 source_check_bad_headings() {
     # TODO description
-    local name="$1"
-    local book_source="$2"
-    local book_ppdir="$3"
+    local book_name="$1"
+    local book_src="$2"
+    local book_pre="$3"
     local book_out="$4"
 
-    echo "##### 2 checking for headers that won't proper display on github in ${name}"
-    if grep -qRI  '^##*[a-zA-Z]' "${book_source}"; then
+    echo "##### 2 checking for headers that won't proper display on github in ${book_name}"
+    if grep -qRI  '^##*[a-zA-Z]' "${book_src}"; then
         err "Headlines broken on github found: "
         grep -RI  '^##*[a-zA-Z]' "${source}"
         exit 1
@@ -32,14 +45,14 @@ source_check_bad_headings() {
 
 pp_check_summary() {
     # check if all md files are included in the SUMMARY.md in the books source
-    local name="$1"
-    local book_source="$2"
-    local book_ppdir="$3"
+    local book_name="$1"
+    local book_src="$2"
+    local book_pre="$3"
     local book_out="$4"
 
     # in pp
-    find "$book_ppdir" -name '*.md' | \
-        sed -e "s;$book_ppdir/;;" | \
+    find "$book_pre" -name '*.md' | \
+        sed -e "s;$book_pre/;;" | \
         grep -vf SummaryBlacklist.txt | \
         grep -v gitbook-plugin | \
         grep -v node_modules/ | \
@@ -48,13 +61,13 @@ pp_check_summary() {
     # in source
     # remove comments
     # remove everything before and after the braces
-    grep -v '^ *# '< "${book_source}/SUMMARY.md" | \
+    grep -v '^ *# '< "${book_src}/SUMMARY.md" | \
         grep '(' | sed -e "s;.*(;;" -e "s;).*;;" | \
         sort  > /tmp/is_summary.txt || ferr "is_summary generation failed"
 
     #compare both files
     if test "$(comm -3 /tmp/is_md.txt /tmp/is_summary.txt|wc -l)" -ne 0; then
-        err "not all files of ${name} are mapped to the summary!"
+        err "not all files of ${book_name} are mapped to the summary!"
         err "files found       |    files in summary"
         comm -3 /tmp/is_md.txt /tmp/is_summary.txt
         exit 1
@@ -62,14 +75,14 @@ pp_check_summary() {
 }
 
 pp_check_leftover_docublocks() {
-    local name="$1"
-    local book_source="$2"
-    local book_ppdir="$3"
+    local book_name="$1"
+    local book_src="$2"
+    local book_pre="$3"
     local book_out="$4"
 
     #in ppdir
-    echo "##### 4 checking for left over docublocks in ${name}"
-    ERRORS="$(grep -rl "startDocuBlock" --include "*.md" "$book_ppdir")"
+    echo "##### 4 checking for left over docublocks in ${book_name}"
+    ERRORS="$(grep -rl "startDocuBlock" --include "*.md" "$book_pre")"
     (( $? > 1 )) && ferr "Failed running chek for leftover DocuBlocks"
     if [[ -n "${ERRORS}" ]]; then
         echo "startDocuBlock markers still found in generated output files:"
@@ -80,22 +93,22 @@ pp_check_leftover_docublocks() {
 
 pp_check_restheader_leftovers() {
     # TODO description
-    local name="$1"
-    local book_source="$2"
-    local book_ppdir="$3"
+    local book_name="$1"
+    local book_src="$2"
+    local book_pre="$3"
     local book_out="$4"
 
     ## original script:
     ## what is this supposed to do?
     ## - bad use of prune!
     ## - how can the expression match without `-E`
-    # ERRORS=$(find "ppbooks/${NAME}" -not \( -path "ppbooks/Drivers/SpringData/*" -prune \) -name "*.md" -exec grep -- '^@[A-Z]*' {} \; -print) || failed "check for restheader leftovers"
+    # ERRORS=$(find "ppbooks/${book_name}" -not \( -path "ppbooks/Drivers/SpringData/*" -prune \) -name "*.md" -exec grep -- '^@[A-Z]*' {} \; -print) || failed "check for restheader leftovers"
 
     #in ppdir
     #TODO FIXME why is the spring data driver excluded??
     # what is that for "^@[A-Z]*"
-    echo "##### 5 checking for restheader leftovers in ${name}"
-    ERRORS="$(find "$book_ppdir"  -path "*/Drivers/SpringData/*" -prune  -o -name "*.md" -exec bash -c 'grep -E -q -- "^@[A-Z]*" "$1" && echo $1' -- '{}' \; )" || failed "check for restheader leftovers"
+    echo "##### 5 checking for restheader leftovers in ${book_name}"
+    ERRORS="$(find "$book_pre"  -path "*/Drivers/SpringData/*" -prune  -o -name "*.md" -exec bash -c 'grep -E -q -- "^@[A-Z]*" "$1" && echo $1' -- '{}' \; )" || failed "check for restheader leftovers"
     if [[ -n "${ERRORS}" ]]; then
         echo "found these unconverted Swagger Restapi tags: "
         echo "${ERRORS}"
@@ -105,14 +118,14 @@ pp_check_restheader_leftovers() {
 
 pp_check_two_links() {
     # TODO description
-    local name="$1"
-    local book_source="$2"
-    local book_ppdir="$3"
+    local book_name="$1"
+    local book_src="$2"
+    local book_pre="$3"
     local book_out="$4"
 
     #in ppdir
     local ERRORS=()
-    echo "##### 6 checking for two links in a single line in ${name}"
+    echo "##### 6 checking for two links in a single line in ${book_name}"
     while IFS= read -r ppfile; do
         local search=$(grep -e '](.*](' "${ppfile}")
         (( $? > 1 )) && ferr "fail in check two links"
@@ -120,8 +133,8 @@ pp_check_two_links() {
         if [[ -n "${ERR}" ]]; then
             ERRORS+=( "\n${ppfile}: \n ${ERR}" )
         fi
-    done < <(find "$book_ppdir" \
-                  -path "$book_ppdir/node_modules*" \
+    done < <(find "$book_pre" \
+                  -path "$book_pre/node_modules*" \
                   -prune -o \
                   -name '*.md' \
                   -print
@@ -137,15 +150,15 @@ pp_check_two_links() {
 function pp_check_directory_link()
 {
     # TODO description
-    local name="$1"
-    local book_source="$2"
-    local book_ppdir="$3"
+    local book_name="$1"
+    local book_src="$2"
+    local book_pre="$3"
     local book_out="$4"
 
 
     #in ppdir
-    echo "##### 7 checking for invalid md links in ${name}"
-    local ERRORS=$( grep -r -E '\[.*\]\(.*\)' "$book_ppdir" | \
+    echo "##### 7 checking for invalid md links in ${book_name}"
+    local ERRORS=$( grep -r -E '\[.*\]\(.*\)' "$book_pre" | \
                     grep '\.md:' | \
                     grep -v html | \
                     grep -v http://| \
@@ -166,40 +179,40 @@ function pp_check_directory_link()
 function src_check_images_referenced()
 {
     # TODO description
-    local name="$1"
-    local book_source="$2"
-    local book_ppdir="$3"
+    local book_name="$1"
+    local book_src="$2"
+    local book_pre="$3"
     local book_out="$4"
 
-    echo "##### 8 checking for unused image files ${name}"
+    echo "##### 8 checking for unused image files ${book_name}"
     local found=false
     while IFS= read -r image; do
         baseimage=$(basename "$image")
-        if ! grep -Rq "${baseimage}" "${name}"; then
+        if ! grep -Rq "${baseimage}" "${book_name}"; then
             ! $found && { echo "the following images are not referenced by any page: " ; found=true; }
             printf "\n${image}"
         fi
-    done < <(find "${name}" -name '*.png')
+    done < <(find "${book_name}" -name '*.png')
     $found && exit 1;
 }
 
 # checks we do not reach yet
 
 pp_check_html_link() {
-    local name="$1"
-    local book_source="$2"
-    local book_ppdir="$3"
+    local book_name="$1"
+    local book_src="$2"
+    local book_pre="$3"
     local book_out="$4"
 
     # TODO description
 
     set -o pipefail
-    name="$1"
+    book_name="$1"
     msg="$2"
-    echo "##### checking for invalid HTML links in ${name}"
+    echo "##### checking for invalid HTML links in ${book_name}"
     echo "${ALLBOOKS}" | tr " " "\n" | sed -e 's;^;/;' -e 's;$;/;' > /tmp/books.regex
 
-    grep -r -E '\[.*\]\(.*\)' "$book_ppdir"| \
+    grep -r -E '\[.*\]\(.*\)' "$book_pre"| \
         grep '\.md:'| grep 'html'| \
         grep -v 'http://' | \
         grep -v 'https://' | \
@@ -216,16 +229,16 @@ pp_check_html_link() {
     fi
 }
 
-book_check_post_build_markdown_leftovers() {
+out_build_markdown_leftovers() {
     # TODO description
-    local name="$1"
-    local book_source="$2"
-    local book_ppdir="$3"
+    local book_name="$1"
+    local book_src="$2"
+    local book_pre="$3"
     local book_out="$4"
 
     local ERRORS
 
-    echo "##### checking for remaining markdown snippets in the HTML output of ${name} in $book_out"
+    echo "##### checking for remaining markdown snippets in the HTML output of ${book_name} in $book_out"
 
     ERRORS=$(find "$book_out" -name '*.html' -exec grep -- '^##' {} \; -print) || ferr "markdown leftovers 1"
     if [[ -n "${ERRORS}" ]]; then
@@ -291,7 +304,7 @@ function cross_check_dangling_anchors()
     # TODO description
     rm -rf /tmp/tags/
     echo "##### checking for dangling anchors"
-    find "$ARANGO_BUILD_DOC_BOOKS" -name '*.html' | while IFS= read -r htmlf; do
+    find "$ARANGO_BUILD_DOC_OUT" -name '*.html' | while IFS= read -r htmlf; do
         fn=$(basename "${htmlf}")
         echo $fn
         dir=$(sed "s;/$fn;;" <<< "$htmlf")
@@ -396,10 +409,10 @@ function cross_check_dangling_anchors()
 #  - unique in the source
 #  - all docublocks are used somewhere in the documentation
 #
-function cross_check_docublocks()
-{
+function cross_check_docublocks() {
+    #TODO - FIXME
 
-    #cd "$ARANGO_BUILD_DOC_BOOKS"
+    cd "$ARANGO_BUILD_DOC_OUT"
     pwd
 
     grep -R '@startDocuBlock' --include "*.h" --include "*.cpp" --include "*.js" --include "*.md" . |\
@@ -493,8 +506,8 @@ show_config(){
     echo "  source:       $ARANGO_SOURCE"
     echo "  books:        $ARANGO_SOURCE_DOC_BOOKS"
     echo "  build:        $ARANGO_BUILD_DOC"
-    echo "  build ppdir:  $ARANGO_BUILD_DOC_PPDIR"
-    echo "  build books:  $ARANGO_BUILD_DOC_BOOKS"
+    echo "  build ppdir:  $ARANGO_BUILD_DOC_PRE"
+    echo "  build books:  $ARANGO_BUILD_DOC_OUT"
     echo
     echo "versions:"
     echo "  newVersionNumber: $newVersionNumber - from : arangodb/VERSION"
@@ -512,24 +525,6 @@ show_config(){
     done
     echo
 
-    #sleep 3
+    sleep 2
 }
 
-
-#### Snippets to be replaced
-
-## build non html books
-## function build-book-dist()
-## {
-##     NAME="$1"
-##     export DISPLAY="$2"
-##     cd "ppbooks/${NAME}"
-##     for ext in ${OTHER_MIME}; do
-##         OUTPUT="${OUTPUT_DIR}/ArangoDB_${NAME}_${newVersionNumber}.${ext}"
-##         if gitbook "${GITBOOK_ARGS[@]}" "${ext}" ./ "${OUTPUT}"; then
-##             echo "success building ${OUTPUT}"
-##         else
-##             exit 1
-##         fi
-##     done
-## }

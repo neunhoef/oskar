@@ -2,6 +2,15 @@
 # Author - Jan Christoph Uhde
 # Based on scripts by Willi and Simran
 
+# TODO
+#
+# - fix broken tests
+# - execute container with same permissions as calling user not root
+# - find out branch name
+# - add http.tar.gz package creation
+# - test other formats
+#
+
 # get script dir
 script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 ## set options for safety
@@ -28,8 +37,8 @@ export ARANGO_SOURCE_DOC_BOOKS="${ARANGO_SOURCE_DOC_BOOKS:-"$ARANGO_SOURCE_DOC/D
 
 # path to documentation build
 export ARANGO_BUILD_DOC="${ARANGO_BUILD_DOC:-"$ARANGO_WORK/build-documentation"}"
-export ARANGO_BUILD_DOC_PPDIR="${ARANGO_BUILD_DOC_PPDIR:-"$ARANGO_BUILD_DOC/ppdir"}"
-export ARANGO_BUILD_DOC_BOOKS="${ARANGO_BUILD_DOC_BOOKS:-"$ARANGO_BUILD_DOC/books"}"
+export ARANGO_BUILD_DOC_PRE="${ARANGO_BUILD_DOC_PRE:-"$ARANGO_BUILD_DOC/ppdir"}"
+export ARANGO_BUILD_DOC_OUT="${ARANGO_BUILD_DOC_OUT:-"$ARANGO_BUILD_DOC/books"}"
 
 #### VARIABLES CONTROLLING THE BUILD - END ######################################
 
@@ -97,135 +106,12 @@ GITBOOK_ARGS=(--gitbook "${INSTALLED_GITBOOK_VERSION}")
 # pull in build lib
 . /$script_dir/buildLib || ferr "failed to source buildLib"
 # builds a single book
-function build_book() {
-    cd "$ARANGO_SOURCE_DOC_BOOKS" #TODO remove
-
-    local name="$1"
-    local book_source="$ARANGO_SOURCE_DOC_BOOKS/${name}"
-    local book_ppdir="$ARANGO_BUILD_DOC_PPDIR/${name}"
-    local book_out="$ARANGO_BUILD_DOC_BOOKS/${name}"
-
-    section "Generating book ${name}"
-    echo "book source:       $book_source"
-    echo "preprocessing dir: $book_ppdir"
-    echo "output dir:        $book_out"
 
 
-    mkdir -p "$book_ppdir"
-    mkdir -p "$book_out"
-
-    python $ARANGO_SOURCE/Documentation/Scripts/codeBlockReader.py || ferr "can not run codeBlockReader.py"
-
-    section " Pre Checks - Book ${name} "
-    source_check_bad_code_sections "${name}" "$book_source" "$book_ppdir" "$book_out"  #fix function
-    source_check_bad_headings      "${name}" "$book_source" "$book_ppdir" "$book_out"  #fix function
 
 
-    ## copy directroy structure of
-    ## arangodb/Documentation/Books/${name}
-    ## to ppdir
-    cd "$book_source" || ferr "could not enter book source dir: $book_source"
-    find . -type d -exec mkdir -p "$book_ppdir/{}" \;
-    tree "$book_ppdir"
-
-    section " Create Images - Book ${name} "
-    #create ditaa images
-    cd "$book_source"
-    local use_ditaa=false
-    if type ditaa; then
-        say " - generating ditaa images"
-        use_ditaa=true
-    else
-        say "- generating FAKE ditaa images - no ditaa installed"
-    fi
-
-    local file
-    while read file; do
-        local dest="$book_ppdir/${file//ditaa/png}"
-        # if dest dir is not available then the creation of the
-        # directory structures did most proably not work correctly
-        if $use_ditaa; then
-            ditaa "$file" "$dest" || ferr "ditaa for $file to $dest failed"
-        else
-            local fake="$ARANGO_SOURCE/js/node/node_modules/mocha/images/error.png"
-            cp "$fake" "$dest" || ferr "fake ditaa for $file to $dest failed"
-        fi
-    done < <(find . -name "*.ditaa")
-
-
-    section " Prepare Environment - Book ${name} "
-    # copy / link SUMMARY.md and FOOTER.html
-    say " - create SUMMARY.md"
-    [[ -L "$book_ppdir/SUMMARY.md" ]] || ln -s "$book_source/SUMMARY.md" "$book_ppdir" || ferr "failed to SUMMARY"
-    say " - create FOOTER.html"
-    [[ -f "$book_ppdir/FOOTER.html" ]] || ln -s "$book_source/FOOTER.html" "$book_ppdir" || ferr "failed FOOTER"
-
-    # copy styles
-    say " - copy styles"
-    cd "$book_ppdir"
-    rsync -rh "$book_source/styles" "$book_ppdir" || ferr "failed to rsync styles"
-
-    # copy book template
-    say " - copy book.json"
-    [[ -f "$book_ppdir/book.json" ]] || cp "${book_source}/book.json" "$book_ppdir"
-
-    # generateMdFiles
-    section " Generate Markdown - Book ${name} "
-    cd "$ARANGO_SOURCE_DOC_BOOKS"
-    #echo " - generating MD-Filedds"
-    python ${ARANGO_SOURCE}/Documentation/Scripts/generateMdFiles.py \
-           "${name}" \
-           "$ARANGO_BUILD_DOC_PPDIR" \
-           "$ARANGO_SOURCE/js/apps/system/_admin/aardvark/APP/api-docs.json" \
-           "${FILTER:-""}" || ferr "failed to generate md files"
-
-    test -d "$ARANGO_BUILD_DOC_BOOKS" || mkdir -p "$ARANGO_BUILD_DOC_BOOKS"
-
-    section " Checking Integrity - Book ${name}"
-    # run checks
-    pp_check_summary                "${name}" "$book_source" "$book_ppdir" "$book_out"
-    pp_check_leftover_docublocks    "${name}" "$book_source" "$book_ppdir" "$book_out"
-    pp_check_restheader_leftovers   "${name}" "$book_source" "$book_ppdir" "$book_out"
-    pp_check_two_links              "${name}" "$book_source" "$book_ppdir" "$book_out"
-    pp_check_directory_link         "${name}" "$book_source" "$book_ppdir" "$book_out"
-
-    # to fix
-    src_check_images_referenced    "${name}" "$book_source" "$book_ppdir" "$book_out"
-
-    section " Fill in Templates - Book ${name}"
-    # expand versions in files
-    say " - replace placeholders"
-    cd "$book_ppdir"
-    for file in book.json styles/header.js README.md; do
-        if [[ -f $file ]]; then
-            say "   - running sed on $file"
-            sed -e "s/VERSION_NUMBER/v${VERSION}/g" \
-                -e "s;/devel;/${RELEASE_DIRECTORY};" \
-                -e "s;@GSEARCH_ID@;${ALL_GSEARCH_ID[${name}]};" \
-                -e "s;@GCHANGE_FREQ@;${GCHANGE_FREQ};" \
-                -e "s;@GPRIORITY@;${GPRIORITY};" \
-                -e "s;@BROWSEABLE_VERSIONS@;${BROWSEABLE_VERSIONS};" \
-                \
-                -i "${file}" || ferr "failed to run sed to subsitute variables"
-        else
-            echo "there is no file: $file in $book_ppdir"
-        fi
-    done
-
-    section " Building Book - ${name} "
-    #copy gitbook modules form cache in build image
-    i="devel" #TODO get versiont
-
-    #TODO FIXME
-    cache="/root/gitbook_cache/$i/$name"
-    modules="$cache/node_modules"
-    say " - copy node modules"
-    cp -r "$modules" "$book_ppdir" || ferr "failed to copy node modules"
-
-    say " - run gitbook"
-    cd "$book_ppdir"
-
-    local cmd=( gitbook "${GITBOOK_ARGS[@]}" build "$book_ppdir" "$book_out" )
+run_gitbook() {
+    local cmd=( gitbook "${GITBOOK_ARGS[@]}" "$@" )
     echo "run ${cmd[@]}"
     if ! time "${cmd[@]}" ; then
         echo "## install log  ###########################################"
@@ -240,17 +126,148 @@ function build_book() {
         ls -lisah node_modules
         ferr "running gitbook failed"
     fi
+}
 
-    section " Clean Up - Book ${name} "
+function build_book() {
+    cd "$ARANGO_SOURCE_DOC_BOOKS" #TODO remove
+
+    local book_name="$1"
+    local book_src="$ARANGO_SOURCE_DOC_BOOKS/${book_name}"
+    local book_pre="$ARANGO_BUILD_DOC_PRE/${book_name}"
+    local book_out="$ARANGO_BUILD_DOC_OUT/${book_name}"
+
+    section "Generating book ${book_name}"
+    echo "book source:       $book_src"
+    echo "preprocessing dir: $book_pre"
+    echo "output dir:        $book_out"
+
+
+    mkdir -p "$book_pre"
+    mkdir -p "$book_out"
+
+    python $ARANGO_SOURCE/Documentation/Scripts/codeBlockReader.py || ferr "can not run codeBlockReader.py"
+
+    section " Pre Checks - Book ${book_name} "
+    source_check_bad_code_sections "${book_name}" "$book_src" "$book_pre" "$book_out"  #fix function
+    source_check_bad_headings      "${book_name}" "$book_src" "$book_pre" "$book_out"  #fix function
+
+
+    ## copy directroy structure of
+    ## arangodb/Documentation/Books/${book_name}
+    ## to ppdir
+    cd "$book_src" || ferr "could not enter book source dir: $book_src"
+    find . -type d -exec mkdir -p "$book_pre/{}" \;
+    tree "$book_pre"
+
+    section " Create Images - Book ${book_name} "
+    #create ditaa images
+    cd "$book_src"
+    local use_ditaa=false
+    if type ditaa; then
+        say " - generating ditaa images"
+        use_ditaa=true
+    else
+        say "- generating FAKE ditaa images - no ditaa installed"
+    fi
+
+    local file
+    while read file; do
+        local dest="$book_pre/${file//ditaa/png}"
+        # if dest dir is not available then the creation of the
+        # directory structures did most proably not work correctly
+        if $use_ditaa; then
+            ditaa "$file" "$dest" || ferr "ditaa for $file to $dest failed"
+        else
+            local fake="$ARANGO_SOURCE/js/node/node_modules/mocha/images/error.png"
+            cp "$fake" "$dest" || ferr "fake ditaa for $file to $dest failed"
+        fi
+    done < <(find . -name "*.ditaa")
+
+
+    section " Prepare Environment - Book ${book_name} "
+    # copy / link SUMMARY.md and FOOTER.html
+    say " - create SUMMARY.md"
+    [[ -L "$book_pre/SUMMARY.md" ]] || cp "$book_src/SUMMARY.md" "$book_pre" || ferr "failed to SUMMARY"
+    say " - create FOOTER.html"
+    [[ -f "$book_pre/FOOTER.html" ]] || ln -s "$book_src/FOOTER.html" "$book_pre" || ferr "failed FOOTER"
+
+    # copy styles
+    say " - copy styles"
+    cd "$book_pre"
+    rsync -rh "$book_src/styles" "$book_pre" || ferr "failed to rsync styles"
+
+    # copy book template
+    say " - copy book.json"
+    [[ -f "$book_pre/book.json" ]] || cp "${book_src}/book.json" "$book_pre"
+
+    # generateMdFiles
+    section " Generate Markdown - Book ${book_name} "
+    cd "$ARANGO_SOURCE_DOC_BOOKS"
+    #echo " - generating MD-Filedds"
+    python ${ARANGO_SOURCE}/Documentation/Scripts/generateMdFiles.py \
+           "${book_name}" \
+           "$ARANGO_BUILD_DOC_PRE" \
+           "$ARANGO_SOURCE/js/apps/system/_admin/aardvark/APP/api-docs.json" \
+           "${FILTER:-""}" || ferr "failed to generate md files"
+
+    test -d "$ARANGO_BUILD_DOC_OUT" || mkdir -p "$ARANGO_BUILD_DOC_OUT"
+
+    section " Checking Integrity - Book ${book_name}"
+    # run checks
+    pp_check_summary                "${book_name}" "$book_src" "$book_pre" "$book_out"
+    pp_check_leftover_docublocks    "${book_name}" "$book_src" "$book_pre" "$book_out"
+    pp_check_restheader_leftovers   "${book_name}" "$book_src" "$book_pre" "$book_out"
+    pp_check_two_links              "${book_name}" "$book_src" "$book_pre" "$book_out"
+    pp_check_directory_link         "${book_name}" "$book_src" "$book_pre" "$book_out"
+
+    # to fix
+    src_check_images_referenced    "${book_name}" "$book_src" "$book_pre" "$book_out"
+
+    section " Fill in Templates - Book ${book_name}"
+    # expand versions in files
+    say " - replace placeholders"
+    cd "$book_pre"
+    for file in book.json styles/header.js README.md; do
+        if [[ -f $file ]]; then
+            say "   - running sed on $file"
+            sed -e "s/VERSION_NUMBER/v${VERSION}/g" \
+                -e "s;/devel;/${RELEASE_DIRECTORY};" \
+                -e "s;@GSEARCH_ID@;${ALL_GSEARCH_ID[${book_name}]};" \
+                -e "s;@GCHANGE_FREQ@;${GCHANGE_FREQ};" \
+                -e "s;@GPRIORITY@;${GPRIORITY};" \
+                -e "s;@BROWSEABLE_VERSIONS@;${BROWSEABLE_VERSIONS};" \
+                \
+                -i "${file}" || ferr "failed to run sed to subsitute variables"
+        else
+            echo "there is no file: $file in $book_pre"
+        fi
+    done
+
+    section " Building Book - ${book_name} "
+    #copy gitbook modules form cache in build image
+    i="devel" #TODO get versiont
+
+    #TODO FIXME
+    cache="/root/gitbook_cache/$i/$book_name"
+    modules="$cache/node_modules"
+    say " - copy node modules"
+    cp -r "$modules" "$book_pre" || ferr "failed to copy node modules"
+
+    say " - run gitbook"
+    cd "$book_pre"
+
+    run_gitbook build "$book_pre" "$book_out"
+
+    section " Clean Up - Book ${book_name} "
     say " - delete FOOTER.html"
-    rm -f "$book_ppdir/FOOTER.html"
+    rm -f "$book_pre/FOOTER.html"
 
     # work around bug
     echo " - deleting markdown files in output (gitbook 3.x bug)"
     find "$book_out" -type f -name "*.md" -delete
 
-    book_check_post_build_markdown_leftovers "${name}" "$book_source" "$book_ppdir" "$book_out"
-    pp_check_html_link                       "${name}" "$book_source" "$book_ppdir" "$book_out"
+    out_markdown_leftovers "${book_name}" "$book_src" "$book_pre" "$book_out"
+    #pp_check_html_link     "${book_name}" "$book_src" "$book_pre" "$book_out"
 }
 
 
@@ -260,16 +277,16 @@ build_books() {
     local flushout=true
 
     for book in ${ALLBOOKS}; do
-        local book_source="$ARANGO_SOURCE_DOC_BOOKS/${book}"
-        local book_ppdir="$ARANGO_BUILD_DOC_PPDIR/${book}"
-        local book_out="$ARANGO_BUILD_DOC_BOOKS/${book}"
+        local book_src="$ARANGO_SOURCE_DOC_BOOKS/${book}"
+        local book_pre="$ARANGO_BUILD_DOC_PRE/${book}"
+        local book_out="$ARANGO_BUILD_DOC_OUT/${book}"
 
         if $flushout; then
             rm -fr "$book_out"
         fi
 
         if $flushpp; then
-            rm -fr "$book_ppdir"
+            rm -fr "$book_pre"
         fi
 
         section "build book $book"
@@ -278,22 +295,51 @@ build_books() {
     done
 
     section "cross book checks"
-    cross_check_docublocks ""
-    cross_check_dangling_anchors ""
+    # cross_check_docublocks #TODO FIXME
+    cross_check_dangling_anchorsd
     echo "##### Generating redirect index.html"; \
     echo '<html><head><meta http-equiv="refresh" content="0; url=Manual/"></head><body></body></html>' > books/index.html
 }
 
 main(){
-    show_config
-    cd "$ARANGO_SOURCE_DOC_BOOKS" # TODO remove
+    show_config "$@"
 
-    #rm -fr "$ARANGO_BUILD_DOC_BOOKS" || ferr "could not delete books output dir"
-    #rm -fr "$ARANGO_BUILD_DOC_PPDIR" || ferr "could not delete ppdir dir"
-    #mkdir -p "$ARANGO_BUILD_DOC_BOOKS" || ferr "could not create books output dir"
-    #mkdir -p "$ARANGO_BUILD_DOC_PPDIR" || ferr "could not create ppdir dir"
+    # parse args
+    keep_old=false
+    all_formats=false
+    for arg in "$@"; do
+        case $arg in
+            --keep-old)
+                keep_old=true
+            ;;
+            --all-formats)
+                all_formats=true
+            ;;
+            *)
+            ;;
+        esac
+    done
 
+    # keep or delete files from last build
+    if $keep_old; then
+        rm -fr "$ARANGO_BUILD_DOC_OUT" || ferr "could not delete books output dir"
+        rm -fr "$ARANGO_BUILD_DOC_PRE" || ferr "could not delete ppdir dir"
+        mkdir -p "$ARANGO_BUILD_DOC_OUT" || ferr "could not create books output dir"
+        mkdir -p "$ARANGO_BUILD_DOC_PRE" || ferr "could not create ppdir dir"
+    fi
+
+    #build html and run checks
     build_books
+
+    # build other formats
+    if $all_formats; then
+        for book_name in $ALLBOOKS; do
+            for format in $OTHER_MIME; do
+                local out="${ARANGO_BUILD_DOC}/ArangoDB_${book_name}_${newVersionNumber}.${format}"
+                run_gitbook "${GITBOOK_ARGS[@]}" "${format}" "$ARANGO_BUILD_DOC_PRE/$book_name" "${out}"
+            done
+        done
+    fi
 
     echo
     success "building documentation"
@@ -303,73 +349,26 @@ main "$@"
 
 exit $?
 
-
-function build-dist-books()
-{
-    if test -z "${OUTPUT_DIR}"; then
-        echo "please specify --outputDir"
-        exit 1
-    fi
-    rm -rf books ppbooks
-
-    WD=$(pwd)
-    build-books
-    mkdir -p "${OUTPUT_DIR}"
-    (
-        mv books "ArangoDB-${newVersionNumber}"
-        pwd
-        tar -czf "${OUTPUT_DIR}/ArangoDB-${newVersionNumber}.tar.gz" "ArangoDB-${newVersionNumber}"
-        mv "ArangoDB-${newVersionNumber}" books
-    )
-    for book in $ALLBOOKS; do
-        cd "$WD"; build-book-dist "${book}"
-    done
-}
-
-#VERB=$1
-#shift
-#
-#if test -z "$VERB"; then
-#    VERB=build-books
-#fi
-
-#while [ $# -gt 0 ];  do
-#    case "$1" in
-#        --name)
-#            shift
-#            NAME=$1
-#            shift
-#            ;;
-#        --filter)
-#            shift
-#            FILTER=$1
-#            export FILTER
-#            shift
-#            ;;
-#        *)
-#            show_help
-#            exit 1
-#            ;;
-#
-#    esac
-#done
-
-
-# case "$VERB" in
-#     build-books)
-#         ;;
-#   #  check-book)
-#   #      check-summary "${NAME}"
-#   #      book-check-leftover-docublocks "${NAME}"
-#   #      book-check-restheader-leftovers "${NAME}"
-#   #      ppbook-check-two-links "${NAME}"
-#   #      ppbook-check-directory-link "${NAME}"
-#   #      book-check-images-referenced "${NAME}"
-#   #      book-check-markdown-leftovers "${NAME}"
-#   #      check-dangling-anchors "${NAME}" "some of the above errors may be because of referenced books weren't rebuilt."
-#   #      ;;
-#     *)
+# # TODO - add this
+# function build-dist-books()
+# {
+#     if test -z "${OUTPUT_DIR}"; then
+#         echo "please specify --outputDir"
 #         exit 1
-#         ;;
-# esac
-
+#     fi
+#     rm -rf books ppbooks
+#
+#     WD=$(pwd)
+#     build-books
+#     mkdir -p "${OUTPUT_DIR}"
+#     (
+#         mv books "ArangoDB-${newVersionNumber}"
+#         pwd
+#         tar -czf "${OUTPUT_DIR}/ArangoDB-${newVersionNumber}.tar.gz" "ArangoDB-${newVersionNumber}"
+#         mv "ArangoDB-${newVersionNumber}" books
+#     )
+#     for book in $ALLBOOKS; do
+#         cd "$WD"; build-book-dist "${book}"
+#     done
+# }
+#

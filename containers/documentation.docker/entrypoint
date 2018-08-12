@@ -6,9 +6,23 @@ nvm use stable
 
 set -u
 
-#TODO add options
 skip_examples=false
 skip_swagger=false
+for arg in "$@"; do
+    case "$arg" in
+        --skip-examples)
+            skip_examples=true
+        ;;
+        --skip-swagger)
+            skip_swagger=true
+        ;;
+        *)
+        ;;
+    esac
+done
+
+
+#TODO add options
 
 type gitbook &>/dev/null || { echo "gitbook not installed"; exit; }
 type ditaa &>/dev/null || { echo "dittaa not installed"; exit; }
@@ -24,13 +38,13 @@ export ARANGO_SOURCE_DOC_BOOKS="$ARANGO_SOURCE_DOC/Books"
 
 # path to documentation build
 export ARANGO_BUILD_DOC="$ARANGO_WORK/build-documentation"
-export ARANGO_BUILD_DOC_PPDIR="$ARANGO_BUILD_DOC/ppdir"
-export ARANGO_BUILD_DOC_BOOKS="$ARANGO_BUILD_DOC/books"
+export ARANGO_BUILD_DOC_PRE="$ARANGO_BUILD_DOC/pre_processec"
+export ARANGO_BUILD_DOC_OUT="$ARANGO_BUILD_DOC/book_html"
 
-# THIS MUST GO
-export ARANGO_BUILD_DOC="$ARANGO_SOURCE_DOC_BOOKS" ## TODO FIXME - we can not freely select the output dir
-export ARANGO_BUILD_DOC_PPDIR="$ARANGO_BUILD_DOC/ppbooks"
-export ARANGO_BUILD_DOC_BOOKS="$ARANGO_BUILD_DOC/books"
+# # THIS MUST GO
+# export ARANGO_BUILD_DOC="$ARANGO_SOURCE_DOC_BOOKS" ## TODO FIXME - we can not freely select the output dir
+# export ARANGO_BUILD_DOC_PRE="$ARANGO_BUILD_DOC/ppbooks"
+# export ARANGO_BUILD_DOC_OUT="$ARANGO_BUILD_DOC/books"
 
 cd "$ARANGO_SOURCE" || { echo "could not change in arangodb source directroy"; exit 1; }
 echo $(pwd)
@@ -54,4 +68,4 @@ fi
 cd "$ARANGO_SOURCE_DOC_BOOKS"
 # get gitbook version
 echo "calling build_documenation"
-"$ARANGO_OSKAR/containers/documentation.docker/build_documentation"
+"$ARANGO_OSKAR/containers/documentation.docker/build_documentation" "$@"
