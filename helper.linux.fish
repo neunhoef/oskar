@@ -9,7 +9,7 @@ set -gx CENTOSPACKAGINGIMAGE neunhoef/centospackagearangodb-$ARCH
 
 function buildUbuntuBuildImage
   cd $WORKDIR
-  cp -a scripts/{makeArangoDB,buildArangoDB,checkoutArangoDB,checkoutEnterprise,clearWorkDir,downloadStarter,downloadSyncer,runTests,switchBranches,recursiveChown}.fish containers/buildUbuntu.docker/scripts
+  cp -a scripts/{makeArangoDB,buildArangoDB,checkoutArangoDB,checkoutEnterprise,clearWorkDir,downloadStarter,downloadSyncer,runTests,runFullTests,switchBranches,recursiveChown}.fish containers/buildUbuntu.docker/scripts
   cd $WORKDIR/containers/buildUbuntu.docker
   docker build -t $UBUNTUBUILDIMAGE .
   rm -f $WORKDIR/containers/buildUbuntu.docker/scripts/*.fish
