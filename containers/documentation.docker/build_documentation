@@ -1,6 +1,12 @@
 #!/bin/bash
-# Author - Jan Christoph Uhde
-# Based on scripts by Willi and Simran
+#
+# Author - Jan Christoph Uhde - Copyright ArangoDB 2018
+#
+# Based on scripts by:
+#   Wilfried Goesgens
+#   Simran Brucherseifer
+#
+
 
 # TODO
 #
@@ -12,6 +18,7 @@
 #
 # - test other formats
 #
+
 
 # get script dir
 script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
@@ -105,12 +112,13 @@ fi
 GITBOOK_ARGS=(--gitbook "${INSTALLED_GITBOOK_VERSION}")
 #### GLOBAL VARS THAT SHOULD NOT BE MODIFIED BY USERS - END ########################################################
 
-# pull in build lib
+# pull in build lib - this lib contains most of checks
 . /$script_dir/buildLib || ferr "failed to source buildLib"
-# builds a single book
 
 
-
+################################################################################
+### HELPER FUNCTIONS ###########################################################
+################################################################################
 
 run_gitbook() {
     local cmd=( gitbook "${GITBOOK_ARGS[@]}" "$@" )
@@ -163,6 +171,10 @@ run_ditaa() {
         fi
     done < <(find . -name "*.ditaa")
 }
+
+################################################################################
+### TARGET FUNCTIONS ###########################################################
+################################################################################
 
 function build_book() {
     local book_name="$1"
@@ -287,7 +299,7 @@ function build_book() {
     find "$book_out" -type f -name "*.md" -delete
 
     out_markdown_leftovers "${book_name}" "$book_src" "$book_pre" "$book_out" || ferr "fail"
-    #pp_check_html_link     "${book_name}" "$book_src" "$book_pre" "$book_out"
+    pp_check_html_link     "${book_name}" "$book_src" "$book_pre" "$book_out" || ferr "fail"
 }
 
 
@@ -323,6 +335,12 @@ build_books() {
         > "$ARANGO_BUILD_DOC_OUT/index.html"
 }
 
+################################################################################
+### MAIN FUNCTIONS #############################################################
+################################################################################
+
+
+# main does parsing and calls functions for targets
 main(){
     show_config "$@"
 
@@ -342,8 +360,7 @@ main(){
                 section " cross book checks "
                 # cross_check_docublocks #TODO FIXME
                 cross_check_dangling_anchors
-                success "cross checks"
-                exit
+                success "executing cross-checks" && exit
             ;;
             --check*)
                 echo "==============================================================================="
@@ -355,6 +372,8 @@ main(){
                     local book_src="$ARANGO_SOURCE_DOC_BOOKS/${book_name}"
                     local book_pre="$ARANGO_BUILD_DOC_PRE/${book_name}"
                     local book_out="$ARANGO_BUILD_DOC_OUT/${book_name}"
+
+                    section " Build Book - ${book_name} " | sed 's/-/=/g' | sed 's/ = / - /'
 
                     section " Pre Checks - Book ${book_name} "
                     source_check_bad_code_sections "${book_name}" "$book_src" "$book_pre" "$book_out" || ferr "fail"
@@ -369,14 +388,14 @@ main(){
                     src_check_images_referenced   "${book_name}" "$book_src" "$book_pre" "$book_out" || ferr "fail"
 
                     out_markdown_leftovers        "${book_name}" "$book_src" "$book_pre" "$book_out" || ferr "fail"
-                    #pp_check_html_link     "${book_name}" "$book_src" "$book_pre" "$book_out"
+                    pp_check_html_link            "${book_name}" "$book_src" "$book_pre" "$book_out" || ferr "fail"
                 done
 
                 echo "==============================================================================="
-                section " cross book checks "
+                section " check book checks "
                 # cross_check_docublocks #TODO FIXME
                 cross_check_dangling_anchors
-                success "cross checks"
+                success "executing checks" && exit
                 exit
             ;;
             *)
@@ -410,8 +429,10 @@ main(){
     echo
 }
 main "$@"
-
 exit $?
+
+
+
 
 # # TODO - add this
 # function build-dist-books()
