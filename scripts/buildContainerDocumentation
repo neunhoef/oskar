@@ -3,6 +3,29 @@ script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 . "$script_dir/lib/oskar.bash"
 
 containerdir="$script_dir/../containers/documentation.docker"
-cp "$script_dir/lib/oskar.bash" "$containerdir" && \
-docker build -t "$arango_doc_container_default" --build-arg CACHE_DATE=$(date --iso-8601=seconds) "$containerdir"
-rm -fr "$containerdir/oskar.bash"
+
+## parse args
+force_update=false
+for arg in "$@"; do
+    case $arg in
+        --force-update)
+            force_update=true
+        ;;
+        *)
+        ;;
+    esac
+done
+
+## build command
+cmd=( "docker" "build"
+      "-t" "$arango_doc_container_default"
+    )
+if $force_update; then
+    cmd+=( "--build-arg" "FORCE_UPDATE=$(date --iso-8601=seconds)" )
+fi
+cmd+=( "$containerdir" )
+
+## execute command
+echo "calling ${cmd[@]}"
+sleep 1
+${cmd[@]}

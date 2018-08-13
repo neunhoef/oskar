@@ -8,6 +8,8 @@
 # - execute container with same permissions as calling user not root
 # - find out branch name
 # - add http.tar.gz package creation
+#
+#
 # - test other formats
 #
 
@@ -60,8 +62,6 @@ else
     say(){ echo "$@"; }
     success(){ echo "Success $@"; }
 fi
-
-success(){ echo "Success: $@"; }
 
 # define global functions
 debug(){ $ARANGO_DEBUG && say "#-# DEBUG #-# " "$@" && return 0; return 1; }
@@ -127,6 +127,8 @@ run_gitbook() {
         cat book.json
         echo "## modules ####################################################################"
         ls -lisah node_modules
+        echo "###############################################################################"
+        echo "try to run ./scripts/buildContainerDocumentation --force-update if modules are missing"
         ferr "running gitbook failed"
         echo "==============================================================================="
     fi
