@@ -304,12 +304,13 @@ function build_book() {
 
 
 build_books() {
+    local books="$1"
     echo "================================================================================"
-    section " Build All Books " | sed 's/-/=/g'
+    section " Build Books: $books " | sed 's/-/=/g'
     local flushpp=true
     local flushout=true
 
-    for book in ${ALLBOOKS}; do
+    for book in $books; do
         local book_src="$ARANGO_SOURCE_DOC_BOOKS/${book}"
         local book_pre="$ARANGO_BUILD_DOC_PRE/${book}"
         local book_out="$ARANGO_BUILD_DOC_OUT/${book}"
@@ -326,10 +327,13 @@ build_books() {
 
     done
 
-    echo "==============================================================================="
-    section " cross book checks "
-    # cross_check_docublocks #TODO FIXME
-    cross_check_dangling_anchors
+    if [[ "$books" == "$ALLBOOKS" ]]; then
+        echo "==============================================================================="
+        section " cross book checks "
+        # cross_check_docublocks #TODO FIXME
+        cross_check_dangling_anchors
+    fi
+
     echo "##### Generating redirect index.html"; \
     echo '<html><head><meta http-equiv="refresh" content="0; url=Manual/"></head><body></body></html>' \
         > "$ARANGO_BUILD_DOC_OUT/index.html"
@@ -345,15 +349,22 @@ main(){
     show_config "$@"
 
     # parse args
-    keep_old=false
-    all_formats=false
+    local keep_old=false
+    local all_formats=false
+    local books="$ALLBOOKS"
     for arg in "$@"; do
         case $arg in
             --keep-old)
                 keep_old=true
+                shift
             ;;
             --all-formats)
                 all_formats=true
+                shift
+            ;;
+            --books)
+                books="$2"
+                shift 2
             ;;
             --cross-check*)
                 echo "==============================================================================="
@@ -367,7 +378,7 @@ main(){
                 section " cross book checks "
 
                 local book
-                for book in $ALLBOOKS; do
+                for book in $books; do
                     local book_name="$book"
                     local book_src="$ARANGO_SOURCE_DOC_BOOKS/${book_name}"
                     local book_pre="$ARANGO_BUILD_DOC_PRE/${book_name}"
@@ -399,6 +410,7 @@ main(){
                 exit
             ;;
             *)
+                shift
             ;;
         esac
     done
@@ -412,7 +424,7 @@ main(){
     fi
 
     #build html and run checks
-    build_books "$@" || ferr "fail"
+    build_books "$books" || ferr "fail"
 
     # build other formats
     if $all_formats; then
