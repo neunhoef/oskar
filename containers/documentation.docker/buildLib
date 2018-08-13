@@ -164,14 +164,13 @@ pp_check_two_links() {
     local book_out="$4"
 
     #in ppdir
-    local ERRORS=()
+    local errors=()
     echo "##### 6 checking for two links in a single line in ${book_name}"
     while IFS= read -r ppfile; do
-        local search=$(grep -e '](.*](' "${ppfile}")
-        (( $? > 1 )) && ferr "fail in check two links"
-        local ERR="$(echo "$search" | grep -v '|' )"
-        if [[ -n "${ERR}" ]]; then
-            ERRORS+=( "\n${ppfile}: \n ${ERR}" )
+        local search=$(grep_ignore_empty -e '](.*](' "${ppfile}")
+        local err="$(echo "$search" | grep -v '|' )"
+        if [[ -n "${err}" ]]; then
+            errors+=( "\n${ppfile}: \n ${err}" )
         fi
     done < <(find "$book_pre" \
                   -path "$book_pre/node_modules*" \
@@ -180,15 +179,14 @@ pp_check_two_links() {
                   -print
             ) || ferr "failed checking for two links"
 
-    if [[ "${ERRORS[@]}" ]]; then
+    if [[ "${errors[@]}" ]]; then
         echo "found these files with two links in one line: "
-        echo "${ERRORS[@]}"
-        exit 1;
+        echo "${errors[@]}"
+        ferr "found these files with two links in one line - see above "
     fi
 }
 
-function pp_check_directory_link()
-{
+pp_check_directory_link() { #OK
     # TODO description
     local book_name="$1"
     local book_src="$2"
@@ -215,7 +213,7 @@ function pp_check_directory_link()
     fi
 }
 
-src_check_images_referenced() { #DONE
+src_check_images_referenced() { #OK
     # check if all images that are in source are used.
     local book_name="$1"
     local book_src="$2"
@@ -236,7 +234,7 @@ src_check_images_referenced() { #DONE
 ################################################################################
 ### POST CHECKS ################################################################
 
-out_markdown_leftovers() {
+out_markdown_leftovers() { #TODO REVIEW
     # TODO description
     local book_name="$1"
     local book_src="$2"
@@ -396,7 +394,6 @@ cross_check_dangling_anchors() {
         fi
     done
     ## why do we create anchorlist above, when we delete it in the next lines?
-    debug "anchors step four"
 
     echo "##### cross checking anchors" # OK
     local debug_anchors=false

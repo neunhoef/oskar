@@ -404,8 +404,8 @@ main(){
 
                 echo "==============================================================================="
                 section " check book checks "
-                # cross_check_docublocks #TODO FIXME
                 cross_check_dangling_anchors
+                cross_check_docublocks #TODO FIXME - enable for build
                 success "executing checks" && exit
                 exit
             ;;

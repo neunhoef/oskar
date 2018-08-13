@@ -47,13 +47,30 @@ ls -lisah ./build/bin &>/dev/null || echo "unable to access source/bild/bin"
 if $skip_examples; then
   echo "skip generate examples"
 else
+  echo "run generate examples"
   ./utils/generateExamples.sh || { echo "failed to generate examples!"; exit 1; }
 fi
 
 if $skip_swagger; then
   echo "skip generate swagger"
 else
-  ./utils/generateSwagger.sh || { echo "failed to generate swagger"; exit 1; }
+  echo "generate swagger"
+
+  #TODO ./utils/generateSwagger.sh - must be deleted
+  cmd=( 'python'
+        "$PWD/utils/generateSwagger.py"
+        "$PWD"
+        "$PWD/js/apps/system/_admin/aardvark/APP/api-docs"
+        'api-docs'
+        "$PWD/Documentation/DocuBlocks/Rest"
+      )
+  echo "run ${cmd[@]}"
+  "${cmd[@]}" > $PWD/js/apps/system/_admin/aardvark/APP/api-docs.json \
+    || { echo "failed to generate swagger"; exit 1; }
+
+  ls -lisah js/apps/system/_admin/aardvark/APP/api-docs.json
+
+  #./utils/generateSwagger.sh || { echo "failed to generate swagger"; exit 1; }
 fi
 
 echo "calling build_documenation"
