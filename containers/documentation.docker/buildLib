@@ -298,26 +298,22 @@ out_markdown_leftovers() {
 }
 
 
-function cross_check_dangling_anchors()
-{
-    ##TODO FIXME
-    # TODO description
+cross_check_dangling_anchors() {
     rm -rf /tmp/tags/
-    echo "##### checking for dangling anchors"
-    find "$ARANGO_BUILD_DOC_OUT" -name '*.html' | while IFS= read -r htmlf; do
+    echo "##### checking for dangling anchors" #TODO REVIEW
+    while IFS= read -r htmlf; do
         fn=$(basename "${htmlf}")
         echo $fn
         dir=$(sed "s;/$fn;;" <<< "$htmlf")
         mkdir -p "/tmp/tags/${dir}"
         grep '<h. ' < "${htmlf}" | \
             sed -e 's;.*id=";;' -e 's;".*;;' > "/tmp/tags/${dir}/${fn}"
-    done
-
+    done < <(find "$ARANGO_BUILD_DOC_OUT" -name '*.html')
     debug "one"
 
     fail=0
     rm -f /tmp/failduplicatetags.txt
-    find /tmp/tags -type f | while IFS= read -r htmlf; do
+    while IFS= read -r htmlf; do
         sort "${htmlf}" |grep -v ^$ > /tmp/sorted.txt
         sort -u "${htmlf}" |grep -v ^$ > /tmp/sortedunique.txt
         if test "$(comm -3 /tmp/sorted.txt /tmp/sortedunique.txt|wc -l)" -ne 0; then
@@ -325,7 +321,7 @@ function cross_check_dangling_anchors()
             comm -3 /tmp/sorted.txt /tmp/sortedunique.txt
             touch /tmp/failduplicatetags.txt
         fi
-    done
+    done < <(find /tmp/tags -type f)
     debug "two"
 
     rm -f /tmp/sorted.txt /tmp/sortedunique.txt
@@ -338,7 +334,7 @@ function cross_check_dangling_anchors()
     rm -f /tmp/anchorlist.txt
     debug "three"
 
-    echo "##### fetching anchors from generated http files"
+    echo "##### fetching anchors from generated http files" # TODO REVIEW
     for file in $(find "$ARANGO_BUILD_DOC_OUT" -name \*.html); do
         # - strip of the menu
         # - then the page tail.
@@ -360,52 +356,57 @@ function cross_check_dangling_anchors()
     ## why do we create anchorlist above, when we delete it in the next lines?
     debug "four"
 
-    echo "##### cross checking anchors"
-    NO=0
-    echo "${NO}" > /tmp/anchorlistcount.txt
-    # shellcheck disable=SC2002
-    cat /tmp/anchorlist.txt | while IFS= read -r i; do
-        ANCHOR=$(echo "$i" | cut '-d,' -f 3)
-        FN=$(echo "$i" | cut '-d,' -f 2)
-        SFN=$(echo "$i" | cut '-d,' -f 1)
+    echo "##### cross checking anchors" # OK
+    local debug_anchors=true
+    local dangling_anchor_count=0
 
-        if test -z "$FN"; then
-            FN="$SFN"
+    # loop vars that
+    local anchor
+    local relative_filename
+    local full_filename
+
+    while IFS=',' read -r full_filename relative_filename anchor; do
+        $debug_anchors && debug "anchor $anchor"
+        $debug_anchors && debug "relative_filename $relative_filename"
+        $debug_anchors && debug "full_filename $full_filename"
+
+        local check_filename
+        if [[ -z "$relative_filename" ]]; then
+            $debug_anchors && debug "using fullname"
+            check_filename="$full_filename"
         else
-            SFNP=$(sed 's;/[a-zA-Z0-9.-]*.html;;' <<< "$SFN")
-            FN="${SFNP}/${FN}"
+            $debug_anchors && debug "using modified fullname"
+            check_filename="${full_filename%/*html}/${relative_filename}"
         fi
-        if test -d "$FN"; then
-            FN="${FN}index.html"
+
+        $debug_anchors && debug $check_filename
+
+        if [[ -d "$check_filename" ]]; then
+            check_filename="${check_filename}/index.html"
         fi
-        if test ! -f "/tmp/tags/${FN}"; then
-            echo ""
-            echo "File referenced by ${i} doesn't exist."
-            NO=$((NO + 1))
-            echo ""
+
+        if  ! [[ -f "/tmp/tags/${check_filename}" ]]; then
+            err "File referenced by $anchor doesn't exist."
+            debug "file missing" && exit 1
+            (( dangling_anchor_count++ ))
         else
-            if test -n "$ANCHOR"; then
-                if grep -q "^$ANCHOR$" "/tmp/tags/${FN}"; then
-                    true
-                else
-                    echo ""
-                    echo "Anchor not found in $i"
-                    NO=$((NO + 1))
+            if [[ -n "$anchor" ]]; then
+                if ! grep -q "^$anchor$" "/tmp/tags/${check_filename}"; then
+                    err "Anchor $anchor not found in $full_filename $relative_filename"
+                    dangling_anchor_count=$((dangling_anchor_count + 1))
                     echo "available anchors in that file:"
-                    cat "/tmp/tags/${FN}" |sort
-                    echo ""
+                    sort < "/tmp/tags/${check_filename}"
                 fi
             fi
         fi
-        echo "${NO}" > /tmp/anchorlistcount.txt
-    done
-    NO="$(cat /tmp/anchorlistcount.txt)"
-    if test "${NO}" -gt 0; then
-        echo "${NO} Dangling anchors found!"
-        exit 1
+    done < /tmp/anchorlist.txt || ferr "failed in big loop"
+
+    if (( dangling_anchor_count > 0 )); then
+        ferr "${dangling_anchor_count} Dangling anchors found!"
     fi
+
     rm -rf /tmp/anchorlist.txt /tmp/tags
-    debug "five"
+    $debug_anchors && debug "five"
 }
 
 #************************************************************
