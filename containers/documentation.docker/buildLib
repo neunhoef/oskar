@@ -1,5 +1,6 @@
 #!/bin/bash
 
+### HELPER ####################################################################
 grep_ignore_empty(){
     grep "$@"
     local rv=$?
@@ -10,6 +11,47 @@ grep_ignore_empty(){
 }
 # make it available for sub-shells
 export -f grep_ignore_empty
+
+show_config(){
+    echo "  build lib sourced"
+    echo "  passed arguments: '$@'"
+    echo
+    section "ArangoDB documentation build configuration"
+    echo "directories:"
+    echo "  script dir:  $script_dir"
+    echo "  work:         $ARANGO_WORK"
+    echo "  source:       $ARANGO_SOURCE"
+    echo "  books:        $ARANGO_SOURCE_DOC_BOOKS"
+    echo "  build:        $ARANGO_BUILD_DOC"
+    echo "  build ppdir:  $ARANGO_BUILD_DOC_PRE"
+    echo "  build books:  $ARANGO_BUILD_DOC_OUT"
+    echo
+    echo "versions:"
+    echo "  newVersionNumber: $newVersionNumber - from : arangodb/VERSION"
+    echo "  VERSION: $VERSION"
+    echo "  BROWSEABLE_VERSIONS: $BROWSEABLE_VERSIONS"
+    echo "  INSTALLED_GITBOOK_VERSION: $INSTALLED_GITBOOK_VERSION"
+    echo "  RELEASE_DIRECTORY: $RELEASE_DIRECTORY"
+    echo
+    echo "google:"
+    echo "  GCHANGE_FREQ: $GCHANGE_FREQ"
+    echo "  GPRIORITY: $GPRIORITY"
+    echo "  ALL_GSEARCH_ID:"
+    for id in  "${ALL_GSEARCH_ID[@]}"; do
+        echo "    $id"
+    done
+    echo
+
+    sleep 2
+}
+
+################################################################################
+### CHECKS #####################################################################
+################################################################################
+
+
+################################################################################
+### SOURCE CHECKS ##############################################################
 
 source_check_bad_code_sections() {
     # checks for ``` followd by a blank
@@ -26,7 +68,7 @@ source_check_bad_code_sections() {
     fi
 }
 
-source_check_bad_headings() {
+source_check_bad_headings() { #DONE
     # TODO description
     local book_name="$1"
     local book_src="$2"
@@ -41,17 +83,18 @@ source_check_bad_headings() {
     fi
 }
 
-pp_check_summary() {
+pp_check_summary() { #DONE
+    echo "##### 3 check if all md files are included in the SUMMARY.md"
+
     # check if all md files are included in the SUMMARY.md in the books source
     local book_name="$1"
     local book_src="$2"
     local book_pre="$3"
     local book_out="$4"
 
-    # in pp
     find "$book_pre" -name '*.md' | \
         sed -e "s;$book_pre/;;" | \
-        grep -vf SummaryBlacklist.txt | \
+        grep -vf "$ARANGO_SOURCE_DOC_BOOKS/SummaryBlacklist.txt" | \
         grep -v gitbook-plugin | \
         grep -v node_modules/ | \
         sort > /tmp/is_md.txt || ferr "is_md.txt generation failed"
@@ -80,10 +123,9 @@ pp_check_leftover_docublocks() {
 
     #in ppdir
     echo "##### 4 checking for left over docublocks in ${book_name}"
-    ERRORS="$(grep -rl "startDocuBlock" --include "*.md" "$book_pre")"
-    (( $? > 1 )) && ferr "Failed running chek for leftover DocuBlocks"
+    ERRORS="$(grep_ignore_empty -rl "startDocuBlock" --include "*.md" "$book_pre")" || ferr "Failed running chek for leftover DocuBlocks"
     if [[ -n "${ERRORS}" ]]; then
-        echo "startDocuBlock markers still found in generated output files:"
+        err "startDocuBlock markers still found in generated output files:"
         echo "${ERRORS}" | sed -e "s/^/- /g"
         exit 1
     fi
@@ -153,7 +195,6 @@ function pp_check_directory_link()
     local book_pre="$3"
     local book_out="$4"
 
-
     #in ppdir
     echo "##### 7 checking for invalid md links in ${book_name}"
     local ERRORS=$( grep -r -E '\[.*\]\(.*\)' "$book_pre" | \
@@ -168,34 +209,32 @@ function pp_check_directory_link()
 
 
     if [[ -n "$ERRORS" ]]; then
-        echo "Found directory links! use ../<directory>/README.md instead!"
+        err "Found directory links! use ../<directory>/README.md instead!"
         echo "${ERRORS}"
-        exit 1
+        ferr "Found directory links! use ../<directory>/README.md instead!"
     fi
 }
 
-function src_check_images_referenced()
-{
-    # TODO description
+src_check_images_referenced() { #DONE
+    # check if all images that are in source are used.
     local book_name="$1"
     local book_src="$2"
     local book_pre="$3"
     local book_out="$4"
 
     echo "##### 8 checking for unused image files ${book_name}"
-    local found=false
+    local error_occured=0
     while IFS= read -r image; do
-        baseimage=$(basename "$image")
-        if ! grep -Rq "${baseimage}" "${book_name}"; then
-            ! $found && { echo "the following images are not referenced by any page: " ; found=true; }
-            printf "\n${image}"
+        if ! grep -Rq "${image##*/}" "${book_src}"; then
+            (( error_occured == 0 )) && { err "the following images are not referenced by any page: " ; error_occured=1; }
+            echo "${image}"
         fi
-    done < <(find "${book_name}" -name '*.png')
-    $found && exit 1;
-    return 0
+    done < <(find "${book_src}" -name '*.png') || ferr "fail"
+    return $error_occured
 }
 
-# checks we do not reach yet
+################################################################################
+### POST CHECKS ################################################################
 
 pp_check_html_link() {
     local book_name="$1"
@@ -237,7 +276,7 @@ out_markdown_leftovers() {
 
     local ERRORS
 
-    echo "##### checking for remaining markdown snippets in the HTML output of ${book_name} in $book_out"
+    echo "##### 9 checking for remaining markdown snippets in the HTML in ${book_name} "
 
     ERRORS=$(find "$book_out" -name '*.html' -exec grep -- '^##' {} \; -print) || ferr "markdown leftovers 1"
     if [[ -n "${ERRORS}" ]]; then
@@ -297,44 +336,48 @@ out_markdown_leftovers() {
     fi
 }
 
+################################################################################
+### CROSS CHECKS ###############################################################
 
 cross_check_dangling_anchors() {
     rm -rf /tmp/tags/
-    echo "##### checking for dangling anchors" #TODO REVIEW
-    while IFS= read -r htmlf; do
-        fn=$(basename "${htmlf}")
-        echo $fn
-        dir=$(sed "s;/$fn;;" <<< "$htmlf")
-        mkdir -p "/tmp/tags/${dir}"
-        grep '<h. ' < "${htmlf}" | \
-            sed -e 's;.*id=";;' -e 's;".*;;' > "/tmp/tags/${dir}/${fn}"
-    done < <(find "$ARANGO_BUILD_DOC_OUT" -name '*.html')
-    debug "one"
 
-    fail=0
-    rm -f /tmp/failduplicatetags.txt
+    echo "##### create tag structure" #OK
+    # go through html files
+    # find id="tags"
+    # write list of tags ot /tmp/tags/html_file_dir/html_flile_name_without_ext
+    local html_file_full
+    while IFS= read -r html_file_full; do
+        local file_name="${html_file_full##*/}"
+        local dir="${html_file_full%/*}"
+        mkdir -p "/tmp/tags/${dir}"
+        grep_ignore_empty '<h. ' "${html_file_full}" | \
+            sed -e 's;.*id=";;' -e 's;".*;;' > "/tmp/tags/${dir}/${file_name}" \
+            || ferr "failed creating tag structure"
+    done < <(find "$ARANGO_BUILD_DOC_OUT" -name '*.html')
+
+
+    echo "##### check if tags (files in /tmp/tags) are unique" #OK
+    local error_occured=false
     while IFS= read -r htmlf; do
-        sort "${htmlf}" |grep -v ^$ > /tmp/sorted.txt
-        sort -u "${htmlf}" |grep -v ^$ > /tmp/sortedunique.txt
-        if test "$(comm -3 /tmp/sorted.txt /tmp/sortedunique.txt|wc -l)" -ne 0; then
+        local errors=$( comm -3  <(sort    "${htmlf}" | grep -v ^$ ) \
+                                 <(sort -u "${htmlf}" | grep -v ^$ )
+                      ) || ferr "compare - unique tags failed"
+
+        if [[ -n "$errors" ]]; then
             echo "in ${htmlf}: "
-            comm -3 /tmp/sorted.txt /tmp/sortedunique.txt
-            touch /tmp/failduplicatetags.txt
+            echo "$errors"
+            error_occured=true
         fi
     done < <(find /tmp/tags -type f)
-    debug "two"
 
-    rm -f /tmp/sorted.txt /tmp/sortedunique.txt
-    if test -f /tmp/failduplicatetags.txt; then
-        echo "duplicate anchors detected - see above"
-        rm -f /tmp/failduplicatetags.txt
-        exit 1
+    if $error_occured; then
+        ferr "duplicate anchors detected - see above"
     fi
 
-    rm -f /tmp/anchorlist.txt
-    debug "three"
 
     echo "##### fetching anchors from generated http files" # TODO REVIEW
+    rm -f /tmp/anchorlist.txt
     for file in $(find "$ARANGO_BUILD_DOC_OUT" -name \*.html); do
         # - strip of the menu
         # - then the page tail.
@@ -354,10 +397,10 @@ cross_check_dangling_anchors() {
         fi
     done
     ## why do we create anchorlist above, when we delete it in the next lines?
-    debug "four"
+    debug "anchors step four"
 
     echo "##### cross checking anchors" # OK
-    local debug_anchors=true
+    local debug_anchors=false
     local dangling_anchor_count=0
 
     # loop vars that
@@ -406,7 +449,6 @@ cross_check_dangling_anchors() {
     fi
 
     rm -rf /tmp/anchorlist.txt /tmp/tags
-    $debug_anchors && debug "five"
 }
 
 #************************************************************
@@ -420,7 +462,7 @@ function cross_check_docublocks() {
     #TODO - FIXME
 
     cd "$ARANGO_BUILD_DOC_OUT"
-    pwd
+    debug && pwd
 
     grep -R '@startDocuBlock' --include "*.h" --include "*.cpp" --include "*.js" --include "*.md" . |\
         grep -v '@startDocuBlockInline' |\
@@ -431,9 +473,7 @@ function cross_check_docublocks() {
         grep -v '.*~:.*' |\
         grep -v '.*#.*:.*' \
              > /tmp/rawindoc.txt || err "failed search for startDocuBlock - with $?"
-    ###
-    echo "in rawdoc"
-    cat /tmp/rawindoc.txt | wc -l
+    debug "lines in raw doc $(/tmp/rawindoc.txt | wc -l)"
 
 
 
@@ -447,8 +487,7 @@ function cross_check_docublocks() {
              >> /tmp/rawindoc.txt || err "failed to search for startDocuBlockInline - with $?"
     sed  -e "s;\r$;;" -e "s;.*ck ;;" -e "s;.*ne ;;" < /tmp/rawindoc.txt | sort -u > /tmp/indoc.txt
     ###
-    echo "in doc"
-    cat /tmp/rawindoc.txt | wc -l
+    echo "lines in doc $(cat /tmp/indoc.txt | wc -l)"
 
 
 
@@ -463,8 +502,7 @@ function cross_check_docublocks() {
         grep -v '.*#.*:.*' \
              >> /tmp/rawinprog.txt || err "failed to search for startDocuBlock in source - with $?"
     ###
-    echo "in prog"
-    cat /tmp/rawinprog.txt | wc -l
+    debug "lines in rawprog $(cat /tmp/rawinprog.txt | wc -l)"
 
     # These files are converted to docublocks on the fly and only live in memory.
     for file in "$ARANGO_SOURCE_DOC/Examples/"*.json ; do
@@ -500,38 +538,5 @@ function cross_check_docublocks() {
         fi
         ferr "Not all blocks were found on both sides:"
     fi
-}
-
-show_config(){
-    echo "  build lib sourced"
-    echo "  passed arguments: '$@'"
-    echo
-    section "ArangoDB documentation build configuration"
-    echo "directories:"
-    echo "  script dir:  $script_dir"
-    echo "  work:         $ARANGO_WORK"
-    echo "  source:       $ARANGO_SOURCE"
-    echo "  books:        $ARANGO_SOURCE_DOC_BOOKS"
-    echo "  build:        $ARANGO_BUILD_DOC"
-    echo "  build ppdir:  $ARANGO_BUILD_DOC_PRE"
-    echo "  build books:  $ARANGO_BUILD_DOC_OUT"
-    echo
-    echo "versions:"
-    echo "  newVersionNumber: $newVersionNumber - from : arangodb/VERSION"
-    echo "  VERSION: $VERSION"
-    echo "  BROWSEABLE_VERSIONS: $BROWSEABLE_VERSIONS"
-    echo "  INSTALLED_GITBOOK_VERSION: $INSTALLED_GITBOOK_VERSION"
-    echo "  RELEASE_DIRECTORY: $RELEASE_DIRECTORY"
-    echo
-    echo "google:"
-    echo "  GCHANGE_FREQ: $GCHANGE_FREQ"
-    echo "  GPRIORITY: $GPRIORITY"
-    echo "  ALL_GSEARCH_ID:"
-    for id in  "${ALL_GSEARCH_ID[@]}"; do
-        echo "    $id"
-    done
-    echo
-
-    sleep 2
 }
 

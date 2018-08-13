@@ -235,7 +235,6 @@ function build_book() {
 
 
     section " Checking Integrity - Book ${book_name}"
-    # run checks
     pp_check_summary              "${book_name}" "$book_src" "$book_pre" "$book_out" || ferr "fail"
     pp_check_leftover_docublocks  "${book_name}" "$book_src" "$book_pre" "$book_out" || ferr "fail"
     pp_check_restheader_leftovers "${book_name}" "$book_src" "$book_pre" "$book_out" || ferr "fail"
@@ -336,7 +335,41 @@ main(){
             --all-formats)
                 all_formats=true
             ;;
-            --cross-check)
+            --cross-check*)
+                echo "==============================================================================="
+                section " cross book checks "
+                # cross_check_docublocks #TODO FIXME
+                cross_check_dangling_anchors
+                success "cross checks"
+                exit
+            ;;
+            --check*)
+                echo "==============================================================================="
+                section " cross book checks "
+
+                local book
+                for book in $ALLBOOKS; do
+                    local book_name="$book"
+                    local book_src="$ARANGO_SOURCE_DOC_BOOKS/${book_name}"
+                    local book_pre="$ARANGO_BUILD_DOC_PRE/${book_name}"
+                    local book_out="$ARANGO_BUILD_DOC_OUT/${book_name}"
+
+                    section " Pre Checks - Book ${book_name} "
+                    source_check_bad_code_sections "${book_name}" "$book_src" "$book_pre" "$book_out" || ferr "fail"
+                    source_check_bad_headings      "${book_name}" "$book_src" "$book_pre" "$book_out" || ferr "fail"
+
+                    section " Checking Integrity - Book ${book_name}"
+                    pp_check_summary              "${book_name}" "$book_src" "$book_pre" "$book_out" || ferr "fail"
+                    pp_check_leftover_docublocks  "${book_name}" "$book_src" "$book_pre" "$book_out" || ferr "fail"
+                    pp_check_restheader_leftovers "${book_name}" "$book_src" "$book_pre" "$book_out" || ferr "fail"
+                    pp_check_two_links            "${book_name}" "$book_src" "$book_pre" "$book_out" || ferr "fail"
+                    pp_check_directory_link       "${book_name}" "$book_src" "$book_pre" "$book_out" || ferr "fail"
+                    src_check_images_referenced   "${book_name}" "$book_src" "$book_pre" "$book_out" || ferr "fail"
+
+                    out_markdown_leftovers        "${book_name}" "$book_src" "$book_pre" "$book_out" || ferr "fail"
+                    #pp_check_html_link     "${book_name}" "$book_src" "$book_pre" "$book_out"
+                done
+
                 echo "==============================================================================="
                 section " cross book checks "
                 # cross_check_docublocks #TODO FIXME
