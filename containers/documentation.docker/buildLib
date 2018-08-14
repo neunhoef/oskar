@@ -615,11 +615,14 @@ cross_out_check_dangling_anchors() {
         if [[ -n "$errors" ]]; then
             echo "in ${htmlf}: "
             echo "$errors"
+            echo ${htmlf#/tmp/tags} >> $ARANGO_BUILD_DOC/debug.log
+            cat ${htmlf#/tmp/tags} >> $ARANGO_BUILD_DOC/debug.log
             error_occured=true
         fi
     done < <(find /tmp/tags -type f)
 
     if $error_occured; then
+        echo "inspect $ARANGO_BUILD_DOC/debug.log"
         ferr "duplicate anchors detected - see above"
     fi
 
