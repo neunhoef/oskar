@@ -61,7 +61,7 @@ run_gitbook(){
     shift
     local cmd=( gitbook "${GITBOOK_ARGS[@]}" "$@" )
 
-    echo "run ${cmd[@]}"
+    echo "execute: '${cmd[@]}'"
     if ! time "${cmd[@]}" ; then
         echo "==============================================================================="
         $c && echo "## install log  ###############################################################"
@@ -124,7 +124,7 @@ book_src_checks() {
 
 
 book_pre_checks() {
-    section " Preprocessed Checks - Book $1"
+    section " Preprocessed Checks - Book $1 "
     pp_check_summary              "$@" || ferr "fail"
     pp_check_leftover_docublocks  "$@" || ferr "fail"
     pp_check_restheader_leftovers "$@" || ferr "fail"

@@ -22,6 +22,7 @@ script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 set -u
 # "prevent failing_cmd | echo "still exit status 0 ` from succeeding"
 set -o pipefail
+
 ferr(){ echo "Error: $@"; exit 1; }
 
 #### VARIABLES CONTROLLING THE BUILD ######################################
@@ -30,15 +31,15 @@ ferr(){ echo "Error: $@"; exit 1; }
 # variables that MUST be set before invoking the script
 #
 [[ -v ARANGO_WORK ]] || ferr "ARANGO_WORK is not set"
-[[ -d "$ARANGO_WORK" ]] || ferr "ARANGO_WORK dir path is not a directory"
+[[ -d "$ARANGO_WORK" ]] || ferr "ARANGO_WORK is not a directory"
 # control if there is debug output or not
 ARANGO_DEBUG=false
 
 # variables that SHOULD be set before invoking the script
 # this list must match the versions provided in setup_gitbook
 # usually both variables are set in the docker file
-[[ -v ARANGO_SUPPORTED_BRANCHES ]] || { echo "supported branches not set"; exit 1; }
-[[ -v ARANGO_CACHE_BASE ]] || { echo "arango cache base not set"; exit 1; }
+[[ -v ARANGO_SUPPORTED_BRANCHES ]] || ferr "supported branches not set"
+[[ -v ARANGO_CACHE_BASE ]] || ferr "arango cache base not set"
 
 # path to "arangodb" source
 export ARANGO_SOURCE="${ARANGO_SOURCE:-"$ARANGO_WORK/ArangoDB"}"
@@ -47,8 +48,8 @@ export ARANGO_SOURCE_DOC_BOOKS="${ARANGO_SOURCE_DOC_BOOKS:-"$ARANGO_SOURCE_DOC/D
 
 # path to documentation build
 export ARANGO_BUILD_DOC="${ARANGO_BUILD_DOC:-"$ARANGO_WORK/build-documentation"}"
-export ARANGO_BUILD_DOC_PRE="${ARANGO_BUILD_DOC_PRE:-"$ARANGO_BUILD_DOC/ppdir"}"
-export ARANGO_BUILD_DOC_OUT="${ARANGO_BUILD_DOC_OUT:-"$ARANGO_BUILD_DOC/books"}"
+export ARANGO_BUILD_DOC_PRE="${ARANGO_BUILD_DOC_PRE:-"$ARANGO_BUILD_DOC/books_pp"}"
+export ARANGO_BUILD_DOC_OUT="${ARANGO_BUILD_DOC_OUT:-"$ARANGO_BUILD_DOC/books_html"}"
 
 #### VARIABLES CONTROLLING THE BUILD - END ######################################
 
@@ -69,7 +70,7 @@ else
     err(){ echo "Error: $@";  }
     section(){ echo "$@"; }
     say(){ echo "$@"; }
-    success(){ echo "Success $@"; }
+    success(){ echo "Success: $@"; }
 fi
 
 # define global functions
@@ -150,17 +151,17 @@ function build_book() {
     mkdir -p "$book_out"
 
 
+    book_src_checks "${book_name}" "$book_src" "$book_pre" "$book_out"
+
+
+    section " Preprocess - Book ${book_name} "
     # codeBlockReader creates the file AllComments.txt in the source dir `Documentation/Books`
     # TODO
     # - comment purpose and format of the created file
     # - make script position independent
+    say " - codeBlockReader: create AllCommands.txt"
     cd "$ARANGO_SOURCE_DOC_BOOKS" #TODO remove -- required by script below
     python $ARANGO_SOURCE/Documentation/Scripts/codeBlockReader.py || ferr "can not run codeBlockReader.py"
-
-
-    book_src_checks "${book_name}" "$book_src" "$book_pre" "$book_out"
-
-    section " Preprocess - Book ${book_name} "
 
     ## copy directroy structure of
     ## arangodb/Documentation/Books/${book_name}
@@ -168,7 +169,6 @@ function build_book() {
     cd "$book_src" || ferr "could not enter book source dir: $book_src"
     find . -type d -exec mkdir -p "$book_pre/{}" \;
     tree "$book_pre"
-
 
     say   " - create images"
     run_ditaa "${book_name}" "$book_src" "$book_pre" "$book_out"
