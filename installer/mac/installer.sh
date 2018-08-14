@@ -26,5 +26,6 @@ brew upgrade
 brew link --overwrite python@2
 
 echo import .p12 manually
+#security unlock-keychain -p $PASSWD
 #security import ./MacBuildCertificates.p12 -P $PASSWD
  
