@@ -127,7 +127,7 @@ GITBOOK_ARGS=(--gitbook "${INSTALLED_GITBOOK_VERSION}")
 #### GLOBAL VARS THAT SHOULD NOT BE MODIFIED BY USERS - END ########################################################
 
 # pull in build lib - this lib contains most of checks
-. /$script_dir/buildLib || ferr "failed to source buildLib"
+. "$script_dir/buildLib" || ferr "failed to source buildLib"
 
 
 ################################################################################
@@ -161,17 +161,18 @@ function build_book() {
     # - make script position independent
     say " - codeBlockReader: create AllCommands.txt"
     cd "$ARANGO_SOURCE_DOC_BOOKS" #TODO remove -- required by script below
-    python $ARANGO_SOURCE/Documentation/Scripts/codeBlockReader.py || ferr "can not run codeBlockReader.py"
+    python $ARANGO_SOURCE/Documentation/Scripts/codeBlockReader.py && echo || ferr "can not run codeBlockReader.py"
 
+    say " - copy directory structure"
     ## copy directroy structure of
     ## arangodb/Documentation/Books/${book_name}
     ## to ppdir
     cd "$book_src" || ferr "could not enter book source dir: $book_src"
     find . -type d -exec mkdir -p "$book_pre/{}" \;
-    tree "$book_pre"
+    tree "$book_pre" && echo
 
     say   " - create images"
-    run_ditaa "${book_name}" "$book_src" "$book_pre" "$book_out"
+    run_ditaa "${book_name}" "$book_src" "$book_pre" "$book_out" && echo
 
     # copy / link SUMMARY.md and FOOTER.html
     say " - create SUMMARY.md"
