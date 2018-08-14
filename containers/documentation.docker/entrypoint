@@ -1,8 +1,10 @@
 #!/bin/bash
 script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
-export NVM_DIR=/usr/local/nvm
-. $NVM_DIR/nvm.sh
-nvm use default
+ferr(){ echo "$@"; exit 1; }
+
+export NVM_DIR="${NVM_DIR:-/usr/local/nvm}"
+. $NVM_DIR/nvm.sh || ferr "could not source nvm"
+nvm use default || ferr "could not activate nvm"
 
 set -u
 skip_examples=false

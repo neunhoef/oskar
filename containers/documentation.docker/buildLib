@@ -98,8 +98,13 @@ run_ditaa() {
     fi
 
     local file
+    local dest
+    local src_dir="$book_src"
+
     while read file; do
-        local dest="$book_pre/${file//ditaa/png}"
+        dest="${file#$src_dir}"
+        dest="${dest//ditaa/png}"
+        dest="$src_dir/$dest"     #must be generated to source for generateMdFiles.py
         # if dest dir is not available then the creation of the
         # directory structures did most proably not work correctly
         if $use_ditaa; then
@@ -108,7 +113,7 @@ run_ditaa() {
             local fake="$ARANGO_SOURCE/js/node/node_modules/mocha/images/error.png"
             cp "$fake" "$dest" || ferr "fake ditaa for $file to $dest failed"
         fi
-    done < <(find . -name "*.ditaa")
+    done < <(find ${src_dir} -name "*.ditaa")
 }
 
 ################################################################################
@@ -183,7 +188,7 @@ source_check_bad_headings() { #DONE
     echo "+ bs 02 checking for headers that won't proper display on github in ${book_name}"
     if grep -qRI  '^##*[a-zA-Z]' "${book_src}"; then
         err "Headlines broken on github found: "
-        grep -RI  '^##*[a-zA-Z]' "${source}"
+        grep -RI  '^##*[a-zA-Z]' "${book_src}"
         exit 1
     fi
 }

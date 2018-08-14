@@ -34,8 +34,12 @@ RUN apt-get update && apt-get install -y -q --no-install-recommends \
         ditaa \
         && apt-get clean
 
+## set env
+ENV ARANGO_INSTALL "/install"
+ENV HOME "$ARANGO_INSTALL"
+
 ## get nvm
-ENV NVM_DIR /usr/local/nvm
+ENV NVM_DIR "$ARANGO_INSTALL/nvm"
 ENV NODE_VERSION 8.11.3
 ENV NODE_PATH $NVM_DIR/versions/node/v$NODE_VERSION/lib/node_modules
 ENV PATH      $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
@@ -44,16 +48,16 @@ RUN curl https://raw.githubusercontent.com/creationix/nvm/master/install.sh | ba
     && . $NVM_DIR/nvm.sh \
     && nvm install $NODE_VERSION \
     && nvm alias default $NODE_VERSION \
-    && nvm use default
+    && nvm use default \
+    && chmod -R 777 "$NVM_DIR"
 
-WORKDIR /root
 
 ## switch to force gitbook update
 ARG FORCE_UPDATE="not given"
 
 ## setup gitbook
 ENV ARANGO_SUPPORTED_BRANCHES "3.0 3.1 3.2 3.3 3.4 devel" 
-ENV ARANGO_CACHE_BASE "/root/gitbook_cache" 
+ENV ARANGO_CACHE_BASE "$ARANGO_INSTALL/gitbook_cache" 
 COPY setup_gitbook /setup_gitbook
 RUN /setup_gitbook
 
@@ -61,7 +65,8 @@ RUN /setup_gitbook
 COPY setup /setup
 RUN /setup
 
+WORKDIR "$ARANGO_INSTALL"
 
 ## setup entrypoint
-COPY entrypoint /root/entrypoint
-ENTRYPOINT [ "/root/entrypoint" ]
+COPY entrypoint /entrypoint
+ENTRYPOINT [ "/entrypoint" ]
