@@ -1,15 +1,18 @@
 #!/bin/bash
 export NVM_DIR=/usr/local/nvm
 . $NVM_DIR/nvm.sh
-nvm use stable || { echo "could not use nvm"; exit 1; }
-npm install gitbook-cli -g || { echo "could not install gitbook-cli"; exit 1; }
+ferr(){ echo "$@"; exit 1; }
 
-cache_base="/root/gitbook_cache"
-mkdir -p "$cache_base"
-cd "$cache_base"
-creation_date <<<"$(date)"
+[[ -v ARANGO_SUPPORTED_BRANCHES ]] || ferr "supported branches not set"
+[[ -v ARANGO_CACHE_BASE ]] || ferr "arango cache base not set";
 
-for i in 3.0 3.1 3.2 3.3 3.4 devel; do
+nvm use stable || ferr "could not use nvm"
+npm install gitbook-cli -g || ferr "could not install gitbook-cli"
+
+cache_base="$ARANGO_CACHE_BASE"
+mkdir -p "$cache_base" && cd "$cache_base" || ferr "failed to create cache dir"
+
+for i in $ARANGO_SUPPORTED_BRANCHES; do
     cache="$cache_base/$i"
     mkdir -p "$cache"
     cd "$cache"
@@ -19,14 +22,18 @@ for i in 3.0 3.1 3.2 3.3 3.4 devel; do
         echo "Installing modules for book: $book in version $i"
         mkdir "$book" && cd "$book"
         rm -fr book.json
-        if ! curl --fail -O https://raw.githubusercontent.com/arangodb/arangodb/$i/Documentation/Books/${book}/book.json; then
-            echo "could not download: https://raw.githubusercontent.com/arangodb/arangodb/$i/Documentation/Books/${book}/book.json continue"
+        url="https://raw.githubusercontent.com/arangodb/arangodb/"
+        url+="$i/Documentation/Books/${book}/book.json"
+        if ! curl --fail -O "$url"; then
+            echo "could not download $url continue"
             continue
         fi
 
+        ## replace templates with some random strings so we
+        ## are able to install
         sed -e "s;@GCHANGE_FREQ@;daily};" \
             -e "s;@GPRIORITY@;0.3;" \
-            -i "book.json"
+            -i "book.json" || ferr "failed to replace templates"
 
         echo "calling 'gitbook install' on 'book.json' : << HERE"
         cat book.json
@@ -35,6 +42,6 @@ for i in 3.0 3.1 3.2 3.3 3.4 devel; do
         gitbook install -g &> book_install.log || { echo "Failed to install modules"; cat book.json; exit 1; }
         mv book.json book.json_at_install
     done
-done
+done 2>&1 | tee set_gitbook.log
 
 echo "git book modules successfully installed"

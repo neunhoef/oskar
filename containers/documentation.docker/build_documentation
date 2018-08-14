@@ -10,13 +10,8 @@
 
 # TODO
 #
-# - fix broken tests
 # - execute container with same permissions as calling user not root
-# - find out branch name
 # - add http.tar.gz package creation
-#
-#
-# - test other formats
 #
 
 
@@ -33,12 +28,17 @@ set -o pipefail
 #
 # variables that MUST be set before invoking the script
 #
-[[ $ARANGO_WORK ]] || ferr "path to work dir not set"
+[[ -v ARANGO_WORK ]] || ferr "path to work dir not set"
+[[ -d ARANGO_WORK ]] || ferr "work dir path is not a directory"
 # control if there is debug output or not
 ARANGO_DEBUG=true
 
 # variables that SHOULD be set before invoking the script
-#
+# this list must match the versions provided in setup_gitbook
+# usually both variables are set in the docker file
+[[ -v ARANGO_SUPPORTED_BRANCHES ]] || { echo "supported branches not set"; exit 1; }
+[[ -v ARANGO_CACHE_BASE ]] || { echo "arango cache base not set"; exit 1; }
+
 # path to "arangodb" source
 export ARANGO_SOURCE="${ARANGO_SOURCE:-"$ARANGO_WORK/ArangoDB"}"
 export ARANGO_SOURCE_DOC="${ARANGO_SOURCE_DOC:-"$ARANGO_SOURCE/Documentation"}"
@@ -83,6 +83,17 @@ ALLBOOKS="HTTP AQL Manual Cookbook Drivers"
 OTHER_MIME="pdf epub mobi"
 TRIPPLETICS='```'
 
+#get branch name
+cd "$ARANGO_SOURCE" || ferr "can not cd into source"
+branch_current="$(git rev-parse --abbrev-ref HEAD)" || ferr "can not get branch name"
+branch_to_use="not found"
+for name in $ARANGO_SUPPORTED_BRANCHES; do
+    if [[ $branch_current == $name ]]; then
+        branch_to_use="$name"
+    fi
+done
+[[ $branch_to_use == "not found" ]] && ferr "you currently checked out branch is not supported"
+
 newVersionNumber="$( tr -d '\r\n' < "$ARANGO_SOURCE/VERSION" )"
 #If ../../VERSION contains the string "devel" the current date will be added to all pages containing the version.
 
@@ -120,23 +131,30 @@ GITBOOK_ARGS=(--gitbook "${INSTALLED_GITBOOK_VERSION}")
 ### HELPER FUNCTIONS ###########################################################
 ################################################################################
 
-run_gitbook() {
+run_gitbook(){
+    local cache="$1"
+    local c=true
+    if [[ $cache == "" ]] || [[ $cache == "fake cache" ]]; then
+        c=false
+    fi
+    shift
     local cmd=( gitbook "${GITBOOK_ARGS[@]}" "$@" )
+
     echo "run ${cmd[@]}"
     if ! time "${cmd[@]}" ; then
         echo "==============================================================================="
-        echo "## install log  ###############################################################"
-        cat "$cache/book_install.log"
-        echo "## book.json at install########################################################"
-        cat "$cache/book.json_at_install"
-        echo "## diff #######################################################################"
-        diff book.json "$cache/book.json_at_install"
+        $c && echo "## install log  ###############################################################"
+        $c && cat "$cache/book_install.log"
+        $c && echo "## book.json at install########################################################"
+        $c && cat "$cache/book.json_at_install"
+        $c && echo "## diff #######################################################################"
+        $c && diff book.json "$cache/book.json_at_install"
         echo "## book.json ##################################################################"
         cat book.json
         echo "## modules ####################################################################"
         ls -lisah node_modules
-        echo "###############################################################################"
-        echo "try to run ./scripts/buildContainerDocumentation --force-update if modules are missing"
+        $c && echo "###############################################################################"
+        $c && echo "try to run ./scripts/buildContainerDocumentation --force-update if modules are missing"
         ferr "running gitbook failed"
         echo "==============================================================================="
     fi
@@ -277,17 +295,14 @@ function build_book() {
         fi
     done
 
-
     section " Building Book - ${book_name} "
-
     #copy gitbook modules from cache in build image
     say " - copy node modules"
-    local i="devel" #TODO FIXME get - calculate version to use
-    local cache="/root/gitbook_cache/$i/$book_name"
+    local cache="$ARANGO_CACHE_BASE/$branch_to_use/$book_name"
     cp -r "$cache/node_modules" "$book_pre" || ferr "failed to copy node modules"
 
     say " - run gitbook"
-    run_gitbook build "$book_pre" "$book_out" || ferr "fail"
+    run_gitbook "$cache" build "$book_pre" "$book_out" || ferr "fail exectuting run_gitbook"
 
 
     section " Clean Up - Book ${book_name} "
@@ -431,7 +446,7 @@ main(){
         for book_name in $ALLBOOKS; do
             for format in $OTHER_MIME; do
                 local out="${ARANGO_BUILD_DOC}/ArangoDB_${book_name}_${newVersionNumber}.${format}"
-                run_gitbook "${GITBOOK_ARGS[@]}" "${format}" "$ARANGO_BUILD_DOC_PRE/$book_name" "${out}" || ferr "fail"
+                run_gitbook "fake cache" "${GITBOOK_ARGS[@]}" "${format}" "$ARANGO_BUILD_DOC_PRE/$book_name" "${out}" || ferr "fail"
             done
         done
     fi

@@ -242,61 +242,67 @@ out_markdown_leftovers() { #TODO REVIEW
     local book_pre="$3"
     local book_out="$4"
 
-    local ERRORS
+    local errors
 
     echo "+ 09 checking for remaining markdown snippets in the HTML in ${book_name} "
 
-    ERRORS=$(find "$book_out" -name '*.html' -exec grep -- '^##' {} \; -print) || ferr "markdown leftovers 1"
-    if [[ -n "${ERRORS}" ]]; then
+    errors=$(find "$book_out" -name '*.html' -exec grep -- '^##' {} \; -print) \
+        || ferr "markdown leftovers 1"
+    if [[ -n "${errors}" ]]; then
         err "found these unconverted markdown titles"
-        echo "${ERRORS}"
+        echo "${errors}"
         exit 1
     fi
 
-    ERRORS=$(find "$book_out" -name '*.html' -exec grep -- '&amp;gt;' {} \; -print) || ferr "markdown leftovers 2"
-    if [[ -n "${ERRORS}" ]]; then
+    errors=$(find "$book_out" -name '*.html' -exec grep -- '&amp;gt;' {} \; -print) \
+        || ferr "markdown leftovers 2"
+    if [[ -n "${errors}" ]]; then
         err "found these double converted > signs"
-        echo "${ERRORS}"
+        echo "${errors}"
         exit 1
     fi
 
-    local ERRORS=()
+    local errorsa=()
     while IFS= read -r line; do
-        grep -E '"[a-zA-Z/\.]*\.md\"[ />]' "$line" | grep -v data-filepath;
+        grep '"[a-zA-Z/\.]*\.md\"[ />]' "$line" | grep -v data-filepath
         local rv=$?
-        (( rv == 0 )) && ERRORS+=( "$line" )
+        (( rv == 0 )) && errorsa+=( "$line" )
         (( rv == 2 )) && ferr "markdown leftovers 3"
     done < <(find "$book_out" -name '*.html')
 
-    if [[ -n "${ERRORS[@]}" ]]; then
+    if [[ -n "${errorsa[@]}" ]]; then
         err "found dangling markdown links"
-        echo "${ERRORS[@]}"
+        echo "${errorsa[@]}"
         exit 1
 
     fi
 
-    ERRORS=$(find "$book_out" -name '*.html' -exec grep '"[a-zA-Z/\.]*\.md#' {} \; -print) || ferr "markdown leftovers 4"
-    if [[ -n "${ERRORS}" ]]; then
+    errors=$(find "$book_out" -name '*.html' -exec grep '"[a-zA-Z/\.]*\.md#' {} \; -print) \
+        || ferr "markdown leftovers 4"
+    if [[ -n "${errors}" ]]; then
         err "found dangling markdown links: "
-        echo "${ERRORS}"
+        echo "${errors}"
         exit 1
     fi
 
-    ERRORS=$(find "$book_out" -name '*.html' -exec grep "${TRIPPLETICS}" {} \; -print) || ferr "markdown leftovers 5"
-    if [[ -n "${ERRORS}" ]]; then
+    errors=$(find "$book_out" -name '*.html' -exec grep "${TRIPPLETICS}" {} \; -print) \
+        || ferr "markdown leftovers 5"
+    if [[ -n "${errors}" ]]; then
         err "found dangling markdown code sections: "
-        echo "${ERRORS}"
+        echo "${errors}"
         exit 1
     fi
 
-    ERRORS=$(find "$book_out" -name '*.html' -exec grep '\]<a href' {} \; -print) || ferr "markdown leftovers 6"
+    ERRORS=$(find "$book_out" -name '*.html' -exec grep '\]<a href' {} \; -print) \
+        || ferr "markdown leftovers 6"
     if [[ -n "${ERRORS}" ]]; then
         err "found unconverted markdown links: "
         echo "${ERRORS}"
         exit 1
     fi
 
-    ERRORS=$(find "$book_out" -name '*.html' -exec grep '\[.*\](.*[\.html|\.md|http|#.*])' {} \; -print) || ferr "markdown leftovers 7"
+    ERRORS=$(find "$book_out" -name '*.html' -exec grep '\[.*\](.*[\.html|\.md|http|#.*])' {} \; -print) \
+        || ferr "markdown leftovers 7"
     if [[ -n "${ERRORS}" ]]; then
         err "found unconverted markdown links: "
         echo "${ERRORS}"
@@ -336,120 +342,6 @@ pp_check_html_link() {
 
 ################################################################################
 ### CROSS CHECKS ###############################################################
-
-
-
-cross_check_dangling_anchors() {
-    rm -rf /tmp/tags/
-
-    echo "+ 12 checking anchors"
-    echo "  - create tag structure" #OK
-    # go through html files
-    # find id="tags"
-    # write list of tags ot /tmp/tags/html_file_dir/html_flile_name_without_ext
-    local html_file_full
-    while IFS= read -r html_file_full; do
-        local file_name="${html_file_full##*/}"
-        local dir="${html_file_full%/*}"
-        mkdir -p "/tmp/tags/${dir}"
-        grep_ignore_empty '<h. ' "${html_file_full}" | \
-            sed -e 's;.*id=";;' -e 's;".*;;' > "/tmp/tags/${dir}/${file_name}" \
-            || ferr "failed creating tag structure"
-    done < <(find "$ARANGO_BUILD_DOC_OUT" -name '*.html')
-
-
-    echo "  - check if tags (files in /tmp/tags) are unique" #OK
-    local error_occured=false
-    while IFS= read -r htmlf; do
-        local errors=$( comm -3  <(sort    "${htmlf}" | grep -v ^$ ) \
-                                 <(sort -u "${htmlf}" | grep -v ^$ )
-                      ) || ferr "compare - unique tags failed"
-
-        if [[ -n "$errors" ]]; then
-            echo "in ${htmlf}: "
-            echo "$errors"
-            error_occured=true
-        fi
-    done < <(find /tmp/tags -type f)
-
-    if $error_occured; then
-        ferr "duplicate anchors detected - see above"
-    fi
-
-
-    echo "  - fetching anchors from generated http files" # TODO REVIEW
-    rm -f /tmp/anchorlist.txt
-    for file in $(find "$ARANGO_BUILD_DOC_OUT" -name \*.html); do
-        # - strip of the menu
-        # - then the page tail.
-        # - remove links to external pages
-        cat $file | \
-            sed -r -n -e '/normal markdown-section/,${p}'| \
-            sed -r -n -e '/.*id="page-footer".*/q;p' | \
-            grep_ignore_empty '<a href="' | \
-            grep_ignore_empty -v 'target="_blank"' | \
-            sed -e 's;.*href=";;' -e 's;".*;;' > /tmp/thisdoc.txt || { ls -lisah "$file"; ferr "fail cat $file"; }
-
-        if [[ -f /tmp/thisdoc.txt ]]; then
-            # Links with anchors:
-            cat /tmp/thisdoc.txt | grep_ignore_empty '#' | sed "s;\(.*\)#\(.*\);${file},\1,\2;" >> /tmp/anchorlist.txt || ferr "fail 1 cat thisdoc.txt for: $file"
-            # links without anchors:
-            cat /tmp/thisdoc.txt | grep_ignore_empty -v '#' | sed "s;\(.*\);${file},\1,;" >> /tmp/anchorlist.txt || ferr "fail 2 cat thisdoc.txt for file: $file"
-        fi
-    done
-    ## why do we create anchorlist above, when we delete it in the next lines?
-
-    echo "  - cross checking anchors" # OK
-    local debug_anchors=false
-    local dangling_anchor_count=0
-
-    # loop vars that
-    local anchor
-    local relative_filename
-    local full_filename
-
-    while IFS=',' read -r full_filename relative_filename anchor; do
-        $debug_anchors && debug "anchor $anchor"
-        $debug_anchors && debug "relative_filename $relative_filename"
-        $debug_anchors && debug "full_filename $full_filename"
-
-        local check_filename
-        if [[ -z "$relative_filename" ]]; then
-            $debug_anchors && debug "using fullname"
-            check_filename="$full_filename"
-        else
-            $debug_anchors && debug "using modified fullname"
-            check_filename="${full_filename%/*html}/${relative_filename}"
-        fi
-
-        $debug_anchors && debug $check_filename
-
-        if [[ -d "$check_filename" ]]; then
-            check_filename="${check_filename}/index.html"
-        fi
-
-        if  ! [[ -f "/tmp/tags/${check_filename}" ]]; then
-            err "File referenced by $anchor doesn't exist."
-            debug "file missing" && exit 1
-            (( dangling_anchor_count++ ))
-        else
-            if [[ -n "$anchor" ]]; then
-                if ! grep -q "^$anchor$" "/tmp/tags/${check_filename}"; then
-                    err "Anchor $anchor not found in $full_filename $relative_filename"
-                    dangling_anchor_count=$((dangling_anchor_count + 1))
-                    echo "available anchors in that file:"
-                    sort < "/tmp/tags/${check_filename}"
-                fi
-            fi
-        fi
-    done < /tmp/anchorlist.txt || ferr "failed in big loop"
-
-    if (( dangling_anchor_count > 0 )); then
-        ferr "${dangling_anchor_count} Dangling anchors found!"
-    fi
-
-    rm -rf /tmp/anchorlist.txt /tmp/tags
-}
 
 #************************************************************
 # Check docublocks - checks whether docublock are
@@ -519,14 +411,19 @@ function cross_check_docublocks() { #TODO review
 
     # These files are converted to docublocks on the fly and only live in memory.
     for file in "$ARANGO_SOURCE_DOC/Examples/"*.json ; do
-        echo "$file" |sed -e "s;.*/;Generated: @startDocuBlock program_options_;" -e "s;.json;;" >> /tmp/rawinprog.txt
+        echo "$file" | sed -e "s;.*/;Generated: @startDocuBlock program_options_;" \
+                           -e "s;.json;;" \
+        >> /tmp/rawinprog.txt
     done
 
     echo "Generated: startDocuBlockInline errorCodes">> /tmp/rawinprog.txt
     debug "lines  rawinprog $(cat /tmp/rawinprog.txt | wc -l)"
 
-    sed -e "s;\r$;;" -e "s;.*ck ;;" -e "s;.*ne ;;" < /tmp/rawinprog.txt  |sort > /tmp/inprog_raw.txt
+    sed -e "s;\r$;;" -e "s;.*ck ;;" -e "s;.*ne ;;" < /tmp/rawinprog.txt \
+        | sort > /tmp/inprog_raw.txt
+
     sort -u < /tmp/inprog_raw.txt > /tmp/inprog.txt
+
     debug "lines inprog $(cat /tmp/inprog.txt | wc -l)"
     #### in prog - end
     #########################################################
@@ -534,8 +431,7 @@ function cross_check_docublocks() { #TODO review
     #check for duplicates in DocuBlocks Dir
     echo "  - find duplicates in DoucBlock dir"
     if [[ "$(wc -l < /tmp/inprog.txt)" -ne "$(wc -l < /tmp/inprog_raw.txt)" ]]; then
-        echo ""
-        echo "Duplicate entry found in the source trees:"
+        err "Duplicate entry found in the source trees:"
         comm -3 /tmp/inprog_raw.txt /tmp/inprog.txt
         ferr "Duplicate entry found in the source trees:"
     fi
@@ -565,3 +461,115 @@ function cross_check_docublocks() { #TODO review
     fi
 }
 
+cross_check_dangling_anchors() {
+    rm -rf /tmp/tags/
+
+    echo "+ 12 checking anchors"
+    echo "  - create tag structure" #OK
+    # go through html files
+    # find id="tags"
+    # write list of tags ot /tmp/tags/html_file_dir/html_flile_name_without_ext
+    local html_file_full
+    while IFS= read -r html_file_full; do
+        local file_name="${html_file_full##*/}"
+        local dir="${html_file_full%/*}"
+        mkdir -p "/tmp/tags/${dir}"
+        grep_ignore_empty '<h. ' "${html_file_full}" | \
+            sed -e 's;.*id=";;' -e 's;".*;;' > "/tmp/tags/${dir}/${file_name}" \
+            || ferr "failed creating tag structure"
+    done < <(find "$ARANGO_BUILD_DOC_OUT" -name '*.html')
+
+
+    echo "  - check if tags (files in /tmp/tags) are unique" #OK
+    local error_occured=false
+    while IFS= read -r htmlf; do
+        local errors=$( comm -3  <(sort    "${htmlf}" | grep -v ^$ ) \
+                                 <(sort -u "${htmlf}" | grep -v ^$ )
+                      ) || ferr "compare - unique tags failed"
+
+        if [[ -n "$errors" ]]; then
+            echo "in ${htmlf}: "
+            echo "$errors"
+            error_occured=true
+        fi
+    done < <(find /tmp/tags -type f)
+
+    if $error_occured; then
+        ferr "duplicate anchors detected - see above"
+    fi
+
+
+    ### TODO REVIEW - End ############################################################
+    echo "  - fetching anchors from generated http files"
+    rm -f /tmp/anchorlist.txt
+    for file in $(find "$ARANGO_BUILD_DOC_OUT" -name \*.html); do
+        # - strip of the menu
+        # - then the page tail.
+        # - remove links to external pages
+        cat $file | \
+            sed -r -n -e '/normal markdown-section/,${p}'| \
+            sed -r -n -e '/.*id="page-footer".*/q;p' | \
+            grep_ignore_empty '<a href="' | \
+            grep_ignore_empty -v 'target="_blank"' | \
+            sed -e 's;.*href=";;' -e 's;".*;;' > /tmp/thisdoc.txt || { ls -lisah "$file"; ferr "fail cat $file"; }
+
+        if [[ -f /tmp/thisdoc.txt ]]; then
+            # Links with anchors:
+            cat /tmp/thisdoc.txt | grep_ignore_empty '#' | sed "s;\(.*\)#\(.*\);${file},\1,\2;" >> /tmp/anchorlist.txt || ferr "fail 1 cat thisdoc.txt for: $file"
+            # links without anchors:
+            cat /tmp/thisdoc.txt | grep_ignore_empty -v '#' | sed "s;\(.*\);${file},\1,;" >> /tmp/anchorlist.txt || ferr "fail 2 cat thisdoc.txt for file: $file"
+        fi
+    done
+    ### TODO - End ##################################################################
+
+    echo "  - cross checking anchors" # OK
+    local debug_anchors=false
+    local dangling_anchor_count=0
+
+    # loop vars that
+    local anchor
+    local relative_filename
+    local full_filename
+
+    while IFS=',' read -r full_filename relative_filename anchor; do
+        $debug_anchors && debug "anchor $anchor"
+        $debug_anchors && debug "relative_filename $relative_filename"
+        $debug_anchors && debug "full_filename $full_filename"
+
+        local check_filename
+        if [[ -z "$relative_filename" ]]; then
+            $debug_anchors && debug "using fullname"
+            check_filename="$full_filename"
+        else
+            $debug_anchors && debug "using modified fullname"
+            check_filename="${full_filename%/*html}/${relative_filename}"
+        fi
+
+        $debug_anchors && debug $check_filename
+
+        if [[ -d "$check_filename" ]]; then
+            check_filename="${check_filename}/index.html"
+        fi
+
+        if  ! [[ -f "/tmp/tags/${check_filename}" ]]; then
+            err "File referenced by $anchor doesn't exist."
+            debug "file missing" && exit 1
+            (( dangling_anchor_count++ ))
+        else
+            if [[ -n "$anchor" ]]; then
+                if ! grep -q "^$anchor$" "/tmp/tags/${check_filename}"; then
+                    err "Anchor $anchor not found in $full_filename $relative_filename"
+                    dangling_anchor_count=$((dangling_anchor_count + 1))
+                    echo "available anchors in that file:"
+                    sort < "/tmp/tags/${check_filename}"
+                fi
+            fi
+        fi
+    done < /tmp/anchorlist.txt || ferr "failed in big loop"
+
+    if (( dangling_anchor_count > 0 )); then
+        ferr "${dangling_anchor_count} Dangling anchors found!"
+    fi
+
+    rm -rf /tmp/anchorlist.txt /tmp/tags
+}

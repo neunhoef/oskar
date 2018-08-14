@@ -28,6 +28,7 @@ RUN apt-get update && apt-get install -y -q --no-install-recommends \
 ## install packages for doc
 RUN apt-get update && apt-get install -y -q --no-install-recommends \
         git \
+        calibre \
         calibre-bin \
         tar \
         ditaa \
@@ -43,11 +44,11 @@ RUN curl https://raw.githubusercontent.com/creationix/nvm/master/install.sh | ba
     && nvm alias default $NODE_VERSION \
     && nvm use default
 
-WORKDIR /root
-
 ## setup env
 ENV NODE_PATH $NVM_DIR/versions/node/v$NODE_VERSION/lib/node_modules
 ENV PATH      $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
+
+WORKDIR /root
 
 ## install lcokfile - do we still need this?
 RUN pip install lockfile
@@ -56,6 +57,8 @@ RUN pip install lockfile
 ARG FORCE_UPDATE="not given"
 
 ## setup gitbook
+ENV ARANGO_SUPPORTED_BRANCHES "3.0 3.1 3.2 3.3 3.4 devel" 
+ENV ARANGO_CACHE_BASE "/root/gitbook_cache" 
 COPY setup_gitbook /setup_gitbook
 RUN /setup_gitbook
 
