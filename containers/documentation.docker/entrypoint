@@ -2,10 +2,9 @@
 script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 export NVM_DIR=/usr/local/nvm
 . $NVM_DIR/nvm.sh
-nvm use stable
+nvm use default
 
 set -u
-
 skip_examples=false
 skip_swagger=false
 for arg in "$@"; do

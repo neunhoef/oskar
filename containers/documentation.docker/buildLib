@@ -1,6 +1,12 @@
 #!/bin/bash
 
-### HELPER ####################################################################
+################################################################################
+### HELPER FUNCTIONS ###########################################################
+################################################################################
+
+# a grep that does not fail if there are no matches
+# can be used with multiple pipes where grep is not
+# expected to macht always something
 grep_ignore_empty(){
     grep "$@"
     local rv=$?
@@ -9,6 +15,7 @@ grep_ignore_empty(){
     (( rv == 1 )) &&  { false && debug "echo no match found via 'grep $@'" >&2; return 0; }
     return $rv
 }
+
 # make it available for sub-shells
 export -f grep_ignore_empty
 
@@ -45,10 +52,107 @@ show_config(){
     sleep 2
 }
 
+run_gitbook(){
+    local cache="$1"
+    local c=true
+    if [[ $cache == "" ]] || [[ $cache == "fake cache" ]]; then
+        c=false
+    fi
+    shift
+    local cmd=( gitbook "${GITBOOK_ARGS[@]}" "$@" )
+
+    echo "run ${cmd[@]}"
+    if ! time "${cmd[@]}" ; then
+        echo "==============================================================================="
+        $c && echo "## install log  ###############################################################"
+        $c && cat "$cache/book_install.log"
+        $c && echo "## book.json at install########################################################"
+        $c && cat "$cache/book.json_at_install"
+        $c && echo "## diff #######################################################################"
+        $c && diff book.json "$cache/book.json_at_install"
+        echo "## book.json ##################################################################"
+        cat book.json
+        echo "## modules ####################################################################"
+        ls -lisah node_modules
+        $c && echo "###############################################################################"
+        $c && echo "try to run ./scripts/buildContainerDocumentation --force-update if modules are missing"
+        ferr "running gitbook failed"
+        echo "==============================================================================="
+    fi
+}
+
+run_ditaa() {
+    #create ditaa images
+    local book_name="$1"
+    local book_src="$2"
+    local book_pre="$3"
+    local book_out="$4"
+
+    cd "$book_src"
+    local use_ditaa=false
+    if type ditaa; then
+        say " - generating ditaa images"
+        use_ditaa=true
+    else
+        say "- generating FAKE ditaa images - no ditaa installed"
+    fi
+
+    local file
+    while read file; do
+        local dest="$book_pre/${file//ditaa/png}"
+        # if dest dir is not available then the creation of the
+        # directory structures did most proably not work correctly
+        if $use_ditaa; then
+            ditaa "$file" "$dest" || ferr "ditaa for $file to $dest failed"
+        else
+            local fake="$ARANGO_SOURCE/js/node/node_modules/mocha/images/error.png"
+            cp "$fake" "$dest" || ferr "fake ditaa for $file to $dest failed"
+        fi
+    done < <(find . -name "*.ditaa")
+}
+
 ################################################################################
 ### CHECKS #####################################################################
 ################################################################################
 
+book_src_checks() {
+    section " Source Checks - Book $1 "
+    source_check_bad_code_sections "$@" || ferr "fail"
+    source_check_bad_headings      "$@" || ferr "fail"
+    source_check_images_referenced "$@" || ferr "failed check for unused iamges ($?)"
+}
+
+
+book_pre_checks() {
+    section " Preprocessed Checks - Book $1"
+    pp_check_summary              "$@" || ferr "fail"
+    pp_check_leftover_docublocks  "$@" || ferr "fail"
+    pp_check_restheader_leftovers "$@" || ferr "fail"
+    pp_check_two_links            "$@" || ferr "fail"
+    pp_check_directory_link       "$@" || ferr "fail"
+    pp_check_html_link            "$@" || ferr "fail"
+}
+
+book_out_checks(){
+    section " Output Checks - Book $1 "
+    out_markdown_leftovers "$@" || ferr "fail"
+}
+
+cross_src_checks(){
+    section " Cross Source Checks "
+    cross_source_check_docublocks
+}
+
+cross_pre_out_checks(){
+    section " Cross Preprocessed and Output Checks "
+    cross_out_check_dangling_anchors
+}
+
+#book_src_checks "${book_name}" "$book_src" "$book_pre" "$book_out"
+#book_pre_checks "${book_name}" "$book_src" "$book_pre" "$book_out"
+#book_out_checks "${book_name}" "$book_src" "$book_pre" "$book_out"
+#cross_src_checks
+#cross_pre_out_checks
 
 ################################################################################
 ### SOURCE CHECKS ##############################################################
@@ -60,7 +164,7 @@ source_check_bad_code_sections() {
     local book_pre="$3"
     local book_out="$4"
 
-    echo "+ 01 checking for bad code sections in ${book_name}"
+    echo "+ bs 01 checking for bad code sections in ${book_name}"
 
     if grep -qR  "^${TRIPPLETICS} *.* " "${book_src}"; then
         err "tripple tics with blanks afterwards found: "
@@ -76,7 +180,7 @@ source_check_bad_headings() { #DONE
     local book_pre="$3"
     local book_out="$4"
 
-    echo "+ 02 checking for headers that won't proper display on github in ${book_name}"
+    echo "+ bs 02 checking for headers that won't proper display on github in ${book_name}"
     if grep -qRI  '^##*[a-zA-Z]' "${book_src}"; then
         err "Headlines broken on github found: "
         grep -RI  '^##*[a-zA-Z]' "${source}"
@@ -84,8 +188,33 @@ source_check_bad_headings() { #DONE
     fi
 }
 
+source_check_images_referenced() { #OK
+    # check if all images that are in source are used.
+    local book_name="$1"
+    local book_src="$2"
+    local book_pre="$3"
+    local book_out="$4"
+
+    echo "+ bs 03 checking for unused image files ${book_name}"
+
+    local error=false
+    while IFS= read -r image; do
+        if ! grep -Rq "${image##*/}" "${book_src}"; then
+            ! $error && { err "the following images are not referenced by any page: " ; error=true; }
+            echo "${image}"
+        fi
+    done < <(find "${book_src}" -name '*.png')
+
+    if $error; then
+        ferr "found unused images"
+    fi
+}
+
+################################################################################
+### PREPROCESSED CHECKS ########################################################
+
 pp_check_summary() { #DONE
-    echo "+ 03 checking if all md files are included in the SUMMARY.md"
+    echo "+ bp 01 checking if all md files are included in the SUMMARY.md"
 
     # check if all md files are included in the SUMMARY.md in the books source
     local book_name="$1"
@@ -116,6 +245,7 @@ pp_check_summary() { #DONE
     fi
 }
 
+
 pp_check_leftover_docublocks() {
     local book_name="$1"
     local book_src="$2"
@@ -123,7 +253,7 @@ pp_check_leftover_docublocks() {
     local book_out="$4"
 
     #in ppdir
-    echo "+ 04 checking for left over docublocks in ${book_name}"
+    echo "+ bp 02 checking for left over docublocks in ${book_name}"
     ERRORS="$(grep_ignore_empty -rl "startDocuBlock" --include "*.md" "$book_pre")" || ferr "Failed running chek for leftover DocuBlocks"
     if [[ -n "${ERRORS}" ]]; then
         err "startDocuBlock markers still found in generated output files:"
@@ -148,7 +278,7 @@ pp_check_restheader_leftovers() {
     #in ppdir
     #TODO FIXME why is the spring data driver excluded??
     # what is that for "^@[A-Z]*"
-    echo "+ 05 checking for restheader leftovers in ${book_name}"
+    echo "+ bp 03 checking for restheader leftovers in ${book_name}"
     ERRORS="$(find "$book_pre"  -path "*/Drivers/SpringData/*" -prune  -o -name "*.md" -exec bash -c 'grep -E -q -- "^@[A-Z]*" "$1" && echo $1' -- '{}' \; )" || failed "check for restheader leftovers"
     if [[ -n "${ERRORS}" ]]; then
         echo "found these unconverted Swagger Restapi tags: "
@@ -166,7 +296,7 @@ pp_check_two_links() {
 
     #in ppdir
     local errors=()
-    echo "+ 06 checking for two links in a single line in ${book_name}"
+    echo "+ bp 04 checking for two links in a single line in ${book_name}"
     while IFS= read -r ppfile; do
         local search=$(grep_ignore_empty -e '](.*](' "${ppfile}")
         local err="$(echo "$search" | grep -v '|' )"
@@ -195,7 +325,7 @@ pp_check_directory_link() { #OK
     local book_out="$4"
 
     #in ppdir
-    echo "+ 07 checking for invalid md links in ${book_name}"
+    echo "+ bp 05 checking for invalid md links in ${book_name}"
     local ERRORS=$( grep -r -E '\[.*\]\(.*\)' "$book_pre" | \
                     grep '\.md:' | \
                     grep -v html | \
@@ -214,102 +344,6 @@ pp_check_directory_link() { #OK
     fi
 }
 
-src_check_images_referenced() { #OK
-    # check if all images that are in source are used.
-    local book_name="$1"
-    local book_src="$2"
-    local book_pre="$3"
-    local book_out="$4"
-
-    echo "+ 08 checking for unused image files ${book_name}"
-    local error_occured=0
-    while IFS= read -r image; do
-        if ! grep -Rq "${image##*/}" "${book_src}"; then
-            (( error_occured == 0 )) && { err "the following images are not referenced by any page: " ; error_occured=1; }
-            echo "${image}"
-        fi
-    done < <(find "${book_src}" -name '*.png') || ferr "fail"
-    return $error_occured
-}
-
-################################################################################
-### POST CHECKS ################################################################
-
-out_markdown_leftovers() { #TODO REVIEW
-    # TODO description
-    local book_name="$1"
-    local book_src="$2"
-    local book_pre="$3"
-    local book_out="$4"
-
-    local errors
-
-    echo "+ 09 checking for remaining markdown snippets in the HTML in ${book_name} "
-
-    errors=$(find "$book_out" -name '*.html' -exec grep -- '^##' {} \; -print) \
-        || ferr "markdown leftovers 1"
-    if [[ -n "${errors}" ]]; then
-        err "found these unconverted markdown titles"
-        echo "${errors}"
-        exit 1
-    fi
-
-    errors=$(find "$book_out" -name '*.html' -exec grep -- '&amp;gt;' {} \; -print) \
-        || ferr "markdown leftovers 2"
-    if [[ -n "${errors}" ]]; then
-        err "found these double converted > signs"
-        echo "${errors}"
-        exit 1
-    fi
-
-    local errorsa=()
-    while IFS= read -r line; do
-        grep '"[a-zA-Z/\.]*\.md\"[ />]' "$line" | grep -v data-filepath
-        local rv=$?
-        (( rv == 0 )) && errorsa+=( "$line" )
-        (( rv == 2 )) && ferr "markdown leftovers 3"
-    done < <(find "$book_out" -name '*.html')
-
-    if [[ -n "${errorsa[@]}" ]]; then
-        err "found dangling markdown links"
-        echo "${errorsa[@]}"
-        exit 1
-
-    fi
-
-    errors=$(find "$book_out" -name '*.html' -exec grep '"[a-zA-Z/\.]*\.md#' {} \; -print) \
-        || ferr "markdown leftovers 4"
-    if [[ -n "${errors}" ]]; then
-        err "found dangling markdown links: "
-        echo "${errors}"
-        exit 1
-    fi
-
-    errors=$(find "$book_out" -name '*.html' -exec grep "${TRIPPLETICS}" {} \; -print) \
-        || ferr "markdown leftovers 5"
-    if [[ -n "${errors}" ]]; then
-        err "found dangling markdown code sections: "
-        echo "${errors}"
-        exit 1
-    fi
-
-    ERRORS=$(find "$book_out" -name '*.html' -exec grep '\]<a href' {} \; -print) \
-        || ferr "markdown leftovers 6"
-    if [[ -n "${ERRORS}" ]]; then
-        err "found unconverted markdown links: "
-        echo "${ERRORS}"
-        exit 1
-    fi
-
-    ERRORS=$(find "$book_out" -name '*.html' -exec grep '\[.*\](.*[\.html|\.md|http|#.*])' {} \; -print) \
-        || ferr "markdown leftovers 7"
-    if [[ -n "${ERRORS}" ]]; then
-        err "found unconverted markdown links: "
-        echo "${ERRORS}"
-        exit 1
-    fi
-}
-
 pp_check_html_link() {
     local book_name="$1"
     local book_src="$2"
@@ -321,7 +355,7 @@ pp_check_html_link() {
     set -o pipefail
     book_name="$1"
     msg="$2"
-    echo "+ 10 checking for invalid HTML links in ${book_name}"
+    echo "+ bp 06 checking for invalid HTML links in ${book_name}"
 
     for book in $ALLBOOKS; do echo "/$book/"; done > /tmp/books.regex
 
@@ -340,6 +374,92 @@ pp_check_html_link() {
     fi
 }
 
+
+################################################################################
+### POST CHECKS ################################################################
+
+out_markdown_leftovers() { #TODO REVIEW
+    # checks output for markdown leftovers
+    # TODO Willi - annotate separate steps
+    local book_name="$1"
+    local book_src="$2"
+    local book_pre="$3"
+    local book_out="$4"
+
+    local errors
+    echo "+ bo 01 checking for remaining markdown snippets in the HTML in ${book_name} "
+
+    echo "  - Willi please add a short description"
+    errors=$(find "$book_out" -name '*.html' -exec grep -- '^##' {} \; -print) \
+        || ferr "markdown leftovers 1"
+    if [[ -n "${errors}" ]]; then
+        err "found these unconverted markdown titles"
+        echo "${errors}"
+        exit 1
+    fi
+
+    echo "  - Willi please add a short description"
+    errors=$(find "$book_out" -name '*.html' -exec grep -- '&amp;gt;' {} \; -print) \
+        || ferr "markdown leftovers 2"
+    if [[ -n "${errors}" ]]; then
+        err "found these double converted > signs"
+        echo "${errors}"
+        exit 1
+    fi
+
+    echo "  - Willi please add a short description"
+    local errorsa=()
+    while IFS= read -r line; do
+        grep '"[a-zA-Z/\.]*\.md\"[ />]' "$line" | grep -v data-filepath
+        local rv=$?
+        (( rv == 0 )) && errorsa+=( "$line" )
+        (( rv == 2 )) && ferr "markdown leftovers 3"
+    done < <(find "$book_out" -name '*.html')
+
+    if [[ -n "${errorsa[@]}" ]]; then
+        err "found dangling markdown links"
+        echo "${errorsa[@]}"
+        exit 1
+
+    fi
+
+    echo "  - Willi please add a short description"
+    errors=$(find "$book_out" -name '*.html' -exec grep '"[a-zA-Z/\.]*\.md#' {} \; -print) \
+        || ferr "markdown leftovers 4"
+    if [[ -n "${errors}" ]]; then
+        err "found dangling markdown links: "
+        echo "${errors}"
+        exit 1
+    fi
+
+    echo "  - Willi please add a short description"
+    errors=$(find "$book_out" -name '*.html' -exec grep "${TRIPPLETICS}" {} \; -print) \
+        || ferr "markdown leftovers 5"
+    if [[ -n "${errors}" ]]; then
+        err "found dangling markdown code sections: "
+        echo "${errors}"
+        exit 1
+    fi
+
+    echo "  - Willi please add a short description"
+    ERRORS=$(find "$book_out" -name '*.html' -exec grep '\]<a href' {} \; -print) \
+        || ferr "markdown leftovers 6"
+    if [[ -n "${ERRORS}" ]]; then
+        err "found unconverted markdown links: "
+        echo "${ERRORS}"
+        exit 1
+    fi
+
+    echo "  - Willi please add a short description"
+    ERRORS=$(find "$book_out" -name '*.html' -exec grep '\[.*\](.*[\.html|\.md|http|#.*])' {} \; -print) \
+        || ferr "markdown leftovers 7"
+    if [[ -n "${ERRORS}" ]]; then
+        err "found unconverted markdown links: "
+        echo "${ERRORS}"
+        exit 1
+    fi
+}
+
 ################################################################################
 ### CROSS CHECKS ###############################################################
 
@@ -350,13 +470,13 @@ pp_check_html_link() {
 #  - unique in the source
 #  - all docublocks are used somewhere in the documentation
 #
-function cross_check_docublocks() { #TODO review
+cross_source_check_docublocks() { #TODO review
     # This function runs in source only it compares if all the
     # Docublocks are used in the Documentation and if none
     # are missing
 
     ## TODO - Willi please document the sed expressions what are you doing
-    echo "+ 11 checking docublocks"
+    echo "+ cs 01 checking docublocks"
 
     #########################################################
     #### in doc
@@ -461,10 +581,10 @@ function cross_check_docublocks() { #TODO review
     fi
 }
 
-cross_check_dangling_anchors() {
+cross_out_check_dangling_anchors() {
     rm -rf /tmp/tags/
 
-    echo "+ 12 checking anchors"
+    echo "+ co 01 checking anchors"
     echo "  - create tag structure" #OK
     # go through html files
     # find id="tags"
