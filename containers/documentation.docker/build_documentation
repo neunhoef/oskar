@@ -10,13 +10,18 @@
 
 # TODO
 #
-# - execute container with same permissions as calling user not root
-# - add http.tar.gz package creation
+# required:
+# - add http.tar.gz package creation (use snippet at the end of this file)
+#
+# later:
+# - allComments.txt - do not generate in source
+# - images - do not genrate in source
+# - Examples - do not generate in source
 #
 
-
-# get script dir
+## get script dir
 script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+
 ## set options for safety
 # fail on unset variables
 set -u
