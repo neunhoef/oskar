@@ -43,7 +43,7 @@ for i in $ARANGO_SUPPORTED_BRANCHES; do
         gitbook install -g &> book_install.log || { echo "Failed to install modules"; cat book.json; exit 1; }
         mv book.json book.json_at_install
     done
-done 2>&1 | tee set_gitbook.log
+done 2>&1 | tee setup_gitbook.log
 
 chmod 777 "$ARANGO_CACHE_BASE"
 

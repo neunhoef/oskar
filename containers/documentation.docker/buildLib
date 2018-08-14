@@ -232,7 +232,8 @@ pp_check_summary() { #DONE
         grep -vf "$ARANGO_SOURCE_DOC_BOOKS/SummaryBlacklist.txt" | \
         grep -v gitbook-plugin | \
         grep -v node_modules/ | \
-        sort > /tmp/is_md.txt || ferr "is_md.txt generation failed"
+        sort > /tmp/is_md.txt \
+        || ferr "failed to create is_md.txt - for some info run: find '${book_pre#/oskar/}' -name '*.md'"
 
     # in source
     # remove comments
