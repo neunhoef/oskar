@@ -139,6 +139,21 @@ GITBOOK_ARGS=(--gitbook "${INSTALLED_GITBOOK_VERSION}")
 
 
 ################################################################################
+### HELPER FUNCTIONS ###########################################################
+################################################################################
+
+# Pre-process path for call to e.g. Python or Node.js
+function prepare_path() {
+    local any_path="$1"
+    # Convert to Windows path, e.g. '/cygwin/c/...' to 'C:\...'
+    if [ "$is_cygwin" = true ]; then
+        echo "$(cygpath -w $any_path)"
+        return 0
+    fi
+    echo "${any_path}"
+}
+
+################################################################################
 ### TARGET FUNCTIONS ###########################################################
 ################################################################################
 
@@ -171,11 +186,7 @@ function build_book() {
     # - make script position independent
     say " - codeBlockReader: create AllCommands.txt"
     cd "$ARANGO_SOURCE_DOC_BOOKS" #TODO remove -- required by script below
-    code_block_reader="${ARANGO_SOURCE}/Documentation/Scripts/codeBlockReader.py"
-    if [ "$is_cygwin" = true ]; then
-        code_block_reader="$(cygpath -w $code_block_reader)"
-    fi
-    python "${code_block_reader}" && echo || ferr "can not run codeBlockReader.py"
+    python "$(prepare_path ${ARANGO_SOURCE}/Documentation/Scripts/codeBlockReader.py)" && echo || ferr "can not run codeBlockReader.py"
 
 
     say " - copy directory structure"
@@ -210,16 +221,10 @@ function build_book() {
     say " - generate markdown"
     cd "$ARANGO_SOURCE_DOC_BOOKS"
     #echo " - generating MD-Filedds"
-    generate_md_files="${ARANGO_SOURCE}/Documentation/Scripts/generateMdFiles.py"
-    api_docs="${ARANGO_SOURCE}/js/apps/system/_admin/aardvark/APP/api-docs.json"
-    if [ "$is_cygwin" = true ]; then
-        generate_md_files="$(cygpath -w $generate_md_files)"
-        api_docs="$(cygpath -w $api_docs)"
-    fi
-    python "${generate_md_files}" \
+    python "$(prepare_path ${ARANGO_SOURCE}/Documentation/Scripts/generateMdFiles.py)" \
            "${book_name}" \
-           "$ARANGO_BUILD_DOC_PRE" \
-           "${api_docs}" \
+           "$(prepare_path ${ARANGO_BUILD_DOC_PRE})" \
+           "$(prepare_path ${ARANGO_SOURCE}/js/apps/system/_admin/aardvark/APP/api-docs.json)" \
            "${FILTER:-""}" || ferr "failed to generate md files"
 
     test -d "$ARANGO_BUILD_DOC_OUT" || mkdir -p "$ARANGO_BUILD_DOC_OUT"
@@ -254,7 +259,7 @@ function build_book() {
         cp -r "$cache/node_modules" "$book_pre" || ferr "failed to copy node modules"
 
         say " - run gitbook"
-        run_gitbook "$cache" build "$book_pre" "$book_out" || ferr "fail exectuting run_gitbook"
+        run_gitbook "$(prepare_path $cache)" build "$(prepare_path $book_pre)" "$(prepare_path $book_out)" || ferr "fail exectuting run_gitbook"
 
         say " - delete FOOTER.html"
         rm -f "$book_pre/FOOTER.html"
@@ -379,7 +384,7 @@ main(){
         for book_name in $ALLBOOKS; do
             for format in $OTHER_MIME; do
                 local out="${ARANGO_BUILD_DOC}/ArangoDB_${book_name}_${newVersionNumber}.${format}"
-                run_gitbook "fake cache" "${GITBOOK_ARGS[@]}" "${format}" "$ARANGO_BUILD_DOC_PRE/$book_name" "${out}" || ferr "fail"
+                run_gitbook "fake cache" "${GITBOOK_ARGS[@]}" "${format}" "$(prepare_path $ARANGO_BUILD_DOC_PRE/$book_name)" "$(prepare_path ${out})" || ferr "fail"
             done
         done
     fi
