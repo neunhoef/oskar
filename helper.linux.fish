@@ -321,8 +321,8 @@ end
 
 function updateOskar
   cd $WORKDIR
-  and git checkout -- .
-  and git pull
+  and git fetch
+  and git reset --hard origin/master
   and source helper.fish
   and pullUbuntuBuildImage
   and pullAlpineBuildImage
