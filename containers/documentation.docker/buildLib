@@ -60,7 +60,8 @@ source_check_bad_code_sections() {
     local book_pre="$3"
     local book_out="$4"
 
-    echo "##### 1 checking for bad code sections in ${book_name}"
+    echo "+ 01 checking for bad code sections in ${book_name}"
+
     if grep -qR  "^${TRIPPLETICS} *.* " "${book_src}"; then
         err "tripple tics with blanks afterwards found: "
         grep -R  "^${TRIPPLETICS} *.* " "${book_src}"
@@ -75,7 +76,7 @@ source_check_bad_headings() { #DONE
     local book_pre="$3"
     local book_out="$4"
 
-    echo "##### 2 checking for headers that won't proper display on github in ${book_name}"
+    echo "+ 02 checking for headers that won't proper display on github in ${book_name}"
     if grep -qRI  '^##*[a-zA-Z]' "${book_src}"; then
         err "Headlines broken on github found: "
         grep -RI  '^##*[a-zA-Z]' "${source}"
@@ -84,7 +85,7 @@ source_check_bad_headings() { #DONE
 }
 
 pp_check_summary() { #DONE
-    echo "##### 3 check if all md files are included in the SUMMARY.md"
+    echo "+ 03 checking if all md files are included in the SUMMARY.md"
 
     # check if all md files are included in the SUMMARY.md in the books source
     local book_name="$1"
@@ -122,7 +123,7 @@ pp_check_leftover_docublocks() {
     local book_out="$4"
 
     #in ppdir
-    echo "##### 4 checking for left over docublocks in ${book_name}"
+    echo "+ 04 checking for left over docublocks in ${book_name}"
     ERRORS="$(grep_ignore_empty -rl "startDocuBlock" --include "*.md" "$book_pre")" || ferr "Failed running chek for leftover DocuBlocks"
     if [[ -n "${ERRORS}" ]]; then
         err "startDocuBlock markers still found in generated output files:"
@@ -147,7 +148,7 @@ pp_check_restheader_leftovers() {
     #in ppdir
     #TODO FIXME why is the spring data driver excluded??
     # what is that for "^@[A-Z]*"
-    echo "##### 5 checking for restheader leftovers in ${book_name}"
+    echo "+ 05 checking for restheader leftovers in ${book_name}"
     ERRORS="$(find "$book_pre"  -path "*/Drivers/SpringData/*" -prune  -o -name "*.md" -exec bash -c 'grep -E -q -- "^@[A-Z]*" "$1" && echo $1' -- '{}' \; )" || failed "check for restheader leftovers"
     if [[ -n "${ERRORS}" ]]; then
         echo "found these unconverted Swagger Restapi tags: "
@@ -165,7 +166,7 @@ pp_check_two_links() {
 
     #in ppdir
     local errors=()
-    echo "##### 6 checking for two links in a single line in ${book_name}"
+    echo "+ 06 checking for two links in a single line in ${book_name}"
     while IFS= read -r ppfile; do
         local search=$(grep_ignore_empty -e '](.*](' "${ppfile}")
         local err="$(echo "$search" | grep -v '|' )"
@@ -194,7 +195,7 @@ pp_check_directory_link() { #OK
     local book_out="$4"
 
     #in ppdir
-    echo "##### 7 checking for invalid md links in ${book_name}"
+    echo "+ 07 checking for invalid md links in ${book_name}"
     local ERRORS=$( grep -r -E '\[.*\]\(.*\)' "$book_pre" | \
                     grep '\.md:' | \
                     grep -v html | \
@@ -220,7 +221,7 @@ src_check_images_referenced() { #OK
     local book_pre="$3"
     local book_out="$4"
 
-    echo "##### 8 checking for unused image files ${book_name}"
+    echo "+ 08 checking for unused image files ${book_name}"
     local error_occured=0
     while IFS= read -r image; do
         if ! grep -Rq "${image##*/}" "${book_src}"; then
@@ -243,7 +244,7 @@ out_markdown_leftovers() { #TODO REVIEW
 
     local ERRORS
 
-    echo "##### 9 checking for remaining markdown snippets in the HTML in ${book_name} "
+    echo "+ 09 checking for remaining markdown snippets in the HTML in ${book_name} "
 
     ERRORS=$(find "$book_out" -name '*.html' -exec grep -- '^##' {} \; -print) || ferr "markdown leftovers 1"
     if [[ -n "${ERRORS}" ]]; then
@@ -314,7 +315,7 @@ pp_check_html_link() {
     set -o pipefail
     book_name="$1"
     msg="$2"
-    echo "##### 10 checking for invalid HTML links in ${book_name}"
+    echo "+ 10 checking for invalid HTML links in ${book_name}"
 
     for book in $ALLBOOKS; do echo "/$book/"; done > /tmp/books.regex
 
@@ -336,10 +337,13 @@ pp_check_html_link() {
 ################################################################################
 ### CROSS CHECKS ###############################################################
 
+
+
 cross_check_dangling_anchors() {
     rm -rf /tmp/tags/
 
-    echo "##### create tag structure" #OK
+    echo "+ 12 checking anchors"
+    echo "  - create tag structure" #OK
     # go through html files
     # find id="tags"
     # write list of tags ot /tmp/tags/html_file_dir/html_flile_name_without_ext
@@ -354,7 +358,7 @@ cross_check_dangling_anchors() {
     done < <(find "$ARANGO_BUILD_DOC_OUT" -name '*.html')
 
 
-    echo "##### check if tags (files in /tmp/tags) are unique" #OK
+    echo "  - check if tags (files in /tmp/tags) are unique" #OK
     local error_occured=false
     while IFS= read -r htmlf; do
         local errors=$( comm -3  <(sort    "${htmlf}" | grep -v ^$ ) \
@@ -373,7 +377,7 @@ cross_check_dangling_anchors() {
     fi
 
 
-    echo "##### fetching anchors from generated http files" # TODO REVIEW
+    echo "  - fetching anchors from generated http files" # TODO REVIEW
     rm -f /tmp/anchorlist.txt
     for file in $(find "$ARANGO_BUILD_DOC_OUT" -name \*.html); do
         # - strip of the menu
@@ -395,7 +399,7 @@ cross_check_dangling_anchors() {
     done
     ## why do we create anchorlist above, when we delete it in the next lines?
 
-    echo "##### cross checking anchors" # OK
+    echo "  - cross checking anchors" # OK
     local debug_anchors=false
     local dangling_anchor_count=0
 
@@ -454,85 +458,110 @@ cross_check_dangling_anchors() {
 #  - unique in the source
 #  - all docublocks are used somewhere in the documentation
 #
-function cross_check_docublocks() {
-    #TODO - FIXME
+function cross_check_docublocks() { #TODO review
+    # This function runs in source only it compares if all the
+    # Docublocks are used in the Documentation and if none
+    # are missing
 
-    cd "$ARANGO_BUILD_DOC_OUT"
-    debug && pwd
+    ## TODO - Willi please document the sed expressions what are you doing
+    echo "+ 11 checking docublocks"
 
-    grep -R '@startDocuBlock' --include "*.h" --include "*.cpp" --include "*.js" --include "*.md" . |\
+    #########################################################
+    #### in doc
+    echo "  - find blocks in documentation"
+    grep -R '@startDocuBlock' --include "*.h" --include "*.cpp" --include "*.js" \
+        --include "*.md" "${ARANGO_SOURCE_DOC_BOOKS}" |\
         grep -v '@startDocuBlockInline' |\
         grep -v stash |\
         grep -v ppbook |\
-        grep -v allComments.txt |\
-        grep -v Makefile |\
-        grep -v '.*~:.*' |\
+        grep -v allComments.txt | \
+        grep -v Makefile | \
+        grep -v '.*~:.*' | \
         grep -v '.*#.*:.*' \
-             > /tmp/rawindoc.txt || err "failed search for startDocuBlock - with $?"
-    debug "lines in raw doc $(/tmp/rawindoc.txt | wc -l)"
+            > /tmp/rawindoc.txt || ferr "failed search for startDocuBlock - with $?"
+    debug "lines rawindoc $(cat /tmp/rawindoc.txt | wc -l)"
 
-
-
-    grep -R '@startDocuBlockInline' --include "*.h" --include "*.cpp" --include "*.js" --include "*.md" . |\
+    grep -R '@startDocuBlockInline' --include "*.h" --include "*.cpp" --include "*.js" \
+        --include "*.md" "${ARANGO_SOURCE_DOC_BOOKS}" |\
         grep -v ppbook |\
         grep -v stash |\
         grep -v allComments.txt |\
         grep -v Makefile |\
         grep -v '.*~:.*' |\
         grep -v '.*#.*:.*' \
-             >> /tmp/rawindoc.txt || err "failed to search for startDocuBlockInline - with $?"
+             >> /tmp/rawindoc.txt || ferr "failed to search for startDocuBlockInline - with $?"
+    debug "lines rawindoc $(cat /tmp/rawindoc.txt | wc -l)"
+
     sed  -e "s;\r$;;" -e "s;.*ck ;;" -e "s;.*ne ;;" < /tmp/rawindoc.txt | sort -u > /tmp/indoc.txt
-    ###
-    echo "lines in doc $(cat /tmp/indoc.txt | wc -l)"
+    debug "lines indoc $(cat /tmp/indoc.txt | wc -l)"
+    #### in end
+    #########################################################
+
+    #########################################################
+    #### in prog
+    echo "  - find blocks in DocuBlocks directroy"
+    grep -R '^@startDocuBlock' "$ARANGO_SOURCE_DOC/DocuBlocks" --include "*.md" | \
+        grep -v aardvark > /tmp/rawinprog.txt || err "failed"
+    debug "lines rawinproc $(cat /tmp/indoc.txt | wc -l)"
 
 
-
-    grep -R '^@startDocuBlock' "$ARANGO_SOURCE_DOC/DocuBlocks" --include "*.md" |grep -v aardvark > /tmp/rawinprog.txt
     # searching the Inline docublocks needs some more blacklisting:
-    grep -R '@startDocuBlockInline' --include "*.h" --include "*.cpp" --include "*.js" --include "*.md" . |\
+    grep -R '@startDocuBlockInline' --include "*.h" --include "*.cpp" --include "*.js" \
+        --include "*.md" "${ARANGO_SOURCE_DOC_BOOKS}" "$ARANGO_BUILD_DOC" |\
         grep -v ppbook |\
         grep -v stash |\
         grep -v allComments.txt |\
         grep -v build.sh |\
         grep -v '.*~:.*' |\
         grep -v '.*#.*:.*' \
-             >> /tmp/rawinprog.txt || err "failed to search for startDocuBlock in source - with $?"
-    ###
-    debug "lines in rawprog $(cat /tmp/rawinprog.txt | wc -l)"
+             >> /tmp/rawinprog.txt || ferr "failed to search for startDocuBlockInline in source - with $?"
+    debug "lines  rawinprog $(cat /tmp/rawinprog.txt | wc -l)"
 
     # These files are converted to docublocks on the fly and only live in memory.
     for file in "$ARANGO_SOURCE_DOC/Examples/"*.json ; do
         echo "$file" |sed -e "s;.*/;Generated: @startDocuBlock program_options_;" -e "s;.json;;" >> /tmp/rawinprog.txt
     done
+
     echo "Generated: startDocuBlockInline errorCodes">> /tmp/rawinprog.txt
+    debug "lines  rawinprog $(cat /tmp/rawinprog.txt | wc -l)"
 
     sed -e "s;\r$;;" -e "s;.*ck ;;" -e "s;.*ne ;;" < /tmp/rawinprog.txt  |sort > /tmp/inprog_raw.txt
     sort -u < /tmp/inprog_raw.txt > /tmp/inprog.txt
-    if test "$(wc -l < /tmp/inprog.txt)" -ne "$(wc -l < /tmp/inprog_raw.txt)"; then
+    debug "lines inprog $(cat /tmp/inprog.txt | wc -l)"
+    #### in prog - end
+    #########################################################
+
+    #check for duplicates in DocuBlocks Dir
+    echo "  - find duplicates in DoucBlock dir"
+    if [[ "$(wc -l < /tmp/inprog.txt)" -ne "$(wc -l < /tmp/inprog_raw.txt)" ]]; then
         echo ""
         echo "Duplicate entry found in the source trees:"
         comm -3 /tmp/inprog_raw.txt /tmp/inprog.txt
         ferr "Duplicate entry found in the source trees:"
     fi
 
-    if test "$(comm -3 /tmp/indoc.txt /tmp/inprog.txt |wc -l)" -ne 0; then
-        echo ""
-        echo "Not all blocks were found on both sides:"
+    # compare Documenation and Docublocks
+    echo "  - compare documentation and DoucBlock dir"
+    if [[ "$(comm -3 /tmp/indoc.txt /tmp/inprog.txt | wc -l)" -ne 0 ]]; then
+        err "Not all blocks were found on both sides:"
         echo "Documentation      |     Programcode:"
         comm -3 /tmp/indoc.txt /tmp/inprog.txt
-        if test "$(comm -2 -3 /tmp/indoc.txt /tmp/inprog.txt |wc -l)" -gt 0; then
+        if [[ "$(comm -2 -3 /tmp/indoc.txt /tmp/inprog.txt | wc -l)" -gt 0 ]]; then
+            # TODO missing in doc? - provide more useful messages
             echo "Documentation: "
             for grepit in $(comm -2 -3 /tmp/indoc.txt /tmp/inprog.txt); do
                 grep "$grepit" /tmp/rawindoc.txt
             done
         fi
-        if test "$(comm -1 -3 /tmp/indoc.txt /tmp/inprog.txt |wc -l)" -gt 0; then
+        if [[  "$(comm -1 -3 /tmp/indoc.txt /tmp/inprog.txt |wc -l)" -gt 0 ]]; then
+            # TODO missing in doc? - provide more useful messages
             echo "Program code:"
             for grepit in $(comm -1 -3 /tmp/indoc.txt /tmp/inprog.txt); do
                 grep "$grepit" /tmp/rawinprog.txt | sed "s;/// @startDocuBlock;\t\t;"
             done
         fi
-        ferr "Not all blocks were found on both sides:"
+        say "There is a mismatch of DocuBlocks used in the Documenation the Blocks provided"
+        ferr "Not all blocks were found on both sides"
     fi
 }
 

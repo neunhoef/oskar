@@ -330,8 +330,8 @@ build_books() {
     if [[ "$books" == "$ALLBOOKS" ]]; then
         echo "==============================================================================="
         section " cross book checks "
-        # cross_check_docublocks #TODO FIXME
-        cross_check_dangling_anchors
+        cross_check_dangling_anchors || ferr "fail"
+        cross_check_docublocks || ferr "fail"
     fi
 
     echo "##### Generating redirect index.html"; \
@@ -369,8 +369,8 @@ main(){
             --cross-check*)
                 echo "==============================================================================="
                 section " cross book checks "
-                # cross_check_docublocks #TODO FIXME
-                cross_check_dangling_anchors
+                cross_check_docublocks || ferr "fail"
+                cross_check_dangling_anchors || ferr "fail"
                 success "executing cross-checks" && exit
             ;;
             --check*)
@@ -404,8 +404,8 @@ main(){
 
                 echo "==============================================================================="
                 section " check book checks "
-                cross_check_dangling_anchors
-                cross_check_docublocks #TODO FIXME - enable for build
+                cross_check_dangling_anchors || ferr "fail"
+                cross_check_docublocks || ferr "fail"
                 success "executing checks" && exit
                 exit
             ;;
