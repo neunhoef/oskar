@@ -17,6 +17,13 @@
 
 # get script dir
 script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+
+# determine if this is run in Cygwin under Windows
+is_cygwin=false
+if test "$(uname -o||true)" == "Cygwin"; then
+    is_cygwin=true
+fi
+
 ## set options for safety
 # fail on unset variables
 set -u
@@ -164,7 +171,11 @@ function build_book() {
     # - make script position independent
     say " - codeBlockReader: create AllCommands.txt"
     cd "$ARANGO_SOURCE_DOC_BOOKS" #TODO remove -- required by script below
-    python $ARANGO_SOURCE/Documentation/Scripts/codeBlockReader.py && echo || ferr "can not run codeBlockReader.py"
+    code_block_reader="${ARANGO_SOURCE}/Documentation/Scripts/codeBlockReader.py"
+    if [ "$is_cygwin" = true ]; then
+        code_block_reader="$(cygpath -w $code_block_reader)"
+    fi
+    python "${code_block_reader}" && echo || ferr "can not run codeBlockReader.py"
 
 
     say " - copy directory structure"
@@ -199,10 +210,16 @@ function build_book() {
     say " - generate markdown"
     cd "$ARANGO_SOURCE_DOC_BOOKS"
     #echo " - generating MD-Filedds"
-    python ${ARANGO_SOURCE}/Documentation/Scripts/generateMdFiles.py \
+    generate_md_files="${ARANGO_SOURCE}/Documentation/Scripts/generateMdFiles.py"
+    api_docs="${ARANGO_SOURCE}/js/apps/system/_admin/aardvark/APP/api-docs.json"
+    if [ "$is_cygwin" = true ]; then
+        generate_md_files="$(cygpath -w $generate_md_files)"
+        api_docs="$(cygpath -w $api_docs)"
+    fi
+    python "${generate_md_files}" \
            "${book_name}" \
            "$ARANGO_BUILD_DOC_PRE" \
-           "$ARANGO_SOURCE/js/apps/system/_admin/aardvark/APP/api-docs.json" \
+           "${api_docs}" \
            "${FILTER:-""}" || ferr "failed to generate md files"
 
     test -d "$ARANGO_BUILD_DOC_OUT" || mkdir -p "$ARANGO_BUILD_DOC_OUT"
