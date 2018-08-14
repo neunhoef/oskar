@@ -22,16 +22,17 @@ script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 set -u
 # "prevent failing_cmd | echo "still exit status 0 ` from succeeding"
 set -o pipefail
+ferr(){ echo "Error: $@"; exit 1; }
 
 #### VARIABLES CONTROLLING THE BUILD ######################################
 # The Variables are usually set by the docker entry point
 #
 # variables that MUST be set before invoking the script
 #
-[[ -v ARANGO_WORK ]] || ferr "path to work dir not set"
-[[ -d ARANGO_WORK ]] || ferr "work dir path is not a directory"
+[[ -v ARANGO_WORK ]] || ferr "ARANGO_WORK is not set"
+[[ -d "$ARANGO_WORK" ]] || ferr "ARANGO_WORK dir path is not a directory"
 # control if there is debug output or not
-ARANGO_DEBUG=true
+ARANGO_DEBUG=false
 
 # variables that SHOULD be set before invoking the script
 # this list must match the versions provided in setup_gitbook
@@ -54,7 +55,9 @@ export ARANGO_BUILD_DOC_OUT="${ARANGO_BUILD_DOC_OUT:-"$ARANGO_BUILD_DOC/books"}"
 #### GOBAL SETUP ################################################################
 
 # pull in bash_lib or create replacement functions
-if . "/root/bash_lib"; then
+BASH_LIB="${BASH_LIB:-"/root/bash_lib"}"
+if [ -f "$BASH_LIB" ]; then
+    . "$BASH_LIB" || ferr "failed to source bash_lib"
     ferr(){ _o_ferr "$@"; }
     err(){ _o_err "$@"; }
     section(){ _o_section "$@"; }
@@ -63,7 +66,6 @@ if . "/root/bash_lib"; then
 
 else
     echo "could not source bash_lib"
-    ferr(){ echo "Error: $@"; exit 1; }
     err(){ echo "Error: $@";  }
     section(){ echo "$@"; }
     say(){ echo "$@"; }
