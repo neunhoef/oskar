@@ -50,14 +50,17 @@ ls -lisah ./build/bin &>/dev/null || echo "unable to access source/bild/bin"
 if $skip_examples; then
     echo "skip generate examples"
 else
-    if [[ ./build/bin/arangod -version | grep -q "enterprise-version: cummunity" ]]; then
+    if ./build/bin/arangod -version | grep -q "enterprise"; then
+        echo "########################################################"
+        echo "./build/bin/arangod --version"
+        ./build/bin/arangod --version
+        echo "########################################################"
+        echo "arangod needs to be compiled as community edition!"
+        echo "You can skip example generation with --skip-examples!!!"
+        exit 1
+     else
         echo "run generate examples"
         ./utils/generateExamples.sh || { echo "failed to generate examples!"; exit 1; }
-     else
-         echo "arangod needs to be compiles in community edition"
-         ./build/bin/arangod --version
-         echo "arangod needs to be compiles in community edition"
-         echo "you can skip example generation with --skip-examples"
     fi
 fi
 
