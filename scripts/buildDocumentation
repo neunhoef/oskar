@@ -28,9 +28,9 @@ oskar_dir="$script_dir/../"
 
 cmd=( docker
       run
+      --user $UID
       -v "$oskar_dir:/oskar"
       -t "$arango_doc_container_default"
-      --uid $UID
       --
       "$@"
     )

@@ -183,7 +183,7 @@ source_check_bad_headings() { #DONE
     echo "+ bs 02 checking for headers that won't proper display on github in ${book_name}"
     if grep -qRI  '^##*[a-zA-Z]' "${book_src}"; then
         err "Headlines broken on github found: "
-        grep -RI  '^##*[a-zA-Z]' "${source}"
+        grep -RI  '^##*[a-zA-Z]' "${book_src}"
         exit 1
     fi
 }

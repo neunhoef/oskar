@@ -1,7 +1,8 @@
 #!/bin/bash
-export NVM_DIR=/usr/local/nvm
-. $NVM_DIR/nvm.sh
+
 ferr(){ echo "$@"; exit 1; }
+export NVM_DIR=${NVM_DIR:-"/usr/local/nvm"}
+. $NVM_DIR/nvm.sh || ferr "could not source nvm"
 
 [[ -v ARANGO_SUPPORTED_BRANCHES ]] || ferr "supported branches not set"
 [[ -v ARANGO_CACHE_BASE ]] || ferr "arango cache base not set";
@@ -43,5 +44,7 @@ for i in $ARANGO_SUPPORTED_BRANCHES; do
         mv book.json book.json_at_install
     done
 done 2>&1 | tee set_gitbook.log
+
+chmod 777 "$ARANGO_CACHE_BASE"
 
 echo "git book modules successfully installed"
