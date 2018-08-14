@@ -142,6 +142,7 @@ function build_book() {
     local book_out="$ARANGO_BUILD_DOC_OUT/${book_name}"
 
 
+
     section " Build Book - ${book_name} " | sed 's/-/=/g' | sed 's/ = / - /'
     echo "book source:       $book_src"
     echo "preprocessing dir: $book_pre"
@@ -151,6 +152,7 @@ function build_book() {
     mkdir -p "$book_pre"
     mkdir -p "$book_out"
 
+    rm -fr "$book_src/?" #TODO fix ditaa - probably happens because user has no real home directory
 
     book_src_checks "${book_name}" "$book_src" "$book_pre" "$book_out"
 
@@ -164,6 +166,7 @@ function build_book() {
     cd "$ARANGO_SOURCE_DOC_BOOKS" #TODO remove -- required by script below
     python $ARANGO_SOURCE/Documentation/Scripts/codeBlockReader.py && echo || ferr "can not run codeBlockReader.py"
 
+
     say " - copy directory structure"
     ## copy directroy structure of
     ## arangodb/Documentation/Books/${book_name}
@@ -174,6 +177,7 @@ function build_book() {
 
     say   " - create images"
     run_ditaa "${book_name}" "$book_src" "$book_pre" "$book_out" && echo
+    rm -fr "$book_src/?" #TODO fix ditta
 
     # copy / link SUMMARY.md and FOOTER.html
     say " - create SUMMARY.md"
