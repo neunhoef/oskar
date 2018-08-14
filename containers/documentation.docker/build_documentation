@@ -148,9 +148,9 @@ function prepare_path() {
     # Convert to Windows path, e.g. '/cygwin/c/...' to 'C:\...'
     if [ "$is_cygwin" = true ]; then
         echo "$(cygpath -w $any_path)"
-        return 0
+    else
+        echo "${any_path}"
     fi
-    echo "${any_path}"
 }
 
 ################################################################################
