@@ -283,15 +283,16 @@ build_books() {
 
     done
 
-    if [[ "$books" == "$ALLBOOKS" ]]; then
-        echo "==============================================================================="
-        section " Cross Preprocessed and Output Checks "
-        cross_out_check_dangling_anchors || ferr "failed to check for dangling anchors"
-    fi
-
-    echo "##### Generating redirect index.html"; \
+    echo "==============================================================================="
+    section " Post All Books  "
+    echo " - Generating redirect index.html unconditionally (depends on book Manual)"; \
     echo '<html><head><meta http-equiv="refresh" content="0; url=Manual/"></head><body></body></html>' \
         > "$ARANGO_BUILD_DOC_OUT/index.html"
+
+    if [[ "$books" == "$ALLBOOKS" ]]; then
+        cross_pre_out_checks || ferr "failed to check for dangling anchors"
+    fi
+
 }
 
 ################################################################################
