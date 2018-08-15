@@ -108,7 +108,7 @@ run_ditaa() {
         # if dest dir is not available then the creation of the
         # directory structures did most proably not work correctly
         if $use_ditaa; then
-            ditaa "$file" "$dest" || ferr "ditaa for $file to $dest failed"
+            ditaa "$(expand_cygpath $file)" "$(expand_cygpath $dest)" || ferr "ditaa for $file to $dest failed"
         else
             local fake="$ARANGO_SOURCE/js/node/node_modules/mocha/images/error.png"
             cp "$fake" "$dest" || ferr "fake ditaa for $file to $dest failed"
