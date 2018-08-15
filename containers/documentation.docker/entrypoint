@@ -7,6 +7,8 @@ export NVM_DIR="${NVM_DIR:-/usr/local/nvm}"
 nvm use default || ferr "could not activate nvm"
 
 set -u
+set -o pipefail
+
 skip_examples=false
 skip_swagger=false
 for arg in "$@"; do
@@ -39,6 +41,8 @@ export ARANGO_BUILD_DOC="$ARANGO_WORK/build-documentation"
 export ARANGO_BUILD_DOC_PRE="$ARANGO_BUILD_DOC/books_pp"
 export ARANGO_BUILD_DOC_OUT="$ARANGO_BUILD_DOC/books_html"
 
+cd /oskar || { ls -lisah /oskar;  ferr "can not chage into /oskar"; }
+
 cd "$ARANGO_SOURCE" || { echo "could not change in arangodb source directroy"; exit 1; }
 ls -lisah ./build &>/dev/null || echo "no build directory"
 ls -lisah ./build/bin &>/dev/null || echo "unable to access source/bild/bin"
@@ -46,32 +50,42 @@ ls -lisah ./build/bin &>/dev/null || echo "unable to access source/bild/bin"
 [[ -e ./build/bin/arangod ]] || { echo "no arangod installed"; exit 1; }
 
 if $skip_examples; then
-  echo "skip generate examples"
+    echo "skip generate examples"
 else
-  echo "run generate examples"
-  ./utils/generateExamples.sh || { echo "failed to generate examples!"; exit 1; }
+    if ./build/bin/arangod -version | grep -q "enterprise"; then
+        echo "########################################################"
+        echo "./build/bin/arangod --version"
+        ./build/bin/arangod --version
+        echo "########################################################"
+        echo "arangod needs to be compiled as community edition!"
+        echo "You can skip example generation with --skip-examples!!!"
+        exit 1
+     else
+        echo "run generate examples"
+        ./utils/generateExamples.sh || { echo "failed to generate examples!"; exit 1; }
+    fi
 fi
 
 if $skip_swagger; then
   echo "skip generate swagger"
 else
-  echo "generate swagger"
+    echo "generate swagger"
 
-  #TODO ./utils/generateSwagger.sh - must be deleted
-  cmd=( 'python'
-        "$PWD/utils/generateSwagger.py"
-        "$PWD"
-        "$PWD/js/apps/system/_admin/aardvark/APP/api-docs"
-        'api-docs'
-        "$PWD/Documentation/DocuBlocks/Rest"
-      )
-  echo "run ${cmd[@]}"
-  "${cmd[@]}" > $PWD/js/apps/system/_admin/aardvark/APP/api-docs.json \
-    || { echo "failed to generate swagger"; exit 1; }
+    #TODO ./utils/generateSwagger.sh - must be deleted
+    cmd=( 'python'
+          "$PWD/utils/generateSwagger.py"
+          "$PWD"
+          "$PWD/js/apps/system/_admin/aardvark/APP/api-docs"
+          'api-docs'
+          "$PWD/Documentation/DocuBlocks/Rest"
+        )
+    echo "run ${cmd[@]}"
+    "${cmd[@]}" > $PWD/js/apps/system/_admin/aardvark/APP/api-docs.json \
+      || { echo "failed to generate swagger"; exit 1; }
 
-  ls -lisah js/apps/system/_admin/aardvark/APP/api-docs.json
+    ls -lisah js/apps/system/_admin/aardvark/APP/api-docs.json
 
-  #./utils/generateSwagger.sh || { echo "failed to generate swagger"; exit 1; }
+    #./utils/generateSwagger.sh || { echo "failed to generate swagger"; exit 1; }
 fi
 
 echo "calling build_documenation"
