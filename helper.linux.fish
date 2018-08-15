@@ -157,6 +157,9 @@ function clearWorkDir
 end
 
 function buildArangoDB
+  #TODO FIXME - do not change the current directory so people
+  #             have to do a 'cd' for a subsequent call.
+  #             Fix by not relying on relative locations in other functions
   checkoutIfNeeded
   runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/buildArangoDB.fish $argv
   set -l s $status
@@ -205,6 +208,7 @@ function buildDebianPackage
     return 1
   end
 
+  # FIXME do not rely on relative paths
   cd $WORKDIR
   rm -rf $WORKDIR/work/debian
   and if test "$ENTERPRISEEDITION" = "On"
@@ -235,12 +239,15 @@ function transformSpec
     echo transformSpec: wrong number of arguments
     return 1
   end
+  # FIXME do not rely on relative paths
   cp "$argv[1]" "$argv[2]"
   sed -i -e "s/@PACKAGE_VERSION@/$ARANGODB_VERSION/" "$argv[2]"
   sed -i -e "s/@PACKAGE_REVISION@/$ARANGODB_PACKAGE_REVISION/" "$argv[2]"
 end
 
 function buildRPMPackage
+  # FIXME do not rely on relative paths
+
   # This assumes that a static build has already happened
   # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
   # ARANGODB_FULL_VERSION, for example by running findArangoDBVersion.
