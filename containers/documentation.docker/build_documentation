@@ -10,9 +10,6 @@
 
 # TODO
 #
-# required:
-# - add http.tar.gz package creation (use snippet at the end of this file)
-#
 # later:
 # - allComments.txt - do not generate in source
 # - images - do not genrate in source
@@ -146,22 +143,20 @@ function build_book() {
     local book_pre="$ARANGO_BUILD_DOC_PRE/${book_name}"
     local book_out="$ARANGO_BUILD_DOC_OUT/${book_name}"
 
-
-
     section " Build Book - ${book_name} " | sed 's/-/=/g' | sed 's/ = / - /'
     echo "book source:       $book_src"
     echo "preprocessing dir: $book_pre"
     echo "output dir:        $book_out"
 
-
-    mkdir -p "$book_pre"
-    mkdir -p "$book_out"
+    mkdir -p "$book_pre" || ferr "failed to create preprocessing directory"
+    mkdir -p "$book_out" || ferr "failed to create output directory"
 
     rm -fr "$book_src/?" #TODO fix ditaa - probably happens because user has no real home directory
 
+    ##########################################################################
     book_src_checks "${book_name}" "$book_src" "$book_pre" "$book_out"
 
-
+    ##########################################################################
     section " Preprocess - Book ${book_name} "
     # codeBlockReader creates the file AllComments.txt in the source dir `Documentation/Books`
     # TODO
@@ -213,45 +208,46 @@ function build_book() {
     test -d "$ARANGO_BUILD_DOC_OUT" || mkdir -p "$ARANGO_BUILD_DOC_OUT"
 
 
+    ##########################################################################
     book_pre_checks "${book_name}" "$book_src" "$book_pre" "$book_out"
 
-    {
-        section " Building Book - ${book_name} "
-        # expand versions in files
-        say " - replace placeholders in templates"
-        cd "$book_pre"
-        for file in book.json styles/header.js README.md; do
-            if [[ -f $file ]]; then
-                say "   - running sed on $file"
-                sed -e "s/VERSION_NUMBER/v${VERSION}/g" \
-                    -e "s;/devel;/${RELEASE_DIRECTORY};" \
-                    -e "s;@GSEARCH_ID@;${ALL_GSEARCH_ID[${book_name}]};" \
-                    -e "s;@GCHANGE_FREQ@;${GCHANGE_FREQ};" \
-                    -e "s;@GPRIORITY@;${GPRIORITY};" \
-                    -e "s;@BROWSEABLE_VERSIONS@;${BROWSEABLE_VERSIONS};" \
-                    \
-                    -i "${file}" || ferr "failed to run sed to subsitute variables"
-            else
-                echo "there is no file: $file in $book_pre"
-            fi
-        done
+    ##########################################################################
+    section " Building Book - ${book_name} "
+    # expand versions in files
+    say " - replace placeholders in templates"
+    cd "$book_pre"
+    for file in book.json styles/header.js README.md; do
+        if [[ -f $file ]]; then
+            say "   - running sed on $file"
+            sed -e "s/VERSION_NUMBER/v${VERSION}/g" \
+                -e "s;/devel;/${RELEASE_DIRECTORY};" \
+                -e "s;@GSEARCH_ID@;${ALL_GSEARCH_ID[${book_name}]};" \
+                -e "s;@GCHANGE_FREQ@;${GCHANGE_FREQ};" \
+                -e "s;@GPRIORITY@;${GPRIORITY};" \
+                -e "s;@BROWSEABLE_VERSIONS@;${BROWSEABLE_VERSIONS};" \
+                \
+                -i "${file}" || ferr "failed to run sed to subsitute variables"
+        else
+            echo "there is no file: $file in $book_pre"
+        fi
+    done
 
-        #copy gitbook modules from cache in build image
-        say " - copy node modules"
-        local cache="$ARANGO_CACHE_BASE/$branch_to_use/$book_name"
-        cp -r "$cache/node_modules" "$book_pre" || ferr "failed to copy node modules"
+    #copy gitbook modules from cache in build image
+    say " - copy node modules"
+    local cache="$ARANGO_CACHE_BASE/$branch_to_use/$book_name"
+    cp -r "$cache/node_modules" "$book_pre" || ferr "failed to copy node modules"
 
-        say " - run gitbook"
-        run_gitbook "$cache" build "$book_pre" "$book_out" || ferr "fail exectuting run_gitbook"
+    say " - run gitbook"
+    run_gitbook "$cache" build "$book_pre" "$book_out" || ferr "fail exectuting run_gitbook"
 
-        say " - delete FOOTER.html"
-        rm -f "$book_pre/FOOTER.html"
+    say " - delete FOOTER.html"
+    rm -f "$book_pre/FOOTER.html"
 
-        # work around bug
-        say " - deleting markdown files in output (gitbook 3.x bug)"
-        find "$book_out" -type f -name "*.md" -delete
-    }
+    # work around bug
+    say " - deleting markdown files in output (gitbook 3.x bug)"
+    find "$book_out" -type f -name "*.md" -delete
 
+    ##########################################################################
     book_out_checks "${book_name}" "$book_src" "$book_pre" "$book_out" || ferr "fail"
 }
 
@@ -363,6 +359,11 @@ main(){
     #build html and run checks
     build_books "$books" || ferr "fail"
 
+    local out="${ARANGO_BUILD_DOC}/ArangoDB-${newVersionNumber}"
+    cp -r "$ARANGO_BUILD_DOC_OUT" "$out" || ferr "failed to copy html docu" #rather move
+    tar -czf "$out.tar.gz" "$out" || ferr "failed to tar html docu"
+    rm -fr "$out" || err "failed to delete docu copy"
+
     # build other formats
     if $all_formats; then
         for book_name in $ALLBOOKS; do
@@ -370,7 +371,7 @@ main(){
                 local out="${ARANGO_BUILD_DOC}/ArangoDB_${book_name}_${newVersionNumber}.${format}"
                 run_gitbook "fake cache" "${GITBOOK_ARGS[@]}" "${format}" "$ARANGO_BUILD_DOC_PRE/$book_name" "${out}" || ferr "fail"
             done
-        done
+        done || ferr "failed to build all formats"
     fi
 
     echo
@@ -379,30 +380,3 @@ main(){
 }
 main "$@"
 exit $?
-
-
-
-
-# # TODO - add this
-# function build-dist-books()
-# {
-#     if test -z "${OUTPUT_DIR}"; then
-#         echo "please specify --outputDir"
-#         exit 1
-#     fi
-#     rm -rf books ppbooks
-#
-#     WD=$(pwd)
-#     build-books
-#     mkdir -p "${OUTPUT_DIR}"
-#     (
-#         mv books "ArangoDB-${newVersionNumber}"
-#         pwd
-#         tar -czf "${OUTPUT_DIR}/ArangoDB-${newVersionNumber}.tar.gz" "ArangoDB-${newVersionNumber}"
-#         mv "ArangoDB-${newVersionNumber}" books
-#     )
-#     for book in $ALLBOOKS; do
-#         cd "$WD"; build-book-dist "${book}"
-#     done
-# }
-#
