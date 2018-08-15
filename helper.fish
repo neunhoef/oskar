@@ -29,16 +29,23 @@ function unlockDirectory
 end
 
 function showConfig
-  echo "Enterpriseedition : $ENTERPRISEEDITION"
-  echo "Buildmode         : $BUILDMODE"
-  echo "Storage engine    : $STORAGEENGINE"
-  echo "Maintainer        : $MAINTAINER"
+  echo "#################################"
+  echo "Build Configuration"
+  echo "- Enterprise     : $ENTERPRISEEDITION"
+  echo "- Buildmode      : $BUILDMODE"
+  echo "- Maintainer     : $MAINTAINER"
   echo
-  echo "Workdir           : $WORKDIR"
-  echo "Inner workdir     : $INNERWORKDIR"
-  echo "Parallelism       : $PARALLELISM"
-  echo "Test suite        : $TESTSUITE"
-  echo "Verbose           : $VERBOSEOSKAR"
+  echo "Test Configuration:"
+  echo "- Storage engine : $STORAGEENGINE"
+  echo "- Test suite     : $TESTSUITE"
+  echo
+  echo "Internal Configuration:"
+  echo "- Workdir        : $WORKDIR"
+  echo "- Inner workdir  : $INNERWORKDIR"
+  echo "- Parallelism    : $PARALLELISM"
+  echo "- Verbose        : $VERBOSEOSKAR"
+  echo "#################################"
+  echo
 end
 
 function single ; set -gx TESTSUITE single ; end
