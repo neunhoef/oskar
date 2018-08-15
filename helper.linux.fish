@@ -123,7 +123,7 @@ end
 
 function buildDocumentationInPr
     if test $ENTERPRISEEDITION != On
-        if (git rev-parse --abbrev-ref HEAD) == devel;
+        if test (cd $WORKDIR/work/ArangoDB; and git rev-parse --abbrev-ref HEAD) = devel;
             buildDocumentation
             return $status
         else
