@@ -29,13 +29,14 @@ function unlockDirectory
 end
 
 function showConfig
+  echo "Enterpriseedition : $ENTERPRISEEDITION"
+  echo "Buildmode         : $BUILDMODE"
+  echo "Storage engine    : $STORAGEENGINE"
+  echo "Maintainer        : $MAINTAINER"
+  echo
   echo "Workdir           : $WORKDIR"
   echo "Inner workdir     : $INNERWORKDIR"
-  echo "Maintainer        : $MAINTAINER"
-  echo "Buildmode         : $BUILDMODE"
   echo "Parallelism       : $PARALLELISM"
-  echo "Enterpriseedition : $ENTERPRISEEDITION"
-  echo "Storage engine    : $STORAGEENGINE"
   echo "Test suite        : $TESTSUITE"
   echo "Verbose           : $VERBOSEOSKAR"
 end
