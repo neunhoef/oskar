@@ -232,7 +232,8 @@ pp_check_summary() { #DONE
         grep -vf "$ARANGO_SOURCE_DOC_BOOKS/SummaryBlacklist.txt" | \
         grep -v gitbook-plugin | \
         grep -v node_modules/ | \
-        sort > /tmp/is_md.txt || ferr "is_md.txt generation failed"
+        sort > /tmp/is_md.txt \
+        || ferr "failed to create is_md.txt - for some info run: find '${book_pre#/oskar/}' -name '*.md'"
 
     # in source
     # remove comments
@@ -615,11 +616,14 @@ cross_out_check_dangling_anchors() {
         if [[ -n "$errors" ]]; then
             echo "in ${htmlf}: "
             echo "$errors"
+            echo ${htmlf#/tmp/tags} >> $ARANGO_BUILD_DOC/debug.log
+            cat ${htmlf#/tmp/tags} >> $ARANGO_BUILD_DOC/debug.log
             error_occured=true
         fi
     done < <(find /tmp/tags -type f)
 
     if $error_occured; then
+        echo "inspect $ARANGO_BUILD_DOC/debug.log"
         ferr "duplicate anchors detected - see above"
     fi
 

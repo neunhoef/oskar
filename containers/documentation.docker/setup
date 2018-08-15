@@ -24,7 +24,9 @@ install_bash_lib(){
 }
 
 ## run installations
+
 #install_lockfile
 install_ditaa
 install_bash_lib
-echo "exit setup"
+
+echo "setup done"
