@@ -41,6 +41,8 @@ export ARANGO_BUILD_DOC="$ARANGO_WORK/build-documentation"
 export ARANGO_BUILD_DOC_PRE="$ARANGO_BUILD_DOC/books_pp"
 export ARANGO_BUILD_DOC_OUT="$ARANGO_BUILD_DOC/books_html"
 
+cd /oskar || { ls -lisah /oskar;  ferr "can not chage into /oskar"; }
+
 cd "$ARANGO_SOURCE" || { echo "could not change in arangodb source directroy"; exit 1; }
 ls -lisah ./build &>/dev/null || echo "no build directory"
 ls -lisah ./build/bin &>/dev/null || echo "unable to access source/bild/bin"

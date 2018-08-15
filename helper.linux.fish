@@ -116,6 +116,25 @@ function runInContainer
   return $s
 end
 
+function buildDocumentation
+    set -l DOCIMAGE "obi/test" # TODO global var
+    runInContainer "--user" "$UID" "-v" "$WORKDIR:/oskar" -t "$DOCIMAGE"
+end
+
+function buildDocumentationInPr
+    if test $ENTERPRISEEDITION != On
+        if (git rev-parse --abbrev-ref HEAD) == devel;
+            buildDocumentation
+            return $status
+        else
+            #TODO - make it available for more branches
+            echo "Documentation building documentation is only available for 'devel' branch!"
+        end
+    else
+        echo "Documentation building is not available for enterprise edition in PR tests"
+    end
+end
+
 function checkoutArangoDB
   runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/checkoutArangoDB.fish
   or return $status

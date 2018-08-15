@@ -11,6 +11,7 @@
 # TODO
 #
 # later:
+# - move tmp to build dir - to allow parallel builds outside docker
 # - allComments.txt - do not generate in source
 # - images - do not genrate in source
 # - Examples - do not generate in source
