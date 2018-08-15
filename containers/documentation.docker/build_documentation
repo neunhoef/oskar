@@ -29,7 +29,7 @@ fi
 # Convert to Windows path in Cygwin, i.e. '/cygwin/c/...' to 'C:\...'
 expand_cygpath() {
     local any_path="$1"
-    if [[ -n $any_path && $is_cygwin ]]; then
+    if [[ -n $any_path ]] && $is_cygwin; then
         echo "$(cygpath -w $any_path)"
     else
         echo "${any_path}"
