@@ -227,7 +227,7 @@ function buildDebianPackage
   and echo -n " -- ArangoDB <hackers@arangodb.com>  " >> $ch
   and date -R >> $ch
   and if test $ARCH = aarch64
-    sed -i -e "s/^Architecture:.*$/Architecture: arm64/" $WORKDIR/work/debian/control
+    sed -i -e 's/^Architecture:.*$/Architecture: arm64/' $WORKDIR/work/debian/control
   end
   and runInContainer $UBUNTUPACKAGINGIMAGE $SCRIPTSDIR/buildDebianPackage.fish
   set -l s $status
