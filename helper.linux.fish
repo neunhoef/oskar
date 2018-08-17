@@ -122,6 +122,7 @@ function buildDocumentation
 end
 
 function buildDocumentationInPr
+    #disable once enterprise only options are availalbe
     if test $ENTERPRISEEDITION != On
         if test (cd $WORKDIR/work/ArangoDB; and git rev-parse --abbrev-ref HEAD) = devel;
             buildDocumentation
@@ -133,6 +134,10 @@ function buildDocumentationInPr
     else
         echo "Documentation building is not available for enterprise edition in PR tests"
     end
+end
+
+function buildContainerDocumentation
+    eval "$WORKDIR/scripts/buildContainerDocumentation"
 end
 
 function checkoutArangoDB

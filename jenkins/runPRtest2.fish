@@ -13,7 +13,6 @@ echo on branch $ENTERPRISE_BRANCH of enterprise repository.
 
 switchBranches $ARANGODB_BRANCH $ENTERPRISE_BRANCH
 and oskar1
-#and buildDocumentationInPR
 
 set -l s $status
 cd "$HOME/$NODE_NAME/oskar" ; moveResultsToWorkspace ; unlockDirectory 

@@ -58,10 +58,15 @@ spin_cmd() {
     if $ARANGO_SPIN; then
         {   local scount=1
             local arr=( "Was ist denn jetzt mit gitbook?"
-                        "Was muss ich machen? - jsteemann"
+                        "Was muss ich machen?"
                         "Muss das so kompliziert sein?"
+                        "Drei!!!"
                         "Soll ich das selber machen?"
                         "Das bekommt man von Hand ohne diese ganzen Scripte schneller hin!"
+                        "Es soll auch irgendwann fertig werden!"
+                        "Wissen wir was wir tun?"
+                        "Es gibt kein Buch ArangoDB!"
+                        "Der Dokumentation kann man nicht trauen! Guck lieber in den Code!!"
                       )
             while :; do
                 for a in / - \\ \|
@@ -74,7 +79,7 @@ spin_cmd() {
                     fi
                 done;
             done &
-        } 2> /dev/null;
+        } 2> /dev/null
         local spin_pid=$!
 
         time "$@"
