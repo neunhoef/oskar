@@ -118,7 +118,11 @@ end
 
 function buildDocumentation
     set -l DOCIMAGE "obi/test" # TODO global var
-    runInContainer "--user" "$UID" "-v" "$WORKDIR:/oskar" -t "$DOCIMAGE"
+    runInContainer -e 'ARANGO_SPIN=true' \
+                   --user "$UID" \
+                   -v "$WORKDIR:/oskar" \
+                   -t "$DOCIMAGE" \
+                   -- "$argv"
 end
 
 function buildDocumentationInPr

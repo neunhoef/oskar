@@ -71,7 +71,7 @@ spin_cmd() {
             while :; do
                 for a in / - \\ \|
                 do
-                    printf '%s\b' "$a";
+                    #printf '%s\b' "$a";
                     sleep 0.1;
                     (( scount++ ))
                     if (( scount % 600 == 0)); then
