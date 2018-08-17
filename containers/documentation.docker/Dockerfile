@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y -q --no-install-recommends \
         wget \
         rsync \
         tree \
+        jq \
         && apt-get clean
 
 ## install packages for python
@@ -37,6 +38,7 @@ RUN apt-get update && apt-get install -y -q --no-install-recommends \
 ## set env
 ENV ARANGO_INSTALL "/install"
 ENV HOME "$ARANGO_INSTALL"
+RUN mkdir "$ARANGO_INSTALL" && chmod 777 "$ARANGO_INSTALL"
 
 ## get nvm
 ENV NVM_DIR "$ARANGO_INSTALL/nvm"
@@ -49,6 +51,7 @@ RUN curl https://raw.githubusercontent.com/creationix/nvm/master/install.sh | ba
     && nvm install $NODE_VERSION \
     && nvm alias default $NODE_VERSION \
     && nvm use default \
+    && npm i npm@latest -g \
     && chmod -R 777 "$NVM_DIR"
 
 

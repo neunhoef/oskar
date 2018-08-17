@@ -7,8 +7,8 @@
 #   Simran Brucherseifer
 #
 
-
 # TODO
+# - try to find matching gitbook cache
 #
 # later:
 # - move tmp to build dir - to allow parallel builds outside docker
@@ -93,13 +93,11 @@ TRIPPLETICS='```'
 #get branch name
 cd "$ARANGO_SOURCE" || ferr "can not cd into source"
 branch_current="$(git rev-parse --abbrev-ref HEAD)" || ferr "can not get branch name"
-branch_to_use="not found"
 for name in $ARANGO_SUPPORTED_BRANCHES; do
     if [[ $branch_current == $name ]]; then
         branch_to_use="$name"
     fi
 done
-[[ $branch_to_use == "not found" ]] && ferr "you currently checked out branch is not supported"
 
 newVersionNumber="$( tr -d '\r\n' < "$ARANGO_SOURCE/VERSION" )"
 #If ../../VERSION contains the string "devel" the current date will be added to all pages containing the version.
@@ -139,6 +137,7 @@ GITBOOK_ARGS=(--gitbook "${INSTALLED_GITBOOK_VERSION}")
 ################################################################################
 
 function build_book() {
+    #set -u book
     local book_name="$1"
     local book_src="$ARANGO_SOURCE_DOC_BOOKS/${book_name}"
     local book_pre="$ARANGO_BUILD_DOC_PRE/${book_name}"
@@ -155,7 +154,7 @@ function build_book() {
     rm -fr "$book_src/?" #TODO fix ditaa - probably happens because user has no real home directory
 
     ##########################################################################
-    book_src_checks "${book_name}" "$book_src" "$book_pre" "$book_out"
+    book_src_checks "${book_name}" "$book_src" "$book_pre" "$book_out" || ferr "failed source check"
 
     ##########################################################################
     section " Preprocess - Book ${book_name} "
@@ -205,7 +204,6 @@ function build_book() {
            "$ARANGO_BUILD_DOC_PRE" \
            "$ARANGO_SOURCE/js/apps/system/_admin/aardvark/APP/api-docs.json" \
            "${FILTER:-""}" || ferr "failed to generate md files"
-
     test -d "$ARANGO_BUILD_DOC_OUT" || mkdir -p "$ARANGO_BUILD_DOC_OUT"
 
 
@@ -233,13 +231,41 @@ function build_book() {
         fi
     done
 
+    say " - detect cache"
+    if ! [[ -v branch_to_use ]]; then
+        echo "$ARANGO_CACHE_BASE"
+
+        this="$(mktemp)"
+        cat "$book_src/book.json" | sed -e 's/@GPRIORITY@/0/' | jq .plugins > "$this" || exit 1
+        unset cache
+        while read -r file; do
+            echo "$file"
+            local dir="${file%/*}"
+            if cmp --silent "$this" "$file"; then
+                local cache="$dir"
+                echo "  - found match in $dir"
+                break
+            fi
+        done < <(find "$ARANGO_CACHE_BASE" -iname "book.json.plugins" )
+        rm "$this"
+
+        local msg="failed to detect cache - book.json of $book_name\n"
+              msg="Plugins do match any cached version."
+              msg="If you use new plugins make sure to add this branch"
+              msg="to ARANGO_SUPPORTED_BRANCHES and rebuild the doc container."
+        [[ -v cache ]] || ferr -e "$msg"
+
+    else
+        local cache="$ARANGO_CACHE_BASE/$branch_to_use/$book_name"
+    fi
+
     #copy gitbook modules from cache in build image
     say " - copy node modules"
-    local cache="$ARANGO_CACHE_BASE/$branch_to_use/$book_name"
     cp -r "$cache/node_modules" "$book_pre" || ferr "failed to copy node modules"
 
     say " - run gitbook"
     run_gitbook "$cache" build "$book_pre" "$book_out" || ferr "fail exectuting run_gitbook"
+    unset cache
 
     say " - delete FOOTER.html"
     rm -f "$book_pre/FOOTER.html"
@@ -262,6 +288,7 @@ build_books() {
     echo "==============================================================================="
     section " Cross Source Checks "
     cross_source_check_docublocks || ferr "docublocks check failed"
+    echo checks done
 
     for book in $books; do
         local book_src="$ARANGO_SOURCE_DOC_BOOKS/${book}"
