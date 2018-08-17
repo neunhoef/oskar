@@ -166,7 +166,7 @@ function build_book() {
     ## to ppdir
     cd "$book_src" || ferr "could not enter book source dir: $book_src"
     find . -type d -exec mkdir -p "$book_pre/{}" \;
-    tree "$book_pre" && echo
+    debug && tree "$book_pre" && echo
 
     say   " - create images"
     run_ditaa "${book_name}" "$book_src" "$book_pre" "$book_out" && echo
@@ -234,6 +234,7 @@ function build_book() {
         while read -r file; do
             local dir="${file%/*}"
             if cmp --silent "$this" "$file"; then
+                debug "compare with $file"
                 local cache="$dir"
                 echo "  - found match in $dir"
                 break

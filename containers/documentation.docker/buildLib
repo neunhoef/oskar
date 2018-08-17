@@ -54,7 +54,6 @@ show_config(){
 
 spin_cmd() {
     ARANGO_SPIN=${ARANGO_SPIN:-false}
-    echo $ARANGO_SPIN
     if $ARANGO_SPIN; then
         {   local scount=1
             local arr=( "Was ist denn jetzt mit gitbook?"
