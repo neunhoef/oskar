@@ -28,6 +28,7 @@ for i in $ARANGO_SUPPORTED_BRANCHES; do
         echo " - run curl on '$url'"
         if ! curl -s -S --fail -O "$url" >/dev/null; then
             echo "could not download $url continue"
+            rm -fr "$cache/$book"
             continue
         fi
 
@@ -40,7 +41,7 @@ for i in $ARANGO_SUPPORTED_BRANCHES; do
                 echo " - found match in $dir"
                 break
             fi
-        done < <(find "$ARANGO_CACHE_BASE" -not -path "$cache/*" -iname "book.json.plugins" )
+        done < <(find "$ARANGO_CACHE_BASE" -not -path "$cache/$book/*" -iname "book.json.plugins" )
 
         if [[ -v found ]]; then
             echo " - linking $found to $(pwd)"
