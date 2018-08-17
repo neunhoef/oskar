@@ -56,12 +56,22 @@ spin_cmd() {
     ARANGO_SPIN=${ARANGO_SPIN:-false}
     echo $ARANGO_SPIN
     if $ARANGO_SPIN; then
-        {
+        {   local scount=1
+            local arr=( "Was ist denn jetzt mit gitbook?"
+                        "Was muss ich machen? - jsteemann"
+                        "Muss das so kompliziert sein?"
+                        "Soll ich das selber machen?"
+                        "Das bekommt man von Hand ohne diese ganzen Scripte schneller hin!"
+                      )
             while :; do
                 for a in / - \\ \|
                 do
                     printf '%s\b' "$a";
                     sleep 0.1;
+                    (( scount++ ))
+                    if (( scount % 600 == 0)); then
+                        echo "${arr[$(( $RANDOM % ${#arr[@]}))]}"
+                    fi
                 done;
             done &
         } 2> /dev/null;
