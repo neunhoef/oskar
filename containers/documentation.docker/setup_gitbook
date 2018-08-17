@@ -71,7 +71,7 @@ for i in $ARANGO_SUPPORTED_BRANCHES; do
 done 2>&1 | tee setup_gitbook.log
 
 chmod -R 777 "$ARANGO_CACHE_BASE"
-tree -L 3 "$ARANGO_CACHE_BASE"
+tree -L 2 "$ARANGO_CACHE_BASE"
 sleep 3
 
 echo "git book modules successfully installed"
