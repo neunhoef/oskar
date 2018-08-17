@@ -9,11 +9,13 @@ RUN apt-get update && apt-get install -y -q --no-install-recommends \
         apt-transport-https \
         build-essential \
         ca-certificates \
-        curl \
-        git \
         libssl-dev \
         wget \
+        curl \
+        tar \
+        git \
         rsync \
+        parallel \
         tree \
         jq \
         && apt-get clean
@@ -31,7 +33,6 @@ RUN apt-get update && apt-get install -y -q --no-install-recommends \
         git \
         calibre \
         calibre-bin \
-        tar \
         ditaa \
         && apt-get clean
 

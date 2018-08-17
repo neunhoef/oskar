@@ -61,7 +61,7 @@ run_gitbook(){
     shift
     local cmd=( gitbook "${GITBOOK_ARGS[@]}" "$@" )
 
-    echo "execute: '${cmd[@]}'"
+    echo "execute (date +%H:%M:%S): '${cmd[@]}' "
     if ! time "${cmd[@]}" ; then
         echo "==============================================================================="
         $c && echo "## install log  ###############################################################"

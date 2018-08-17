@@ -92,14 +92,14 @@ ALLBOOKS="HTTP AQL Manual Cookbook Drivers"
 OTHER_MIME="pdf epub mobi"
 TRIPPLETICS='```'
 
-#get branch name
-cd "$ARANGO_SOURCE" || ferr "can not cd into source"
-branch_current="$(git rev-parse --abbrev-ref HEAD)" || ferr "can not get branch name"
-for name in $ARANGO_SUPPORTED_BRANCHES; do
-    if [[ $branch_current == $name ]]; then
-        branch_to_use="$name"
-    fi
-done
+#get branch name - cache detection should work - this could be removed
+#cd "$ARANGO_SOURCE" || ferr "can not cd into source"
+#branch_current="$(git rev-parse --abbrev-ref HEAD)" || ferr "can not get branch name"
+#for name in $ARANGO_SUPPORTED_BRANCHES; do
+#    if [[ $branch_current == $name ]]; then
+#        branch_to_use="$name"
+#    fi
+#done
 
 newVersionNumber="$( tr -d '\r\n' < "$ARANGO_SOURCE/VERSION" )"
 #If ../../VERSION contains the string "devel" the current date will be added to all pages containing the version.
@@ -139,7 +139,6 @@ GITBOOK_ARGS=(--gitbook "${INSTALLED_GITBOOK_VERSION}")
 ################################################################################
 
 function build_book() {
-    #set -u book
     local book_name="$1"
     local book_src="$ARANGO_SOURCE_DOC_BOOKS/${book_name}"
     local book_pre="$ARANGO_BUILD_DOC_PRE/${book_name}"
@@ -160,14 +159,6 @@ function build_book() {
 
     ##########################################################################
     section " Preprocess - Book ${book_name} "
-    # codeBlockReader creates the file AllComments.txt in the source dir `Documentation/Books`
-    # TODO
-    # - comment purpose and format of the created file
-    # - make script position independent
-    say " - codeBlockReader: create AllCommands.txt"
-    cd "$ARANGO_SOURCE_DOC_BOOKS" #TODO remove -- required by script below
-    python $ARANGO_SOURCE/Documentation/Scripts/codeBlockReader.py && echo || ferr "can not run codeBlockReader.py"
-
 
     say " - copy directory structure"
     ## copy directroy structure of
@@ -241,7 +232,6 @@ function build_book() {
         cat "$book_src/book.json" | sed -e 's/@GPRIORITY@/0/' | jq .plugins > "$this" || exit 1
         unset cache
         while read -r file; do
-            echo "$file"
             local dir="${file%/*}"
             if cmp --silent "$this" "$file"; then
                 local cache="$dir"
@@ -292,6 +282,16 @@ build_books() {
     cross_source_check_docublocks || ferr "docublocks check failed"
     echo checks done
 
+    echo "==============================================================================="
+    section " Preprocess All Books "
+    # codeBlockReader creates the file AllComments.txt in the source dir `Documentation/Books`
+    # TODO
+    # - comment purpose and format of the created file
+    # - make script position independent
+    say " - codeBlockReader: create AllCommands.txt"
+    cd "$ARANGO_SOURCE_DOC_BOOKS" #TODO remove -- required by script below
+    python $ARANGO_SOURCE/Documentation/Scripts/codeBlockReader.py && echo || ferr "can not run codeBlockReader.py"
+
     for book in $books; do
         local book_src="$ARANGO_SOURCE_DOC_BOOKS/${book}"
         local book_pre="$ARANGO_BUILD_DOC_PRE/${book}"
@@ -299,14 +299,15 @@ build_books() {
 
         if $flushout; then
             rm -fr "$book_out"
+            mkdir -p "$book_out"
         fi
 
         if $flushpp; then
             rm -fr "$book_pre"
+            mkdir -p "$book_pre"
         fi
 
         build_book "${book}" "$@"
-
     done
 
     echo "==============================================================================="
@@ -329,6 +330,9 @@ build_books() {
 # main does parsing and calls functions for targets
 main(){
     show_config "$@"
+
+    test -d "$ARANGO_BUILD_DOC_OUT" || mkdir -p "$ARANGO_BUILD_DOC_OUT"
+    test -d "$ARANGO_BUILD_DOC_PRE" || mkdir -p "$ARANGO_BUILD_DOC_PRE"
 
     # parse args
     local keep_old=false
@@ -382,9 +386,9 @@ main(){
     if $keep_old; then
         rm -fr "$ARANGO_BUILD_DOC_OUT" || ferr "could not delete books output dir"
         rm -fr "$ARANGO_BUILD_DOC_PRE" || ferr "could not delete ppdir dir"
-        mkdir -p "$ARANGO_BUILD_DOC_OUT" || ferr "could not create books output dir"
-        mkdir -p "$ARANGO_BUILD_DOC_PRE" || ferr "could not create ppdir dir"
     fi
+    test -d "$ARANGO_BUILD_DOC_OUT" || mkdir -p "$ARANGO_BUILD_DOC_OUT" || ferr "could not create books output dir"
+    test -d "$ARANGO_BUILD_DOC_PRE" || mkdir -p "$ARANGO_BUILD_DOC_PRE" || ferr "could not create ppdir dir"
 
     #build html and run checks
     build_books "$books" || ferr "fail"
