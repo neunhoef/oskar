@@ -79,6 +79,8 @@ fi
 
 # define global functions
 debug(){ $ARANGO_DEBUG && say "#-# DEBUG #-# " "$@" && return 0; return 1; }
+. $NVM_DIR/nvm.sh || ferr "could not source nvm"
+nvm use default || ferr "could not use nvm"
 
 echo "================================================================================"
 section " ArangoDB Documenation Build script " | sed 's/-/=/g'

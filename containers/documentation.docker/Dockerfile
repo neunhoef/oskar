@@ -60,7 +60,10 @@ ARG FORCE_UPDATE="not given"
 
 ## setup gitbook
 ENV ARANGO_SUPPORTED_BRANCHES "3.0 3.1 3.2 3.3 3.4 devel" 
-ENV ARANGO_CACHE_BASE "$ARANGO_INSTALL/gitbook_cache" 
+ENV ARANGO_CACHE_BASE "$ARANGO_INSTALL/gitbook_cache"
+# install gitbook
+RUN bash -l -c ". $NVM_DIR/nvm.sh && nvm use default && npm install gitbook-cli -g && gitbook fetch"
+# setup cache
 COPY setup_gitbook /setup_gitbook
 RUN /setup_gitbook
 
