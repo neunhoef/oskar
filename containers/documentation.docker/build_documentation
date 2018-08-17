@@ -183,11 +183,11 @@ function build_book() {
     say " - generate markdown"
     cd "$ARANGO_SOURCE_DOC_BOOKS"
     #echo " - generating MD-Filedds"
-    python ${ARANGO_SOURCE}/Documentation/Scripts/generateMdFiles.py \
-           "${book_name}" \
-           "$ARANGO_BUILD_DOC_PRE" \
-           "$ARANGO_SOURCE/js/apps/system/_admin/aardvark/APP/api-docs.json" \
-           "${FILTER:-""}" || ferr "failed to generate md files"
+    ensure_cmd python ${ARANGO_SOURCE}/Documentation/Scripts/generateMdFiles.py \
+                    "${book_name}" \
+                    "$ARANGO_BUILD_DOC_PRE" \
+                    "$ARANGO_SOURCE/js/apps/system/_admin/aardvark/APP/api-docs.json" \
+                    "${FILTER:-""}"
     test -d "$ARANGO_BUILD_DOC_OUT" || mkdir -p "$ARANGO_BUILD_DOC_OUT"
 
 
@@ -281,7 +281,7 @@ build_books() {
     # - make script position independent
     say " - codeBlockReader: create AllCommands.txt"
     cd "$ARANGO_SOURCE_DOC_BOOKS" #TODO remove -- required by script below
-    python $ARANGO_SOURCE/Documentation/Scripts/codeBlockReader.py && echo || ferr "can not run codeBlockReader.py"
+    run_cmd python $ARANGO_SOURCE/Documentation/Scripts/codeBlockReader.py && echo || ferr "can not run codeBlockReader.py"
 
     for book in $books; do
         local book_src="$ARANGO_SOURCE_DOC_BOOKS/${book}"

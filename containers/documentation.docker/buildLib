@@ -52,8 +52,24 @@ show_config(){
     sleep 2
 }
 
+run_cmd(){
+    section " run external => " | sed 's/-/#/g'
+    echo "execute ($(date +%H:%M:%S)): '$@'"
+    section "" | sed 's/-/#/g'
+    time "$@"
+    local status=$?
+    section " <= run external " | sed 's/-/#/g'
+    return $status
+}
+
+ensure_cmd(){
+    run_cmd "$@"
+    (( $? != 0 )) && ferr "failed to run: '$@' "
+}
+
 spin_cmd() {
     ARANGO_SPIN=${ARANGO_SPIN:-false}
+    echo $ARANGO_SPIN
     if $ARANGO_SPIN; then
         {   local scount=1
             local arr=( "Was ist denn jetzt mit gitbook?"
@@ -70,7 +86,7 @@ spin_cmd() {
             while :; do
                 for a in / - \\ \|
                 do
-                    #printf '%s\b' "$a";
+                    printf '%s\b' "$a";
                     sleep 0.1;
                     (( scount++ ))
                     if (( scount % 600 == 0)); then
@@ -81,13 +97,13 @@ spin_cmd() {
         } 2> /dev/null
         local spin_pid=$!
 
-        time "$@"
+        run_cmd "$@"
 
         local status=$?
         { kill $spin_pid && wait; } 2>/dev/null
         return $status
     else
-        time "$@"
+        run_cmd "$@"
     fi
 }
 
@@ -104,9 +120,7 @@ run_gitbook(){
     local cmd=( gitbook "${GITBOOK_ARGS[@]}" "$@" )
     echo "execute ($(date +%H:%M:%S)): '${cmd[@]}' "
     spin_cmd "${cmd[@]}"
-    local status=$?
-
-    if (( status != 0 )) ; then
+    if (( $? != 0 )) ; then
         echo "==============================================================================="
         echo "## book.json ##################################################################"
         cat book.json
@@ -149,7 +163,7 @@ run_ditaa() {
         # if dest dir is not available then the creation of the
         # directory structures did most proably not work correctly
         if $use_ditaa; then
-            ditaa "$file" "$dest" || ferr "ditaa for $file to $dest failed"
+            run_cmd ditaa "$file" "$dest" || ferr "ditaa for $file to $dest failed"
         else
             local fake="$ARANGO_SOURCE/js/node/node_modules/mocha/images/error.png"
             cp "$fake" "$dest" || ferr "fake ditaa for $file to $dest failed"
