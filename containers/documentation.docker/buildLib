@@ -52,32 +52,59 @@ show_config(){
     sleep 2
 }
 
+spin_cmd() {
+    ARANGO_SPIN=${ARANGO_SPIN:-false}
+    echo $ARANGO_SPIN
+    if $ARANGO_SPIN; then
+        {
+            while :; do
+                for a in / - \\ \|
+                do
+                    printf '%s\b' "$a";
+                    sleep 0.1;
+                done;
+            done &
+        } 2> /dev/null;
+        local spin_pid=$!
+
+        time "$@"
+
+        local status=$?
+        { kill $spin_pid && wait; } 2>/dev/null
+        return $status
+    else
+        time "$@"
+    fi
+}
+
 run_gitbook(){
     local cache="$1"
+    shift
+
     local c=true
     if [[ $cache == "" ]] || [[ $cache == "fake cache" ]]; then
         c=false
     fi
-    shift
-    local cmd=( gitbook "${GITBOOK_ARGS[@]}" "$@" )
 
-    echo "execute (date +%H:%M:%S): '${cmd[@]}' "
-    if ! time "${cmd[@]}" ; then
+
+    local cmd=( gitbook "${GITBOOK_ARGS[@]}" "$@" )
+    echo "execute ($(date +%H:%M:%S)): '${cmd[@]}' "
+    spin_cmd "${cmd[@]}"
+    local status=$?
+
+    if (( status != 0 )) ; then
         echo "==============================================================================="
-        $c && echo "## install log  ###############################################################"
-        $c && cat "$cache/book_install.log"
-        #$c && echo "## book.json at install########################################################"
-        #$c && cat "$cache/book.json.install"
-        $c && echo "## diff #######################################################################"
-        $c && diff book.json "$cache/book.json.install"
         echo "## book.json ##################################################################"
         cat book.json
+        $c && echo "## diff #######################################################################"
+        $c && diff "$book_src/book.json" "$cache/book.json.original"
+        $c && echo "plugins must not differ"
         echo "## modules ####################################################################"
         ls -lisah node_modules
-        $c && echo "###############################################################################"
-        $c && echo "try to run ./scripts/buildContainerDocumentation --force-update if modules are missing"
-        ferr "running gitbook failed"
+        echo "###############################################################################"
+        echo "try to run ./scripts/buildContainerDocumentation --force-update if modules are missing"
         echo "==============================================================================="
+        ferr "running gitbook failed"
     fi
 }
 

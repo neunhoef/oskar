@@ -27,6 +27,7 @@ oskar_dir="${script_dir%/*}"
 
 cmd=( docker
       run
+      -e "ARANGO_SPIN=true"
       --user $UID
       -v "$oskar_dir:/oskar"
       -t "$arango_doc_container_default"
