@@ -63,7 +63,7 @@ BASH_LIB="${BASH_LIB:-"$ARANGO_INSTALL/bash_lib"}"
 
 if [ -f "$BASH_LIB" ]; then
     . "$BASH_LIB" || ferr "failed to source bash_lib"
-    ferr(){ _o_ferr "$@"; }
+    ferr(){ _o_ferrx "$@"; }
     err(){ _o_err "$@"; }
     section(){ _o_section "$@"; }
     say(){ _o_say "$@"; }
