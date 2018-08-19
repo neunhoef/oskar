@@ -53,12 +53,12 @@ show_config(){
 }
 
 run_cmd(){
-    section " run external => " | sed 's/-/#/g'
+    section "run external =>" | sed 's/-/#/g'
     echo "execute ($(date +%H:%M:%S)): '$@'"
     section "" | sed 's/-/#/g'
     time "$@"
     local status=$?
-    section " <= run external " | sed 's/-/#/g'
+    section "<= run external" | sed 's/-/#/g'
     return $status
 }
 
@@ -121,17 +121,18 @@ run_gitbook(){
     echo "execute ($(date +%H:%M:%S)): '${cmd[@]}' "
     spin_cmd "${cmd[@]}"
     if (( $? != 0 )) ; then
-        echo "==============================================================================="
-        echo "## book.json ##################################################################"
+        section "" | sed 's/-/=/g'
+        section "book.json" | sed 's/-/#/g'
         cat book.json
-        $c && echo "## diff #######################################################################"
+
+        $c && section "diff" | sed 's/-/#/g'
         $c && diff "$book_src/book.json" "$cache/book.json.original"
         $c && echo "plugins must not differ"
-        echo "## modules ####################################################################"
+
+        section "modules" | sed 's/-/#/g'
         ls -lisah node_modules
-        echo "###############################################################################"
+        section "" | sed 's/-/=/g'
         echo "try to run ./scripts/buildContainerDocumentation --force-update if modules are missing"
-        echo "==============================================================================="
         ferr "running gitbook failed"
     fi
 }
@@ -176,7 +177,7 @@ run_ditaa() {
 ################################################################################
 
 book_src_checks() {
-    section " Source Checks - Book $1 "
+    section "Source Checks - Book $1"
     source_check_bad_code_sections "$@" || ferr "fail"
     source_check_bad_headings      "$@" || ferr "fail"
     source_check_images_referenced "$@" || ferr "failed check for unused iamges ($?)"
@@ -184,7 +185,7 @@ book_src_checks() {
 
 
 book_pre_checks() {
-    section " Preprocessed Checks - Book $1 "
+    section "Preprocessed Checks - Book $1"
     pp_check_summary              "$@" || ferr "fail"
     pp_check_leftover_docublocks  "$@" || ferr "fail"
     pp_check_restheader_leftovers "$@" || ferr "fail"
@@ -194,17 +195,17 @@ book_pre_checks() {
 }
 
 book_out_checks(){
-    section " Output Checks - Book $1 "
+    section "Output Checks - Book $1"
     out_markdown_leftovers "$@" || ferr "fail"
 }
 
 cross_src_checks(){
-    section " Cross Source Checks "
+    section "Cross Source Checks"
     cross_source_check_docublocks
 }
 
 cross_pre_out_checks(){
-    section " Cross Preprocessed and Output Checks "
+    section "Cross Preprocessed and Output Checks"
     cross_out_check_dangling_anchors
 }
 
