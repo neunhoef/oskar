@@ -140,6 +140,10 @@ function buildDocumentationInPr
     end
 end
 
+function buildDocumentationForRelease
+    buildDocumentation --all-formats
+end
+
 function buildContainerDocumentation
     eval "$WORKDIR/scripts/buildContainerDocumentation"
 end
