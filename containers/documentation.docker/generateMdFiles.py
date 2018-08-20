@@ -2,23 +2,25 @@
 
 # Sample call in build documentatin script
 # #echo " - generating MD-Filedds"
-# python ${ARANGO_SOURCE}/Documentation/Scripts/generateMdFiles.py \
+# python3 ${ARANGO_SOURCE}/Documentation/Scripts/generateMdFiles.py \
 #        "${book_name}" \
-#        "$ARANGO_BUILD_DOC_PRE" \
-#        "$ARANGO_SOURCE/js/apps/system/_admin/aardvark/APP/api-docs.json" \
-#        "${FILTER:-""}" || ferr "failed to generate md files"
+#        "$ARANGO_SOURCE" \
+#        "$ARANGO_BUILD_DOC_PRE"
 #
 #
 #    Args:
-#
-#    inDir                         - book source
+#    book                          - book name
+#    srcDir                        - arango source source
 #    outDir                        - out directory
-#    swaggerJson                   - api-docs.json
 #    fileFilter (optional)         - filter re
 #    blockFilter (optional)        - block filter re?!?!a
 #
 #   needs allComments
-#    #TODO add path to examples
+#
+#   TODO
+#   - add path to examples
+#   - kill global state
+#
 #
 
 import sys
@@ -29,6 +31,12 @@ import io
 import shutil
 
 
+
+import logging
+
+# create logger with 'spam_application'
+logger = logging.getLogger('spam_application')
+logger.setLevel(logging.INFO)
 
 def printe(*args, **kwargs):
     print(*args, file=stderr, **kwargs)
@@ -363,13 +371,9 @@ remove_MULTICR = re.compile(r'\n\n\n*')
 
 RXIMAGES = re.compile(r".*\!\[([\d\s\w\/\. ()-]*)\]\(([\d\s\w\/\.-]*)\).*")
 
-def _mkdir_recursive(path):
-    sub_path = os.path.dirname(path)
-    if not os.path.exists(sub_path):
-        _mkdir_recursive(sub_path)
-    if not os.path.exists(path):
-        os.mkdir(path)
-
+def mkdir_recursive(ipath):
+    path = path_abs_norm(ipath)
+    os.makedirs(path, exist_ok=True)
 
 def replaceCode(lines, blockName):
     global swagger, thisVerb, route, verb
@@ -490,34 +494,38 @@ def replaceCodeFullFile(lines):
 # main loop over all files
 ################################################################################
 def walk_on_files(conf):
-    global fileFilter
+    """ walk over source tree and skip files and calculate output path for
+        files that are not skipped
+    """
+
+    global fileFilter #do we want to modify this? why global
+
     count = 0
     skipped = 0
 
-    print("walk on files inDirPath: " + conf.book_src)
-
+    logger.info("walk on files inDirPath: " + conf.book_src)
 
     for root, dirs, files in os.walk(conf.book_src):
         for file in files:
-            full_file_path=os.path.join(root,file)
-            in_file_rel_path=os.path.relpath(full_file_path, conf.book_src)
+
+            in_full_path=os.path.join(root,file)
+            in_rel_path=os.path.relpath(in_full_path, conf.book_src)
+            out_full_path = os.path.join(conf.book_pp, in_rel_path)
 
 
             if file.endswith(".md") and not file.endswith("SUMMARY.md"):
                 count += 1
-                nextInFileFull = os.path.join(root, file)
-                nextOutFileFull = os.path.join(conf.book_pp, in_file_rel_path)
                 if fileFilter != None:
-                    if fileFilter.match(nextInFileFull) == None:
+                    if fileFilter.match(in_full_path) == None:
                         skipped += 1
-                        # print("Skipping %s -> %s" % (inFileFull, outFileFull))
                         continue;
-                #print("%s -> %s" % (nextInFileFull, nextOutFileFull))
-                _mkdir_recursive(os.path.join(conf.book_src, root))
-                findStartCode(nextInFileFull, nextOutFileFull, conf.book_src)
+                ## what are those 2 functions doing
+                mkdir_recursive(os.path.dirname(out_full_path)) #create dir for output file
+                find_start_code(in_full_path, out_full_path, conf)
     print( "Processed %d files, skipped %d" % (count, skipped))
 
-def findStartCode(inFileFull, outFileFull, baseInPath):
+def find_start_code(inFileFull, outFileFull, conf):
+    baseInPahh = conf.book_src
     inFD = io.open(inFileFull, "r", encoding="utf-8", newline=None)
     textFile = inFD.read()
     inFD.close()
@@ -558,7 +566,7 @@ def findStartCode(inFileFull, outFileFull, baseInPath):
 
         outdir = os.path.dirname(outf)
         if not os.path.exists(outdir):
-            _mkdir_recursive(outdir)
+            mkdir_recursive(outdir)
         if os.path.commonprefix([inf, bookDir]) != bookDir:
             assetDir = os.path.join(outdir, assets)
             if not os.path.exists(assetDir):
@@ -827,7 +835,7 @@ swaggerJson: {swaggerJson}
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         print("usage: book arango-source output-directory swaggerJson [filter]")
-        exit(1)
+        sys.exit(1)
 
     conf = Config(sys.argv[1], sys.argv[2], sys.argv[3])
     print(conf)
@@ -841,12 +849,15 @@ if __name__ == '__main__':
         blockFilter = re.compile(sys.argv[6])
     ## end
 
-    f = io.open(conf.swaggerJson, 'r', encoding='utf-8', newline=None)
-    swagger=json.load(f)
-    f.close()
+    with open(conf.swaggerJson, 'r', encoding='utf-8', newline=None) as f:
+        swagger=json.load(f)
+
     loadDokuBlocks(conf.allComments) #"allComments.txt"
+
     loadProgramOptionBlocks()
+
     print("loaded %d / %d docu blocks" % (len(dokuBlocks[0]), len(dokuBlocks[1])))
-    #print(dokuBlocks[0].keys())
 
     walk_on_files(conf)
+
+    sys.exit(0)
