@@ -485,32 +485,32 @@ def replaceCodeFullFile(lines):
 ################################################################################
 # main loop over all files
 ################################################################################
-def walk_on_files(src_dir, book, inDirPath, outDirPath):
+def walk_on_files(conf):
     global fileFilter
     count = 0
     skipped = 0
 
-    print("walk on files inDirPath: " + inDirPath)
+    print("walk on files inDirPath: " + conf.book_src)
 
 
-    for root, dirs, files in os.walk(inDirPath):
+    for root, dirs, files in os.walk(conf.book_src):
         for file in files:
             full_file_path=os.path.join(root,file)
-            in_file_rel_path=os.path.relpath(full_file_path, inDirPath)
+            in_file_rel_path=os.path.relpath(full_file_path, conf.book_src)
+
+
             if file.endswith(".md") and not file.endswith("SUMMARY.md"):
                 count += 1
                 nextInFileFull = os.path.join(root, file)
-                nextOutFileFull = os.path.join(outDirPath, book, in_file_rel_path)
-                print("out dir path " + outDirPath)
-                print("next out file" + nextOutFileFull)
+                nextOutFileFull = os.path.join(conf.book_pp, in_file_rel_path)
                 if fileFilter != None:
                     if fileFilter.match(nextInFileFull) == None:
                         skipped += 1
                         # print "Skipping %s -> %s" % (inFileFull, outFileFull)
                         continue;
                 #print "%s -> %s" % (nextInFileFull, nextOutFileFull)
-                _mkdir_recursive(os.path.join(outDirPath, root))
-                findStartCode(nextInFileFull, nextOutFileFull, inDirPath)
+                _mkdir_recursive(os.path.join(conf.book_src, root))
+                findStartCode(nextInFileFull, nextOutFileFull, conf.book_src)
     print  "Processed %d files, skipped %d" % (count, skipped)
 
 def findStartCode(inFileFull, outFileFull, baseInPath):
@@ -796,48 +796,53 @@ def loadProgramOptionBlocks():
         dokuBlocks[0]['program_options_' + program.lower()] = '\n'.join(output) + '\n\n'
 
 
-
 def path_abs_norm(path):
     return os.path.normpath(os.path.abspath(path))
+
+class Config():
+    def __init__(self,book, src, out):
+        self.book = book
+        self.src = path_abs_norm(src)
+        self.out =  path_abs_norm(out)
+
+        self.book_src = os.path.join(self.src ,"Documentation","Books", self.book)
+        self.book_pp = os.path.join(self.out , self.book)
+        self.allComments = os.path.join(self.src, "Documentation", "Books", "allComments.txt")
+        self.swaggerJson = os.path.join(self.src, "js","apps","system","_admin","aardvark","APP","api-docs.json")
+
+    def __str__(self):
+        return """
+book       : {book}
+src        : {src}
+out        : {out}
+book_src   : {book_src}
+allComments: {allComments}
+swaggerJson: {swaggerJson}
+""".format(**(self.__dict__))
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         print("usage: book arango-source output-directory swaggerJson [filter]")
         exit(1)
 
-    book = sys.argv[1]
-    srcDir = path_abs_norm(sys.argv[2])
-    outDir = path_abs_norm(sys.argv[3])
+    conf = Config(sys.argv[1], sys.argv[2], sys.argv[3])
+    print(conf)
 
-
-    inDir = os.path.join(srcDir,"Documentation","Books",book)
-    allComments = os.path.join(srcDir, "Documentation", "Books", "allComments.txt")
-    swaggerJson = os.path.join(srcDir,"js","apps","system","_admin","aardvark","APP","api-docs.json")
-
+    #TODO add to conf if required
     if len(sys.argv) > 5 and sys.argv[5].strip() != '':
         print "filtering " + sys.argv[4]
         fileFilter = re.compile(sys.argv[5])
     if len(sys.argv) > 6 and sys.argv[6].strip() != '':
         print "filtering Docublocks: " + sys.argv[5]
         blockFilter = re.compile(sys.argv[6])
+    ## end
 
-    print("book: " + book)
-    print("inDir: " + inDir)
-    print("outDir: " + outDir)
-    print("srcDir: " + srcDir)
-    print("allComments: " + allComments)
-    print("swaggerJson: " + swaggerJson)
-
-
-
-
-
-    f = io.open(swaggerJson, 'r', encoding='utf-8', newline=None)
-    swagger= json.load(f)
+    f = io.open(conf.swaggerJson, 'r', encoding='utf-8', newline=None)
+    swagger=json.load(f)
     f.close()
-    loadDokuBlocks(allComments) #"allComments.txt"
+    loadDokuBlocks(conf.allComments) #"allComments.txt"
     loadProgramOptionBlocks()
     print "loaded %d / %d docu blocks" % (len(dokuBlocks[0]), len(dokuBlocks[1]))
     #print dokuBlocks[0].keys()
 
-    walk_on_files(srcDir, book, inDir, outDir)
+    walk_on_files(conf)

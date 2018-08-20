@@ -192,8 +192,6 @@ function build_book() {
                "${FILTER:-""}" || ferr "could not generate md-files $?"
     test -d "$ARANGO_BUILD_DOC_OUT" || mkdir -p "$ARANGO_BUILD_DOC_OUT"
 
-    exit 0
-
 
     ##########################################################################
     book_pre_checks "${book_name}" "$book_src" "$book_pre" "$book_out"
