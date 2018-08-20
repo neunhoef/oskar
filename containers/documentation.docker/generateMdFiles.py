@@ -524,19 +524,22 @@ def walk_on_files(conf):
                 find_start_code(in_full_path, out_full_path, conf)
     print( "Processed %d files, skipped %d" % (count, skipped))
 
-def find_start_code(inFileFull, outFileFull, conf):
-    baseInPahh = conf.book_src
-    inFD = io.open(inFileFull, "r", encoding="utf-8", newline=None)
-    textFile = inFD.read()
-    inFD.close()
-    #print("-" * 80)
-    #print(textFile)
+def find_start_code(in_full, out_full, conf):
+    baseInPath = conf.book_src
+
+    textFile = None
+    with open(in_full, "r", encoding="utf-8", newline=None) as fd:
+        textFile = fd.read()
+
+    logger.debug("-" * 80)
+    logger.debug(textFile)
+
     matchInline = re.findall(r'@startDocuBlockInline\s*(\w+)', textFile)
     if matchInline:
         for find in matchInline:
             #print("7"*80)
-            #print(inFileFull + " " + find)
-            textFile = replaceTextInline(textFile, inFileFull, find)
+            #print(in_full + " " + find)
+            textFile = replaceTextInline(textFile, in_full, find)
             #print(textFile)
 
     match = re.findall(r'@startDocuBlock\s*(\w+)', textFile)
@@ -544,23 +547,23 @@ def find_start_code(inFileFull, outFileFull, conf):
         for find in match:
             #print("8"*80)
             #print(find)
-            textFile = replaceText(textFile, inFileFull, find)
+            textFile = replaceText(textFile, in_full, find)
             #print(textFile)
 
     try:
         textFile = replaceCodeFullFile(textFile)
     except:
-        printe("while parsing :      "  + inFileFull)
+        printe("while parsing :      "  + in_full)
         raise
     #print("9" * 80)
     #print(textFile)
 
     def analyzeImages(m):
         imageLink = m.groups()[1]
-        inf = os.path.realpath(os.path.join(os.path.dirname(inFileFull), imageLink))
-        outf = os.path.realpath(os.path.join(os.path.dirname(outFileFull), imageLink))
+        inf = os.path.realpath(os.path.join(os.path.dirname(in_full), imageLink))
+        outf = os.path.realpath(os.path.join(os.path.dirname(out_full), imageLink))
         bookDir = os.path.realpath(baseInPath)
-        depth = len(inFileFull.split(os.sep)) - 1 # filename + book directory
+        depth = len(in_full.split(os.sep)) - 1 # filename + book directory
         assets = os.path.join((".." + os.sep)*depth, baseInPath, "assets")
 	# print(inf, outf, bookDir, depth, assets)
 
@@ -579,7 +582,7 @@ def find_start_code(inFileFull, outFileFull, conf):
         return str('![' + m.groups()[0] + '](' + imageLink + ')')
 
     textFile = re.sub(RXIMAGES,analyzeImages, textFile)
-    outFD = io.open(outFileFull, "w", encoding="utf-8", newline="")
+    outFD = io.open(out_full, "w", encoding="utf-8", newline="")
     outFD.write(textFile)
     outFD.close()
 #JSF_put_api_replication_synchronize
