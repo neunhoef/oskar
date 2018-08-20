@@ -191,7 +191,6 @@ function build_book() {
     ensure_cmd python "${book_name}" \
                       "${ARANGO_SOURCE}" \
                       "$ARANGO_BUILD_DOC_PRE" \
-                      "$ARANGO_SOURCE/js/apps/system/_admin/aardvark/APP/api-docs.json" \
                       "${FILTER:-""}"
     test -d "$ARANGO_BUILD_DOC_OUT" || mkdir -p "$ARANGO_BUILD_DOC_OUT"
 
