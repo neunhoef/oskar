@@ -31,7 +31,7 @@ import shutil
 
 
 def printe(*args, **kwargs):
-    return print(*args, file=stderr, **kwargs)
+    print(*args, file=stderr, **kwargs)
 
 ################################################################################
 ### @brief length of the swagger definition namespace
@@ -105,7 +105,7 @@ def unwrapPostJson(reference, layer):
             required = ('required' in swagger['definitions'][reference] and
                         param in swagger['definitions'][reference]['required'])
 
-            # print >> sys.stderr, thisParam
+            # printe(thisParam)
             if '$ref' in thisParam:
                 subStructRef = getReference(thisParam, reference, None)
 
@@ -163,10 +163,10 @@ def getRestBodyParam():
 def getRestDescription():
     #printe("RESTDESCRIPTION")
     if thisVerb['description']:
-        #print >> sys.stderr, thisVerb['description']
+        #printe(thisVerb['description'])
         return RX3[0].sub(RX3[1], thisVerb['description'])
     else:
-        #print >> sys.stderr, "ELSE"
+        #printe("ELSE")
         return ""
 
 def getRestReplyBodyParam(param):
@@ -185,7 +185,7 @@ def noValidation():
     pass
 
 def validatePathParameters():
-    # print thisVerb
+    # print(thisVerb)
     for nParam in range(0, len(thisVerb['parameters'])):
         if thisVerb['parameters'][nParam]['in'] == 'path':
             break
@@ -193,7 +193,7 @@ def validatePathParameters():
         raise Exception("@RESTPATHPARAMETERS found in Swagger data without any parameter following in %s " % json.dumps(thisVerb, indent=4, separators=(', ',': '), sort_keys=True))
 
 def validateQueryParams():
-    # print thisVerb
+    # print(thisVerb)
     for nParam in range(0, len(thisVerb['parameters'])):
         if thisVerb['parameters'][nParam]['in'] == 'query':
             break
@@ -201,7 +201,7 @@ def validateQueryParams():
         raise Exception("@RESTQUERYPARAMETERS found in Swagger data without any parameter following in %s " % json.dumps(thisVerb, indent=4, separators=(', ',': '), sort_keys=True))
 
 def validateHeaderParams():
-    # print thisVerb
+    # print(thisVerb)
     for nParam in range(0, len(thisVerb['parameters'])):
         if thisVerb['parameters'][nParam]['in'] == 'header':
             break
@@ -209,7 +209,7 @@ def validateHeaderParams():
         raise Exception("@RESTHEADERPARAMETERS found in Swagger data without any parameter following in %s " % json.dumps(thisVerb, indent=4, separators=(', ',': '), sort_keys=True))
 
 def validateReturnCodes():
-    # print thisVerb
+    # print(thisVerb)
     for nParam in range(0, len(thisVerb['responses'])):
         if len(thisVerb['responses'].keys()) != 0:
             break
@@ -273,7 +273,7 @@ r'''
 
 def SimpleRepl(match):
     m = match.group(0)
-    # print 'xxxxx [%s]' % m
+    # print('xxxxx [%s]' % m)
     n = None
     try:
         n = SIMPL_REPL_VALIDATE_DICT[m]
@@ -383,15 +383,15 @@ def replaceCode(lines, blockName):
             (verb,route) =  headerMatch.group(1).split(',')[0].split(' ')
             verb = verb.lower()
         except:
-            print >> sys.stderr, "failed to parse header from: " + headerMatch.group(1) + " while analysing " + blockName
+            printe("failed to parse header from: " + headerMatch.group(1) + " while analysing " + blockName)
             raise
 
         try:
             thisVerb = swagger['paths'][route][verb]
         except:
-            print >> sys.stderr, "failed to locate route in the swagger json: [" + verb + " " + route + "]" + " while analysing " + blockName
-            print >> sys.stderr, lines
-            print >> sys.stderr, "Did you forget to run utils/generateSwagger.sh?"
+            printe("failed to locate route in the swagger json: [" + verb + " " + route + "]" + " while analysing " + blockName)
+            printe(lines)
+            printe("Did you forget to run utils/generateSwagger.sh?")
             raise
 
     for (oneRX, repl) in RX:
@@ -403,7 +403,7 @@ def replaceCode(lines, blockName):
         foundRestBodyParam = False
         foundRestReplyBodyParam = False
         lineR = lines.split('\n')
-        #print lineR
+        #print(lineR)
         l = len(lineR)
         r = 0
         while (r < l):
@@ -418,7 +418,7 @@ def replaceCode(lines, blockName):
                 while ((len(lineR[r]) == 0) or
                        ((lineR[r][0] != '@') or
                        have_RESTBODYPARAM.search(lineR[r]))):
-                    # print "xxx - %d %s" %(len(lineR[r]), lineR[r])
+                    # print("xxx - %d %s" %(len(lineR[r]), lineR[r]))
                     lineR[r] = ''
                     r+=1
 
@@ -448,14 +448,14 @@ def replaceCode(lines, blockName):
                     r+=1
             r+=1
         lines = "\n".join(lineR)
-    #print "x" * 70
-    #print lines
+    #print("x" * 70)
+    #print(lines)
     try:
         lines = SIMPLE_RX.sub(SimpleRepl, lines)
     except Exception as x:
-        print >> sys.stderr, "While working on: [" + verb + " " + route + "]" + " while analysing " + blockName
-        print >> sys.stderr, x.message
-        print >> sys.stderr, "Did you forget to run utils/generateSwagger.sh?"
+        printe("While working on: [" + verb + " " + route + "]" + " while analysing " + blockName)
+        printe(x.message)
+        printe("Did you forget to run utils/generateSwagger.sh?")
         raise
 
 
@@ -463,7 +463,7 @@ def replaceCode(lines, blockName):
         lines = oneRX.sub(repl, lines)
 
     lines = remove_MULTICR.sub("\n\n", lines)
-    #print lines
+    #print(lines)
     return lines
 
 def replaceCodeIndex(lines):
@@ -510,42 +510,42 @@ def walk_on_files(conf):
                 if fileFilter != None:
                     if fileFilter.match(nextInFileFull) == None:
                         skipped += 1
-                        # print "Skipping %s -> %s" % (inFileFull, outFileFull)
+                        # print("Skipping %s -> %s" % (inFileFull, outFileFull))
                         continue;
-                #print "%s -> %s" % (nextInFileFull, nextOutFileFull)
+                #print("%s -> %s" % (nextInFileFull, nextOutFileFull))
                 _mkdir_recursive(os.path.join(conf.book_src, root))
                 findStartCode(nextInFileFull, nextOutFileFull, conf.book_src)
-    print  "Processed %d files, skipped %d" % (count, skipped)
+    print( "Processed %d files, skipped %d" % (count, skipped))
 
 def findStartCode(inFileFull, outFileFull, baseInPath):
     inFD = io.open(inFileFull, "r", encoding="utf-8", newline=None)
     textFile = inFD.read()
     inFD.close()
-    #print "-" * 80
-    #print textFile
+    #print("-" * 80)
+    #print(textFile)
     matchInline = re.findall(r'@startDocuBlockInline\s*(\w+)', textFile)
     if matchInline:
         for find in matchInline:
-            #print "7"*80
-            #print inFileFull + " " + find
+            #print("7"*80)
+            #print(inFileFull + " " + find)
             textFile = replaceTextInline(textFile, inFileFull, find)
-            #print textFile
+            #print(textFile)
 
     match = re.findall(r'@startDocuBlock\s*(\w+)', textFile)
     if match:
         for find in match:
-            #print "8"*80
-            #print find
+            #print("8"*80)
+            #print(find)
             textFile = replaceText(textFile, inFileFull, find)
-            #print textFile
+            #print(textFile)
 
     try:
         textFile = replaceCodeFullFile(textFile)
     except:
         printe("while parsing :      "  + inFileFull)
         raise
-    #print "9" * 80
-    #print textFile
+    #print("9" * 80)
+    #print(textFile)
 
     def analyzeImages(m):
         imageLink = m.groups()[1]
@@ -578,18 +578,18 @@ def findStartCode(inFileFull, outFileFull, baseInPath):
 
 def replaceText(text, pathOfFile, searchText):
   ''' inserts docublocks into md '''
-  #print '7'*80
+  #print('7'*80)
   global dokuBlocks
   if not searchText in dokuBlocks[0]:
-      print >> sys.stderr, "Failed to locate the docublock '" + searchText + "' for replacing it into the file '" +pathOfFile + "'\n have:"
-      print >> sys.stderr, dokuBlocks[0].keys()
-      print >> sys.stderr, '*' * 80
-      print >> sys.stderr, text
-      print >> sys.stderr, "Failed to locate the docublock '" + searchText + "' for replacing it into the file '" +pathOfFile + "' For details scroll up!"
+      printe("Failed to locate the docublock '" + searchText + "' for replacing it into the file '" +pathOfFile + "'\n have:")
+      printe(dokuBlocks[0].keys())
+      printe('*' * 80)
+      printe(text)
+      printe("Failed to locate the docublock '" + searchText + "' for replacing it into the file '" +pathOfFile + "' For details scroll up!")
       exit(1)
-  #print '7'*80
-  #print dokuBlocks[0][searchText]
-  #print '7'*80
+  #print('7'*80)
+  #print(dokuBlocks[0][searchText])
+  #print('7'*80)
   rc= re.sub("@startDocuBlock\s+"+ searchText + "(?:\s+|$)", dokuBlocks[0][searchText], text)
   return rc
 
@@ -597,23 +597,23 @@ def replaceTextInline(text, pathOfFile, searchText):
   ''' inserts docublocks into md '''
   global dokuBlocks
   if not searchText in dokuBlocks[1]:
-      print >> sys.stderr, "Failed to locate the inline docublock '" + searchText + "' for replacing it into the file '" + pathOfFile + "'\n have: "
-      print >> sys.stderr, "%s" %(dokuBlocks[1].keys())
-      print >> sys.stderr, '*' * 80
-      print >> sys.stderr, text
-      print >> sys.stderr, "Failed to locate the inline docublock '" + searchText + "' for replacing it into the file '" + pathOfFile + "' For details scroll up!"
+      printe("Failed to locate the inline docublock '" + searchText + "' for replacing it into the file '" + pathOfFile + "'\n have: ")
+      printe("%s" %(dokuBlocks[1].keys()))
+      printe('*' * 80)
+      printe(text)
+      printe("Failed to locate the inline docublock '" + searchText + "' for replacing it into the file '" + pathOfFile + "' For details scroll up!")
       exit(1)
   rePattern = r'(?s)\s*@startDocuBlockInline\s+'+ searchText +'\s.*?@endDocuBlock\s' + searchText
   # (?s) is equivalent to flags=re.DOTALL but works in Python 2.6
   match = re.search(rePattern, text)
 
   if (match == None):
-      print >> sys.stderr, "failed to match with '" + rePattern + "' for " + searchText + " in file " + pathOfFile + " in: \n" + text
+      printe("failed to match with '" + rePattern + "' for " + searchText + " in file " + pathOfFile + " in: \n" + text)
       exit(1)
 
   subtext = match.group(0)
   if (len(re.findall('@startDocuBlock', subtext)) > 1):
-      print >> sys.stderr, "failed to snap with '" + rePattern + "' on end docublock for " + searchText + " in " + pathOfFile + " our match is:\n" + subtext
+      printe("failed to snap with '" + rePattern + "' on end docublock for " + searchText + " in " + pathOfFile + " our match is:\n" + subtext)
       exit(1)
 
   return re.sub(rePattern, dokuBlocks[1][searchText], text)
@@ -640,7 +640,7 @@ def readStartLine(line):
         try:
             thisBlockName = SEARCH_START.search(line).group(1).strip()
         except:
-            print >> sys.stderr, "failed to read startDocuBlock: [" + line + "]"
+            printe("failed to read startDocuBlock: [" + line + "]")
             exit(1)
         dokuBlocks[thisBlockType][thisBlockName] = ""
         return STATE_SEARCH_END
@@ -651,8 +651,8 @@ def readNextLine(line):
     if '@endDocuBlock' in line:
         return STATE_SEARCH_START
     dokuBlocks[thisBlockType][thisBlockName] += line
-    #print "reading " + thisBlockName
-    #print dokuBlocks[thisBlockType][thisBlockName]
+    #print("reading " + thisBlockName)
+    #print(dokuBlocks[thisBlockType][thisBlockName])
     return STATE_SEARCH_END
 
 def loadDokuBlocks(allComments):
@@ -666,25 +666,25 @@ def loadDokuBlocks(allComments):
             state = readNextLine(line)
 
         #if state == STATE_SEARCH_START:
-        #    print dokuBlocks[thisBlockType].keys()
+        #    print(dokuBlocks[thisBlockType].keys())
 
     if blockFilter != None:
         remainBlocks= {}
-        print "filtering blocks"
+        print("filtering blocks")
         for oneBlock in dokuBlocks[0]:
             if blockFilter.match(oneBlock) != None:
-                print "found block %s" % (oneBlock)
-                #print dokuBlocks[0][oneBlock]
+                print("found block %s" % (oneBlock))
+                #print(dokuBlocks[0][oneBlock])
                 remainBlocks[oneBlock] = dokuBlocks[0][oneBlock]
         dokuBlocks[0] = remainBlocks
 
     for oneBlock in dokuBlocks[0]:
         try:
-            #print "processing %s" % oneBlock
+            #print("processing %s" % oneBlock)
             dokuBlocks[0][oneBlock] = replaceCode(dokuBlocks[0][oneBlock], oneBlock)
-            #print "6"*80
-            #print dokuBlocks[0][oneBlock]
-            #print "6"*80
+            #print("6"*80)
+            #print(dokuBlocks[0][oneBlock])
+            #print("6"*80)
         except:
             printe("while parsing :\n"  + oneBlock)
             raise
@@ -834,10 +834,10 @@ if __name__ == '__main__':
 
     #TODO add to conf if required
     if len(sys.argv) > 5 and sys.argv[5].strip() != '':
-        print "filtering " + sys.argv[4]
+        print("filtering " + sys.argv[4])
         fileFilter = re.compile(sys.argv[5])
     if len(sys.argv) > 6 and sys.argv[6].strip() != '':
-        print "filtering Docublocks: " + sys.argv[5]
+        print("filtering Docublocks: " + sys.argv[5])
         blockFilter = re.compile(sys.argv[6])
     ## end
 
@@ -846,7 +846,7 @@ if __name__ == '__main__':
     f.close()
     loadDokuBlocks(conf.allComments) #"allComments.txt"
     loadProgramOptionBlocks()
-    print "loaded %d / %d docu blocks" % (len(dokuBlocks[0]), len(dokuBlocks[1]))
-    #print dokuBlocks[0].keys()
+    print("loaded %d / %d docu blocks" % (len(dokuBlocks[0]), len(dokuBlocks[1])))
+    #print(dokuBlocks[0].keys())
 
     walk_on_files(conf)
