@@ -61,7 +61,7 @@ blockFilter = None
 dokuBlocks = [{},{}]
 thisVerb = {}
 route = ''
-verb = '#    #TODO add path to examples'
+verb = '' #    #TODO add path to examples'
 
 ################################################################################
 ### Swagger Markdown rendering
@@ -737,8 +737,6 @@ def loadProgramOptionBlocks():
         # Load program options dump and convert to Python object
         with io.open(programOptionsDump, 'r', encoding='utf-8', newline=None) as fp:
             try:
-                print(program)
-                os.exit(1)
                 optionsRaw = json.load(fp)
             except ValueError as err:
                 # invalid JSON
@@ -806,27 +804,26 @@ if __name__ == '__main__':
         exit(1)
 
     book = sys.argv[1]
-    src_dir = sys.argv[2]
-    preprocessing_dir = sys.argv[3]
+    srcDir = sys.argv[2]
+    inDir = os.path.join(srcDir,"Documentation","Books",book)
 
-    if len(sys.argv) > 4 and sys.argv[4].strip() != '':
-        print STD_COLOR + "filtering " + sys.argv[4] + RESET
-        fileFilter = re.compile(sys.argv[4])
+    allComments = os.path.join(srcDir, "Documentation", "Books", "allComments.txt")
+    outDir = sys.argv[3]
+    swaggerJson = os.path.join(srcDir,"js","apps","system","_admin","aardvark","APP","api-docs.json")
     if len(sys.argv) > 5 and sys.argv[5].strip() != '':
+        print STD_COLOR + "filtering " + sys.argv[4] + RESET
+        fileFilter = re.compile(sys.argv[5])
+    if len(sys.argv) > 6 and sys.argv[6].strip() != '':
         print STD_COLOR + "filtering Docublocks: " + sys.argv[5] + RESET
-        blockFilter = re.compile(sys.argv[5])
-
-
-    book_src_dir = os.path.join(src_dir,book)
-    allComments = os.path.join(src_dir, "Documentation", "Books", "allComments.txt")
-    swaggerJson = os.path.join(src_dir,"js","apps","system","_admin","aardvark","APP","api-docs.json")
-
+        blockFilter = re.compile(sys.argv[6])
     f = io.open(swaggerJson, 'r', encoding='utf-8', newline=None)
     swagger= json.load(f)
     f.close()
-    loadDokuBlocks(allComments) #"allComments.txt
+    loadDokuBlocks(allComments) #"allComments.txt"
     loadProgramOptionBlocks()
-
     print "%sloaded %d / %d docu blocks%s" % (STD_COLOR, len(dokuBlocks[0]), len(dokuBlocks[1]), RESET)
     #print dokuBlocks[0].keys()
-    walk_on_files(book_src_dir, preprocessing_dir)
+
+    print(inDir)
+    print(outDir)
+    walk_on_files(inDir, outDir)
