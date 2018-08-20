@@ -184,15 +184,15 @@ function build_book() {
     # generateMdFiles
     say " - generate markdown"
     cd "$ARANGO_SOURCE_DOC_BOOKS" #must be run in that location
-    #echo " - generating MD-Filedds"
 
-    containers/documentation.docker/generateMdFiles.py HTTP work/ArangoDB work/build-documentation/books_pp work/ArangoDB/js/apps/system/_admin/aardvark/APP/api-docs.json
-
-    ensure_cmd python "${book_name}" \
-                      "${ARANGO_SOURCE}" \
-                      "$ARANGO_BUILD_DOC_PRE" \
-                      "${FILTER:-""}"
+    ensure_cmd "$ARANGO_WORK/../containers/documentation.docker/generateMdFiles.py" \
+               "${book_name}" \
+               "${ARANGO_SOURCE}" \
+               "$ARANGO_BUILD_DOC_PRE" \
+               "${FILTER:-""}" || ferr "could not generate md-files $?"
     test -d "$ARANGO_BUILD_DOC_OUT" || mkdir -p "$ARANGO_BUILD_DOC_OUT"
+
+    exit 0
 
 
     ##########################################################################
@@ -274,7 +274,6 @@ build_books() {
     local flushout=true
 
     section "" | sed 's/-/=/g'
-    section "Cross Source Checks"
     cross_source_check_docublocks || ferr "docublocks check failed"
     echo checks done
 

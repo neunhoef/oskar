@@ -28,17 +28,6 @@ import json
 import io
 import shutil
 
-RESET  = '\033[0m'
-def make_std_color(No):
-    # defined for 1 through 7
-    return '\033[3' + No+ 'm'
-def make_color(No):
-    # defined for 1 through 255
-    return '\033[38;5;'+ No + 'm'
-
-WRN_COLOR = make_std_color('3')
-ERR_COLOR = make_std_color('1')
-STD_COLOR = make_color('8')
 
 ################################################################################
 ### @brief length of the swagger definition namespace
@@ -70,7 +59,7 @@ def getReference(name, source, verb):
     try:
         ref = name['$ref'][defLen:]
     except Exception as x:
-        print >>sys.stderr, ERR_COLOR + "No reference in: " + name + RESET
+        print >>sys.stderr, "No reference in: " + name
         raise
     if not ref in swagger['definitions']:
         fn = ''
@@ -78,7 +67,7 @@ def getReference(name, source, verb):
             fn = swagger['paths'][route][verb]['x-filename']
         else:
             fn = swagger['definitions'][source]['x-filename']
-        print >> sys.stderr, STD_COLOR + json.dumps(swagger['definitions'], indent=4, separators=(', ',': '), sort_keys=True) + RESET
+        print >> sys.stderr, json.dumps(swagger['definitions'], indent=4, separators=(', ',': '), sort_keys=True)
         raise Exception("invalid reference: " + ref + " in " + fn)
     return ref
 
@@ -143,13 +132,13 @@ def unwrapPostJson(reference, layer):
                     try:
                         subStructRef = getReference(thisParam['items'], reference, None)
                     except:
-                        print >>sys.stderr, ERR_COLOR + "while analyzing: " + param + RESET
-                        print >>sys.stderr, WRN_COLOR + thisParam + RESET
+                        print >>sys.stderr, "while analyzing: " + param
+                        print >>sys.stderr, thisParam
                     rc += "\n" + unwrapPostJson(subStructRef, layer + 1)
             else:
                 if thisParam['type'] not in swaggerDataTypes:
-                    print >>sys.stderr, ERR_COLOR + "while analyzing: " + param + RESET
-                    print >>sys.stderr, WRN_COLOR + thisParam['type'] + " is not a valid swagger datatype; supported ones: " + str(swaggerDataTypes) + RESET
+                    print >>sys.stderr, "while analyzing: " + param
+                    print >>sys.stderr, thisParam['type'] + " is not a valid swagger datatype; supported ones: " + str(swaggerDataTypes)
                     raise Exception("invalid swagger type")
                 rc += '  ' * layer + "- **" + param + "**: " + TrimThisParam(thisParam['description'], layer) + '\n'
     return rc
@@ -182,8 +171,8 @@ def getRestReplyBodyParam(param):
     try:
         rc += unwrapPostJson(getReference(thisVerb['responses'][param]['schema'], route, verb), 0)
     except Exception:
-        print >>sys.stderr, ERR_COLOR + "failed to search " + param + " in: " + RESET
-        print >>sys.stderr, WRN_COLOR + json.dumps(thisVerb, indent=4, separators=(', ',': '), sort_keys=True) + RESET
+        print >>sys.stderr, "failed to search " + param + " in: "
+        print >>sys.stderr, json.dumps(thisVerb, indent=4, separators=(', ',': '), sort_keys=True)
         raise
     return rc + "\n"
 
@@ -390,14 +379,14 @@ def replaceCode(lines, blockName):
             (verb,route) =  headerMatch.group(1).split(',')[0].split(' ')
             verb = verb.lower()
         except:
-            print >> sys.stderr, ERR_COLOR + "failed to parse header from: " + headerMatch.group(1) + " while analysing " + blockName + RESET
+            print >> sys.stderr, "failed to parse header from: " + headerMatch.group(1) + " while analysing " + blockName
             raise
 
         try:
             thisVerb = swagger['paths'][route][verb]
         except:
-            print >> sys.stderr, ERR_COLOR + "failed to locate route in the swagger json: [" + verb + " " + route + "]" + " while analysing " + blockName + RESET
-            print >> sys.stderr, WRN_COLOR + lines + RESET
+            print >> sys.stderr, "failed to locate route in the swagger json: [" + verb + " " + route + "]" + " while analysing " + blockName
+            print >> sys.stderr, lines
             print >> sys.stderr, "Did you forget to run utils/generateSwagger.sh?"
             raise
 
@@ -460,8 +449,8 @@ def replaceCode(lines, blockName):
     try:
         lines = SIMPLE_RX.sub(SimpleRepl, lines)
     except Exception as x:
-        print >> sys.stderr, ERR_COLOR + "While working on: [" + verb + " " + route + "]" + " while analysing " + blockName + RESET
-        print >> sys.stderr, WRN_COLOR + x.message + RESET
+        print >> sys.stderr, "While working on: [" + verb + " " + route + "]" + " while analysing " + blockName
+        print >> sys.stderr, x.message
         print >> sys.stderr, "Did you forget to run utils/generateSwagger.sh?"
         raise
 
@@ -496,16 +485,23 @@ def replaceCodeFullFile(lines):
 ################################################################################
 # main loop over all files
 ################################################################################
-def walk_on_files(inDirPath, outDirPath):
+def walk_on_files(src_dir, inDirPath, outDirPath):
     global fileFilter
     count = 0
     skipped = 0
+
+    print("walk on files inDirPath")
+
     for root, dirs, files in os.walk(inDirPath):
         for file in files:
+            in_file_rel_path=os.path.relpath(file,inDirPath)
+            print("in file rel path" + in_file_rel_path)
             if file.endswith(".md") and not file.endswith("SUMMARY.md"):
                 count += 1
                 nextInFileFull = os.path.join(root, file)
-                nextOutFileFull = os.path.join(outDirPath, nextInFileFull)
+                nextOutFileFull = os.path.join(outDirPath, in_file_rel_path)
+                print("out dir path " + outDirPath)
+                print("next out file" + nextOutFileFull)
                 if fileFilter != None:
                     if fileFilter.match(nextInFileFull) == None:
                         skipped += 1
@@ -514,7 +510,7 @@ def walk_on_files(inDirPath, outDirPath):
                 #print "%s -> %s" % (nextInFileFull, nextOutFileFull)
                 _mkdir_recursive(os.path.join(outDirPath, root))
                 findStartCode(nextInFileFull, nextOutFileFull, inDirPath)
-    print STD_COLOR + "Processed %d files, skipped %d" % (count, skipped) + RESET
+    print  "Processed %d files, skipped %d" % (count, skipped)
 
 def findStartCode(inFileFull, outFileFull, baseInPath):
     inFD = io.open(inFileFull, "r", encoding="utf-8", newline=None)
@@ -541,7 +537,7 @@ def findStartCode(inFileFull, outFileFull, baseInPath):
     try:
         textFile = replaceCodeFullFile(textFile)
     except:
-        print >>sys.stderr, ERR_COLOR + "while parsing :      "  + inFileFull + RESET
+        print >>sys.stderr, "while parsing :      "  + inFileFull
         raise
     #print "9" * 80
     #print textFile
@@ -580,11 +576,11 @@ def replaceText(text, pathOfFile, searchText):
   #print '7'*80
   global dokuBlocks
   if not searchText in dokuBlocks[0]:
-      print >> sys.stderr, ERR_COLOR + "Failed to locate the docublock '" + searchText + "' for replacing it into the file '" +pathOfFile + "'\n have:" + RESET
-      print >> sys.stderr, WRN_COLOR + dokuBlocks[0].keys() + RESET
-      print >> sys.stderr, ERR_COLOR + '*' * 80 + RESET
-      print >> sys.stderr, WRN_COLOR + text + RESET
-      print >> sys.stderr, ERR_COLOR + "Failed to locate the docublock '" + searchText + "' for replacing it into the file '" +pathOfFile + "' For details scroll up!" + RESET
+      print >> sys.stderr, "Failed to locate the docublock '" + searchText + "' for replacing it into the file '" +pathOfFile + "'\n have:"
+      print >> sys.stderr, dokuBlocks[0].keys()
+      print >> sys.stderr, '*' * 80
+      print >> sys.stderr, text
+      print >> sys.stderr, "Failed to locate the docublock '" + searchText + "' for replacing it into the file '" +pathOfFile + "' For details scroll up!"
       exit(1)
   #print '7'*80
   #print dokuBlocks[0][searchText]
@@ -596,23 +592,23 @@ def replaceTextInline(text, pathOfFile, searchText):
   ''' inserts docublocks into md '''
   global dokuBlocks
   if not searchText in dokuBlocks[1]:
-      print >> sys.stderr, ERR_COLOR + "Failed to locate the inline docublock '" + searchText + "' for replacing it into the file '" + pathOfFile + "'\n have: " + RESET
-      print >> sys.stderr, "%s%s%s" %(WRN_COLOR, dokuBlocks[1].keys(), RESET)
-      print >> sys.stderr, ERR_COLOR + '*' * 80 + RESET
-      print >> sys.stderr, WRN_COLOR + text + RESET
-      print >> sys.stderr, ERR_COLOR + "Failed to locate the inline docublock '" + searchText + "' for replacing it into the file '" + pathOfFile + "' For details scroll up!" + RESET
+      print >> sys.stderr, "Failed to locate the inline docublock '" + searchText + "' for replacing it into the file '" + pathOfFile + "'\n have: "
+      print >> sys.stderr, "%s" %(dokuBlocks[1].keys())
+      print >> sys.stderr, '*' * 80
+      print >> sys.stderr, text
+      print >> sys.stderr, "Failed to locate the inline docublock '" + searchText + "' for replacing it into the file '" + pathOfFile + "' For details scroll up!"
       exit(1)
   rePattern = r'(?s)\s*@startDocuBlockInline\s+'+ searchText +'\s.*?@endDocuBlock\s' + searchText
   # (?s) is equivalent to flags=re.DOTALL but works in Python 2.6
   match = re.search(rePattern, text)
 
   if (match == None):
-      print >> sys.stderr, ERR_COLOR + "failed to match with '" + rePattern + "' for " + searchText + " in file " + pathOfFile + " in: \n" + text + RESET
+      print >> sys.stderr, "failed to match with '" + rePattern + "' for " + searchText + " in file " + pathOfFile + " in: \n" + text
       exit(1)
 
   subtext = match.group(0)
   if (len(re.findall('@startDocuBlock', subtext)) > 1):
-      print >> sys.stderr, ERR_COLOR + "failed to snap with '" + rePattern + "' on end docublock for " + searchText + " in " + pathOfFile + " our match is:\n" + subtext + RESET
+      print >> sys.stderr, "failed to snap with '" + rePattern + "' on end docublock for " + searchText + " in " + pathOfFile + " our match is:\n" + subtext
       exit(1)
 
   return re.sub(rePattern, dokuBlocks[1][searchText], text)
@@ -639,7 +635,7 @@ def readStartLine(line):
         try:
             thisBlockName = SEARCH_START.search(line).group(1).strip()
         except:
-            print >> sys.stderr, ERR_COLOR + "failed to read startDocuBlock: [" + line + "]"  + RESET
+            print >> sys.stderr, "failed to read startDocuBlock: [" + line + "]"
             exit(1)
         dokuBlocks[thisBlockType][thisBlockName] = ""
         return STATE_SEARCH_END
@@ -669,10 +665,10 @@ def loadDokuBlocks(allComments):
 
     if blockFilter != None:
         remainBlocks= {}
-        print STD_COLOR + "filtering blocks" + RESET
+        print "filtering blocks"
         for oneBlock in dokuBlocks[0]:
             if blockFilter.match(oneBlock) != None:
-                print "%sfound block %s%s" % (STD_COLOR, oneBlock, RESET)
+                print "found block %s" % (oneBlock)
                 #print dokuBlocks[0][oneBlock]
                 remainBlocks[oneBlock] = dokuBlocks[0][oneBlock]
         dokuBlocks[0] = remainBlocks
@@ -685,14 +681,14 @@ def loadDokuBlocks(allComments):
             #print dokuBlocks[0][oneBlock]
             #print "6"*80
         except:
-            print >>sys.stderr, ERR_COLOR + "while parsing :\n"  + oneBlock + RESET
+            print >>sys.stderr, "while parsing :\n"  + oneBlock
             raise
 
     for oneBlock in dokuBlocks[1]:
         try:
             dokuBlocks[1][oneBlock] = replaceCode(dokuBlocks[1][oneBlock], oneBlock)
         except:
-            print >>sys.stderr, WRN_COLOR + "while parsing :\n"  + oneBlock + RESET
+            print >>sys.stderr, "while parsing :\n"  + oneBlock
             raise
 
 def loadProgramOptionBlocks():
@@ -740,7 +736,7 @@ def loadProgramOptionBlocks():
                 optionsRaw = json.load(fp)
             except ValueError as err:
                 # invalid JSON
-                print >>sys.stderr, ERR_COLOR + "Failed to parse program options json: '" + programOptionsDump + "' - to be used as: '" + program + "' - " + err.message + RESET
+                print >>sys.stderr, "Failed to parse program options json: '" + programOptionsDump + "' - to be used as: '" + program + "' - " + err.message
                 raise err
 
         # Group and sort by section name, global section first
@@ -798,32 +794,49 @@ def loadProgramOptionBlocks():
         # Join output and register as docublock (like 'program_options_arangosh')
         dokuBlocks[0]['program_options_' + program.lower()] = '\n'.join(output) + '\n\n'
 
+
+
+def path_abs_norm(path):
+    return os.path.normpath(os.path.abspath(path))
+
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         print("usage: book arango-source output-directory swaggerJson [filter]")
         exit(1)
 
-    book = sys.argv[1]
-    srcDir = sys.argv[2]
-    inDir = os.path.join(srcDir,"Documentation","Books",book)
+    book = path_abs_norm(sys.argv[1])
+    srcDir = path_abs_norm(sys.argv[2])
+    outDir = path_abs_norm(sys.argv[3])
 
+
+    inDir = os.path.join(srcDir,"Documentation","Books",book)
     allComments = os.path.join(srcDir, "Documentation", "Books", "allComments.txt")
-    outDir = sys.argv[3]
     swaggerJson = os.path.join(srcDir,"js","apps","system","_admin","aardvark","APP","api-docs.json")
+
     if len(sys.argv) > 5 and sys.argv[5].strip() != '':
-        print STD_COLOR + "filtering " + sys.argv[4] + RESET
+        print "filtering " + sys.argv[4]
         fileFilter = re.compile(sys.argv[5])
     if len(sys.argv) > 6 and sys.argv[6].strip() != '':
-        print STD_COLOR + "filtering Docublocks: " + sys.argv[5] + RESET
+        print "filtering Docublocks: " + sys.argv[5]
         blockFilter = re.compile(sys.argv[6])
+
+    print("book: " + book)
+    print("inDir: " + inDir)
+    print("outDir: " + outDir)
+    print("srcDir: " + srcDir)
+    print("allComments: " + allComments)
+    print("swaggerJson: " + swaggerJson)
+
+
+
+
+
     f = io.open(swaggerJson, 'r', encoding='utf-8', newline=None)
     swagger= json.load(f)
     f.close()
     loadDokuBlocks(allComments) #"allComments.txt"
     loadProgramOptionBlocks()
-    print "%sloaded %d / %d docu blocks%s" % (STD_COLOR, len(dokuBlocks[0]), len(dokuBlocks[1]), RESET)
+    print "loaded %d / %d docu blocks" % (len(dokuBlocks[0]), len(dokuBlocks[1]))
     #print dokuBlocks[0].keys()
 
-    print(inDir)
-    print(outDir)
-    walk_on_files(inDir, outDir)
+    walk_on_files(srcDir, inDir, outDir)
