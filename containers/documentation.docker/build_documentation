@@ -270,9 +270,7 @@ build_books() {
     local flushpp=true
     local flushout=true
 
-    section "" | sed 's/-/=/g'
-    section "Cross Source Checks"
-    cross_source_check_docublocks || ferr "docublocks check failed"
+    cross_src_checks || ferr "docublocks check failed"
     echo checks done
 
     section "" | sed 's/-/=/g'

@@ -65,6 +65,7 @@ run_cmd(){
 ensure_cmd(){
     run_cmd "$@"
     (( $? != 0 )) && ferr "failed to run: '$@' "
+    return 0
 }
 
 spin_cmd() {
