@@ -72,6 +72,7 @@ if [ -f "$BASH_LIB" ]; then
 
 else
     echo "could not source bash_lib"
+
     err(){ echo "Error: $@";  }
     section(){ echo "=================== $@ ================"; }
     say(){ echo "$@"; }
@@ -182,13 +183,16 @@ function build_book() {
 
     # generateMdFiles
     say " - generate markdown"
-    cd "$ARANGO_SOURCE_DOC_BOOKS"
+    cd "$ARANGO_SOURCE_DOC_BOOKS" #must be run in that location
     #echo " - generating MD-Filedds"
-    ensure_cmd python ${ARANGO_SOURCE}/Documentation/Scripts/generateMdFiles.py \
-                    "${book_name}" \
-                    "$ARANGO_BUILD_DOC_PRE" \
-                    "$ARANGO_SOURCE/js/apps/system/_admin/aardvark/APP/api-docs.json" \
-                    "${FILTER:-""}"
+
+    containers/documentation.docker/generateMdFiles.py HTTP work/ArangoDB work/build-documentation/books_pp work/ArangoDB/js/apps/system/_admin/aardvark/APP/api-docs.json
+
+    ensure_cmd python "${book_name}" \
+                      "${ARANGO_SOURCE}" \
+                      "$ARANGO_BUILD_DOC_PRE" \
+                      "$ARANGO_SOURCE/js/apps/system/_admin/aardvark/APP/api-docs.json" \
+                      "${FILTER:-""}"
     test -d "$ARANGO_BUILD_DOC_OUT" || mkdir -p "$ARANGO_BUILD_DOC_OUT"
 
 
