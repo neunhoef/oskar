@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Sample call in build documentatin script
 # #echo " - generating MD-Filedds"
@@ -28,6 +28,10 @@ import json
 import io
 import shutil
 
+
+
+def printe(*args, **kwargs):
+    return print(*args, file=stderr, **kwargs)
 
 ################################################################################
 ### @brief length of the swagger definition namespace
@@ -59,7 +63,7 @@ def getReference(name, source, verb):
     try:
         ref = name['$ref'][defLen:]
     except Exception as x:
-        print >>sys.stderr, "No reference in: " + name
+        printe("No reference in: " + name)
         raise
     if not ref in swagger['definitions']:
         fn = ''
@@ -67,7 +71,7 @@ def getReference(name, source, verb):
             fn = swagger['paths'][route][verb]['x-filename']
         else:
             fn = swagger['definitions'][source]['x-filename']
-        print >> sys.stderr, json.dumps(swagger['definitions'], indent=4, separators=(', ',': '), sort_keys=True)
+        printe(json.dumps(swagger['definitions'], indent=4, separators=(', ',': '), sort_keys=True))
         raise Exception("invalid reference: " + ref + " in " + fn)
     return ref
 
@@ -84,7 +88,7 @@ def TrimThisParam(text, indent):
 def unwrapPostJson(reference, layer):
     swaggerDataTypes = ["number", "integer", "string", "boolean", "array", "object"]
     ####
-    # print >>sys.stderr, "xx" * layer + reference
+    # printe("xx" * layer + reference)
     global swagger
     rc = ''
     if not 'properties' in swagger['definitions'][reference]:
@@ -107,7 +111,7 @@ def unwrapPostJson(reference, layer):
 
                 rc += '  ' * layer + "- **" + param + "**:\n"
                 ####
-                # print >>sys.stderr, "yy" * layer + param
+                # printe("yy" * layer + param)
                 rc += unwrapPostJson(subStructRef, layer + 1)
 
             elif thisParam['type'] == 'object':
@@ -117,7 +121,7 @@ def unwrapPostJson(reference, layer):
                 trySubStruct = False
                 lf=""
                 ####
-                # print >>sys.stderr, "zz" * layer + param
+                # printe("zz" * layer + param)
                 if 'type' in thisParam['items']:
                     rc += " (" + thisParam['items']['type']  + ")"
                     lf="\n"
@@ -132,13 +136,13 @@ def unwrapPostJson(reference, layer):
                     try:
                         subStructRef = getReference(thisParam['items'], reference, None)
                     except:
-                        print >>sys.stderr, "while analyzing: " + param
-                        print >>sys.stderr, thisParam
+                        printe("while analyzing: " + param)
+                        printe(thisParam)
                     rc += "\n" + unwrapPostJson(subStructRef, layer + 1)
             else:
                 if thisParam['type'] not in swaggerDataTypes:
-                    print >>sys.stderr, "while analyzing: " + param
-                    print >>sys.stderr, thisParam['type'] + " is not a valid swagger datatype; supported ones: " + str(swaggerDataTypes)
+                    printe("while analyzing: " + param)
+                    printe(thisParam['type'] + " is not a valid swagger datatype; supported ones: " + str(swaggerDataTypes))
                     raise Exception("invalid swagger type")
                 rc += '  ' * layer + "- **" + param + "**: " + TrimThisParam(thisParam['description'], layer) + '\n'
     return rc
@@ -157,7 +161,7 @@ def getRestBodyParam():
     return rc
 
 def getRestDescription():
-    #print >>sys.stderr, "RESTDESCRIPTION"
+    #printe("RESTDESCRIPTION")
     if thisVerb['description']:
         #print >> sys.stderr, thisVerb['description']
         return RX3[0].sub(RX3[1], thisVerb['description'])
@@ -171,8 +175,8 @@ def getRestReplyBodyParam(param):
     try:
         rc += unwrapPostJson(getReference(thisVerb['responses'][param]['schema'], route, verb), 0)
     except Exception:
-        print >>sys.stderr, "failed to search " + param + " in: "
-        print >>sys.stderr, json.dumps(thisVerb, indent=4, separators=(', ',': '), sort_keys=True)
+        printe("failed to search " + param + " in: ")
+        printe(json.dumps(thisVerb, indent=4, separators=(', ',': '), sort_keys=True))
         raise
     return rc + "\n"
 
@@ -538,7 +542,7 @@ def findStartCode(inFileFull, outFileFull, baseInPath):
     try:
         textFile = replaceCodeFullFile(textFile)
     except:
-        print >>sys.stderr, "while parsing :      "  + inFileFull
+        printe("while parsing :      "  + inFileFull)
         raise
     #print "9" * 80
     #print textFile
@@ -682,14 +686,14 @@ def loadDokuBlocks(allComments):
             #print dokuBlocks[0][oneBlock]
             #print "6"*80
         except:
-            print >>sys.stderr, "while parsing :\n"  + oneBlock
+            printe("while parsing :\n"  + oneBlock)
             raise
 
     for oneBlock in dokuBlocks[1]:
         try:
             dokuBlocks[1][oneBlock] = replaceCode(dokuBlocks[1][oneBlock], oneBlock)
         except:
-            print >>sys.stderr, "while parsing :\n"  + oneBlock
+            printe("while parsing :\n"  + oneBlock)
             raise
 
 def loadProgramOptionBlocks():
@@ -737,7 +741,7 @@ def loadProgramOptionBlocks():
                 optionsRaw = json.load(fp)
             except ValueError as err:
                 # invalid JSON
-                print >>sys.stderr, "Failed to parse program options json: '" + programOptionsDump + "' - to be used as: '" + program + "' - " + err.message
+                printe("Failed to parse program options json: '" + programOptionsDump + "' - to be used as: '" + program + "' - " + err.message)
                 raise err
 
         # Group and sort by section name, global section first
