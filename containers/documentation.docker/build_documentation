@@ -63,7 +63,8 @@ BASH_LIB="${BASH_LIB:-"$ARANGO_INSTALL/bash_lib"}"
 
 if [ -f "$BASH_LIB" ]; then
     . "$BASH_LIB" || ferr "failed to source bash_lib"
-    ferr(){ _o_ferr "$@"; }
+    ferr(){ _o_ferrx "$@"; }
+
     err(){ _o_err "$@"; }
     section(){ _o_section "$@"; }
     say(){ _o_say "$@"; }
@@ -72,7 +73,7 @@ if [ -f "$BASH_LIB" ]; then
 else
     echo "could not source bash_lib"
     err(){ echo "Error: $@";  }
-    section(){ echo "$@"; }
+    section(){ echo "=================== $@ ================"; }
     say(){ echo "$@"; }
     success(){ echo "Success: $@"; }
 fi
@@ -83,7 +84,7 @@ debug(){ $ARANGO_DEBUG && say "#-# DEBUG #-# " "$@" && return 0; return 1; }
 nvm use default || ferr "could not use nvm"
 
 echo "================================================================================"
-section " ArangoDB Documenation Build script " | sed 's/-/=/g'
+section "ArangoDB Documenation Build script" | sed 's/-/=/g'
 echo "================================================================================"
 
 #### GLOBAL VARS THAT SHOULD NOT BE MODIFIED BY USERS ########################################################
@@ -91,15 +92,6 @@ ALLBOOKS="HTTP AQL Cookbook Drivers" #TODO reactivate Manual
 ALLBOOKS="HTTP AQL Manual Cookbook Drivers"
 OTHER_MIME="pdf epub mobi"
 TRIPPLETICS='```'
-
-#get branch name - cache detection should work - this could be removed
-#cd "$ARANGO_SOURCE" || ferr "can not cd into source"
-#branch_current="$(git rev-parse --abbrev-ref HEAD)" || ferr "can not get branch name"
-#for name in $ARANGO_SUPPORTED_BRANCHES; do
-#    if [[ $branch_current == $name ]]; then
-#        branch_to_use="$name"
-#    fi
-#done
 
 newVersionNumber="$( tr -d '\r\n' < "$ARANGO_SOURCE/VERSION" )"
 #If ../../VERSION contains the string "devel" the current date will be added to all pages containing the version.
@@ -144,7 +136,7 @@ function build_book() {
     local book_pre="$ARANGO_BUILD_DOC_PRE/${book_name}"
     local book_out="$ARANGO_BUILD_DOC_OUT/${book_name}"
 
-    section " Build Book - ${book_name} " | sed 's/-/=/g' | sed 's/ = / - /'
+    section "Build Book - ${book_name}" | sed 's/-/=/g' | sed 's/ = / - /'
     echo "book source:       $book_src"
     echo "preprocessing dir: $book_pre"
     echo "output dir:        $book_out"
@@ -158,7 +150,7 @@ function build_book() {
     book_src_checks "${book_name}" "$book_src" "$book_pre" "$book_out" || ferr "failed source check"
 
     ##########################################################################
-    section " Preprocess - Book ${book_name} "
+    section "Preprocess - Book ${book_name}"
 
     say " - copy directory structure"
     ## copy directroy structure of
@@ -166,7 +158,7 @@ function build_book() {
     ## to ppdir
     cd "$book_src" || ferr "could not enter book source dir: $book_src"
     find . -type d -exec mkdir -p "$book_pre/{}" \;
-    tree "$book_pre" && echo
+    debug && tree "$book_pre" && echo
 
     say   " - create images"
     run_ditaa "${book_name}" "$book_src" "$book_pre" "$book_out" && echo
@@ -192,11 +184,11 @@ function build_book() {
     say " - generate markdown"
     cd "$ARANGO_SOURCE_DOC_BOOKS"
     #echo " - generating MD-Filedds"
-    python ${ARANGO_SOURCE}/Documentation/Scripts/generateMdFiles.py \
-           "${book_name}" \
-           "$ARANGO_BUILD_DOC_PRE" \
-           "$ARANGO_SOURCE/js/apps/system/_admin/aardvark/APP/api-docs.json" \
-           "${FILTER:-""}" || ferr "failed to generate md files"
+    ensure_cmd python ${ARANGO_SOURCE}/Documentation/Scripts/generateMdFiles.py \
+                    "${book_name}" \
+                    "$ARANGO_BUILD_DOC_PRE" \
+                    "$ARANGO_SOURCE/js/apps/system/_admin/aardvark/APP/api-docs.json" \
+                    "${FILTER:-""}"
     test -d "$ARANGO_BUILD_DOC_OUT" || mkdir -p "$ARANGO_BUILD_DOC_OUT"
 
 
@@ -204,7 +196,7 @@ function build_book() {
     book_pre_checks "${book_name}" "$book_src" "$book_pre" "$book_out"
 
     ##########################################################################
-    section " Building Book - ${book_name} "
+    section "Building Book - ${book_name}"
     # expand versions in files
     say " - replace placeholders in templates"
     cd "$book_pre"
@@ -224,39 +216,39 @@ function build_book() {
         fi
     done
 
-    say " - detect cache"
-    if ! [[ -v branch_to_use ]]; then
-        echo "$ARANGO_CACHE_BASE"
+    say " - detect cache in $ARANGO_CACHE_BASE"
+    this="$(mktemp)"
+    # In the command below we must replace all templates that re not in a
+    # string e.g. numbers. Otherwise jq will fail. So if something goes
+    # wrong here you probably need antoher sed command
+    cat "$book_src/book.json" | sed -e 's/@GPRIORITY@/0/' | jq .plugins > "$this" \
+        || ferr "failed to extract plugins form books.json. Make sure it contains vaild json!"
 
-        this="$(mktemp)"
-        cat "$book_src/book.json" | sed -e 's/@GPRIORITY@/0/' | jq .plugins > "$this" || exit 1
-        unset cache
-        while read -r file; do
-            local dir="${file%/*}"
-            if cmp --silent "$this" "$file"; then
-                local cache="$dir"
-                echo "  - found match in $dir"
-                break
-            fi
-        done < <(find "$ARANGO_CACHE_BASE" -iname "book.json.plugins" )
-        rm "$this"
+    unset book_cache
+    while read -r file; do
+        local dir="${file%/*}"
+        if cmp --silent "$this" "$file"; then
+            debug "compare with $file"
+            local book_cache="$dir"
+            echo "  - found match in $dir"
+            break
+        fi
+    done < <(find "$ARANGO_CACHE_BASE" -iname "book.json.plugins" )
+    rm "$this"
 
-        local msg="failed to detect cache - book.json of $book_name\n"
-              msg="Plugins do match any cached version."
-              msg="If you use new plugins make sure to add this branch"
-              msg="to ARANGO_SUPPORTED_BRANCHES and rebuild the doc container."
-        [[ -v cache ]] || ferr -e "$msg"
+    local msg="failed to detect cache - book.json of $book_name\n"
+          msg="Plugins do match any cached version."
+          msg="If you use new plugins make sure to add this branch"
+          msg="to ARANGO_SUPPORTED_BRANCHES and rebuild the doc container."
+    [[ -v book_cache ]] || ferr -e "$msg"
 
-    else
-        local cache="$ARANGO_CACHE_BASE/$branch_to_use/$book_name"
-    fi
 
     #copy gitbook modules from cache in build image
     say " - copy node modules"
-    cp -r "$cache/node_modules" "$book_pre" || ferr "failed to copy node modules"
+    cp -r "$book_cache/node_modules" "$book_pre" || ferr "failed to copy node modules"
 
     say " - run gitbook"
-    run_gitbook "$cache" build "$book_pre" "$book_out" || ferr "fail exectuting run_gitbook"
+    run_gitbook "$book_cache" build "$book_pre" "$book_out" || ferr "fail exectuting run_gitbook"
     unset cache
 
     say " - delete FOOTER.html"
@@ -273,24 +265,25 @@ function build_book() {
 
 build_books() {
     local books="$1"
-    echo "================================================================================"
-    section " Build Books: $books " | sed 's/-/=/g'
+    section "" | sed 's/-/=/g'
+    section "Build Books: $books" | sed 's/-/=/g'
     local flushpp=true
     local flushout=true
-    echo "==============================================================================="
-    section " Cross Source Checks "
+
+    section "" | sed 's/-/=/g'
+    section "Cross Source Checks"
     cross_source_check_docublocks || ferr "docublocks check failed"
     echo checks done
 
-    echo "==============================================================================="
-    section " Preprocess All Books "
+    section "" | sed 's/-/=/g'
+    section "Preprocess All Books"
     # codeBlockReader creates the file AllComments.txt in the source dir `Documentation/Books`
     # TODO
     # - comment purpose and format of the created file
     # - make script position independent
     say " - codeBlockReader: create AllCommands.txt"
     cd "$ARANGO_SOURCE_DOC_BOOKS" #TODO remove -- required by script below
-    python $ARANGO_SOURCE/Documentation/Scripts/codeBlockReader.py && echo || ferr "can not run codeBlockReader.py"
+    run_cmd python $ARANGO_SOURCE/Documentation/Scripts/codeBlockReader.py && echo || ferr "can not run codeBlockReader.py"
 
     for book in $books; do
         local book_src="$ARANGO_SOURCE_DOC_BOOKS/${book}"
@@ -310,8 +303,8 @@ build_books() {
         build_book "${book}" "$@"
     done
 
-    echo "==============================================================================="
-    section " Post All Books  "
+    section "" | sed 's/-/=/g'
+    section "Post All Books"
     echo " - Generating redirect index.html unconditionally (depends on book Manual)"; \
     echo '<html><head><meta http-equiv="refresh" content="0; url=Manual/"></head><body></body></html>' \
         > "$ARANGO_BUILD_DOC_OUT/index.html"
@@ -412,5 +405,6 @@ main(){
     success "building documentation"
     echo
 }
+
 main "$@"
 exit $?

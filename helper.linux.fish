@@ -118,7 +118,11 @@ end
 
 function buildDocumentation
     set -l DOCIMAGE "obi/test" # TODO global var
-    runInContainer "--user" "$UID" "-v" "$WORKDIR:/oskar" -t "$DOCIMAGE"
+    runInContainer -e "ARANGO_SPIN=$ARANGO_SPIN" \
+                   --user "$UID" \
+                   -v "$WORKDIR:/oskar" \
+                   -t "$DOCIMAGE" \
+                   -- "$argv"
 end
 
 function buildDocumentationInPr
@@ -134,6 +138,10 @@ function buildDocumentationInPr
     else
         echo "Documentation building is not available for enterprise edition in PR tests"
     end
+end
+
+function buildDocumentationForRelease
+    buildDocumentation --all-formats
 end
 
 function buildContainerDocumentation
