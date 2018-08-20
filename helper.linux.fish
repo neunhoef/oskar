@@ -9,10 +9,10 @@ set -gx CENTOSPACKAGINGIMAGE neunhoef/centospackagearangodb-$ARCH
 
 function buildUbuntuBuildImage
   cd $WORKDIR
-  cp -a scripts/{makeArangoDB,buildArangoDB,checkoutArangoDB,checkoutEnterprise,clearWorkDir,downloadStarter,downloadSyncer,runTests,switchBranches,recursiveChown}.fish buildUbuntu.docker/scripts
-  cd $WORKDIR/buildUbuntu.docker
+  cp -a scripts/{makeArangoDB,buildArangoDB,checkoutArangoDB,checkoutEnterprise,clearWorkDir,downloadStarter,downloadSyncer,runTests,runFullTests,switchBranches,recursiveChown}.fish containers/buildUbuntu.docker/scripts
+  cd $WORKDIR/containers/buildUbuntu.docker
   docker build -t $UBUNTUBUILDIMAGE .
-  rm -f $WORKDIR/buildUbuntu.docker/scripts/*.fish
+  rm -f $WORKDIR/containers/buildUbuntu.docker/scripts/*.fish
   cd $WORKDIR
 end
 function pushUbuntuBuildImage ; docker push $UBUNTUBUILDIMAGE ; end
@@ -20,10 +20,10 @@ function pullUbuntuBuildImage ; docker pull $UBUNTUBUILDIMAGE ; end
 
 function buildUbuntuPackagingImage
   cd $WORKDIR
-  cp -a scripts/buildDebianPackage.fish buildUbuntuPackaging.docker/scripts
-  cd $WORKDIR/buildUbuntuPackaging.docker
+  cp -a scripts/buildDebianPackage.fish containers/buildUbuntuPackaging.docker/scripts
+  cd $WORKDIR/containers/buildUbuntuPackaging.docker
   docker build -t $UBUNTUPACKAGINGIMAGE .
-  rm -f $WORKDIR/buildUbuntuPackaging.docker/scripts/*.fish
+  rm -f $WORKDIR/containers/buildUbuntuPackaging.docker/scripts/*.fish
   cd $WORKDIR
 end
 function pushUbuntuPackagingImage ; docker push $UBUNTUPACKAGINGIMAGE ; end
@@ -31,10 +31,10 @@ function pullUbuntuPackagingImage ; docker pull $UBUNTUPACKAGINGIMAGE ; end
 
 function buildAlpineBuildImage
   cd $WORKDIR
-  cp -a scripts/makeAlpine.fish scripts/buildAlpine.fish buildAlpine.docker/scripts
-  cd $WORKDIR/buildAlpine.docker
+  cp -a scripts/makeAlpine.fish scripts/buildAlpine.fish containers/buildAlpine.docker/scripts
+  cd $WORKDIR/containers/buildAlpine.docker
   docker build -t $ALPINEBUILDIMAGE .
-  rm -f $WORKDIR/buildAlpine.docker/scripts/*.fish
+  rm -f $WORKDIR/containers/buildAlpine.docker/scripts/*.fish
   cd $WORKDIR
 end
 function pushAlpineBuildImage ; docker push $ALPINEBUILDIMAGE ; end
@@ -42,10 +42,10 @@ function pullAlpineBuildImage ; docker pull $ALPINEBUILDIMAGE ; end
 
 function buildCentosPackagingImage
   cd $WORKDIR
-  cp -a scripts/buildRPMPackage.fish buildCentos7Packaging.docker/scripts
-  cd $WORKDIR/buildCentos7Packaging.docker
+  cp -a scripts/buildRPMPackage.fish containers/buildCentos7Packaging.docker/scripts
+  cd $WORKDIR/containers/buildCentos7Packaging.docker
   docker build -t $CENTOSPACKAGINGIMAGE .
-  rm -f $WORKDIR/buildCentos7Packaging.docker/scripts/*.fish
+  rm -f $WORKDIR/containers/buildCentos7Packaging.docker/scripts/*.fish
   cd $WORKDIR
 end
 function pushCentosPackagingImage ; docker push $CENTOSPACKAGINGIMAGE ; end
@@ -116,6 +116,38 @@ function runInContainer
   return $s
 end
 
+function buildDocumentation
+    set -l DOCIMAGE "obi/test" # TODO global var
+    runInContainer -e "ARANGO_SPIN=$ARANGO_SPIN" \
+                   --user "$UID" \
+                   -v "$WORKDIR:/oskar" \
+                   -t "$DOCIMAGE" \
+                   -- "$argv"
+end
+
+function buildDocumentationInPr
+    #disable once enterprise only options are availalbe
+    if test $ENTERPRISEEDITION != On
+        if test (cd $WORKDIR/work/ArangoDB; and git rev-parse --abbrev-ref HEAD) = devel;
+            buildDocumentation
+            return $status
+        else
+            #TODO - make it available for more branches
+            echo "Documentation building documentation is only available for 'devel' branch!"
+        end
+    else
+        echo "Documentation building is not available for enterprise edition in PR tests"
+    end
+end
+
+function buildDocumentationForRelease
+    buildDocumentation --all-formats
+end
+
+function buildContainerDocumentation
+    eval "$WORKDIR/scripts/buildContainerDocumentation"
+end
+
 function checkoutArangoDB
   runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/checkoutArangoDB.fish
   or return $status
@@ -138,6 +170,9 @@ function clearWorkDir
 end
 
 function buildArangoDB
+  #TODO FIXME - do not change the current directory so people
+  #             have to do a 'cd' for a subsequent call.
+  #             Fix by not relying on relative locations in other functions
   checkoutIfNeeded
   runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/buildArangoDB.fish $argv
   set -l s $status
@@ -186,6 +221,7 @@ function buildDebianPackage
     return 1
   end
 
+  # FIXME do not rely on relative paths
   cd $WORKDIR
   rm -rf $WORKDIR/work/debian
   and if test "$ENTERPRISEEDITION" = "On"
@@ -216,12 +252,15 @@ function transformSpec
     echo transformSpec: wrong number of arguments
     return 1
   end
+  # FIXME do not rely on relative paths
   cp "$argv[1]" "$argv[2]"
   sed -i -e "s/@PACKAGE_VERSION@/$ARANGODB_VERSION/" "$argv[2]"
   sed -i -e "s/@PACKAGE_REVISION@/$ARANGODB_PACKAGE_REVISION/" "$argv[2]"
 end
 
 function buildRPMPackage
+  # FIXME do not rely on relative paths
+
   # This assumes that a static build has already happened
   # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
   # ARANGODB_FULL_VERSION, for example by running findArangoDBVersion.
@@ -299,6 +338,12 @@ function oskar
   runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/runTests.fish
 end
 
+function oskarFull
+  checkoutIfNeeded
+  runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/runFullTests.fish
+end
+
+
 function pushOskar
   cd $WORKDIR
   source helper.fish
@@ -344,13 +389,13 @@ function makeDockerImage
   set -l imagename $argv[1]
 
   cd $WORKDIR/work/ArangoDB/build/install
-  and tar czvf $WORKDIR/arangodb.docker/install.tar.gz *
+  and tar czvf $WORKDIR/containers/arangodb.docker/install.tar.gz *
   if test $status != 0
     echo Could not create install tarball!
     return 1
   end
 
-  cd $WORKDIR/arangodb.docker
+  cd $WORKDIR/containers/arangodb.docker
   docker build -t $imagename .
 end
 

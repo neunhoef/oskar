@@ -29,15 +29,23 @@ function unlockDirectory
 end
 
 function showConfig
-  echo "Workdir           : $WORKDIR"
-  echo "Inner workdir     : $INNERWORKDIR"
-  echo "Maintainer        : $MAINTAINER"
-  echo "Buildmode         : $BUILDMODE"
-  echo "Parallelism       : $PARALLELISM"
-  echo "Enterpriseedition : $ENTERPRISEEDITION"
-  echo "Storage engine    : $STORAGEENGINE"
-  echo "Test suite        : $TESTSUITE"
-  echo "Verbose           : $VERBOSEOSKAR"
+  echo "#################################"
+  echo "Build Configuration"
+  echo "- Enterprise     : $ENTERPRISEEDITION"
+  echo "- Buildmode      : $BUILDMODE"
+  echo "- Maintainer     : $MAINTAINER"
+  echo
+  echo "Test Configuration:"
+  echo "- Storage engine : $STORAGEENGINE"
+  echo "- Test suite     : $TESTSUITE"
+  echo
+  echo "Internal Configuration:"
+  echo "- Workdir        : $WORKDIR"
+  echo "- Inner workdir  : $INNERWORKDIR"
+  echo "- Parallelism    : $PARALLELISM"
+  echo "- Verbose        : $VERBOSEOSKAR"
+  echo "#################################"
+  echo
 end
 
 function single ; set -gx TESTSUITE single ; end
@@ -72,9 +80,15 @@ else ; set -gx PARALLELISM $PARALLELISM ; end
 
 function verbose ; set -gx VERBOSEOSKAR On ; end
 function silent ; set -gx VERBOSEOSKAR Off ; end
+
+
 if test -z "$VERBOSEOSKAR" ; verbose
 else ; set -gx VERBOSEOSKAR $VERBOSEOSKAR ; end
 
+# TODO FIXME
+# main code between function definitions
+# WORDIR IS pdw -  at least check if ./scripts and something
+# else is available before proceeding
 set -gx WORKDIR (pwd)
 if test ! -d work ; mkdir work ; end
 
@@ -99,6 +113,13 @@ function oskar1
   set -x NOSTRIP 1
   buildStaticArangoDB -DUSE_FAILURE_TESTS=On -DDEBUG_SYNC_REPLICATION=On ; or return $status
   oskar
+end
+
+function oskar1Full
+  showConfig
+  set -x NOSTRIP 1
+  buildStaticArangoDB -DUSE_FAILURE_TESTS=On -DDEBUG_SYNC_REPLICATION=On ; or return $status
+  oskarFull
 end
 
 function oskar2
@@ -213,6 +234,7 @@ function moveResultsToWorkspace
   end
 
   for f in $WORKDIR/work/*.deb ; echo "mv $f" ; mv $f $WORKSPACE ; end
+  for f in $WORKDIR/work/*.dmg ; echo "mv $f" ; mv $f $WORKSPACE ; end
   for f in $WORKDIR/work/*.rpm ; echo "mv $f" ; mv $f $WORKSPACE ; end
   for f in $WORKDIR/work/*.tar.gz ; echo "mv $f" ; mv $f $WORKSPACE ; end
   if test -f $WORKDIR/work/testfailures.txt

@@ -54,27 +54,6 @@ If (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     Break
 }
 
-If (-Not ((Get-ItemPropertyValue -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem' -Name 'LongPathsEnabled') -eq 1))
-{
-    Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem' -Name 'LongPathsEnabled' -Value '1'
-}
-
-If (-NOT((Get-ItemPropertyValue -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\PathSet' -Name '(default)' -ErrorAction SilentlyContinue ) -eq 1))
-{
-    $oldpath = (Get-ItemProperty -Path ‘Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment’ -Name PATH).path
-    $newpath = “$oldpath;%ALLUSERSPROFILE%\chocolatey\bin;%PROGRAMFILES%\NASM;C:\Strawberry\perl\bin;C:\tools\DevKit2\bin;C:\tools\DevKit2\mingw\bin;%PROGRAMFILES(x86)%\Windows Kits\10\Debuggers\x64”
-    Set-ItemProperty -Path ‘Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment’ -Name PATH -Value $newPath
-
-    If(Get-ItemPropertyValue -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\PathSet' -Name '(default)' -ErrorAction SilentlyContinue)
-    {
-        Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\PathSet' -Name '(default)' -Value '1'
-    }
-    Else
-    {
-        New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows' -Name "PathSet" -Value "1"
-    }
-}
-
 Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False
 
 DownloadFile -src 'https://github.com/Microsoft/vssetup.powershell/releases/download/2.0.1/VSSetup.zip' -dest "C:\Windows\Temp\VSSetup.zip"
@@ -89,7 +68,7 @@ $arguments = @'
 '@
 ExternalProcess -process Powershell -arguments $arguments -wait $true
 
-$arguments = @("choco install -y dotnet4.7.1","choco install -y vcredist-all","choco install -y winscp","choco install -y sysinternals","choco install -y emacs64","choco install -y cmake.portable","choco install -y nsis","choco install -y python2","choco install -y procdump","choco install -y windbg","choco install -y wget","choco install -y nuget.commandline","choco install -y vim","choco install -y curl","choco install -y notepadplusplus","choco install -y putty.install","choco install -y openssh","choco install -y git","choco install -y winflexbison3","choco install -y ruby","choco install -y ruby2.devkit","choco install -y nodejs","choco install -y jdk8","choco install -y strawberryperl","choco install -y nasm","gem install bundler","gem install persistent_httparty","gem install rspec","gem install rspec-core","npm install -g gitbook-cli","pip3.5 install git+https://github.com/frerich/clcache.git")
+$arguments = @("choco install -y dotnet4.7.1","choco install -y windows-sdk-10.1","choco install -y vcredist-all","choco install -y winscp","choco install -y sysinternals","choco install -y emacs64","choco install -y cmake.portable","choco install -y nsis","choco install -y python2","choco install -y procdump","choco install -y windbg","choco install -y wget","choco install -y nuget.commandline","choco install -y vim","choco install -y curl","choco install -y notepadplusplus","choco install -y putty.install","choco install -y openssh","choco install -y git","choco install -y winflexbison3","choco install -y ruby","choco install -y ruby2.devkit","choco install -y nodejs","choco install -y jdk8","choco install -y strawberryperl","choco install -y nasm","gem install bundler","gem install persistent_httparty","gem install rspec","gem install rspec-core","npm install -g gitbook-cli","pip3.5 install git+https://github.com/frerich/clcache.git")
 ForEach($argument in $arguments)
 {
     ExternalProcess -process Powershell -arguments $argument -wait $true
@@ -102,6 +81,11 @@ While((Get-WmiObject win32_process | Where {$_.Name -eq "vs_installer.exe"}) -or
     Sleep 30
 }
 Remove-Item "C:\Windows\Temp\vs_community.exe"
+
+$arguments = @'
+-NoProfile -ExecutionPolicy Bypass -Command "Invoke-Expression -Command '.\iResearch.ps1'"
+'@
+ExternalProcess -process Powershell -arguments $arguments -wait $true
 
 ExternalProcess -process cmd -arguments "/c $PSScriptRoot\..\CMD\buildssl.bat" -wait $true
 
@@ -116,10 +100,26 @@ Restart-Service -Name SNMP -Force
 ExternalProcess -process "git" -arguments 'config --global user.email "jenkins@arangodb.com"'
 ExternalProcess -process "git" -arguments 'config --global user.name "Jenkins"'
 
-$arguments = @'
--NoProfile -ExecutionPolicy Bypass -Command "Invoke-Expression -Command '.\iResearch.ps1'"
-'@
-ExternalProcess -process Powershell -arguments $arguments -wait $true
+If (-Not ((Get-ItemPropertyValue -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem' -Name 'LongPathsEnabled') -eq 1))
+{
+    Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem' -Name 'LongPathsEnabled' -Value '1'
+}
+
+If (-NOT((Get-ItemPropertyValue -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\PathSet' -Name '(default)' -ErrorAction SilentlyContinue ) -eq 1))
+{
+    $oldpath = (Get-ItemProperty -Path ‘Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment’ -Name PATH).path
+    $newpath = “$oldpath;$((Get-ChildItem -Path C:\ProgramData\chocolatey\lib\ -Recurse -Filter cmake.exe).DirectoryName);%ALLUSERSPROFILE%\chocolatey\bin;%PROGRAMFILES%\NASM;C:\Strawberry\perl\bin;C:\tools\DevKit2\bin;C:\tools\DevKit2\mingw\bin;%PROGRAMFILES(x86)%\Windows Kits\10\bin\x64;%PROGRAMFILES(x86)%\Windows Kits\10\Debuggers\x64”
+    Set-ItemProperty -Path ‘Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment’ -Name PATH -Value $newPath
+
+    If(Get-ItemPropertyValue -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\PathSet' -Name '(default)' -ErrorAction SilentlyContinue)
+    {
+        Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\PathSet' -Name '(default)' -Value '1'
+    }
+    Else
+    {
+        New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows' -Name "PathSet" -Value "1"
+    }
+}
 
 #$clpath = $(Split-Path -Parent $(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter cl.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx64\\x64"}).FullName) 
 #DownloadFile -src 'https://github.com/frerich/clcache/releases/download/v4.1.0/clcache-4.1.0.zip' -dest "C:\Windows\Temp\clcache-4.1.0.zip"

@@ -28,7 +28,7 @@ private key that has access to https://github.com/arangodb/enterprise,
 the initial setup is as follows (in `powershell`, so start a `powershell`):
 
 	Set-Location oskar
-	Import-Module helper.psm1
+	Import-Module -Name .\helper.psm1
 	checkoutEnterprise
 
 ## Choosing branches

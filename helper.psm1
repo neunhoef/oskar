@@ -159,6 +159,19 @@ If(-Not($STATICEXECUTABLES))
     staticExecutablesOff
 }
 
+Function signPackageOn
+{
+    $global:SIGN = $true
+}
+Function signPackageOff
+{
+    $global:SIGN = $false
+}
+If(-Not($SIGN))
+{
+    signPackageOff
+}
+
 Function maintainerOn
 {
     $global:MAINTAINER = "On"
@@ -230,7 +243,7 @@ Function parallelism($threads)
 }
 If(-Not($PARALLELISM))
 {
-    $global:PARALLELISM = 64
+    $global:PARALLELISM = 16
 }
 
 Function checkoutArangoDB
@@ -291,7 +304,7 @@ Function switchBranches($branch_c,$branch_e)
         }
         If ($global:ok) 
         {
-            proc -process "git" -argument "pull" -logfile $false
+            proc -process "git" -argument "fetch" -logfile $false
         }
         If ($global:ok) 
         {
@@ -299,7 +312,7 @@ Function switchBranches($branch_c,$branch_e)
         }
         If ($global:ok) 
         {
-            proc -process "git" -argument "pull" -logfile $false
+            proc -process "git" -argument "reset --hard origin/$branch_c" -logfile $false
         }
         If($ENTERPRISEEDITION -eq "On")
         {
@@ -310,7 +323,7 @@ Function switchBranches($branch_c,$branch_e)
             }
             If ($global:ok) 
             {
-                proc -process "git" -argument "pull" -logfile $false
+                proc -process "git" -argument "fetch" -logfile $false
             }
             If ($global:ok) 
             {
@@ -318,7 +331,7 @@ Function switchBranches($branch_c,$branch_e)
             }
             If ($global:ok) 
             {
-                proc -process "git" -argument "pull" -logfile $false
+                proc -process "git" -argument "reset --hard origin/$branch_e" -logfile $false
             }
         }
     }
@@ -333,7 +346,7 @@ Function updateOskar
     }
     If ($global:ok) 
     {
-        proc -process "git" -argument "pull" -logfile $false
+        proc -process "git" -argument "reset --hard origin/master" -logfile $false
     }
 }
 
@@ -372,19 +385,19 @@ Function  findArangoDBVersion
 {
     If($(Select-String -Path $INNERWORKDIR\ArangoDB\CMakeLists.txt -SimpleMatch "set(ARANGODB_VERSION_MAJOR") -match '.*"([0-9a-zA-Z]*)".*')
     {
-        $ARANGODB_VERSION_MAJOR = $Matches[1]
+        $global:ARANGODB_VERSION_MAJOR = $Matches[1]
         If($(Select-String -Path $INNERWORKDIR\ArangoDB\CMakeLists.txt -SimpleMatch "set(ARANGODB_VERSION_MINOR") -match '.*"([0-9a-zA-Z]*)".*')
         {
-            $ARANGODB_VERSION_MINOR = $Matches[1]
+            $global:ARANGODB_VERSION_MINOR = $Matches[1]
             If($(Select-String -Path $INNERWORKDIR\ArangoDB\CMakeLists.txt -SimpleMatch "set(ARANGODB_VERSION_REVISION") -match '.*"([0-9a-zA-Z]*)".*')
             {
-                $ARANGODB_VERSION_REVISION = $Matches[1]
+                $global:ARANGODB_VERSION_REVISION = $Matches[1]
                 If($(Select-String -Path $INNERWORKDIR\ArangoDB\CMakeLists.txt -SimpleMatch "set(ARANGODB_PACKAGE_REVISION") -match '.*"([0-9a-zA-Z]*)".*')
                 {
-                    $ARANGODB_PACKAGE_REVISION = $Matches[1]
-                    $ARANGODB_VERSION = "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_REVISION"
-                    $ARANGODB_FULL_VERSION = "$ARANGODB_VERSION-$ARANGODB_PACKAGE_REVISION"
-                    Write-Host $ARANGODB_FULL_VERSION
+                    $global:ARANGODB_PACKAGE_REVISION = $Matches[1]
+                    $global:ARANGODB_VERSION = "$global:ARANGODB_VERSION_MAJOR.$global:ARANGODB_VERSION_MINOR.$global:ARANGODB_VERSION_REVISION"
+                    $global:ARANGODB_FULL_VERSION = "$global:ARANGODB_VERSION-$global:ARANGODB_PACKAGE_REVISION"
+                    return $global:ARANGODB_FULL_VERSION
                 }
 
             }
@@ -402,8 +415,8 @@ Function configureWindows
     Push-Location $pwd
     Set-Location "$INNERWORKDIR\ArangoDB\build"
     Write-Host "Time: $((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH.mm.ssZ'))"
-    Write-Host "Configure: cmake -G `"$GENERATOR`" -T `"v141,host=x64`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DUSE_FAILURE_TESTS=`"$USEFAILURETESTS`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES`" -DOPENSSL_USE_STATIC_LIBS=`"$STATICLIBS`" `"$INNERWORKDIR\ArangoDB`""
-    proc -process "cmake" -argument "-G `"$GENERATOR`" -T `"v141,host=x64`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DUSE_FAILURE_TESTS=`"$USEFAILURETESTS`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES`" -DOPENSSL_USE_STATIC_LIBS=`"$STATICLIBS`" `"$INNERWORKDIR\ArangoDB`"" -logfile "$INNERWORKDIR\cmake"
+    Write-Host "Configure: cmake -G `"$GENERATOR`" -T `"v141,host=x64`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DPACKAGING=NSIS -DCMAKE_INSTALL_PREFIX=/ -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DUSE_FAILURE_TESTS=`"$USEFAILURETESTS`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES`" -DOPENSSL_USE_STATIC_LIBS=`"$STATICLIBS`" `"$INNERWORKDIR\ArangoDB`""
+	proc -process "cmake" -argument "-G `"$GENERATOR`" -T `"v141,host=x64`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DPACKAGING=NSIS -DCMAKE_INSTALL_PREFIX=/ -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DUSE_FAILURE_TESTS=`"$USEFAILURETESTS`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES`" -DOPENSSL_USE_STATIC_LIBS=`"$STATICLIBS`" `"$INNERWORKDIR\ArangoDB`"" -logfile "$INNERWORKDIR\cmake"
     Pop-Location
 }
 
@@ -426,6 +439,35 @@ Function buildWindows
     Pop-Location
 }
 
+Function packageWindows
+{
+    If(-Not(Test-Path -PathType Container -Path "$INNERWORKDIR\ArangoDB\build"))
+    {
+        buildWindows
+    }
+    Push-Location $pwd
+    Set-Location "$INNERWORKDIR\ArangoDB\build"
+    Write-Host "Time: $((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH.mm.ssZ'))"
+    Write-Host "Package: cpack -C `"$BUILDMODE`""
+    proc -process "cpack" -argument "-C `"$BUILDMODE`"" -logfile "$INNERWORKDIR\package"
+    Pop-Location
+}
+
+Function signWindows
+{
+    findArangoDBVersion
+    If(-Not(Test-Path -PathType Leaf "$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB3-`"$global:ARANGODB_FULL_VERSION`"_win64.exe"))
+    {
+        packageWindows
+    }
+    Push-Location $pwd
+    Set-Location "$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\"
+    Write-Host "Time: $((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH.mm.ssZ'))"
+    Write-Host "Sign: cpack -C `"$BUILDMODE`""
+    #proc -process "cpack" -argument "-C `"$BUILDMODE`"" -logfile "$INNERWORKDIR\sign"
+    Pop-Location
+}
+
 Function buildArangoDB
 {
     checkoutIfNeeded
@@ -440,6 +482,30 @@ Function buildArangoDB
         if($global:ok)
         {
             Write-Host "Build OK."
+            if($SKIPPACKAGING -eq "Off")
+            {
+                packageWindows
+                if($global:ok)
+                {
+                    Write-Host "Package OK."
+                    if($SIGN)
+                    {
+                        signWindows
+                        if($global:ok)
+                        {
+                            Write-Host "Sign OK."
+                        }
+                        Else
+                        {
+                            Write-Host "Sign error, see $INNERWORKDIR\sign.* for details."
+                        }
+                    }
+                }
+                Else
+                {
+                    Write-Host "Package error, see $INNERWORKDIR\package.* for details."
+                }
+            }
         }
         Else
         {
@@ -460,51 +526,65 @@ Function buildStaticArangoDB
 
 Function moveResultsToWorkspace
 {
-  Write-Host "Moving reports and logs to $env:WORKSPACE ..."
-  If(Test-Path -PathType Leaf "$INNERWORKDIR\test.log")
-  {
-    If(Get-Content -Path "$INNERWORKDIR\test.log" -Head 1 | Select-String -Pattern "BAD" -CaseSensitive)
+    Write-Host "Moving reports and logs to $env:WORKSPACE ..."
+    If(Test-Path -PathType Leaf "$INNERWORKDIR\test.log")
     {
-        ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter testreport*))
+        If(Get-Content -Path "$INNERWORKDIR\test.log" -Head 1 | Select-String -Pattern "BAD" -CaseSensitive)
         {
-            Write-Host "Move $INNERWORKDIR\$file"
-            Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE; comm
-        } 
+            ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter testreport*))
+            {
+                Write-Host "Move $INNERWORKDIR\$file"
+                Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE; comm
+            } 
+        }
+        Else
+        {
+            ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter "testreport*" -Exclude "*.zip"))
+            {
+                Write-Host "Remove $INNERWORKDIR\$file"
+                Remove-Item -Force "$INNERWORKDIR\$file"; comm 
+            } 
+        }
     }
-    Else
+    If(Test-Path -PathType Leaf "$INNERWORKDIR\test.log")
     {
-        ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter "testreport*" -Exclude "*.zip"))
-        {
-            Write-Host "Remove $INNERWORKDIR\$file"
-            Remove-Item -Force "$INNERWORKDIR\$file"; comm 
-        } 
+        Write-Host "Move $INNERWORKDIR\test.log"
+        Move-Item -Path "$INNERWORKDIR\test.log" -Destination $env:WORKSPACE; comm
     }
-  }
-  If(Test-Path -PathType Leaf "$INNERWORKDIR\test.log")
-  {
-    Write-Host "Move $INNERWORKDIR\test.log"
-    Move-Item -Path "$INNERWORKDIR\test.log" -Destination $env:WORKSPACE; comm
-  }
-  ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter "*.zip"))
-  {
-    Write-Host "Move $INNERWORKDIR\$file"
-    Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE; comm
-  }
-  ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter "build*"))
-  {
-    Write-Host "Move $INNERWORKDIR\$file"
-    Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE; comm
-  }
-  ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter "cmake*"))
-  {
-    Write-Host "Move $INNERWORKDIR\$file"
-    Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE; comm
-  }
-  If(Test-Path -PathType Leaf "$INNERWORKDIR\testfailures.log")
-  {
-    Write-Host "Move $INNERWORKDIR\testfailures.log"
-    Move-Item -Path "$INNERWORKDIR\testfailures.log" -Destination $env:WORKSPACE; comm 
-  }
+    ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter "*.zip"))
+    {
+        Write-Host "Move $INNERWORKDIR\$file"
+        Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE; comm
+    }
+    ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter "build*"))
+    {
+        Write-Host "Move $INNERWORKDIR\$file"
+        Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE; comm
+    }
+    ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter "cmake*"))
+    {
+        Write-Host "Move $INNERWORKDIR\$file"
+        Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE; comm
+    }
+    ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter "package*"))
+    {
+        Write-Host "Move $INNERWORKDIR\$file"
+        Move-Item -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE; comm
+    }
+    if($SKIPPACKAGING -eq "Off")
+    {
+        findArangoDBVersion
+            If(Test-Path -PathType Leaf "$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB3-$global:ARANGODB_FULL_VERSION.exe")
+            {
+                Write-Host "Move $INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB3-$global:ARANGODB_FULL_VERSION.exe"
+                Move-Item -Path "$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB3-$global:ARANGODB_FULL_VERSION.exe" -Destination $env:WORKSPACE; comm 
+            }
+    }
+    If(Test-Path -PathType Leaf "$INNERWORKDIR\testfailures.log")
+    {
+        Write-Host "Move $INNERWORKDIR\testfailures.log"
+        Move-Item -Path "$INNERWORKDIR\testfailures.log" -Destination $env:WORKSPACE; comm 
+    }
 }
 
 Function getRepoState
@@ -605,6 +685,8 @@ Function launchSingleTests
     test1 "shell_replication",""
     test1 "http_replication",""
     test1 "catch",""
+    test1 "version",""
+    test1 "endpoints","","--skipEndpointsIpv6","true"
     comm
 }
 

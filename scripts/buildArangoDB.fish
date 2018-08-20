@@ -23,7 +23,7 @@ if test "$PLATFORM" = "linux"
   set GOLD -DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=gold  -DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=gold
 end
 
-echo cmake $argv -DCMAKE_BUILD_TYPE=$BUILDMODE -DCMAKE_CXX_COMPILER=$CCACHEBINPATH/g++ -DCMAKE_C_COMPILER=$CCACHEBINPATH/gcc -DUSE_MAINTAINER_MODE=$MAINTAINER -DUSE_ENTERPRISE=$ENTERPRISEEDITION -DUSE_JEMALLOC=On $GOLD -DCMAKE_INSTALL_PREFIX=/ -DSTATIC_EXECUTABLES=On ..
+echo cmake $argv -DCMAKE_BUILD_TYPE=$BUILDMODE -DCMAKE_CXX_COMPILER=$CCACHEBINPATH/g++ -DCMAKE_C_COMPILER=$CCACHEBINPATH/gcc -DUSE_MAINTAINER_MODE=$MAINTAINER -DUSE_ENTERPRISE=$ENTERPRISEEDITION -DUSE_JEMALLOC=On $GOLD -DCMAKE_INSTALL_PREFIX=/ -DSTATIC_EXECUTABLES=Off ..
 
 echo cmake output in $INNERWORKDIR/cmakeArangoDB.log
 
@@ -35,18 +35,20 @@ cmake $argv \
       -DUSE_ENTERPRISE=$ENTERPRISEEDITION \
       -DUSE_JEMALLOC=On \
       -DCMAKE_INSTALL_PREFIX=/ \
-      -DSTATIC_EXECUTABLES=On \
+      -DSTATIC_EXECUTABLES=Off \
       -DCMAKE_C_FLAGS=-fno-stack-protector \
       -DCMAKE_CXX_FLAGS=-fno-stack-protector \
       $GOLD \
       .. > $INNERWORKDIR/cmakeArangoDB.log ^&1
-
+and echo "configure done"  >> $INNERWORKDIR/cmakeArangoDB.log
 or exit $status
 
 mkdir install
 set -x DESTDIR (pwd)/install
-echo Running make for static build, output in work/buildArangoDB.log
+
+echo "Running make for static build, output in work/buildArangoDB.log"
 nice make -j$PARALLELISM install > $INNERWORKDIR/buildArangoDB.log ^&1
+and echo "build and install done"  >> $INNERWORKDIR/buildArangoDB.log
 and cd install
 and if test -z "$NOSTRIP"
   echo Stripping executables...

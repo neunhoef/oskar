@@ -88,6 +88,12 @@ function oskar
   runLocal $SCRIPTSDIR/runTests.fish
 end
 
+function oskarFull
+  checkoutIfNeeded
+  runLocal $SCRIPTSDIR/runFullTests.fish
+end
+
+
 function pushOskar
   cd $WORKDIR
   source helper.fish
