@@ -485,21 +485,22 @@ def replaceCodeFullFile(lines):
 ################################################################################
 # main loop over all files
 ################################################################################
-def walk_on_files(src_dir, inDirPath, outDirPath):
+def walk_on_files(src_dir, book, inDirPath, outDirPath):
     global fileFilter
     count = 0
     skipped = 0
 
-    print("walk on files inDirPath")
+    print("walk on files inDirPath: " + inDirPath)
+
 
     for root, dirs, files in os.walk(inDirPath):
         for file in files:
-            in_file_rel_path=os.path.relpath(file,inDirPath)
-            print("in file rel path" + in_file_rel_path)
+            full_file_path=os.path.join(root,file)
+            in_file_rel_path=os.path.relpath(full_file_path, inDirPath)
             if file.endswith(".md") and not file.endswith("SUMMARY.md"):
                 count += 1
                 nextInFileFull = os.path.join(root, file)
-                nextOutFileFull = os.path.join(outDirPath, in_file_rel_path)
+                nextOutFileFull = os.path.join(outDirPath, book, in_file_rel_path)
                 print("out dir path " + outDirPath)
                 print("next out file" + nextOutFileFull)
                 if fileFilter != None:
@@ -804,7 +805,7 @@ if __name__ == '__main__':
         print("usage: book arango-source output-directory swaggerJson [filter]")
         exit(1)
 
-    book = path_abs_norm(sys.argv[1])
+    book = sys.argv[1]
     srcDir = path_abs_norm(sys.argv[2])
     outDir = path_abs_norm(sys.argv[3])
 
@@ -839,4 +840,4 @@ if __name__ == '__main__':
     print "loaded %d / %d docu blocks" % (len(dokuBlocks[0]), len(dokuBlocks[1]))
     #print dokuBlocks[0].keys()
 
-    walk_on_files(srcDir, inDir, outDir)
+    walk_on_files(srcDir, book, inDir, outDir)
