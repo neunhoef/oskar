@@ -31,15 +31,22 @@ import io
 import shutil
 
 
-
+# set up logging
 import logging
 
-# create logger with 'spam_application'
-logger = logging.getLogger('spam_application')
-logger.setLevel(logging.INFO)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(lineno)d - %(levelname)s - %(message)s',  datefmt='%H:%M:%S')
+ch.setFormatter(formatter)
+logger.addHandler(ch)
+
 
 def printe(*args, **kwargs):
-    print(*args, file=stderr, **kwargs)
+    print(*args, file=sys.stderr, **kwargs)
 
 ################################################################################
 ### @brief length of the swagger definition namespace
@@ -371,10 +378,6 @@ remove_MULTICR = re.compile(r'\n\n\n*')
 
 RXIMAGES = re.compile(r".*\!\[([\d\s\w\/\. ()-]*)\]\(([\d\s\w\/\.-]*)\).*")
 
-def mkdir_recursive(ipath):
-    path = path_abs_norm(ipath)
-    os.makedirs(path, exist_ok=True)
-
 def replaceCode(lines, blockName):
     global swagger, thisVerb, route, verb
     thisVerb = {}
@@ -493,6 +496,7 @@ def replaceCodeFullFile(lines):
 ################################################################################
 # main loop over all files
 ################################################################################
+#OK
 def walk_on_files(conf):
     """ walk over source tree and skip files and calculate output path for
         files that are not skipped
@@ -503,14 +507,14 @@ def walk_on_files(conf):
     count = 0
     skipped = 0
 
-    logger.info("walk on files inDirPath: " + conf.book_src)
+    #logger.info("walk on files inDirPath: " + conf.book_src)
 
     for root, dirs, files in os.walk(conf.book_src):
         for file in files:
 
             in_full_path=os.path.join(root,file)
             in_rel_path=os.path.relpath(in_full_path, conf.book_src)
-            out_full_path = os.path.join(conf.book_pp, in_rel_path)
+            out_full_path = os.path.join(conf.book_out, in_rel_path)
 
 
             if file.endswith(".md") and not file.endswith("SUMMARY.md"):
@@ -524,68 +528,90 @@ def walk_on_files(conf):
                 find_start_code(in_full_path, out_full_path, conf)
     print( "Processed %d files, skipped %d" % (count, skipped))
 
+#OK
+def handle_images(image_title, image_link, conf, in_full, out_full):
+    """ copy images from source to pp dir, copy book external images
+        to <book>/assets and update image links accordingly.
+    """
+    src_image = path_abs_norm(os.path.join(os.path.dirname(in_full), image_link))
+    out_image = path_abs_norm(os.path.join(os.path.dirname(out_full), image_link))
+
+    assets = os.path.join(conf.book_out, "assets")
+
+    #for images that are not within this book
+    if os.path.commonprefix([src_image, conf.book_src]) != conf.book_src:
+
+        ## the file will end up in out/<bookname>/assets
+        # get image name
+        out_image_name = os.path.basename(image_link)
+        # append name to assets
+        out_image = os.path.join(assets, out_image_name)
+
+        # get path of the current document
+        out_full_dir = os.path.dirname(out_full)
+        # get the relative location of the assets dir to the current document
+        out_image_rel_dir = os.path.relpath(assets, out_full_dir)
+        # append the image name
+        image_link = os.path.join(out_image_rel_dir,out_image_name)
+
+    outdir = os.path.dirname(out_image)
+    if not os.path.exists(outdir):
+        mkdir_recursive(outdir)
+
+    #logger.debug(src_image + " -> "+ out_image)
+    if not os.path.exists(out_image):
+        shutil.copy(src_image, out_image)
+
+    #logger.debug("out_image:    " + out_image)
+    #logger.debug("image_link:   " + image_link)
+    return str('![' + image_title + '](' + image_link + ')')
+
 def find_start_code(in_full, out_full, conf):
+    """ replace dcoublocks and images
+    """
     baseInPath = conf.book_src
 
     textFile = None
     with open(in_full, "r", encoding="utf-8", newline=None) as fd:
         textFile = fd.read()
 
-    logger.debug("-" * 80)
-    logger.debug(textFile)
+    #logger.debug(textFile)
 
-    matchInline = re.findall(r'@startDocuBlockInline\s*(\w+)', textFile)
-    if matchInline:
-        for find in matchInline:
-            #print("7"*80)
-            #print(in_full + " " + find)
-            textFile = replaceTextInline(textFile, in_full, find)
-            #print(textFile)
 
-    match = re.findall(r'@startDocuBlock\s*(\w+)', textFile)
-    if match:
-        for find in match:
-            #print("8"*80)
-            #print(find)
-            textFile = replaceText(textFile, in_full, find)
-            #print(textFile)
+    matches = re.findall(r'@startDocuBlockInline\s*(\w+)', textFile)
+    if matches:
+        for match in matches:
+            #logger.debug(in_full + " " + match)
+            textFile = replaceTextInline(textFile, in_full, match)
+            #logger.debug(textFile)
+
+    matches = re.findall(r'@startDocuBlock\s*(\w+)', textFile)
+    for match in matches:
+        #logger.debug(in_full + " " + match)
+        textFile = replaceText(textFile, in_full, match)
+        #logger.debug(textFile)
 
     try:
         textFile = replaceCodeFullFile(textFile)
-    except:
+    except Exception as e:
         printe("while parsing :      "  + in_full)
-        raise
-    #print("9" * 80)
-    #print(textFile)
+        printe(textFile)
+        raise e
 
-    def analyzeImages(m):
-        imageLink = m.groups()[1]
-        inf = os.path.realpath(os.path.join(os.path.dirname(in_full), imageLink))
-        outf = os.path.realpath(os.path.join(os.path.dirname(out_full), imageLink))
-        bookDir = os.path.realpath(baseInPath)
-        depth = len(in_full.split(os.sep)) - 1 # filename + book directory
-        assets = os.path.join((".." + os.sep)*depth, baseInPath, "assets")
-	# print(inf, outf, bookDir, depth, assets)
+    textFile = re.sub(RXIMAGES
+                     ,lambda match: handle_images(match.groups()[0]
+                                                 ,match.groups()[1]
+                                                 ,conf
+                                                 ,in_full
+                                                 ,out_full
+                                                 )
+                     ,textFile
+                     )
 
-        outdir = os.path.dirname(outf)
-        if not os.path.exists(outdir):
-            mkdir_recursive(outdir)
-        if os.path.commonprefix([inf, bookDir]) != bookDir:
-            assetDir = os.path.join(outdir, assets)
-            if not os.path.exists(assetDir):
-                os.mkdir(assetDir)
-            outf=os.path.join(assetDir, os.path.basename(imageLink))
-            imageLink = os.path.join((".." + os.sep)* (depth - 1), "assets",os.path.basename(imageLink))
+    with open(out_full, "w", encoding="utf-8", newline="") as fd:
+        fd.write(textFile)
 
-        if not os.path.exists(outf):
-            shutil.copy(inf, outf)
-        return str('![' + m.groups()[0] + '](' + imageLink + ')')
-
-    textFile = re.sub(RXIMAGES,analyzeImages, textFile)
-    outFD = io.open(out_full, "w", encoding="utf-8", newline="")
-    outFD.write(textFile)
-    outFD.close()
-#JSF_put_api_replication_synchronize
+    return 0
 
 def replaceText(text, pathOfFile, searchText):
   ''' inserts docublocks into md '''
@@ -810,6 +836,11 @@ def loadProgramOptionBlocks():
         # Join output and register as docublock (like 'program_options_arangosh')
         dokuBlocks[0]['program_options_' + program.lower()] = '\n'.join(output) + '\n\n'
 
+#################################################################################
+
+def mkdir_recursive(ipath):
+    path = path_abs_norm(ipath)
+    os.makedirs(path, exist_ok=True)
 
 def path_abs_norm(path):
     return os.path.normpath(os.path.abspath(path))
@@ -821,7 +852,7 @@ class Config():
         self.out =  path_abs_norm(out)
 
         self.book_src = os.path.join(self.src ,"Documentation","Books", self.book)
-        self.book_pp = os.path.join(self.out , self.book)
+        self.book_out = os.path.join(self.out , self.book)
         self.allComments = os.path.join(self.src, "Documentation", "Books", "allComments.txt")
         self.swaggerJson = os.path.join(self.src, "js","apps","system","_admin","aardvark","APP","api-docs.json")
 
