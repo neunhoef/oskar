@@ -2,9 +2,9 @@ FROM alpine:3.7
 MAINTAINER Max Neunhoeffer <max@arangodb.com>
 
 RUN apk update && apk add nodejs pwgen && npm install -g foxx-cli
-COPY install.tar.gz /install.tar.gz
+ADD install.tar.gz /
 COPY setup.sh /setup.sh
-RUN cd / && tar xzvf install.tar.gz && rm /install.tar.gz && /setup.sh
+RUN /setup.sh
 
 # The following is magic for unholy OpenShift security business.
 # Containers in OpenShift by default run with a random UID but with GID 0,
