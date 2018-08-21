@@ -28,6 +28,13 @@ RUN apt-get update && apt-get install -y -q --no-install-recommends \
         python-argparse \
         && apt-get clean
 
+RUN apt-get update && apt-get install -y -q --no-install-recommends \
+        python3 \
+        python3-setuptools \
+        python3-pip \
+        python3-configargparse \
+        && apt-get clean
+
 ## install packages for doc
 RUN apt-get update && apt-get install -y -q --no-install-recommends \
         git \
