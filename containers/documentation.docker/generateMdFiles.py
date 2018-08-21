@@ -496,6 +496,7 @@ def replaceCodeFullFile(lines):
 ################################################################################
 # main loop over all files
 ################################################################################
+
 #OK
 def walk_on_files(conf):
     """ walk over source tree and skip files and calculate output path for
@@ -508,7 +509,6 @@ def walk_on_files(conf):
     skipped = 0
 
     #logger.info("walk on files inDirPath: " + conf.book_src)
-
     for root, dirs, files in os.walk(conf.book_src):
         for file in files:
 
@@ -527,6 +527,91 @@ def walk_on_files(conf):
                 mkdir_recursive(os.path.dirname(out_full_path)) #create dir for output file
                 find_start_code(in_full_path, out_full_path, conf)
     print( "Processed %d files, skipped %d" % (count, skipped))
+
+#OK - TODO - rename to something useful
+def find_start_code(in_full, out_full, conf):
+    """ replace dcoublocks and images
+    """
+    baseInPath = conf.book_src
+
+    textFile = None
+    with open(in_full, "r", encoding="utf-8", newline=None) as fd:
+        textFile = fd.read()
+
+    #logger.debug(textFile)
+    matches = re.findall(r'@startDocuBlockInline\s*(\w+)', textFile)
+    for match in matches:
+        #logger.debug(in_full + " " + match)
+        textFile = replaceTextInline(textFile, in_full, match)
+
+    matches = re.findall(r'@startDocuBlock\s*(\w+)', textFile)
+    for match in matches:
+        #logger.debug(in_full + " " + match)
+        textFile = replaceText(textFile, in_full, match)
+
+    try:
+        textFile = replaceCodeFullFile(textFile)
+    except Exception as e:
+        printe("while parsing :      "  + in_full)
+        printe(textFile)
+        raise e
+
+    textFile = re.sub(RXIMAGES
+                     ,lambda match: handle_images(match.groups()[0]
+                                                 ,match.groups()[1]
+                                                 ,conf
+                                                 ,in_full
+                                                 ,out_full
+                                                 )
+                     ,textFile
+                     )
+
+    with open(out_full, "w", encoding="utf-8", newline="") as fd:
+        fd.write(textFile)
+
+    return 0
+
+def replaceTextInline(text, pathOfFile, searchText):
+  ''' inserts docublocks into md '''
+  global dokuBlocks
+  if not searchText in dokuBlocks[1]:
+      printe("Failed to locate the inline docublock '" + searchText + "' for replacing it into the file '" + pathOfFile + "'\n have: ")
+      printe("%s" %(dokuBlocks[1].keys()))
+      printe('*' * 80)
+      printe(text)
+      printe("Failed to locate the inline docublock '" + searchText + "' for replacing it into the file '" + pathOfFile + "' For details scroll up!")
+      exit(1)
+  rePattern = r'(?s)\s*@startDocuBlockInline\s+'+ searchText +'\s.*?@endDocuBlock\s' + searchText
+  # (?s) is equivalent to flags=re.DOTALL but works in Python 2.6
+  match = re.search(rePattern, text)
+
+  if (match == None):
+      printe("failed to match with '" + rePattern + "' for " + searchText + " in file " + pathOfFile + " in: \n" + text)
+      exit(1)
+
+  subtext = match.group(0)
+  if (len(re.findall('@startDocuBlock', subtext)) > 1):
+      printe("failed to snap with '" + rePattern + "' on end docublock for " + searchText + " in " + pathOfFile + " our match is:\n" + subtext)
+      exit(1)
+
+  return re.sub(rePattern, dokuBlocks[1][searchText], text)
+
+def replaceText(text, pathOfFile, searchText):
+  ''' inserts docublocks into md '''
+  #print('7'*80)
+  global dokuBlocks
+  if not searchText in dokuBlocks[0]:
+      printe("Failed to locate the docublock '" + searchText + "' for replacing it into the file '" +pathOfFile + "'\n have:")
+      printe(dokuBlocks[0].keys())
+      printe('*' * 80)
+      printe(text)
+      printe("Failed to locate the docublock '" + searchText + "' for replacing it into the file '" +pathOfFile + "' For details scroll up!")
+      exit(1)
+  #print('7'*80)
+  #print(dokuBlocks[0][searchText])
+  #print('7'*80)
+  rc= re.sub("@startDocuBlock\s+"+ searchText + "(?:\s+|$)", dokuBlocks[0][searchText], text)
+  return rc
 
 #OK
 def handle_images(image_title, image_link, conf, in_full, out_full):
@@ -566,94 +651,6 @@ def handle_images(image_title, image_link, conf, in_full, out_full):
     #logger.debug("image_link:   " + image_link)
     return str('![' + image_title + '](' + image_link + ')')
 
-def find_start_code(in_full, out_full, conf):
-    """ replace dcoublocks and images
-    """
-    baseInPath = conf.book_src
-
-    textFile = None
-    with open(in_full, "r", encoding="utf-8", newline=None) as fd:
-        textFile = fd.read()
-
-    #logger.debug(textFile)
-
-
-    matches = re.findall(r'@startDocuBlockInline\s*(\w+)', textFile)
-    if matches:
-        for match in matches:
-            #logger.debug(in_full + " " + match)
-            textFile = replaceTextInline(textFile, in_full, match)
-            #logger.debug(textFile)
-
-    matches = re.findall(r'@startDocuBlock\s*(\w+)', textFile)
-    for match in matches:
-        #logger.debug(in_full + " " + match)
-        textFile = replaceText(textFile, in_full, match)
-        #logger.debug(textFile)
-
-    try:
-        textFile = replaceCodeFullFile(textFile)
-    except Exception as e:
-        printe("while parsing :      "  + in_full)
-        printe(textFile)
-        raise e
-
-    textFile = re.sub(RXIMAGES
-                     ,lambda match: handle_images(match.groups()[0]
-                                                 ,match.groups()[1]
-                                                 ,conf
-                                                 ,in_full
-                                                 ,out_full
-                                                 )
-                     ,textFile
-                     )
-
-    with open(out_full, "w", encoding="utf-8", newline="") as fd:
-        fd.write(textFile)
-
-    return 0
-
-def replaceText(text, pathOfFile, searchText):
-  ''' inserts docublocks into md '''
-  #print('7'*80)
-  global dokuBlocks
-  if not searchText in dokuBlocks[0]:
-      printe("Failed to locate the docublock '" + searchText + "' for replacing it into the file '" +pathOfFile + "'\n have:")
-      printe(dokuBlocks[0].keys())
-      printe('*' * 80)
-      printe(text)
-      printe("Failed to locate the docublock '" + searchText + "' for replacing it into the file '" +pathOfFile + "' For details scroll up!")
-      exit(1)
-  #print('7'*80)
-  #print(dokuBlocks[0][searchText])
-  #print('7'*80)
-  rc= re.sub("@startDocuBlock\s+"+ searchText + "(?:\s+|$)", dokuBlocks[0][searchText], text)
-  return rc
-
-def replaceTextInline(text, pathOfFile, searchText):
-  ''' inserts docublocks into md '''
-  global dokuBlocks
-  if not searchText in dokuBlocks[1]:
-      printe("Failed to locate the inline docublock '" + searchText + "' for replacing it into the file '" + pathOfFile + "'\n have: ")
-      printe("%s" %(dokuBlocks[1].keys()))
-      printe('*' * 80)
-      printe(text)
-      printe("Failed to locate the inline docublock '" + searchText + "' for replacing it into the file '" + pathOfFile + "' For details scroll up!")
-      exit(1)
-  rePattern = r'(?s)\s*@startDocuBlockInline\s+'+ searchText +'\s.*?@endDocuBlock\s' + searchText
-  # (?s) is equivalent to flags=re.DOTALL but works in Python 2.6
-  match = re.search(rePattern, text)
-
-  if (match == None):
-      printe("failed to match with '" + rePattern + "' for " + searchText + " in file " + pathOfFile + " in: \n" + text)
-      exit(1)
-
-  subtext = match.group(0)
-  if (len(re.findall('@startDocuBlock', subtext)) > 1):
-      printe("failed to snap with '" + rePattern + "' on end docublock for " + searchText + " in " + pathOfFile + " our match is:\n" + subtext)
-      exit(1)
-
-  return re.sub(rePattern, dokuBlocks[1][searchText], text)
 
 ################################################################################
 # Read the docublocks into memory
