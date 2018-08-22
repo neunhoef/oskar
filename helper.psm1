@@ -634,8 +634,8 @@ Function unittest($test,$output)
 {
     $PORT=Get-Random -Minimum 20000 -Maximum 65535
     Set-Location "$INNERWORKDIR\ArangoDB"; comm
-    Write-Host "Test: $INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\arangosh.exe -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\UnitTests\unittest.js -- $test"
-    [array]$global:UPIDS = [array]$global:UPIDS+$(Start-Process -FilePath "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\arangosh.exe" -ArgumentList " -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\UnitTests\unittest.js -- $test" -RedirectStandardOutput "$output.stdout.log" -RedirectStandardError "$output.stderr.log" -PassThru).Id; comm
+    Write-Host "Test: $INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\arangosh.exe -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\tests\unittest.js -- $test"
+    [array]$global:UPIDS = [array]$global:UPIDS+$(Start-Process -FilePath "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\arangosh.exe" -ArgumentList " -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\tests\unittest.js -- $test" -RedirectStandardOutput "$output.stdout.log" -RedirectStandardError "$output.stderr.log" -PassThru).Id; comm
 }
 
 Function launchSingleTests
@@ -650,7 +650,7 @@ Function launchSingleTests
         {
             Write-Host "Launching $test"
         }
-        If(-Not(Select-String -Path $INNERWORKDIR\ArangoDB\UnitTests\OskarTestSuitesBlackList -pattern $test[0]))
+        If(-Not(Select-String -Path $INNERWORKDIR\ArangoDB\tests\OskarTestSuitesBlackList -pattern $test[0]))
         {
             unittest "$($test[0]) --cluster false --storageEngine $STORAGEENGINE --minPort $global:portBase --maxPort $($global:portBase + 99) $($test[2..$($test.Length)]) --skipNondeterministic true --skipTimeCritical true --testOutput $env:TMP\$($test[0])$($test[1]).out --writeXmlReport false" -output "$INNERWORKDIR\ArangoDB\$($test[0])_$($test[1])"
             $global:portBase = $($global:portBase + 100)
@@ -658,7 +658,7 @@ Function launchSingleTests
         }
         Else
         {
-            Write-Host "Test suite" $test[0] "skipped by UnitTests/OskarTestSuitesBlackList"
+            Write-Host "Test suite" $test[0] "skipped by tests/OskarTestSuitesBlackList"
         }
     }
     [array]$global:UPIDS = $null
@@ -702,7 +702,7 @@ Function launchClusterTests
         {
             Write-Host "Launching $test"
         }
-        If(-Not(Select-String -Path $INNERWORKDIR\ArangoDB\UnitTests\OskarTestSuitesBlackList -pattern $test[0]))
+        If(-Not(Select-String -Path $INNERWORKDIR\ArangoDB\tests\OskarTestSuitesBlackList -pattern $test[0]))
         {
             $ruby = $(Get-Command ruby.exe -ErrorAction SilentlyContinue).Source
             if (-not $ruby -eq "") {
@@ -718,7 +718,7 @@ Function launchClusterTests
         }
         Else
         {
-            Write-Host "Test suite" $test[0] "skipped by UnitTests/OskarTestSuitesBlackList"
+            Write-Host "Test suite" $test[0] "skipped by tests/OskarTestSuitesBlackList"
         }
     }
     Function test3([array]$test)
@@ -727,7 +727,7 @@ Function launchClusterTests
         {
             Write-Host "Launching $test"
         }
-        If(-Not(Select-String -Path $INNERWORKDIR\ArangoDB\UnitTests\OskarTestSuitesBlackList -pattern $test[0]))
+        If(-Not(Select-String -Path $INNERWORKDIR\ArangoDB\tests\OskarTestSuitesBlackList -pattern $test[0]))
         {
             $ruby = $(Get-Command ruby.exe -ErrorAction SilentlyContinue).Source
             if (-not $ruby -eq "") {
@@ -743,7 +743,7 @@ Function launchClusterTests
         }
         Else
         {
-            Write-Host "Test suite" $test[0] "skipped by UnitTests/OskarTestSuitesBlackList"
+            Write-Host "Test suite" $test[0] "skipped by tests/OskarTestSuitesBlackList"
         }
     }
     [array]$global:UPIDS = $null
