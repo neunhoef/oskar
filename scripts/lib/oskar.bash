@@ -1,3 +1,5 @@
+export arango_doc_container_default="obi/test"
+
 ferr(){
     echo "fatal error: $@"
     exit 1
@@ -22,13 +24,12 @@ setup_gpg(){
     gpg2 --import -v -v ~/.gnupg/secring.gpg 2>&3 || ferr "failed to import secret"
     gpg2 --import -v -v ~/.gnupg/pubring.gpg 2>&3 || ferr "faild to import public key"
 
-     ## wozu? - add key to gpg one time (willi - script)
-     cd /tmp/
-     echo "bla"> Release
-     gpg2 --pinentry-mode=loopback --digest-algo SHA512 \
-          --passphrase-fd 0 --yes -abs \
-          -u "$KEYNAME" \
-          -o Release.gpg Release <<<"arangodb" 2>&3
-     (( $? != 0 )) && { echo "failed test signing"; cat /tmp/createRepoFd3  exit 1; }
-     exec 3<&-
+    cd /tmp/
+    echo "bla"> Release
+    gpg2 --pinentry-mode=loopback --digest-algo SHA512 \
+         --passphrase-fd 0 --yes -abs \
+         -u "$KEYNAME" \
+         -o Release.gpg Release <<<"XXXXXXX" 2>&3
+    (( $? != 0 )) && { echo "failed test signing"; cat /tmp/createRepoFd3  exit 1; }
+    exec 3<&-
 }

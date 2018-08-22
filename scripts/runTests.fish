@@ -44,6 +44,12 @@ function resetLaunch
 end
 
 function launchSingleTests
+  function jslint
+    if test $VERBOSEOSKAR = On ; echo Launching jslint $argv ; end
+    echo utils/jslint.sh
+    utils/jslint.sh > $TMPDIR/jslint.log &
+  end
+
   function test1
     if test $VERBOSEOSKAR = On ; echo Launching $argv ; end
 
@@ -113,6 +119,11 @@ function launchSingleTests
     case 24 ; test1 dump_authentication ""
     case 25 ; test1 version ""
     case 26 ; test1 endpoints "" --skipEndpointsIpv6 true
+    case 27 ; test1 BackupNoAuthSysTests ""
+    case 28 ; test1 BackupNoAuthNoSysTests ""
+    case 29 ; test1 BackupAuthSysTests ""
+    case 30 ; test1 BackupAuthNoSysTests ""
+    case 31 ; jslint
     case '*' ; return 0
   end
   set -g launchCount (math $launchCount + 1)
@@ -245,6 +256,17 @@ function createReport
       end
     end
   end
+
+  if test -e "jslint.log"
+   # this is the jslint output
+    if grep ERROR "jslint.log"
+      set -g result BAD
+      echo Bad result in jslint
+      echo Bad result in jslint >> testProtocol.txt
+      set badtests $badtests "Bad result in jslint"
+    end
+  end
+ 
   popd
   echo $result >> testProtocol.txt
   pushd $INNERWORKDIR

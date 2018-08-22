@@ -32,7 +32,7 @@ set -g FULLARGS $argv \
  -DCMAKE_CXX_FLAGS=-fno-stack-protector \
  -DCMAKE_C_COMPILER=$CCACHEBINPATH/gcc \
  -DCMAKE_C_FLAGS=-fno-stack-protector \
- -DCMAKE_EXE_LINKER_FLAGS=-Wl,--build-id \
+ -DCMAKE_EXE_LINKER_FLAGS="-Wl,--build-id -no-pie"\
  -DCMAKE_INSTALL_PREFIX=/ \
  -DSTATIC_EXECUTABLES=On \
  -DUSE_ENTERPRISE=$ENTERPRISEEDITION \

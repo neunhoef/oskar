@@ -14,6 +14,7 @@ brew install python@2
 brew install ruby
 brew install jq
 brew install git
+brew install moreutils --without-parallel
 
 brew cask install java8
 
@@ -25,5 +26,6 @@ brew upgrade
 brew link --overwrite python@2
 
 echo import .p12 manually
+#security unlock-keychain -p $PASSWD
 #security import ./MacBuildCertificates.p12 -P $PASSWD
  

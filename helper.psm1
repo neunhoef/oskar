@@ -304,7 +304,7 @@ Function switchBranches($branch_c,$branch_e)
         }
         If ($global:ok) 
         {
-            proc -process "git" -argument "pull" -logfile $false
+            proc -process "git" -argument "fetch" -logfile $false
         }
         If ($global:ok) 
         {
@@ -313,10 +313,6 @@ Function switchBranches($branch_c,$branch_e)
         If ($global:ok) 
         {
             proc -process "git" -argument "reset --hard origin/$branch_c" -logfile $false
-        }
-        If ($global:ok) 
-        {
-            proc -process "git" -argument "pull" -logfile $false
         }
         If($ENTERPRISEEDITION -eq "On")
         {
@@ -327,7 +323,7 @@ Function switchBranches($branch_c,$branch_e)
             }
             If ($global:ok) 
             {
-                proc -process "git" -argument "pull" -logfile $false
+                proc -process "git" -argument "fetch" -logfile $false
             }
             If ($global:ok) 
             {
@@ -336,10 +332,6 @@ Function switchBranches($branch_c,$branch_e)
             If ($global:ok) 
             {
                 proc -process "git" -argument "reset --hard origin/$branch_e" -logfile $false
-            }
-            If ($global:ok) 
-            {
-                proc -process "git" -argument "pull" -logfile $false
             }
         }
     }
@@ -354,7 +346,7 @@ Function updateOskar
     }
     If ($global:ok) 
     {
-        proc -process "git" -argument "pull" -logfile $false
+        proc -process "git" -argument "reset --hard origin/master" -logfile $false
     }
 }
 

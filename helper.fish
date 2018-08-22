@@ -29,17 +29,23 @@ function unlockDirectory
 end
 
 function showConfig
-  echo "Workdir            : $WORKDIR"
-  echo "Inner workdir      : $INNERWORKDIR"
-  echo "Maintainer         : $MAINTAINER"
-  echo "Asan               : $ASAN"
-  echo "Buildmode          : $BUILDMODE"
-  echo "Parallelism        : $PARALLELISM"
-  echo "Enterprise edition : $ENTERPRISEEDITION"
-  echo "Storage engine     : $STORAGEENGINE"
-  echo "Test suite         : $TESTSUITE"
-  echo "Verbose oskar      : $VERBOSEOSKAR"
-  echo "Verbose build      : $VERBOSEBUILD"
+  echo "#################################"
+  echo "Build Configuration"
+  echo "- Enterprise     : $ENTERPRISEEDITION"
+  echo "- Buildmode      : $BUILDMODE"
+  echo "- Maintainer     : $MAINTAINER"
+  echo
+  echo "Test Configuration:"
+  echo "- Storage engine : $STORAGEENGINE"
+  echo "- Test suite     : $TESTSUITE"
+  echo
+  echo "Internal Configuration:"
+  echo "- Workdir        : $WORKDIR"
+  echo "- Inner workdir  : $INNERWORKDIR"
+  echo "- Parallelism    : $PARALLELISM"
+  echo "- Verbose        : $VERBOSEOSKAR"
+  echo "#################################"
+  echo
 end
 
 function single ; set -gx TESTSUITE single ; end
@@ -90,6 +96,10 @@ else ; set -gx VERBOSEBUILD $VERBOSEBUILD ; end
 function keepBuild ; set -gx NO_RM_BUILD 1 ; end
 function clearBuild ; set -gx NO_RM_BUILD ; end
 
+# TODO FIXME
+# main code between function definitions
+# WORDIR IS pdw -  at least check if ./scripts and something
+# else is available before proceeding
 set -gx WORKDIR (pwd)
 if test ! -d work ; mkdir work ; end
 

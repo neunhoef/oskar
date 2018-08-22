@@ -58,6 +58,7 @@ echo cmake $FULLARGS ..
 echo cmake output in $INNERWORKDIR/cmakeArangoDB.log
 
 cmake $FULLARGS .. > $INNERWORKDIR/cmakeArangoDB.log ^&1
+and echo "configure done"  >> $INNERWORKDIR/cmakeArangoDB.log
 or exit $status
 
 echo "Finished cmake at "(date)", now starting build"
@@ -71,6 +72,7 @@ end
 set -x DESTDIR (pwd)/install
 echo Running make for static build, output in work/buildArangoDB.log
 nice make $MAKEFLAGS install > $INNERWORKDIR/buildArangoDB.log ^&1
+and echo "build and install done"  >> $INNERWORKDIR/buildArangoDB.log
 and cd install
 and if test -z "$NOSTRIP"
   echo Stripping executables...

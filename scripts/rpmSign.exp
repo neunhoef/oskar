@@ -7,7 +7,7 @@
 set timeout -1
 spawn rpm --define "_gpg_name <info@arangodb.com>" --addsign {*}$argv
 expect -exact "Enter pass phrase: "
-send -- "arangodb\r"
+send -- "XXXXXX\r"
 expect eof
 
 ## end of rpm-sign.exp
