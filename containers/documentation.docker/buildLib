@@ -120,7 +120,6 @@ run_gitbook(){
 
 
     local cmd=( gitbook "${GITBOOK_ARGS[@]}" "$@" )
-    echo "execute ($(date +%H:%M:%S)): '${cmd[@]}' "
     spin_cmd "${cmd[@]}"
     if (( $? != 0 )) ; then
         section "" | sed 's/-/=/g'
