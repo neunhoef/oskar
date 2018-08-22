@@ -386,7 +386,7 @@ main(){
 
     local out="${ARANGO_BUILD_DOC}/ArangoDB-${newVersionNumber}"
     cp -r "$ARANGO_BUILD_DOC_OUT" "$out" || ferr "failed to copy html docu" #rather move
-    tar -czf "$out.tar.gz" "$out" || ferr "failed to tar html docu"
+    run_cmd tar -czf "$out.tar.gz" "$out" || ferr "failed to tar html docu"
     rm -fr "$out" || err "failed to delete docu copy"
 
     # build other formats
@@ -394,7 +394,7 @@ main(){
         for book_name in $ALLBOOKS; do
             for format in $OTHER_MIME; do
                 local out="${ARANGO_BUILD_DOC}/ArangoDB_${book_name}_${newVersionNumber}.${format}"
-                run_gitbook "fake cache" "${GITBOOK_ARGS[@]}" "${format}" "$ARANGO_BUILD_DOC_PRE/$book_name" "${out}" || ferr "fail"
+                run_cmd run_gitbook "fake cache" "${GITBOOK_ARGS[@]}" "${format}" "$ARANGO_BUILD_DOC_PRE/$book_name" "${out}" || ferr "fail"
             done
         done || ferr "failed to build all formats"
     fi
