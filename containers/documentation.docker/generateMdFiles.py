@@ -34,13 +34,14 @@ import shutil
 # set up logging
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("gmdf")
 logger.setLevel(logging.DEBUG)
 
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(lineno)d - %(levelname)s - %(message)s',  datefmt='%H:%M:%S')
+#formatter = logging.Formatter('%(asctime)s-%(name)s:%(lineno)d-%(levelname)s - %(message)s',  datefmt='%H:%M:%S')
+formatter = logging.Formatter('%(name)s:%(lineno)d-%(levelname)s - %(message)s',  datefmt='%H:%M:%S')
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
@@ -286,7 +287,7 @@ r'''
 ''', re.X)
 
 
-def SimpleRepl(match):
+def block_simple_repl(match):
     m = match.group(0)
     # print('xxxxx [%s]' % m)
     n = None
@@ -378,7 +379,7 @@ remove_MULTICR = re.compile(r'\n\n\n*')
 
 RXIMAGES = re.compile(r".*\!\[([\d\s\w\/\. ()-]*)\]\(([\d\s\w\/\.-]*)\).*")
 
-def replaceCode(lines, blockName):
+def block_replace_code(lines, blockName):
     global swagger, thisVerb, route, verb
     thisVerb = {}
     foundRest = False
@@ -458,7 +459,7 @@ def replaceCode(lines, blockName):
     #print("x" * 70)
     #print(lines)
     try:
-        lines = SIMPLE_RX.sub(SimpleRepl, lines)
+        lines = SIMPLE_RX.sub(block_simple_repl, lines)
     except Exception as x:
         printe("While working on: [" + verb + " " + route + "]" + " while analysing " + blockName)
         printe(x.message)
@@ -473,12 +474,13 @@ def replaceCode(lines, blockName):
     #print(lines)
     return lines
 
-def replaceCodeIndex(lines):
-  lines = re.sub(r"<!--(\s*.+\s)-->","", lines)
-  #HTTP API changing code
-  #lines = re.sub(r"@brief(.+)",r"\g<1>", lines)
-  #lines = re.sub(r"@RESTHEADER{([\s\w\/\_{}-]*),([\s\w-]*)}", r"###\g<2>\n`\g<1>`", lines)
-  return lines
+# NOT USED
+#def replaceCodeIndex(lines):
+#  lines = re.sub(r"<!--(\s*.+\s)-->","", lines)
+#  #HTTP API changing code
+#  #lines = re.sub(r"@brief(.+)",r"\g<1>", lines)
+#  #lines = re.sub(r"@RESTHEADER{([\s\w\/\_{}-]*),([\s\w-]*)}", r"###\g<2>\n`\g<1>`", lines)
+#  return lines
 
 RXUnEscapeMDInLinks = re.compile("\\\\_")
 def setAnchor(param):
@@ -488,7 +490,7 @@ def setAnchor(param):
 RXFinal = [
     (re.compile(r"@anchor (.*)"), setAnchor),
 ]
-def replaceCodeFullFile(lines):
+def walk_replace_code_full_file(lines):
     for (oneRX, repl) in RXFinal:
         lines = oneRX.sub(repl, lines)
     return lines
@@ -525,11 +527,11 @@ def walk_on_files(conf):
                         continue;
                 ## what are those 2 functions doing
                 mkdir_recursive(os.path.dirname(out_full_path)) #create dir for output file
-                find_start_code(in_full_path, out_full_path, conf)
-    print( "Processed %d files, skipped %d" % (count, skipped))
+                walk_find_start_code(in_full_path, out_full_path, conf)
+    logger.info( "Processed %d files, skipped %d" % (count, skipped))
 
 #OK - TODO - rename to something useful
-def find_start_code(in_full, out_full, conf):
+def walk_find_start_code(in_full, out_full, conf):
     """ replace dcoublocks and images
     """
     baseInPath = conf.book_src
@@ -542,22 +544,22 @@ def find_start_code(in_full, out_full, conf):
     matches = re.findall(r'@startDocuBlockInline\s*(\w+)', textFile)
     for match in matches:
         #logger.debug(in_full + " " + match)
-        textFile = replaceTextInline(textFile, in_full, match)
+        textFile = walk_replace_text_inline(textFile, in_full, match)
 
     matches = re.findall(r'@startDocuBlock\s*(\w+)', textFile)
     for match in matches:
         #logger.debug(in_full + " " + match)
-        textFile = replaceText(textFile, in_full, match)
+        textFile = walk_replace_text(textFile, in_full, match)
 
     try:
-        textFile = replaceCodeFullFile(textFile)
+        textFile = walk_replace_code_full_file(textFile)
     except Exception as e:
         printe("while parsing :      "  + in_full)
         printe(textFile)
         raise e
 
     textFile = re.sub(RXIMAGES
-                     ,lambda match: handle_images(match.groups()[0]
+                     ,lambda match: walk_handle_images(match.groups()[0]
                                                  ,match.groups()[1]
                                                  ,conf
                                                  ,in_full
@@ -571,7 +573,7 @@ def find_start_code(in_full, out_full, conf):
 
     return 0
 
-def replaceTextInline(text, pathOfFile, searchText):
+def walk_replace_text_inline(text, pathOfFile, searchText):
   ''' inserts docublocks into md '''
   global dokuBlocks
   if not searchText in dokuBlocks[1]:
@@ -596,7 +598,7 @@ def replaceTextInline(text, pathOfFile, searchText):
 
   return re.sub(rePattern, dokuBlocks[1][searchText], text)
 
-def replaceText(text, pathOfFile, searchText):
+def walk_replace_text(text, pathOfFile, searchText):
   ''' inserts docublocks into md '''
   #print('7'*80)
   global dokuBlocks
@@ -614,7 +616,7 @@ def replaceText(text, pathOfFile, searchText):
   return rc
 
 #OK
-def handle_images(image_title, image_link, conf, in_full, out_full):
+def walk_handle_images(image_title, image_link, conf, in_full, out_full):
     """ copy images from source to pp dir, copy book external images
         to <book>/assets and update image links accordingly.
     """
@@ -689,7 +691,7 @@ def readNextLine(line):
     #print(dokuBlocks[thisBlockType][thisBlockName])
     return STATE_SEARCH_END
 
-def loadDokuBlocks(allComments):
+def block_load_all(allComments):
     state = STATE_SEARCH_START
     f = io.open(allComments, "r", encoding="utf-8", newline=None)
     count = 0
@@ -715,7 +717,7 @@ def loadDokuBlocks(allComments):
     for oneBlock in dokuBlocks[0]:
         try:
             #print("processing %s" % oneBlock)
-            dokuBlocks[0][oneBlock] = replaceCode(dokuBlocks[0][oneBlock], oneBlock)
+            dokuBlocks[0][oneBlock] = block_replace_code(dokuBlocks[0][oneBlock], oneBlock)
             #print("6"*80)
             #print(dokuBlocks[0][oneBlock])
             #print("6"*80)
@@ -725,7 +727,7 @@ def loadDokuBlocks(allComments):
 
     for oneBlock in dokuBlocks[1]:
         try:
-            dokuBlocks[1][oneBlock] = replaceCode(dokuBlocks[1][oneBlock], oneBlock)
+            dokuBlocks[1][oneBlock] = block_replace_code(dokuBlocks[1][oneBlock], oneBlock)
         except:
             printe("while parsing :\n"  + oneBlock)
             raise
@@ -869,25 +871,26 @@ if __name__ == '__main__':
         sys.exit(1)
 
     conf = Config(sys.argv[1], sys.argv[2], sys.argv[3])
-    print(conf)
+    [ logger.info(x) for x in str(conf).split('\n') ]
 
-    #TODO add to conf if required
-    if len(sys.argv) > 5 and sys.argv[5].strip() != '':
-        print("filtering " + sys.argv[4])
-        fileFilter = re.compile(sys.argv[5])
-    if len(sys.argv) > 6 and sys.argv[6].strip() != '':
-        print("filtering Docublocks: " + sys.argv[5])
-        blockFilter = re.compile(sys.argv[6])
-    ## end
+    # #TODO add to conf if required
+    # if len(sys.argv) > 5 and sys.argv[5].strip() != '':
+    #     print("filtering " + sys.argv[4])
+    #     fileFilter = re.compile(sys.argv[5])
+    # if len(sys.argv) > 6 and sys.argv[6].strip() != '':
+    #     print("filtering Docublocks: " + sys.argv[5])
+    #     blockFilter = re.compile(sys.argv[6])
+    # ## end
 
     with open(conf.swaggerJson, 'r', encoding='utf-8', newline=None) as f:
         swagger=json.load(f)
 
-    loadDokuBlocks(conf.allComments) #"allComments.txt"
+    block_load_all(conf.allComments) # FIXME "allComments.txt"
 
-    loadProgramOptionBlocks()
+    loadProgramOptionBlocks() # FIXME
 
-    print("loaded %d / %d docu blocks" % (len(dokuBlocks[0]), len(dokuBlocks[1])))
+    logger.info("loaded {} / {} docu blocks".format(len(dokuBlocks[0]), len(dokuBlocks[1])))
+
 
     walk_on_files(conf)
 
