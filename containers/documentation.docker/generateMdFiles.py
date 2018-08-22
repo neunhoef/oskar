@@ -30,7 +30,6 @@ import json
 import io
 import shutil
 
-
 # set up logging
 import logging
 
@@ -45,10 +44,98 @@ formatter = logging.Formatter('%(name)s:%(lineno)d-%(levelname)s - %(message)s',
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
-
+## TODO - delete if every occurrence has been replaced with logging
 def printe(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
+
+
+
+from enum import Enum, unique #, auto
+@unique
+class BlockType(Enum):
+    PLAIN  = 1 #auto()
+    INLINE = 2 #auto()
+
+@unique
+class DocuSearchState(Enum):
+    START = 0
+    END = 1
+
+
+class DocuBlocks():
+    def __init__(self):
+        self.plain_blocks = {}
+        self.inline_blocks = {}
+    def add(self, block):
+        if block.block_type is BlockType.PLAIN:
+            self.plain_blocks[block.key]=block
+        elif block.block_type is BlockType.INLINE:
+            self.inline_blocks[block.key]=block
+        else:
+            print (repr(block))
+            raise ValueError("invalid block type")
+
+class DocuBLock():
+    def __init__(self,btype):
+        self.block_type = btype
+        self.content = ""
+        self.key = None
+
+class DocuBlockReader():
+    def __init__(self, filename):
+        self.filename = filename
+        self.blocks = DocuBlocks();
+
+    def parse(self):
+        with open(self.filename, "r", encoding="utf-8", newline=None) as f:
+            block = None
+            for line in f:
+                block = self.handle_line(line, block)
+
+
+    def handle_line(self, line, block):
+        if not block:
+            block = self.handle_line_start(line)
+        else:
+            block = self.handle_line_follow(line, block)
+        return block
+
+
+    def handle_line_start(self, line):
+        if ("@startDocuBlock" in line):
+            if "@startDocuBlockInline" in line:
+                block = DocuBLock(BlockType.PLAIN)
+            else:
+                block = DocuBLock(BlockType.INLINE)
+
+            print("start: " + str(block))
+            try:
+                block.key = SEARCH_START.search(line).group(1).strip()
+            except:
+                logger.error("failed to read startDocuBlock: [" + line + "]")
+                exit(1)
+
+            logger.info("starting block with key {}".format(block.key))
+            return block
+        return None
+
+    def handle_line_follow(self, line,block):
+        if '@endDocuBlock' in line:
+            print("complete: " + str(block))
+            print("complete: " + str(block.key))
+            print("complete: " + str(block.block_type))
+            self.blocks.add(block)
+            logger.info("ending block with key {}".format(block.key))
+            return None
+        # apppend to content and do not change state
+        block.content += line
+        return block
+
+
+#
+##
+#
 ################################################################################
 ### @brief length of the swagger definition namespace
 ################################################################################
@@ -377,7 +464,6 @@ have_RESTREPLYBODY = re.compile(r"@RESTREPLYBODY")
 have_RESTSTRUCT = re.compile(r"@RESTSTRUCT")
 remove_MULTICR = re.compile(r'\n\n\n*')
 
-RXIMAGES = re.compile(r".*\!\[([\d\s\w\/\. ()-]*)\]\(([\d\s\w\/\.-]*)\).*")
 
 def block_replace_code(lines, blockName):
     global swagger, thisVerb, route, verb
@@ -558,7 +644,8 @@ def walk_find_start_code(in_full, out_full, conf):
         printe(textFile)
         raise e
 
-    textFile = re.sub(RXIMAGES
+    re_images = re.compile(r".*\!\[([\d\s\w\/\. ()-]*)\]\(([\d\s\w\/\.-]*)\).*")
+    textFile = re.sub(re_images
                      ,lambda match: walk_handle_images(match.groups()[0]
                                                  ,match.groups()[1]
                                                  ,conf
@@ -654,6 +741,7 @@ def walk_handle_images(image_title, image_link, conf, in_full, out_full):
     return str('![' + image_title + '](' + image_link + ')')
 
 
+
 ################################################################################
 # Read the docublocks into memory
 ################################################################################
@@ -661,8 +749,7 @@ thisBlock = ""
 thisBlockName = ""
 thisBlockType = 0
 
-STATE_SEARCH_START = 0
-STATE_SEARCH_END = 1
+
 SEARCH_START = re.compile(r" *start[0-9a-zA-Z]*\s\s*([0-9a-zA-Z_ ]*)\s*$")
 
 
@@ -679,29 +766,29 @@ def readStartLine(line):
             printe("failed to read startDocuBlock: [" + line + "]")
             exit(1)
         dokuBlocks[thisBlockType][thisBlockName] = ""
-        return STATE_SEARCH_END
-    return STATE_SEARCH_START
+        return DocuSearchState.END
+    return DocuSearchState.START
 
 def readNextLine(line):
     global thisBlockName, thisBlockType, thisBlock, dokuBlocks
     if '@endDocuBlock' in line:
-        return STATE_SEARCH_START
+        return DocuSearchState.START
     dokuBlocks[thisBlockType][thisBlockName] += line
     #print("reading " + thisBlockName)
     #print(dokuBlocks[thisBlockType][thisBlockName])
-    return STATE_SEARCH_END
+    return DocuSearchState.END
 
-def block_load_all(allComments):
-    state = STATE_SEARCH_START
+def block_load_all(allComments, blocks):
+    state = DocuSearchState.START
     f = io.open(allComments, "r", encoding="utf-8", newline=None)
     count = 0
     for line in f.readlines():
-        if state == STATE_SEARCH_START:
+        if state is DocuSearchState.START:
             state = readStartLine(line)
-        elif state == STATE_SEARCH_END:
+        elif state is DocuSearchState.END:
             state = readNextLine(line)
 
-        #if state == STATE_SEARCH_START:
+        #if state == DocuSearchState.START:
         #    print(dokuBlocks[thisBlockType].keys())
 
     if blockFilter != None:
@@ -714,6 +801,8 @@ def block_load_all(allComments):
                 remainBlocks[oneBlock] = dokuBlocks[0][oneBlock]
         dokuBlocks[0] = remainBlocks
 
+
+    #TODO blocks.add(block)
     for oneBlock in dokuBlocks[0]:
         try:
             #print("processing %s" % oneBlock)
@@ -885,7 +974,11 @@ if __name__ == '__main__':
     with open(conf.swaggerJson, 'r', encoding='utf-8', newline=None) as f:
         swagger=json.load(f)
 
-    block_load_all(conf.allComments) # FIXME "allComments.txt"
+    block_reader = DocuBlockReader(conf.allComments)
+    block_reader.parse()
+
+    blocks = DocuBlocks()
+    block_load_all(conf.allComments, blocks) # FIXME "allComments.txt"
 
     loadProgramOptionBlocks() # FIXME
 
