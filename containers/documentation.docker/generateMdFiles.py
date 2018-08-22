@@ -68,6 +68,7 @@ class DocuBlocks():
         self.plain_blocks = {}
         self.inline_blocks = {}
     def add(self, block):
+        self.block_replace_code(block)
         if block.block_type is BlockType.PLAIN:
             self.plain_blocks[block.key]=block
         elif block.block_type is BlockType.INLINE:
@@ -75,6 +76,105 @@ class DocuBlocks():
         else:
             print (repr(block))
             raise ValueError("invalid block type")
+
+    #@calssmethod
+    def block_replace_code(self, block):
+        global swagger, thisVerb, route, verb
+
+        thisVerb = {}
+        foundRest = False
+        # first find the header:
+        headerMatch = match_RESTHEADER.search(block.content)
+        if headerMatch and headerMatch.lastindex > 0:
+            foundRest = True
+            try:
+                (verb,route) =  headerMatch.group(1).split(',')[0].split(' ')
+                verb = verb.lower()
+            except:
+                printe("failed to parse header from: " + headerMatch.group(1) + " while analysing " + block.key)
+                raise
+
+            try:
+                thisVerb = swagger['paths'][route][verb]
+            except:
+                printe("failed to locate route in the swagger json: [" + verb + " " + route + "]" + " while analysing " + block.key)
+                printe(block.content)
+                printe("Did you forget to run utils/generateSwagger.sh?")
+                raise
+
+        for (oneRX, repl) in RX:
+            block.content = oneRX.sub(repl, block.content)
+
+
+        if foundRest:
+            rcCode = None
+            foundRestBodyParam = False
+            foundRestReplyBodyParam = False
+            lineR = block.content.split('\n')
+            #print(lineR)
+            l = len(lineR)
+            r = 0
+            while (r < l):
+                # remove all but the first RESTBODYPARAM:
+                if have_RESTBODYPARAM.search(lineR[r]):
+                    if foundRestBodyParam:
+                        lineR[r] = ''
+                    else:
+                        lineR[r] = '@RESTDESCRIPTION'
+                    foundRestBodyParam = True
+                    r+=1
+                    while ((len(lineR[r]) == 0) or
+                           ((lineR[r][0] != '@') or
+                           have_RESTBODYPARAM.search(lineR[r]))):
+                        # print("xxx - %d %s" %(len(lineR[r]), lineR[r]))
+                        lineR[r] = ''
+                        r+=1
+
+                m = match_RESTRETURNCODE.search(lineR[r])
+                if m and m.lastindex > 0:
+                    rcCode =  m.group(1)
+
+                # remove all but the first RESTREPLYBODY:
+                if have_RESTREPLYBODY.search(lineR[r]):
+                    if foundRestReplyBodyParam != rcCode:
+                        lineR[r] = '@RESTREPLYBODY{' + rcCode + '}\n'
+                    else:
+                        lineR[r] = ''
+                    foundRestReplyBodyParam = rcCode
+                    r+=1
+                    while (len(lineR[r]) > 1):
+                        lineR[r] = ''
+                        r+=1
+                    m = match_RESTRETURNCODE.search(lineR[r])
+                    if m and m.lastindex > 0:
+                        rcCode =  m.group(1)
+
+                # remove all RESTSTRUCTS - they're referenced anyways:
+                if have_RESTSTRUCT.search(lineR[r]):
+                    while (len(lineR[r]) > 1):
+                        lineR[r] = ''
+                        r+=1
+                r+=1
+            block.content = "\n".join(lineR)
+        #print("x" * 70)
+        #print(block.content)
+        try:
+            block.content = SIMPLE_RX.sub(block_simple_repl, block.content)
+        except Exception as x:
+            printe("While working on: [" + verb + " " + route + "]" + " while analysing " + block.key)
+            printe(x.message)
+            printe("Did you forget to run utils/generateSwagger.sh?")
+            raise
+
+
+        for (oneRX, repl) in RX2:
+            block.content = oneRX.sub(repl, block.content)
+
+        block.content = remove_MULTICR.sub("\n\n", block.content)
+        #print(block.content)
+        return block.content
+
+
 
 class DocuBLock():
     def __init__(self,btype):
@@ -131,101 +231,6 @@ class DocuBlockReader():
         # apppend to content and do not change state
         block.content += line
         return block
-
-    def block_replace_code(self, lines, blockName):
-        global swagger, thisVerb, route, verb
-        thisVerb = {}
-        foundRest = False
-        # first find the header:
-        headerMatch = match_RESTHEADER.search(lines)
-        if headerMatch and headerMatch.lastindex > 0:
-            foundRest = True
-            try:
-                (verb,route) =  headerMatch.group(1).split(',')[0].split(' ')
-                verb = verb.lower()
-            except:
-                printe("failed to parse header from: " + headerMatch.group(1) + " while analysing " + blockName)
-                raise
-
-            try:
-                thisVerb = swagger['paths'][route][verb]
-            except:
-                printe("failed to locate route in the swagger json: [" + verb + " " + route + "]" + " while analysing " + blockName)
-                printe(lines)
-                printe("Did you forget to run utils/generateSwagger.sh?")
-                raise
-
-        for (oneRX, repl) in RX:
-            lines = oneRX.sub(repl, lines)
-
-
-        if foundRest:
-            rcCode = None
-            foundRestBodyParam = False
-            foundRestReplyBodyParam = False
-            lineR = lines.split('\n')
-            #print(lineR)
-            l = len(lineR)
-            r = 0
-            while (r < l):
-                # remove all but the first RESTBODYPARAM:
-                if have_RESTBODYPARAM.search(lineR[r]):
-                    if foundRestBodyParam:
-                        lineR[r] = ''
-                    else:
-                        lineR[r] = '@RESTDESCRIPTION'
-                    foundRestBodyParam = True
-                    r+=1
-                    while ((len(lineR[r]) == 0) or
-                           ((lineR[r][0] != '@') or
-                           have_RESTBODYPARAM.search(lineR[r]))):
-                        # print("xxx - %d %s" %(len(lineR[r]), lineR[r]))
-                        lineR[r] = ''
-                        r+=1
-
-                m = match_RESTRETURNCODE.search(lineR[r])
-                if m and m.lastindex > 0:
-                    rcCode =  m.group(1)
-
-                # remove all but the first RESTREPLYBODY:
-                if have_RESTREPLYBODY.search(lineR[r]):
-                    if foundRestReplyBodyParam != rcCode:
-                        lineR[r] = '@RESTREPLYBODY{' + rcCode + '}\n'
-                    else:
-                        lineR[r] = ''
-                    foundRestReplyBodyParam = rcCode
-                    r+=1
-                    while (len(lineR[r]) > 1):
-                        lineR[r] = ''
-                        r+=1
-                    m = match_RESTRETURNCODE.search(lineR[r])
-                    if m and m.lastindex > 0:
-                        rcCode =  m.group(1)
-
-                # remove all RESTSTRUCTS - they're referenced anyways:
-                if have_RESTSTRUCT.search(lineR[r]):
-                    while (len(lineR[r]) > 1):
-                        lineR[r] = ''
-                        r+=1
-                r+=1
-            lines = "\n".join(lineR)
-        #print("x" * 70)
-        #print(lines)
-        try:
-            lines = SIMPLE_RX.sub(block_simple_repl, lines)
-        except Exception as x:
-            printe("While working on: [" + verb + " " + route + "]" + " while analysing " + blockName)
-            printe(x.message)
-            printe("Did you forget to run utils/generateSwagger.sh?")
-            raise
-
-
-        for (oneRX, repl) in RX2:
-            lines = oneRX.sub(repl, lines)
-
-        lines = remove_MULTICR.sub("\n\n", lines)
-        #print(lines)
-        return lines
 
 
 #
