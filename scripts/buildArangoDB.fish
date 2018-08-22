@@ -11,16 +11,19 @@ if test "$CCACHEBINPATH" = ""
   set -xg CCACHEBINPATH /usr/lib/ccache
 end
 ccache -M 30G
-
 cd $INNERWORKDIR/ArangoDB
+
 if test -z "$NO_RM_BUILD"
   echo "Cleaning build directory"
   rm -rf build
 end
 mkdir -p build
 cd build
+rm -rf install
+and mkdir install
 
 echo "Starting build at "(date)" on "(hostname)
+rm -f $INNERWORKDIR/.ccache.log
 ccache --zero-stats
 
 set -g FULLARGS $argv \
@@ -64,9 +67,6 @@ if test "$VERBOSEBUILD" = "On"
   echo "Building verbosely"
   set -g MAKEFLAGS $MAKEFLAGS V=1 VERBOSE=1 Verbose=1
 end
-
-rm -rf install
-and mkdir install
 
 set -x DESTDIR (pwd)/install
 echo Running make for static build, output in work/buildArangoDB.log
