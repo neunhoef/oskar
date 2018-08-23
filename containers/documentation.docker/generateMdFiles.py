@@ -497,36 +497,242 @@ def walk_handle_images(image_title, image_link, conf, in_full, out_full):
 
 ## replace blocks in .md-files - END ##########################################
 
+
+
+
+
+
+
+
+
+
 #######################################################################################################
 #######################################################################################################
 #######################################################################################################
 #######################################################################################################
-
-
-
-#
-################################################################################
-### @brief length of the swagger definition namespace
-################################################################################
-
-defLen = len('#/definitions/')
-
-################################################################################
-### @brief facility to remove leading and trailing html-linebreaks
-################################################################################
-removeTrailingBR = re.compile("<br>$")
-removeLeadingBR = re.compile("^<br>")
-
-def brTrim(text):
-    return removeLeadingBR.sub("", removeTrailingBR.sub("", text.strip(' ')))
 
 swagger = None
 fileFilter = None
 blockFilter = None
 dokuBlocks = [{},{}]
 thisVerb = {}
+
 route = ''
 verb = '' #    #TODO add path to examples'
+
+defLen = len('#/definitions/')
+
+removeTrailingBR = re.compile("<br>$")
+removeLeadingBR = re.compile("^<br>")
+removeDoubleLF = re.compile("\n\n")
+removeLF = re.compile("\n")
+
+
+
+
+
+SIMPLE_RX = re.compile(
+r'''
+\\|                                 # the backslash...
+@RESTDESCRIPTION|                   # -> <empty>
+@RESTURLPARAMETERS|                 # -> \n**Path Parameters**\n
+@RESTQUERYPARAMETERS|               # -> \n**Query Parameters**\n
+@RESTHEADERPARAMETERS|              # -> \n**Header Parameters**\n
+@RESTBODYPARAM|                     # empty now, comes with the post body -> call post body param
+@RESTRETURNCODES|                   # -> \n**Return Codes**\n
+@PARAMS|                            # -> \n**Parameters**\n
+@RESTPARAMS|                        # -> <empty>
+@RESTURLPARAMS|                     # -> <empty>
+@RESTQUERYPARAMS|                   # -> <empty>
+@PARAM|                             # -> @RESTPARAM
+@RESTURLPARAM|                      # -> @RESTPARAM
+@RESTQUERYPARAM|                    # -> @RESTPARAM
+@RESTHEADERPARAM|                   # -> @RESTPARAM
+@EXAMPLES|                          # -> \n**Examples**\n
+@RESTPARAMETERS|                    # -> <empty>
+@RESTREPLYBODY\{(.*)\}              # -> call body function
+''', re.X)
+
+
+
+###### validataion dict ########################################################
+def noValidation(thisVerb):
+    pass
+
+def validatePathParameters(thisVerb):
+    # logger.info(thisVerb)
+    for nParam in range(0, len(thisVerb['parameters'])):
+        if thisVerb['parameters'][nParam]['in'] == 'path':
+            break
+    else:
+        raise Exception("@RESTPATHPARAMETERS found in Swagger data without any parameter following in %s " % json.dumps(thisVerb, indent=4, separators=(', ',': '), sort_keys=True))
+
+def validateQueryParams(thisVerb):
+    # logger.info(thisVerb)
+    for nParam in range(0, len(thisVerb['parameters'])):
+        if thisVerb['parameters'][nParam]['in'] == 'query':
+            break
+    else:
+        raise Exception("@RESTQUERYPARAMETERS found in Swagger data without any parameter following in %s " % json.dumps(thisVerb, indent=4, separators=(', ',': '), sort_keys=True))
+
+def validateHeaderParams(thisVerb):
+    # logger.info(thisVerb)
+    for nParam in range(0, len(thisVerb['parameters'])):
+        if thisVerb['parameters'][nParam]['in'] == 'header':
+            break
+    else:
+        raise Exception("@RESTHEADERPARAMETERS found in Swagger data without any parameter following in %s " % json.dumps(thisVerb, indent=4, separators=(', ',': '), sort_keys=True))
+
+def validateReturnCodes(thisVerb):
+    # logger.info(thisVerb)
+    for nParam in range(0, len(thisVerb['responses'])):
+        if len(thisVerb['responses'].keys()) != 0:
+            break
+    else:
+        raise Exception("@RESTRETURNCODES found in Swagger data without any documented returncodes %s " % json.dumps(thisVerb, indent=4, separators=(', ',': '), sort_keys=True))
+
+SIMPL_REPL_VALIDATE_DICT = {
+    "@RESTDESCRIPTION"      : noValidation,
+    "@RESTURLPARAMETERS"    : validatePathParameters,
+    "@RESTQUERYPARAMETERS"  : validateQueryParams,
+    "@RESTHEADERPARAMETERS" : validateHeaderParams,
+    "@RESTRETURNCODES"      : validateReturnCodes,
+    "@RESTURLPARAMS"        : validatePathParameters,
+    "@EXAMPLES"             : noValidation
+}
+
+###### validataion dict - END ########################################################
+
+###### simple dict  ########################################################
+#def getRestBodyParam():
+#    rc = "\n**Body Parameters**\n"
+#    addText = ''
+#    for nParam in range(0, len(thisVerb['parameters'])):
+#        if thisVerb['parameters'][nParam]['in'] == 'body':
+#            descOffset = thisVerb['parameters'][nParam]['x-description-offset']
+#            addText = ''
+#            if 'additionalProperties' not in thisVerb['parameters'][nParam]['schema']:
+#                addText = unwrapPostJson(
+#                    getReference(thisVerb['parameters'][nParam]['schema'], route, verb),0)
+#    rc += addText
+#    return rc
+
+def getRestDescription():
+    #logger.error("RESTDESCRIPTION")
+    if thisVerb['description']:
+        #logger.error(thisVerb['description'])
+        return RX3[0].sub(RX3[1], thisVerb['description'])
+    else:
+        #logger.error("ELSE")
+        return ""
+
+def getRestReplyBodyParam(param):
+    rc = "\n**Response Body**\n"
+
+    try:
+        rc += unwrapPostJson(getReference(thisVerb['responses'][param]['schema'], route, verb), 0)
+    except Exception:
+        logger.error("failed to search " + param + " in: ")
+        logger.error(json.dumps(thisVerb, indent=4, separators=(', ',': '), sort_keys=True))
+        raise
+    return rc + "\n"
+
+SIMPL_REPL_DICT = {
+    "\\"                    : "\\\\",
+    "@RESTDESCRIPTION"      : getRestDescription,
+    "@RESTURLPARAMETERS"    : "\n**Path Parameters**\n",
+    "@RESTQUERYPARAMETERS"  : "\n**Query Parameters**\n",
+    "@RESTHEADERPARAMETERS" : "\n**Header Parameters**\n",
+    "@RESTRETURNCODES"      : "\n**Return Codes**\n",
+    "@PARAMS"               : "\n**Parameters**\n",
+    "@RESTPARAMS"           : "",
+    "@RESTURLPARAMS"        : "\n**Path Parameters**\n",
+    "@RESTQUERYPARAMS"      : "\n**Query Parameters**\n",
+    "@RESTBODYPARAM"        : "", #getRestBodyParam,
+    "@RESTREPLYBODY"        : getRestReplyBodyParam,
+    "@RESTQUERYPARAM"       : "@RESTPARAM",
+    "@RESTURLPARAM"         : "@RESTPARAM",
+    "@PARAM"                : "@RESTPARAM",
+    "@RESTHEADERPARAM"      : "@RESTPARAM",
+    "@EXAMPLES"             : "\n**Examples**\n",
+    "@RESTPARAMETERS"       : ""
+}
+###### simple dict - END ########################################################
+
+RX = [
+    ### match -> replace
+    # comments -> nothing
+    (re.compile(r"<!--(\s*.+\s)-->"), ""),
+
+    # <br > newline -> newline
+    (re.compile(r"<br />\n"), "\n"),
+
+    # multi line bullet lists should become one
+    (re.compile(r"\n\n-"), "\n-"),
+
+    #HTTP API changing code
+    # unwrap multi-line-briefs: (up to 3 lines supported by now ;-)
+    (re.compile(r"@brief(.+)\n(.+)\n(.+)\n\n"), r"@brief\g<1> \g<2> \g<3>\n\n"),
+    (re.compile(r"@brief(.+)\n(.+)\n\n"), r"@brief\g<1> \g<2>\n\n"),
+
+    # if there is an @brief above a RESTHEADER, swap the sequence
+    (re.compile(r"@brief(.+\n*)\n@RESTHEADER{([#\s\w\/\_{}-]*),([\s\w-]*)}"), r"###\g<3>\n\g<1>\n\n`\g<2>`"),
+
+    # else simply put it into the text
+    (re.compile(r"@brief(.+)"), r"\g<1>"),
+
+    # Format error codes from errors.dat
+    (re.compile(r"#####+\n"), r""),
+    (re.compile(r"## (.+\n\n)## (.+\n)"), r"## \g<1>\g<2>"),
+    #  (re.compile(r"- (\w+):\s*@LIT{(.+)}"), r"\n*\g<1>* - **\g<2>**:"),
+    (re.compile(r"(.+),(\d+),\"(.+)\",\"(.+)\""), r'\n* <a name="\g<1>"></a>**\g<2>** - **\g<1>**<br>\n  \g<4>'),
+
+    (re.compile(r"TODOSWAGGER.*"),r"")
+    ]
+
+
+RX2 = [
+    # parameters - extract their type and whether mandatory or not.
+    (re.compile(r"@RESTPARAM{(\s*[\w\-]*)\s*,\s*([\w\_\|-]*)\s*,\s*(required|optional)}"), r"* *\g<1>* (\g<3>):"),
+    (re.compile(r"@RESTALLBODYPARAM{(\s*[\w\-]*)\s*,\s*([\w\_\|-]*)\s*,\s*(required|optional)}"), r"\n**Request Body** (\g<3>)\n\n"),
+
+    (re.compile(r"@RESTRETURNCODE{(.*)}"), r"* *\g<1>*:")
+]
+
+RX3 = (re.compile(r'\*\*Example:\*\*((?:.|\n)*?)</code></pre>'), r"")
+
+match_RESTHEADER = re.compile(r"@RESTHEADER\{(.*)\}")
+match_RESTRETURNCODE = re.compile(r"@RESTRETURNCODE\{(.*)\}")
+have_RESTBODYPARAM = re.compile(r"@RESTBODYPARAM|@RESTDESCRIPTION")
+have_RESTREPLYBODY = re.compile(r"@RESTREPLYBODY")
+have_RESTSTRUCT = re.compile(r"@RESTSTRUCT")
+remove_MULTICR = re.compile(r'\n\n\n*')
+
+RXUnEscapeMDInLinks = re.compile("\\\\_")
+def setAnchor(param):
+    unescapedParam = RXUnEscapeMDInLinks.sub("_", param)
+    return "<a name=\"" + unescapedParam + "\">#</a>"
+
+RXFinal = [
+    (re.compile(r"@anchor (.*)"), setAnchor),
+]
+thisBlock = ""
+thisBlockName = ""
+thisBlockType = 0
+
+
+SEARCH_START = re.compile(r" *start[0-9a-zA-Z]*\s\s*([0-9a-zA-Z_ ]*)\s*$")
+
+
+
+def walk_replace_code_full_file(lines):
+    for (oneRX, repl) in RXFinal:
+        lines = oneRX.sub(repl, lines)
+    return lines
+
+def brTrim(text):
+    return removeLeadingBR.sub("", removeTrailingBR.sub("", text.strip(' ')))
+
 
 def getReference(name, source, verb):
     try:
@@ -544,8 +750,6 @@ def getReference(name, source, verb):
         raise Exception("invalid reference: " + ref + " in " + fn)
     return ref
 
-removeDoubleLF = re.compile("\n\n")
-removeLF = re.compile("\n")
 
 def TrimThisParam(text, indent):
     text = text.rstrip('\n').lstrip('\n')
@@ -616,128 +820,9 @@ def unwrapPostJson(reference, layer):
                 rc += '  ' * layer + "- **" + param + "**: " + TrimThisParam(thisParam['description'], layer) + '\n'
     return rc
 
-def getRestBodyParam():
-    rc = "\n**Body Parameters**\n"
-    addText = ''
-    for nParam in range(0, len(thisVerb['parameters'])):
-        if thisVerb['parameters'][nParam]['in'] == 'body':
-            descOffset = thisVerb['parameters'][nParam]['x-description-offset']
-            addText = ''
-            if 'additionalProperties' not in thisVerb['parameters'][nParam]['schema']:
-                addText = unwrapPostJson(
-                    getReference(thisVerb['parameters'][nParam]['schema'], route, verb),0)
-    rc += addText
-    return rc
-
-def getRestDescription():
-    #logger.error("RESTDESCRIPTION")
-    if thisVerb['description']:
-        #logger.error(thisVerb['description'])
-        return RX3[0].sub(RX3[1], thisVerb['description'])
-    else:
-        #logger.error("ELSE")
-        return ""
-
-def getRestReplyBodyParam(param):
-    rc = "\n**Response Body**\n"
-
-    try:
-        rc += unwrapPostJson(getReference(thisVerb['responses'][param]['schema'], route, verb), 0)
-    except Exception:
-        logger.error("failed to search " + param + " in: ")
-        logger.error(json.dumps(thisVerb, indent=4, separators=(', ',': '), sort_keys=True))
-        raise
-    return rc + "\n"
 
 
-def noValidation():
-    pass
 
-def validatePathParameters():
-    # logger.info(thisVerb)
-    for nParam in range(0, len(thisVerb['parameters'])):
-        if thisVerb['parameters'][nParam]['in'] == 'path':
-            break
-    else:
-        raise Exception("@RESTPATHPARAMETERS found in Swagger data without any parameter following in %s " % json.dumps(thisVerb, indent=4, separators=(', ',': '), sort_keys=True))
-
-def validateQueryParams():
-    # logger.info(thisVerb)
-    for nParam in range(0, len(thisVerb['parameters'])):
-        if thisVerb['parameters'][nParam]['in'] == 'query':
-            break
-    else:
-        raise Exception("@RESTQUERYPARAMETERS found in Swagger data without any parameter following in %s " % json.dumps(thisVerb, indent=4, separators=(', ',': '), sort_keys=True))
-
-def validateHeaderParams():
-    # logger.info(thisVerb)
-    for nParam in range(0, len(thisVerb['parameters'])):
-        if thisVerb['parameters'][nParam]['in'] == 'header':
-            break
-    else:
-        raise Exception("@RESTHEADERPARAMETERS found in Swagger data without any parameter following in %s " % json.dumps(thisVerb, indent=4, separators=(', ',': '), sort_keys=True))
-
-def validateReturnCodes():
-    # logger.info(thisVerb)
-    for nParam in range(0, len(thisVerb['responses'])):
-        if len(thisVerb['responses'].keys()) != 0:
-            break
-    else:
-        raise Exception("@RESTRETURNCODES found in Swagger data without any documented returncodes %s " % json.dumps(thisVerb, indent=4, separators=(', ',': '), sort_keys=True))
-
-def validateExamples():
-    pass
-
-SIMPL_REPL_VALIDATE_DICT = {
-    "@RESTDESCRIPTION"      : noValidation,
-    "@RESTURLPARAMETERS"    : validatePathParameters,
-    "@RESTQUERYPARAMETERS"  : validateQueryParams,
-    "@RESTHEADERPARAMETERS" : validateHeaderParams,
-    "@RESTRETURNCODES"      : validateReturnCodes,
-    "@RESTURLPARAMS"        : validatePathParameters,
-    "@EXAMPLES"             : validateExamples
-}
-SIMPL_REPL_DICT = {
-    "\\"                    : "\\\\",
-    "@RESTDESCRIPTION"      : getRestDescription,
-    "@RESTURLPARAMETERS"    : "\n**Path Parameters**\n",
-    "@RESTQUERYPARAMETERS"  : "\n**Query Parameters**\n",
-    "@RESTHEADERPARAMETERS" : "\n**Header Parameters**\n",
-    "@RESTRETURNCODES"      : "\n**Return Codes**\n",
-    "@PARAMS"               : "\n**Parameters**\n",
-    "@RESTPARAMS"           : "",
-    "@RESTURLPARAMS"        : "\n**Path Parameters**\n",
-    "@RESTQUERYPARAMS"      : "\n**Query Parameters**\n",
-    "@RESTBODYPARAM"        : "", #getRestBodyParam,
-    "@RESTREPLYBODY"        : getRestReplyBodyParam,
-    "@RESTQUERYPARAM"       : "@RESTPARAM",
-    "@RESTURLPARAM"         : "@RESTPARAM",
-    "@PARAM"                : "@RESTPARAM",
-    "@RESTHEADERPARAM"      : "@RESTPARAM",
-    "@EXAMPLES"             : "\n**Examples**\n",
-    "@RESTPARAMETERS"       : ""
-}
-SIMPLE_RX = re.compile(
-r'''
-\\|                                 # the backslash...
-@RESTDESCRIPTION|                   # -> <empty>
-@RESTURLPARAMETERS|                 # -> \n**Path Parameters**\n
-@RESTQUERYPARAMETERS|               # -> \n**Query Parameters**\n
-@RESTHEADERPARAMETERS|              # -> \n**Header Parameters**\n
-@RESTBODYPARAM|                     # empty now, comes with the post body -> call post body param
-@RESTRETURNCODES|                   # -> \n**Return Codes**\n
-@PARAMS|                            # -> \n**Parameters**\n
-@RESTPARAMS|                        # -> <empty>
-@RESTURLPARAMS|                     # -> <empty>
-@RESTQUERYPARAMS|                   # -> <empty>
-@PARAM|                             # -> @RESTPARAM
-@RESTURLPARAM|                      # -> @RESTPARAM
-@RESTQUERYPARAM|                    # -> @RESTPARAM
-@RESTHEADERPARAM|                   # -> @RESTPARAM
-@EXAMPLES|                          # -> \n**Examples**\n
-@RESTPARAMETERS|                    # -> <empty>
-@RESTREPLYBODY\{(.*)\}              # -> call body function
-''', re.X)
 
 
 def block_simple_repl(match):
@@ -749,7 +834,7 @@ def block_simple_repl(match):
     except:
         True
     if n != None:
-        n()
+        n(thisVerb)
     try:
         n = SIMPL_REPL_DICT[m]
         if n == None:
@@ -781,54 +866,6 @@ def block_simple_repl(match):
         else:
             raise Exception("failed to find regex while searching for: " + m)
 
-RX = [
-    (re.compile(r"<!--(\s*.+\s)-->"), ""),
-    # remove the placeholder BR's again
-    (re.compile(r"<br />\n"), "\n"),
-    # multi line bullet lists should become one
-    (re.compile(r"\n\n-"), "\n-"),
-
-    #HTTP API changing code
-    # unwrap multi-line-briefs: (up to 3 lines supported by now ;-)
-    (re.compile(r"@brief(.+)\n(.+)\n(.+)\n\n"), r"@brief\g<1> \g<2> \g<3>\n\n"),
-    (re.compile(r"@brief(.+)\n(.+)\n\n"), r"@brief\g<1> \g<2>\n\n"),
-    # if there is an @brief above a RESTHEADER, swap the sequence
-    (re.compile(r"@brief(.+\n*)\n@RESTHEADER{([#\s\w\/\_{}-]*),([\s\w-]*)}"), r"###\g<3>\n\g<1>\n\n`\g<2>`"),
-    # else simply put it into the text
-    (re.compile(r"@brief(.+)"), r"\g<1>"),
-    # there should be no RESTHEADER without brief, so we will fail offensively if by not doing
-    #(re.compile(r"@RESTHEADER{([\s\w\/\_{}-]*),([\s\w-]*)}"), r"###\g<2>\n`\g<1>`"),
-
-    # Format error codes from errors.dat
-    (re.compile(r"#####+\n"), r""),
-    (re.compile(r"## (.+\n\n)## (.+\n)"), r"## \g<1>\g<2>"),
-    #  (re.compile(r"- (\w+):\s*@LIT{(.+)}"), r"\n*\g<1>* - **\g<2>**:"),
-    (re.compile(r"(.+),(\d+),\"(.+)\",\"(.+)\""), r'\n* <a name="\g<1>"></a>**\g<2>** - **\g<1>**<br>\n  \g<4>'),
-
-    (re.compile(r"TODOSWAGGER.*"),r"")
-    ]
-
-
-#    (re.compile(r"@RESTPARAM{([\s\w-]*),([\s\w\_\|-]*),\s*(\w+)}"), r"* *\g<1>*:"),
-#    (re.compile(r"@RESTRETURNCODE{(.*)}"), r"* *\g<1>*:"),
-#    (re.compile(r"@RESTBODYPARAMS{(.*)}"), r"*(\g<1>)*"),
-
-RX2 = [
-    # parameters - extract their type and whether mandatory or not.
-    (re.compile(r"@RESTPARAM{(\s*[\w\-]*)\s*,\s*([\w\_\|-]*)\s*,\s*(required|optional)}"), r"* *\g<1>* (\g<3>):"),
-    (re.compile(r"@RESTALLBODYPARAM{(\s*[\w\-]*)\s*,\s*([\w\_\|-]*)\s*,\s*(required|optional)}"), r"\n**Request Body** (\g<3>)\n\n"),
-
-    (re.compile(r"@RESTRETURNCODE{(.*)}"), r"* *\g<1>*:")
-]
-
-RX3 = (re.compile(r'\*\*Example:\*\*((?:.|\n)*?)</code></pre>'), r"")
-
-match_RESTHEADER = re.compile(r"@RESTHEADER\{(.*)\}")
-match_RESTRETURNCODE = re.compile(r"@RESTRETURNCODE\{(.*)\}")
-have_RESTBODYPARAM = re.compile(r"@RESTBODYPARAM|@RESTDESCRIPTION")
-have_RESTREPLYBODY = re.compile(r"@RESTREPLYBODY")
-have_RESTSTRUCT = re.compile(r"@RESTSTRUCT")
-remove_MULTICR = re.compile(r'\n\n\n*')
 
 
 #################################################################################
@@ -1013,30 +1050,12 @@ def block_replace_code(lines, blockName):
 ####### to be deleted - end #####################################################
 #################################################################################
 
-RXUnEscapeMDInLinks = re.compile("\\\\_")
-def setAnchor(param):
-    unescapedParam = RXUnEscapeMDInLinks.sub("_", param)
-    return "<a name=\"" + unescapedParam + "\">#</a>"
-
-RXFinal = [
-    (re.compile(r"@anchor (.*)"), setAnchor),
-]
-def walk_replace_code_full_file(lines):
-    for (oneRX, repl) in RXFinal:
-        lines = oneRX.sub(repl, lines)
-    return lines
 
 
 
 ################################################################################
 # Read the docublocks into memory
 ################################################################################
-thisBlock = ""
-thisBlockName = ""
-thisBlockType = 0
-
-
-SEARCH_START = re.compile(r" *start[0-9a-zA-Z]*\s\s*([0-9a-zA-Z_ ]*)\s*$")
 
 
 
