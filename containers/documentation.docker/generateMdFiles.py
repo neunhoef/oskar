@@ -30,6 +30,9 @@ import json
 import io
 import shutil
 
+from pprint import pprint as PP
+from pprint import pformat as PF
+
 # set up logging
 import logging
 
@@ -40,13 +43,13 @@ ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 
 #formatter = logging.Formatter('%(asctime)s-%(name)s:%(lineno)d-%(levelname)s - %(message)s',  datefmt='%H:%M:%S')
-formatter = logging.Formatter('%(name)s:%(lineno)d-%(levelname)s - %(message)s',  datefmt='%H:%M:%S')
+formatter = logging.Formatter('%(name)s %(lineno)4d %(levelname)6s-> %(message)s',  datefmt='%H:%M:%S')
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
-## TODO - delete if every occurrence has been replaced with logging
-def printe(*args, **kwargs):
-    print(*args, file=sys.stderr, **kwargs)
+
+def log_multi(level, msg, *args, **kwargs):
+    [ logger.log(level, x, *args, **kwargs) for x in msg.split('\n') ]
 
 
 
@@ -68,7 +71,7 @@ class DocuBlocks():
         self.plain_blocks = {}
         self.inline_blocks = {}
     def add(self, block):
-        self.block_replace_code(block)
+        #self.block_replace_code(block)
         if block.block_type is BlockType.PLAIN:
             self.plain_blocks[block.key]=block
         elif block.block_type is BlockType.INLINE:
@@ -77,9 +80,23 @@ class DocuBlocks():
             print (repr(block))
             raise ValueError("invalid block type")
 
+    def replace_code_in_blocks(self):
+        """ should happen later during add block"""
+        PF(self.plain_blocks)
+        for _, block in self.plain_blocks.items():
+            self.block_replace_code(block)
+        for _, block in self.inline_blocks.items():
+            self.block_replace_code(block)
+
+
     #@calssmethod
     def block_replace_code(self, block):
-        global swagger, thisVerb, route, verb
+        global swagger
+        global thisVerb, route, verb ## why does it crash if these variables are not global
+                                     ## TODO look for function calls that use global STATE
+        #route = ''
+        #verb = ''
+        #thisVerb = {}
 
         thisVerb = {}
         foundRest = False
@@ -91,15 +108,15 @@ class DocuBlocks():
                 (verb,route) =  headerMatch.group(1).split(',')[0].split(' ')
                 verb = verb.lower()
             except:
-                printe("failed to parse header from: " + headerMatch.group(1) + " while analysing " + block.key)
+                logger.error("failed to parse header from: " + headerMatch.group(1) + " while analysing " + block.key)
                 raise
 
             try:
                 thisVerb = swagger['paths'][route][verb]
             except:
-                printe("failed to locate route in the swagger json: [" + verb + " " + route + "]" + " while analysing " + block.key)
-                printe(block.content)
-                printe("Did you forget to run utils/generateSwagger.sh?")
+                logger.error("failed to locate route in the swagger json: [" + verb + " " + route + "]" + " while analysing " + block.key)
+                logger.error(block.content)
+                logger.error("Did you forget to run utils/generateSwagger.sh?")
                 raise
 
         for (oneRX, repl) in RX:
@@ -111,7 +128,7 @@ class DocuBlocks():
             foundRestBodyParam = False
             foundRestReplyBodyParam = False
             lineR = block.content.split('\n')
-            #print(lineR)
+            #logger.info(lineR)
             l = len(lineR)
             r = 0
             while (r < l):
@@ -126,7 +143,7 @@ class DocuBlocks():
                     while ((len(lineR[r]) == 0) or
                            ((lineR[r][0] != '@') or
                            have_RESTBODYPARAM.search(lineR[r]))):
-                        # print("xxx - %d %s" %(len(lineR[r]), lineR[r]))
+                        # logger.info("xxx - %d %s" %(len(lineR[r]), lineR[r]))
                         lineR[r] = ''
                         r+=1
 
@@ -156,22 +173,23 @@ class DocuBlocks():
                         r+=1
                 r+=1
             block.content = "\n".join(lineR)
-        #print("x" * 70)
-        #print(block.content)
+        #logger.info("x" * 70)
+        #logger.info(block.content)
+        #log_multi(logging.ERROR, PF({ "thisVerb" : thisVerb, "verb" : verb, "route" : route}))
         try:
             block.content = SIMPLE_RX.sub(block_simple_repl, block.content)
-        except Exception as x:
-            printe("While working on: [" + verb + " " + route + "]" + " while analysing " + block.key)
-            printe(x.message)
-            printe("Did you forget to run utils/generateSwagger.sh?")
-            raise
+        except Exception as e:
+            logger.error("While working on: [" + verb + " " + route + "]" + " while analysing " + block.key)
+            logger.error(str(e))
+            logger.error("Did you forget to run utils/generateSwagger.sh?")
+            raise e
 
 
         for (oneRX, repl) in RX2:
             block.content = oneRX.sub(repl, block.content)
 
         block.content = remove_MULTICR.sub("\n\n", block.content)
-        #print(block.content)
+        #logger.info(block.content)
         return block.content
 
 
@@ -192,6 +210,7 @@ class DocuBlockReader():
             block = None
             for line in f:
                 block = self.handle_line(line, block)
+        return self.blocks
 
 
     def handle_line(self, line, block):
@@ -209,7 +228,7 @@ class DocuBlockReader():
             else:
                 block = DocuBLock(BlockType.INLINE)
 
-            print("start: " + str(block))
+            logger.debug("start: " + str(block))
             try:
                 block.key = SEARCH_START.search(line).group(1).strip()
             except:
@@ -222,9 +241,9 @@ class DocuBlockReader():
 
     def handle_line_follow(self, line,block):
         if '@endDocuBlock' in line:
-            print("complete: " + str(block))
-            print("complete: " + str(block.key))
-            print("complete: " + str(block.block_type))
+            logger.debug("complete: " + str(block))
+            logger.debug("complete: " + str(block.key))
+            logger.debug("complete: " + str(block.block_type))
             self.blocks.add(block)
             logger.info("ending block with key {}".format(block.key))
             return None
@@ -266,7 +285,7 @@ def getReference(name, source, verb):
     try:
         ref = name['$ref'][defLen:]
     except Exception as x:
-        printe("No reference in: " + name)
+        logger.error("No reference in: " + name)
         raise
     if not ref in swagger['definitions']:
         fn = ''
@@ -274,7 +293,7 @@ def getReference(name, source, verb):
             fn = swagger['paths'][route][verb]['x-filename']
         else:
             fn = swagger['definitions'][source]['x-filename']
-        printe(json.dumps(swagger['definitions'], indent=4, separators=(', ',': '), sort_keys=True))
+        logger.error(json.dumps(swagger['definitions'], indent=4, separators=(', ',': '), sort_keys=True))
         raise Exception("invalid reference: " + ref + " in " + fn)
     return ref
 
@@ -291,7 +310,7 @@ def TrimThisParam(text, indent):
 def unwrapPostJson(reference, layer):
     swaggerDataTypes = ["number", "integer", "string", "boolean", "array", "object"]
     ####
-    # printe("xx" * layer + reference)
+    # logger.error("xx" * layer + reference)
     global swagger
     rc = ''
     if not 'properties' in swagger['definitions'][reference]:
@@ -308,13 +327,13 @@ def unwrapPostJson(reference, layer):
             required = ('required' in swagger['definitions'][reference] and
                         param in swagger['definitions'][reference]['required'])
 
-            # printe(thisParam)
+            # logger.error(thisParam)
             if '$ref' in thisParam:
                 subStructRef = getReference(thisParam, reference, None)
 
                 rc += '  ' * layer + "- **" + param + "**:\n"
                 ####
-                # printe("yy" * layer + param)
+                # logger.error("yy" * layer + param)
                 rc += unwrapPostJson(subStructRef, layer + 1)
 
             elif thisParam['type'] == 'object':
@@ -324,7 +343,7 @@ def unwrapPostJson(reference, layer):
                 trySubStruct = False
                 lf=""
                 ####
-                # printe("zz" * layer + param)
+                # logger.error("zz" * layer + param)
                 if 'type' in thisParam['items']:
                     rc += " (" + thisParam['items']['type']  + ")"
                     lf="\n"
@@ -339,13 +358,13 @@ def unwrapPostJson(reference, layer):
                     try:
                         subStructRef = getReference(thisParam['items'], reference, None)
                     except:
-                        printe("while analyzing: " + param)
-                        printe(thisParam)
+                        logger.error("while analyzing: " + param)
+                        logger.error(thisParam)
                     rc += "\n" + unwrapPostJson(subStructRef, layer + 1)
             else:
                 if thisParam['type'] not in swaggerDataTypes:
-                    printe("while analyzing: " + param)
-                    printe(thisParam['type'] + " is not a valid swagger datatype; supported ones: " + str(swaggerDataTypes))
+                    logger.error("while analyzing: " + param)
+                    logger.error(thisParam['type'] + " is not a valid swagger datatype; supported ones: " + str(swaggerDataTypes))
                     raise Exception("invalid swagger type")
                 rc += '  ' * layer + "- **" + param + "**: " + TrimThisParam(thisParam['description'], layer) + '\n'
     return rc
@@ -364,12 +383,12 @@ def getRestBodyParam():
     return rc
 
 def getRestDescription():
-    #printe("RESTDESCRIPTION")
+    #logger.error("RESTDESCRIPTION")
     if thisVerb['description']:
-        #printe(thisVerb['description'])
+        #logger.error(thisVerb['description'])
         return RX3[0].sub(RX3[1], thisVerb['description'])
     else:
-        #printe("ELSE")
+        #logger.error("ELSE")
         return ""
 
 def getRestReplyBodyParam(param):
@@ -378,8 +397,8 @@ def getRestReplyBodyParam(param):
     try:
         rc += unwrapPostJson(getReference(thisVerb['responses'][param]['schema'], route, verb), 0)
     except Exception:
-        printe("failed to search " + param + " in: ")
-        printe(json.dumps(thisVerb, indent=4, separators=(', ',': '), sort_keys=True))
+        logger.error("failed to search " + param + " in: ")
+        logger.error(json.dumps(thisVerb, indent=4, separators=(', ',': '), sort_keys=True))
         raise
     return rc + "\n"
 
@@ -388,7 +407,7 @@ def noValidation():
     pass
 
 def validatePathParameters():
-    # print(thisVerb)
+    # logger.info(thisVerb)
     for nParam in range(0, len(thisVerb['parameters'])):
         if thisVerb['parameters'][nParam]['in'] == 'path':
             break
@@ -396,7 +415,7 @@ def validatePathParameters():
         raise Exception("@RESTPATHPARAMETERS found in Swagger data without any parameter following in %s " % json.dumps(thisVerb, indent=4, separators=(', ',': '), sort_keys=True))
 
 def validateQueryParams():
-    # print(thisVerb)
+    # logger.info(thisVerb)
     for nParam in range(0, len(thisVerb['parameters'])):
         if thisVerb['parameters'][nParam]['in'] == 'query':
             break
@@ -404,7 +423,7 @@ def validateQueryParams():
         raise Exception("@RESTQUERYPARAMETERS found in Swagger data without any parameter following in %s " % json.dumps(thisVerb, indent=4, separators=(', ',': '), sort_keys=True))
 
 def validateHeaderParams():
-    # print(thisVerb)
+    # logger.info(thisVerb)
     for nParam in range(0, len(thisVerb['parameters'])):
         if thisVerb['parameters'][nParam]['in'] == 'header':
             break
@@ -412,7 +431,7 @@ def validateHeaderParams():
         raise Exception("@RESTHEADERPARAMETERS found in Swagger data without any parameter following in %s " % json.dumps(thisVerb, indent=4, separators=(', ',': '), sort_keys=True))
 
 def validateReturnCodes():
-    # print(thisVerb)
+    # logger.info(thisVerb)
     for nParam in range(0, len(thisVerb['responses'])):
         if len(thisVerb['responses'].keys()) != 0:
             break
@@ -476,7 +495,7 @@ r'''
 
 def block_simple_repl(match):
     m = match.group(0)
-    # print('xxxxx [%s]' % m)
+    # logger.info('xxxxx [%s]' % m)
     n = None
     try:
         n = SIMPL_REPL_VALIDATE_DICT[m]
@@ -577,15 +596,15 @@ def block_replace_code(lines, blockName):
             (verb,route) =  headerMatch.group(1).split(',')[0].split(' ')
             verb = verb.lower()
         except:
-            printe("failed to parse header from: " + headerMatch.group(1) + " while analysing " + blockName)
+            logger.error("failed to parse header from: " + headerMatch.group(1) + " while analysing " + blockName)
             raise
 
         try:
             thisVerb = swagger['paths'][route][verb]
         except:
-            printe("failed to locate route in the swagger json: [" + verb + " " + route + "]" + " while analysing " + blockName)
-            printe(lines)
-            printe("Did you forget to run utils/generateSwagger.sh?")
+            logger.error("failed to locate route in the swagger json: [" + verb + " " + route + "]" + " while analysing " + blockName)
+            logger.error(lines)
+            logger.error("Did you forget to run utils/generateSwagger.sh?")
             raise
 
     for (oneRX, repl) in RX:
@@ -597,7 +616,7 @@ def block_replace_code(lines, blockName):
         foundRestBodyParam = False
         foundRestReplyBodyParam = False
         lineR = lines.split('\n')
-        #print(lineR)
+        #logger.info(lineR)
         l = len(lineR)
         r = 0
         while (r < l):
@@ -612,7 +631,7 @@ def block_replace_code(lines, blockName):
                 while ((len(lineR[r]) == 0) or
                        ((lineR[r][0] != '@') or
                        have_RESTBODYPARAM.search(lineR[r]))):
-                    # print("xxx - %d %s" %(len(lineR[r]), lineR[r]))
+                    # logger.info("xxx - %d %s" %(len(lineR[r]), lineR[r]))
                     lineR[r] = ''
                     r+=1
 
@@ -642,14 +661,14 @@ def block_replace_code(lines, blockName):
                     r+=1
             r+=1
         lines = "\n".join(lineR)
-    #print("x" * 70)
-    #print(lines)
+    #logger.info("x" * 70)
+    #logger.info(lines)
     try:
         lines = SIMPLE_RX.sub(block_simple_repl, lines)
     except Exception as x:
-        printe("While working on: [" + verb + " " + route + "]" + " while analysing " + blockName)
-        printe(x.message)
-        printe("Did you forget to run utils/generateSwagger.sh?")
+        logger.error("While working on: [" + verb + " " + route + "]" + " while analysing " + blockName)
+        logger.error(x.message)
+        logger.error("Did you forget to run utils/generateSwagger.sh?")
         raise
 
 
@@ -657,7 +676,7 @@ def block_replace_code(lines, blockName):
         lines = oneRX.sub(repl, lines)
 
     lines = remove_MULTICR.sub("\n\n", lines)
-    #print(lines)
+    #logger.info(lines)
     return lines
 
 # NOT USED
@@ -740,8 +759,8 @@ def walk_find_start_code(in_full, out_full, conf):
     try:
         textFile = walk_replace_code_full_file(textFile)
     except Exception as e:
-        printe("while parsing :      "  + in_full)
-        printe(textFile)
+        logger.error("while parsing :      "  + in_full)
+        logger.error(textFile)
         raise e
 
     re_images = re.compile(r".*\!\[([\d\s\w\/\. ()-]*)\]\(([\d\s\w\/\.-]*)\).*")
@@ -764,41 +783,41 @@ def walk_replace_text_inline(text, pathOfFile, searchText):
   ''' inserts docublocks into md '''
   global dokuBlocks
   if not searchText in dokuBlocks[1]:
-      printe("Failed to locate the inline docublock '" + searchText + "' for replacing it into the file '" + pathOfFile + "'\n have: ")
-      printe("%s" %(dokuBlocks[1].keys()))
-      printe('*' * 80)
-      printe(text)
-      printe("Failed to locate the inline docublock '" + searchText + "' for replacing it into the file '" + pathOfFile + "' For details scroll up!")
+      logger.error("Failed to locate the inline docublock '" + searchText + "' for replacing it into the file '" + pathOfFile + "'\n have: ")
+      logger.error("%s" %(dokuBlocks[1].keys()))
+      logger.error('*' * 80)
+      logger.error(text)
+      logger.error("Failed to locate the inline docublock '" + searchText + "' for replacing it into the file '" + pathOfFile + "' For details scroll up!")
       exit(1)
   rePattern = r'(?s)\s*@startDocuBlockInline\s+'+ searchText +'\s.*?@endDocuBlock\s' + searchText
   # (?s) is equivalent to flags=re.DOTALL but works in Python 2.6
   match = re.search(rePattern, text)
 
   if (match == None):
-      printe("failed to match with '" + rePattern + "' for " + searchText + " in file " + pathOfFile + " in: \n" + text)
+      logger.error("failed to match with '" + rePattern + "' for " + searchText + " in file " + pathOfFile + " in: \n" + text)
       exit(1)
 
   subtext = match.group(0)
   if (len(re.findall('@startDocuBlock', subtext)) > 1):
-      printe("failed to snap with '" + rePattern + "' on end docublock for " + searchText + " in " + pathOfFile + " our match is:\n" + subtext)
+      logger.error("failed to snap with '" + rePattern + "' on end docublock for " + searchText + " in " + pathOfFile + " our match is:\n" + subtext)
       exit(1)
 
   return re.sub(rePattern, dokuBlocks[1][searchText], text)
 
 def walk_replace_text(text, pathOfFile, searchText):
   ''' inserts docublocks into md '''
-  #print('7'*80)
+  #logger.info('7'*80)
   global dokuBlocks
   if not searchText in dokuBlocks[0]:
-      printe("Failed to locate the docublock '" + searchText + "' for replacing it into the file '" +pathOfFile + "'\n have:")
-      printe(dokuBlocks[0].keys())
-      printe('*' * 80)
-      printe(text)
-      printe("Failed to locate the docublock '" + searchText + "' for replacing it into the file '" +pathOfFile + "' For details scroll up!")
+      logger.error("Failed to locate the docublock '" + searchText + "' for replacing it into the file '" +pathOfFile + "'\n have:")
+      logger.error(dokuBlocks[0].keys())
+      logger.error('*' * 80)
+      logger.error(text)
+      logger.error("Failed to locate the docublock '" + searchText + "' for replacing it into the file '" +pathOfFile + "' For details scroll up!")
       exit(1)
-  #print('7'*80)
-  #print(dokuBlocks[0][searchText])
-  #print('7'*80)
+  #logger.info('7'*80)
+  #logger.info(dokuBlocks[0][searchText])
+  #logger.info('7'*80)
   rc= re.sub("@startDocuBlock\s+"+ searchText + "(?:\s+|$)", dokuBlocks[0][searchText], text)
   return rc
 
@@ -863,7 +882,7 @@ def readStartLine(line):
         try:
             thisBlockName = SEARCH_START.search(line).group(1).strip()
         except:
-            printe("failed to read startDocuBlock: [" + line + "]")
+            logger.error("failed to read startDocuBlock: [" + line + "]")
             exit(1)
         dokuBlocks[thisBlockType][thisBlockName] = ""
         return DocuSearchState.END
@@ -874,8 +893,8 @@ def readNextLine(line):
     if '@endDocuBlock' in line:
         return DocuSearchState.START
     dokuBlocks[thisBlockType][thisBlockName] += line
-    #print("reading " + thisBlockName)
-    #print(dokuBlocks[thisBlockType][thisBlockName])
+    #logger.info("reading " + thisBlockName)
+    #logger.info(dokuBlocks[thisBlockType][thisBlockName])
     return DocuSearchState.END
 
 def block_load_all(allComments, blocks):
@@ -889,15 +908,15 @@ def block_load_all(allComments, blocks):
             state = readNextLine(line)
 
         #if state == DocuSearchState.START:
-        #    print(dokuBlocks[thisBlockType].keys())
+        #    logger.info(dokuBlocks[thisBlockType].keys())
 
     if blockFilter != None:
         remainBlocks= {}
-        print("filtering blocks")
+        logger.info("filtering blocks")
         for oneBlock in dokuBlocks[0]:
             if blockFilter.match(oneBlock) != None:
-                print("found block %s" % (oneBlock))
-                #print(dokuBlocks[0][oneBlock])
+                logger.info("found block %s" % (oneBlock))
+                #logger.info(dokuBlocks[0][oneBlock])
                 remainBlocks[oneBlock] = dokuBlocks[0][oneBlock]
         dokuBlocks[0] = remainBlocks
 
@@ -905,20 +924,20 @@ def block_load_all(allComments, blocks):
     #TODO blocks.add(block)
     for oneBlock in dokuBlocks[0]:
         try:
-            #print("processing %s" % oneBlock)
+            #logger.info("processing %s" % oneBlock)
             dokuBlocks[0][oneBlock] = block_replace_code(dokuBlocks[0][oneBlock], oneBlock)
-            #print("6"*80)
-            #print(dokuBlocks[0][oneBlock])
-            #print("6"*80)
+            #logger.info("6"*80)
+            #logger.info(dokuBlocks[0][oneBlock])
+            #logger.info("6"*80)
         except:
-            printe("while parsing :\n"  + oneBlock)
+            logger.error("while parsing :\n"  + oneBlock)
             raise
 
     for oneBlock in dokuBlocks[1]:
         try:
             dokuBlocks[1][oneBlock] = block_replace_code(dokuBlocks[1][oneBlock], oneBlock)
         except:
-            printe("while parsing :\n"  + oneBlock)
+            logger.error("while parsing :\n"  + oneBlock)
             raise
 
 def loadProgramOptionBlocks():
@@ -966,7 +985,7 @@ def loadProgramOptionBlocks():
                 optionsRaw = json.load(fp)
             except ValueError as err:
                 # invalid JSON
-                printe("Failed to parse program options json: '" + programOptionsDump + "' - to be used as: '" + program + "' - " + err.message)
+                logger.error("Failed to parse program options json: '" + programOptionsDump + "' - to be used as: '" + program + "' - " + err.message)
                 raise err
 
         # Group and sort by section name, global section first
@@ -1056,18 +1075,18 @@ swaggerJson: {swaggerJson}
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
-        print("usage: book arango-source output-directory swaggerJson [filter]")
+        logger.info("usage: book arango-source output-directory swaggerJson [filter]")
         sys.exit(1)
 
     conf = Config(sys.argv[1], sys.argv[2], sys.argv[3])
-    [ logger.info(x) for x in str(conf).split('\n') ]
+    log_multi(logging.INFO, str(conf))
 
     # #TODO add to conf if required
     # if len(sys.argv) > 5 and sys.argv[5].strip() != '':
-    #     print("filtering " + sys.argv[4])
+    #     logger.info("filtering " + sys.argv[4])
     #     fileFilter = re.compile(sys.argv[5])
     # if len(sys.argv) > 6 and sys.argv[6].strip() != '':
-    #     print("filtering Docublocks: " + sys.argv[5])
+    #     logger.info("filtering Docublocks: " + sys.argv[5])
     #     blockFilter = re.compile(sys.argv[6])
     # ## end
 
@@ -1075,9 +1094,9 @@ if __name__ == '__main__':
         swagger=json.load(f)
 
     block_reader = DocuBlockReader(conf.allComments)
-    block_reader.parse()
+    blocks = block_reader.parse()
+    blocks.replace_code_in_blocks()
 
-    blocks = DocuBlocks()
     block_load_all(conf.allComments, blocks) # FIXME "allComments.txt"
 
     loadProgramOptionBlocks() # FIXME
