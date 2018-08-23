@@ -23,6 +23,7 @@
 #
 #
 
+### module import
 import sys
 import re
 import os
@@ -30,10 +31,11 @@ import json
 import io
 import shutil
 
+from enum import Enum, unique
 from pprint import pprint as PP
 from pprint import pformat as PF
 
-# set up logging
+### set up logging
 import logging
 
 logger = logging.getLogger("gmdf")
@@ -47,30 +49,35 @@ formatter = logging.Formatter('%(name)s %(lineno)4d %(levelname)6s-> %(message)s
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
-
 def log_multi(level, msg, *args, **kwargs):
     [ logger.log(level, x, *args, **kwargs) for x in msg.split('\n') ]
 
-
-
-
-from enum import Enum, unique #, auto
+### Type Definitions
 @unique
 class BlockType(Enum):
     PLAIN  = 1 #auto()
     INLINE = 2 #auto()
 
+
+## reading of docublock
+
+#TODO  can be removed when done
 @unique
 class DocuSearchState(Enum):
     START = 0
     END = 1
 
-
 class DocuBlocks():
+    #TODO rename allComments.txt - to intermeadiate Docublocks
+    """ Structure that holds plain and inline docublocks that are found in the allComments.txt files
+    """
+
     def __init__(self):
         self.plain_blocks = {}
         self.inline_blocks = {}
+
     def add(self, block):
+        """ adds a block found by the parser"""
         #self.block_replace_code(block)
         if block.block_type is BlockType.PLAIN:
             self.plain_blocks[block.key]=block
@@ -91,6 +98,7 @@ class DocuBlocks():
 
     #@calssmethod
     def block_replace_code(self, block):
+        """clean up functions that needs to be run on each block"""
         global swagger
         global thisVerb, route, verb ## why does it crash if these variables are not global
                                      ## TODO look for function calls that use global STATE
@@ -195,21 +203,34 @@ class DocuBlocks():
 
 
 class DocuBLock():
+    """description of a single DocuBlock"""
     def __init__(self,btype):
-        self.block_type = btype
-        self.content = ""
-        self.key = None
+        self.block_type = btype  # plain or inline
+        self.content = ""        # textual content of the block
+        self.key = None          # block key or name
 
 class DocuBlockReader():
     def __init__(self, filename):
-        self.filename = filename
-        self.blocks = DocuBlocks();
+        self.filename = filename       # file to read the blocks from
+        self.blocks = DocuBlocks();    # stucture that the found blocks are added to and
+                                       # that is returned when the parse has finished
 
     def parse(self):
+        """ Parses the text document that contains the DocuBlocks.
+
+            A state machine is used here, as long as the block is
+            None we search for the start of a new block. Otherwise
+            we are within a block and add to the block or close it.
+            When the block is closed we begin to search for a new block.
+        """
+
         with open(self.filename, "r", encoding="utf-8", newline=None) as f:
             block = None
             for line in f:
                 block = self.handle_line(line, block)
+
+            if block != None:
+                raise ValueError("we are inside and open block!!!")
         return self.blocks
 
 
