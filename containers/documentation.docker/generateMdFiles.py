@@ -30,6 +30,7 @@ import os
 import json
 import io
 import shutil
+import types
 
 from enum import Enum, unique
 from pprint import pprint as PP
@@ -248,7 +249,7 @@ class DocuBlocks():
         #logger.info(block.content)
         #log_multi(logging.ERROR, PF({ "thisVerb" : thisVerb, "verb" : verb, "route" : route}))
         try:
-            block.content = SIMPLE_RX.sub(block_simple_repl, block.content)
+            block.content = SIMPLE_RX.sub(lambda match : block_simple_repl(match, thisVerb), block.content)
         except Exception as e:
             logger.error("While working on: [" + verb + " " + route + "]" + " while analysing " + block.key)
             logger.error(str(e))
@@ -312,24 +313,24 @@ class DocuBlockReader():
             else:
                 block = DocuBLock(BlockType.INLINE)
 
-            logger.debug("start: " + str(block))
+            #logger.debug("start: " + str(block))
             try:
                 block.key = SEARCH_START.search(line).group(1).strip()
             except:
                 logger.error("failed to read startDocuBlock: [" + line + "]")
                 exit(1)
 
-            logger.info("starting block with key {}".format(block.key))
+            #logger.debug("starting block with key {}".format(block.key))
             return block
         return None
 
     def handle_line_follow(self, line,block):
         if '@endDocuBlock' in line:
-            logger.debug("complete: " + str(block))
-            logger.debug("complete: " + str(block.key))
-            logger.debug("complete: " + str(block.block_type))
+            #logger.debug("complete: " + str(block))
+            #logger.debug("complete: " + str(block.key))
+            #logger.debug("complete: " + str(block.block_type))
             self.blocks.add(block)
-            logger.info("ending block with key {}".format(block.key))
+            #logger.info("ending block with key {}".format(block.key))
             return None
         # apppend to content and do not change state
         block.content += line
@@ -617,7 +618,7 @@ SIMPL_REPL_VALIDATE_DICT = {
 #    rc += addText
 #    return rc
 
-def getRestDescription():
+def getRestDescription(thisVerb, param):
     #logger.error("RESTDESCRIPTION")
     if thisVerb['description']:
         #logger.error(thisVerb['description'])
@@ -626,7 +627,7 @@ def getRestDescription():
         #logger.error("ELSE")
         return ""
 
-def getRestReplyBodyParam(param):
+def getRestReplyBodyParam(thisVerb, param):
     rc = "\n**Response Body**\n"
 
     try:
@@ -637,7 +638,7 @@ def getRestReplyBodyParam(param):
         raise
     return rc + "\n"
 
-SIMPL_REPL_DICT = {
+REST_REPLACEMENT_DICT = {
     "\\"                    : "\\\\",
     "@RESTDESCRIPTION"      : getRestDescription,
     "@RESTURLPARAMETERS"    : "\n**Path Parameters**\n",
@@ -695,7 +696,6 @@ RX2 = [
     # parameters - extract their type and whether mandatory or not.
     (re.compile(r"@RESTPARAM{(\s*[\w\-]*)\s*,\s*([\w\_\|-]*)\s*,\s*(required|optional)}"), r"* *\g<1>* (\g<3>):"),
     (re.compile(r"@RESTALLBODYPARAM{(\s*[\w\-]*)\s*,\s*([\w\_\|-]*)\s*,\s*(required|optional)}"), r"\n**Request Body** (\g<3>)\n\n"),
-
     (re.compile(r"@RESTRETURNCODE{(.*)}"), r"* *\g<1>*:")
 ]
 
@@ -822,49 +822,38 @@ def unwrapPostJson(reference, layer):
 
 
 
+def exectue_if_function(fun, *args, **kwargs):
+    if type(fun) == types.FunctionType:
+        logging.info("execute function")
+        return fun(*args, **kwargs)
+    else:
+        return fun
 
 
-
-def block_simple_repl(match):
+def block_simple_repl(match, thisVerb):
     m = match.group(0)
-    # logger.info('xxxxx [%s]' % m)
-    n = None
-    try:
-        n = SIMPL_REPL_VALIDATE_DICT[m]
-    except:
-        True
-    if n != None:
-        n(thisVerb)
-    try:
-        n = SIMPL_REPL_DICT[m]
-        if n == None:
-            raise Exception("failed to find regex while searching for: " + m)
-        else:
-            if type(n) == type(''):
-                return n
-            else:
-                return n()
-    except Exception:
+    #logger.info('xxxxx [%s]' % m)
+    #log_multi(logging.ERROR, 'xxxxx [%s]' % thisVerb)
+
+    validation_function = SIMPL_REPL_VALIDATE_DICT.get(m, None)
+    if validation_function:
+        validation_function(thisVerb)
+
+
+    rest_replacement = REST_REPLACEMENT_DICT.get(m, None)
+    if rest_replacement:
+        return exectue_if_function(rest_replacement, thisVerb, None)
+    else:
         pos = m.find('{')
         if pos > 0:
             newMatch = m[:pos]
             param = m[pos + 1 :].rstrip(' }')
-            try:
-                n = SIMPL_REPL_DICT[newMatch]
-                if n == None:
-                    raise Exception("failed to find regex while searching for: " +
-                                    newMatch + " extracted from: " + m)
-                else:
-                    if type(n) == type(''):
-                        return n
-                    else:
-                        return n(param)
-            except Exception as x:
-                #raise Exception("failed to find regex while searching for: " +
-                #                newMatch + " extracted from: " + m)
-                raise
-        else:
-            raise Exception("failed to find regex while searching for: " + m)
+
+            new_rest_replacement = REST_REPLACEMENT_DICT.get(newMatch, None)
+            if new_rest_replacement == None:
+                raise Exception("failed to find regex while searching for: " + newMatch + " extracted from: " + m)
+            else:
+                return exectue_if_function(new_rest_replacement, thisVerb, param)
 
 
 
@@ -1024,12 +1013,11 @@ def block_replace_code(lines, blockName):
     #logger.info("x" * 70)
     #logger.info(lines)
     try:
-        lines = SIMPLE_RX.sub(block_simple_repl, lines)
+        lines = SIMPLE_RX.sub(lambda match : block_simple_repl(match, thisVerb), lines)
     except Exception as x:
         logger.error("While working on: [" + verb + " " + route + "]" + " while analysing " + blockName)
-        logger.error(x.message)
         logger.error("Did you forget to run utils/generateSwagger.sh?")
-        raise
+        raise x
 
 
     for (oneRX, repl) in RX2:
