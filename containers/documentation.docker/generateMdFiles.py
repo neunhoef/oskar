@@ -53,7 +53,7 @@ logger.addHandler(ch)
 def logger_multi(level, msg, *args, **kwargs):
     [ logger.log(level, x, *args, **kwargs) for x in msg.split('\n') ]
 
-def logger_exc((level):
+def logger_exc(level):
     logger_multi(level, traceback.format_exc(file=sys.stdout))
 
 ### set up of logging - END ####################################################
@@ -656,10 +656,10 @@ def getRestReplyBodyParam(swagger, thisVerb, verb, route, param):
     reference = getReference(swagger, schema_name, route, verb)
     rc += unwrapPostJson(swagger, reference , 0)
 
-    logger.info(rc)
-    logger.info("name: " + str(schema_name))
-    logger.info("route: " + str(route))
-    logger.info("verb: " +str(verb))
+    #logger.info(rc)
+    #logger.info("name: " + str(schema_name))
+    #logger.info("route: " + str(route))
+    #logger.info("verb: " +str(verb))
     return rc + "\n"
 
 REST_REPLACEMENT_DICT = {
