@@ -105,6 +105,12 @@ def get_from_dict(nested, default, *access_path):
             return default
     return current
 
+def exectue_if_function(fun, *args, **kwargs):
+    if type(fun) == types.FunctionType:
+        return fun(*args, **kwargs)
+    else:
+        return fun
+
 ### helper - END ###############################################################
 
 ### config #####################################################################
@@ -143,7 +149,7 @@ class DocuBlocks():
     """ Structure that holds plain and inline docublocks that are found in the allComments.txt files
     """
 
-    def __init__(self, swagger):
+    def __init__(self, swagger): #GOOD
         self.plain = {}   #former 0
         self.inline = {}  #former 1
         self.swagger = swagger
@@ -168,7 +174,7 @@ class DocuBlocks():
             self.block_replace_code(block)
 
 
-    def block_replace_code(self, block):
+    def block_replace_code(self, block): # TODO - cleanup
         """clean up functions that needs to be run on each block"""
 
         thisVerb = None
@@ -176,7 +182,7 @@ class DocuBlocks():
         route=None
         foundRest = False
         # first find the header:
-        headerMatch = match_RESTHEADER.search(block.content)
+        headerMatch = g_re_RESTHEADER.search(block.content)
         if headerMatch and headerMatch.lastindex > 0:
             foundRest = True
             try:
@@ -248,6 +254,7 @@ class DocuBlocks():
                         r+=1
                 r+=1
             block.content = "\n".join(lineR)
+
         #logger.info("x" * 70)
         #logger.info(block.content)
         #logger_multi(logging.ERROR, PF({ "thisVerb" : thisVerb, "verb" : verb, "route" : route}))
@@ -269,18 +276,18 @@ class DocuBlocks():
 
 
 
-class DocuBLock():
+class DocuBLock(): #GOOD
     """description of a single DocuBlock"""
     def __init__(self,btype):
         self.block_type = btype  # plain or inline
         self.content = ""        # textual content of the block
         self.key = None          # block key or name
 
-class DocuBlockReader():
+class DocuBlockReader(): #GOOD
     def __init__(self):
         self.blocks = None
 
-    def parse(self, filename, swagger):
+    def parse(self, filename, swagger): #GOOD
                # file to read the blocks from
         self.blocks = DocuBlocks(swagger);    # stucture that the found blocks are added to and
                                        # that is returned when the parse has finished
@@ -302,7 +309,7 @@ class DocuBlockReader():
         return self.blocks
 
 
-    def handle_line(self, line, block):
+    def handle_line(self, line, block): #GOOD
         if not block:
             block = self.handle_line_start(line)
         else:
@@ -310,7 +317,7 @@ class DocuBlockReader():
         return block
 
 
-    def handle_line_start(self, line):
+    def handle_line_start(self, line): #GOOD
         if ("@startDocuBlock" in line):
             if "@startDocuBlockInline" in line:
                 block = DocuBLock(BlockType.INLINE)
@@ -329,7 +336,7 @@ class DocuBlockReader():
             return block
         return None
 
-    def handle_line_follow(self, line,block):
+    def handle_line_follow(self, line,block): #GOOD
         if '@endDocuBlock' in line:
             #logger.debug("complete: " + str(block))
             #logger.debug("complete: " + str(block.key))
@@ -346,8 +353,7 @@ class DocuBlockReader():
 
 ## replace blocks in .md-files ################################################
 
-#OK
-def walk_on_files(conf, blocks):
+def walk_on_files(conf, blocks): #GOOD
     """ walk over source tree and skip files and calculate output path for
         files that are not skipped
     """
@@ -375,7 +381,7 @@ def walk_on_files(conf, blocks):
                 walk_find_start_code(in_full_path, out_full_path, conf, blocks)
     logger.info( "Processed %d files, skipped %d" % (count, skipped))
 
-#OK - TODO - rename to something useful
+#TODO - rename to something useful
 def walk_find_start_code(in_full, out_full, conf, blocks):
     """ replace dcoublocks and images
     """
@@ -459,8 +465,7 @@ def walk_replace_text(text, pathOfFile, searchText, blocks):
   rc= re.sub("@startDocuBlock\s+"+ searchText + "(?:\s+|$)", blocks.plain[searchText].content, text)
   return rc
 
-#OK
-def walk_handle_images(image_title, image_link, conf, in_full, out_full):
+def walk_handle_images(image_title, image_link, conf, in_full, out_full): #GOOD
     """ copy images from source to pp dir, copy book external images
         to <book>/assets and update image links accordingly.
     """
@@ -499,27 +504,27 @@ def walk_handle_images(image_title, image_link, conf, in_full, out_full):
 
 ## replace blocks in .md-files - END ##########################################
 
-defLen = len('#/definitions/')
 
-removeTrailingBR = re.compile("<br>$")
-removeLeadingBR = re.compile("^<br>")
-removeDoubleLF = re.compile("\n\n")
-removeLF = re.compile("\n")
+###############################################################################
+###############################################################################
+########################## REVIEW EVERYTHING BELOW ############################
+###############################################################################
+###############################################################################
 
-match_RESTHEADER = re.compile(r"@RESTHEADER\{(.*)\}")
+###### regular expressions #####################################################
+g_length_definitions = len('#/definitions/')
+g_re_trailing_br = re.compile("<br>$")
+g_re_leading_br = re.compile("^<br>")
+g_re_dobule_lf = re.compile("\n\n")
+g_re_lf = re.compile("\n")
+g_re_RESTHEADER = re.compile(r"@RESTHEADER\{(.*)\}")
 match_RESTRETURNCODE = re.compile(r"@RESTRETURNCODE\{(.*)\}")
 have_RESTBODYPARAM = re.compile(r"@RESTBODYPARAM|@RESTDESCRIPTION")
 have_RESTREPLYBODY = re.compile(r"@RESTREPLYBODY")
 have_RESTSTRUCT = re.compile(r"@RESTSTRUCT")
 remove_MULTICR = re.compile(r'\n\n\n*')
-
 RXUnEscapeMDInLinks = re.compile("\\\\_")
-
-
-
 SEARCH_START = re.compile(r" *start[0-9a-zA-Z]*\s\s*([0-9a-zA-Z_ ]*)\s*$")
-
-
 
 SIMPLE_RX = re.compile(
 r'''
@@ -542,7 +547,9 @@ r'''
 @RESTPARAMETERS|                    # -> <empty>
 @RESTREPLYBODY\{(.*)\}              # -> call body function
 ''', re.X)
+###### regular expressions - end ###############################################
 
+###### match replace ###########################################################
 RX = [
     ### match -> replace
     # comments -> nothing
@@ -583,7 +590,7 @@ RX2 = [
 ]
 
 RX3 = (re.compile(r'\*\*Example:\*\*((?:.|\n)*?)</code></pre>'), r"")
-
+###### match replace - end #####################################################
 
 ###### validataion dict ########################################################
 def noValidation(thisVerb):
@@ -630,11 +637,9 @@ SIMPL_REPL_VALIDATE_DICT = {
     "@RESTURLPARAMS"        : validatePathParameters,
     "@EXAMPLES"             : noValidation
 }
-
 ###### validataion dict - END ########################################################
 
 ###### simple dict  ########################################################
-
 def getRestDescription(swagger, thisVerb, verb, route, param):
     #logger.debug("RESTDESCRIPTION")
     if thisVerb['description']:
@@ -692,22 +697,19 @@ RXFinal = [
     (re.compile(r"@anchor (.*)"), setAnchor),
 ]
 
-
-
-
 def walk_replace_code_full_file(lines):
     for (oneRX, repl) in RXFinal:
         lines = oneRX.sub(repl, lines)
     return lines
 
-def brTrim(text):
-    return removeLeadingBR.sub("", removeTrailingBR.sub("", text.strip(' ')))
 
+def trim_br(text):
+    return g_re_leading_br.sub("", g_re_trailing_br.sub("", text.strip(' ')))
 
 def getReference(swagger, name, source, verb):
 
     try:
-        ref = name['$ref'][defLen:]
+        ref = name['$ref'][g_length_definitions:]
     except Exception as x:
         logger.error("No reference in: " + name)
         raise
@@ -724,10 +726,10 @@ def getReference(swagger, name, source, verb):
 
 def TrimThisParam(text, indent):
     text = text.rstrip('\n').lstrip('\n')
-    text = removeDoubleLF.sub("\n", text)
+    text = g_re_dobule_lf.sub("\n", text)
     if (indent > 0):
         indent = (indent + 2) # align the text right of the list...
-    return removeLF.sub("\n" + ' ' * indent, text)
+    return g_re_lf.sub("\n" + ' ' * indent, text)
 
 def unwrapPostJson(swagger, reference, layer):
     swaggerDataTypes = ["number", "integer", "string", "boolean", "array", "object"]
@@ -757,7 +759,7 @@ def unwrapPostJson(swagger, reference, layer):
                 rc += unwrapPostJson(swagger, subStructRef, layer + 1)
 
             elif thisParam['type'] == 'object':
-                rc += '  ' * layer + "- **" + param + "**: " + TrimThisParam(brTrim(thisParam['description']), layer) + "\n"
+                rc += '  ' * layer + "- **" + param + "**: " + TrimThisParam(trim_br(thisParam['description']), layer) + "\n"
             elif thisParam['type'] == 'array':
                 rc += '  ' * layer + "- **" + param + "**"
                 trySubStruct = False
@@ -773,7 +775,7 @@ def unwrapPostJson(swagger, reference, layer):
                         lf="\n"
                     else:
                         trySubStruct = True
-                rc += ": " + TrimThisParam(brTrim(thisParam['description']), layer) + lf
+                rc += ": " + TrimThisParam(trim_br(thisParam['description']), layer) + lf
                 if trySubStruct:
                     subStructRef = None
                     try:
@@ -791,13 +793,6 @@ def unwrapPostJson(swagger, reference, layer):
                 rc += '  ' * layer + "- **" + param + "**: " + TrimThisParam(thisParam['description'], layer) + '\n'
     return rc
 
-def exectue_if_function(fun, *args, **kwargs):
-    if type(fun) == types.FunctionType:
-        return fun(*args, **kwargs)
-    else:
-        return fun
-
-
 def block_simple_repl(match, swagger, thisVerb, verb, route):
     m = match.group(0)
     #logger.info('xxxxx [%s]' % m)
@@ -813,6 +808,7 @@ def block_simple_repl(match, swagger, thisVerb, verb, route):
         return exectue_if_function(rest_replacement, swagger, thisVerb, verb, route, None)
     else:
         pos = m.find('{')
+        ## what is done here
         if pos > 0:
             newMatch = m[:pos]
             param = m[pos + 1 :].rstrip(' }')
