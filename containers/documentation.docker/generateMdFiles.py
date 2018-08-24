@@ -73,15 +73,15 @@ def main():
     #     blockFilter = re.compile(sys.argv[6])
     # ## end
 
-    global swagger
+    swagger=None
     with open(conf.swaggerJson, 'r', encoding='utf-8', newline=None) as f:
         swagger=json.load(f)
 
-    block_reader = DocuBlockReader(conf.allComments)
-    blocks = block_reader.parse()
+    block_reader = DocuBlockReader()
+    blocks = block_reader.parse(conf.allComments, swagger)
     blocks.replace_code_in_blocks()
 
-    block_load_all(conf.allComments, blocks) # FIXME "allComments.txt"
+    block_load_all(conf.allComments, swagger) # FIXME "allComments.txt"
 
     loadProgramOptionBlocks() # FIXME
 
@@ -137,9 +137,10 @@ class DocuBlocks():
     """ Structure that holds plain and inline docublocks that are found in the allComments.txt files
     """
 
-    def __init__(self):
+    def __init__(self, swagger):
         self.plain_blocks = {}
         self.inline_blocks = {}
+        self.swagger = swagger
 
     def add(self, block):
         """ adds a block found by the parser"""
@@ -163,7 +164,6 @@ class DocuBlocks():
 
     def block_replace_code(self, block):
         """clean up functions that needs to be run on each block"""
-        global swagger
         global thisVerb, route, verb ## why does it crash if these variables are not global
                                      ## TODO look for function calls that use global STATE
         #route = ''
@@ -184,7 +184,7 @@ class DocuBlocks():
                 raise
 
             try:
-                thisVerb = swagger['paths'][route][verb]
+                thisVerb = self.swagger['paths'][route][verb]
             except:
                 logger.error("failed to locate route in the swagger json: [" + verb + " " + route + "]" + " while analysing " + block.key)
                 logger.error(block.content)
@@ -249,7 +249,7 @@ class DocuBlocks():
         #logger.info(block.content)
         #log_multi(logging.ERROR, PF({ "thisVerb" : thisVerb, "verb" : verb, "route" : route}))
         try:
-            block.content = SIMPLE_RX.sub(lambda match : block_simple_repl(match, thisVerb), block.content)
+            block.content = SIMPLE_RX.sub(lambda match : block_simple_repl(match, self.swagger, thisVerb), block.content)
         except Exception as e:
             logger.error("While working on: [" + verb + " " + route + "]" + " while analysing " + block.key)
             logger.error(str(e))
@@ -274,12 +274,13 @@ class DocuBLock():
         self.key = None          # block key or name
 
 class DocuBlockReader():
-    def __init__(self, filename):
-        self.filename = filename       # file to read the blocks from
-        self.blocks = DocuBlocks();    # stucture that the found blocks are added to and
-                                       # that is returned when the parse has finished
+    def __init__(self):
+        self.blocks = None
 
-    def parse(self):
+    def parse(self, filename, swagger):
+               # file to read the blocks from
+        self.blocks = DocuBlocks(swagger);    # stucture that the found blocks are added to and
+                                       # that is returned when the parse has finished
         """ Parses the text document that contains the DocuBlocks.
 
             A state machine is used here, as long as the block is
@@ -288,7 +289,7 @@ class DocuBlockReader():
             When the block is closed we begin to search for a new block.
         """
 
-        with open(self.filename, "r", encoding="utf-8", newline=None) as f:
+        with open(filename, "r", encoding="utf-8", newline=None) as f:
             block = None
             for line in f:
                 block = self.handle_line(line, block)
@@ -512,7 +513,6 @@ def walk_handle_images(image_title, image_link, conf, in_full, out_full):
 #######################################################################################################
 #######################################################################################################
 
-swagger = None
 fileFilter = None
 blockFilter = None
 dokuBlocks = [{},{}]
@@ -605,7 +605,7 @@ SIMPL_REPL_VALIDATE_DICT = {
 ###### validataion dict - END ########################################################
 
 ###### simple dict  ########################################################
-def getRestDescription(thisVerb, param):
+def getRestDescription(swagger, thisVerb, param):
     #logger.debug("RESTDESCRIPTION")
     if thisVerb['description']:
         #logger.error(thisVerb['description'])
@@ -614,11 +614,11 @@ def getRestDescription(thisVerb, param):
         #logger.debug("rest description empty")
         return ""
 
-def getRestReplyBodyParam(thisVerb, param):
+def getRestReplyBodyParam(swagger, thisVerb, param):
     rc = "\n**Response Body**\n"
 
     try:
-        rc += unwrapPostJson(getReference(thisVerb['responses'][param]['schema'], route, verb), 0)
+        rc += unwrapPostJson(swagger, getReference(swagger, thisVerb['responses'][param]['schema'], route, verb), 0)
     except Exception:
         logger.error("failed to search " + param + " in: ")
         logger.error(json.dumps(thisVerb, indent=4, separators=(', ',': '), sort_keys=True))
@@ -721,7 +721,7 @@ def brTrim(text):
     return removeLeadingBR.sub("", removeTrailingBR.sub("", text.strip(' ')))
 
 
-def getReference(name, source, verb):
+def getReference(swagger, name, source, verb):
     try:
         ref = name['$ref'][defLen:]
     except Exception as x:
@@ -745,18 +745,17 @@ def TrimThisParam(text, indent):
         indent = (indent + 2) # align the text right of the list...
     return removeLF.sub("\n" + ' ' * indent, text)
 
-def unwrapPostJson(reference, layer):
+def unwrapPostJson(swagger, reference, layer):
     swaggerDataTypes = ["number", "integer", "string", "boolean", "array", "object"]
     ####
     # logger.error("xx" * layer + reference)
-    global swagger
     rc = ''
     if not 'properties' in swagger['definitions'][reference]:
         if 'items' in swagger['definitions'][reference]:
             if swagger['definitions'][reference]['type'] == 'array':
                 rc += '[\n'
-            subStructRef = getReference(swagger['definitions'][reference]['items'], reference, None)
-            rc += unwrapPostJson(subStructRef, layer + 1)
+            subStructRef = getReference(swagger, swagger['definitions'][reference]['items'], reference, None)
+            rc += unwrapPostJson(swagger, subStructRef, layer + 1)
             if swagger['definitions'][reference]['type'] == 'array':
                 rc += ']\n'
     else:
@@ -767,12 +766,12 @@ def unwrapPostJson(reference, layer):
 
             # logger.error(thisParam)
             if '$ref' in thisParam:
-                subStructRef = getReference(thisParam, reference, None)
+                subStructRef = getReference(swagger, thisParam, reference, None)
 
                 rc += '  ' * layer + "- **" + param + "**:\n"
                 ####
                 # logger.error("yy" * layer + param)
-                rc += unwrapPostJson(subStructRef, layer + 1)
+                rc += unwrapPostJson(swagger, subStructRef, layer + 1)
 
             elif thisParam['type'] == 'object':
                 rc += '  ' * layer + "- **" + param + "**: " + TrimThisParam(brTrim(thisParam['description']), layer) + "\n"
@@ -793,12 +792,14 @@ def unwrapPostJson(reference, layer):
                         trySubStruct = True
                 rc += ": " + TrimThisParam(brTrim(thisParam['description']), layer) + lf
                 if trySubStruct:
+                    subStructRef = None
                     try:
-                        subStructRef = getReference(thisParam['items'], reference, None)
-                    except:
+                        subStructRef = getReference(swagger, thisParam['items'], reference, None)
+                    except Exception as e:
                         logger.error("while analyzing: " + param)
                         logger.error(thisParam)
-                    rc += "\n" + unwrapPostJson(subStructRef, layer + 1)
+                        raise e
+                    rc += "\n" + unwrapPostJson(swagger, subStructRef, layer + 1)
             else:
                 if thisParam['type'] not in swaggerDataTypes:
                     logger.error("while analyzing: " + param)
@@ -817,7 +818,7 @@ def exectue_if_function(fun, *args, **kwargs):
         return fun
 
 
-def block_simple_repl(match, thisVerb):
+def block_simple_repl(match, swagger, thisVerb):
     m = match.group(0)
     #logger.info('xxxxx [%s]' % m)
     #log_multi(logging.ERROR, 'xxxxx [%s]' % thisVerb)
@@ -829,7 +830,7 @@ def block_simple_repl(match, thisVerb):
 
     rest_replacement = REST_REPLACEMENT_DICT.get(m, None)
     if rest_replacement:
-        return exectue_if_function(rest_replacement, thisVerb, None)
+        return exectue_if_function(rest_replacement, swagger, thisVerb, None)
     else:
         pos = m.find('{')
         if pos > 0:
@@ -840,7 +841,7 @@ def block_simple_repl(match, thisVerb):
             if new_rest_replacement == None:
                 raise Exception("failed to find regex while searching for: " + newMatch + " extracted from: " + m)
             else:
-                return exectue_if_function(new_rest_replacement, thisVerb, param)
+                return exectue_if_function(new_rest_replacement, swagger, thisVerb, param)
 
 
 
@@ -878,7 +879,7 @@ def readNextLine(line):
     #logger.info(dokuBlocks[thisBlockType][thisBlockName])
     return DocuSearchState.END
 
-def block_load_all(allComments, blocks):
+def block_load_all(allComments, swagger):
     state = DocuSearchState.START
     f = io.open(allComments, "r", encoding="utf-8", newline=None)
     count = 0
@@ -906,7 +907,7 @@ def block_load_all(allComments, blocks):
     for oneBlock in dokuBlocks[0]:
         try:
             #logger.info("processing %s" % oneBlock)
-            dokuBlocks[0][oneBlock] = block_replace_code(dokuBlocks[0][oneBlock], oneBlock)
+            dokuBlocks[0][oneBlock] = block_replace_code(swagger, dokuBlocks[0][oneBlock], oneBlock)
             #logger.info("6"*80)
             #logger.info(dokuBlocks[0][oneBlock])
             #logger.info("6"*80)
@@ -916,12 +917,12 @@ def block_load_all(allComments, blocks):
 
     for oneBlock in dokuBlocks[1]:
         try:
-            dokuBlocks[1][oneBlock] = block_replace_code(dokuBlocks[1][oneBlock], oneBlock)
+            dokuBlocks[1][oneBlock] = block_replace_code(swagger, dokuBlocks[1][oneBlock], oneBlock)
         except:
             logger.error("while parsing :\n"  + oneBlock)
             raise
-def block_replace_code(lines, blockName):
-    global swagger, thisVerb, route, verb
+def block_replace_code(swagger, lines, blockName):
+    global thisVerb, route, verb
     thisVerb = {}
     foundRest = False
     # first find the header:
@@ -1000,7 +1001,7 @@ def block_replace_code(lines, blockName):
     #logger.info("x" * 70)
     #logger.info(lines)
     try:
-        lines = SIMPLE_RX.sub(lambda match : block_simple_repl(match, thisVerb), lines)
+        lines = SIMPLE_RX.sub(lambda match : block_simple_repl(match, swagger, thisVerb), lines)
     except Exception as x:
         logger.error("While working on: [" + verb + " " + route + "]" + " while analysing " + blockName)
         logger.error("Did you forget to run utils/generateSwagger.sh?")
