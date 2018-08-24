@@ -12,8 +12,6 @@
 #    book                          - book name
 #    srcDir                        - arango source source
 #    outDir                        - out directory
-#    fileFilter (optional)         - filter re
-#    blockFilter (optional)        - block filter re?!?!a
 #
 #   needs allComments
 #
@@ -36,8 +34,6 @@ import traceback
 from enum import Enum, unique
 from pprint import pprint as PP
 from pprint import pformat as PF
-
-
 
 
 ### set up of logging #########################################################
@@ -68,17 +64,10 @@ def main():
         logger.info("usage: book arango-source output-directory swaggerJson [filter]")
         sys.exit(1)
 
+    #add filters
     conf = Config(sys.argv[1], sys.argv[2], sys.argv[3])
-    log_multi(logging.INFO, str(conf))
 
-    # #TODO add to conf if required
-    # if len(sys.argv) > 5 and sys.argv[5].strip() != '':
-    #     logger.info("filtering " + sys.argv[4])
-    #     fileFilter = re.compile(sys.argv[5])
-    # if len(sys.argv) > 6 and sys.argv[6].strip() != '':
-    #     logger.info("filtering Docublocks: " + sys.argv[5])
-    #     blockFilter = re.compile(sys.argv[6])
-    # ## end
+    log_multi(logging.INFO, str(conf))
 
     swagger=None
     with open(conf.swaggerJson, 'r', encoding='utf-8', newline=None) as f:
@@ -88,11 +77,9 @@ def main():
     blocks = block_reader.parse(conf.allComments, swagger)
     blocks.replace_code_in_blocks()
 
-    block_load_all(conf.allComments, swagger) # FIXME "allComments.txt"
-
     loadProgramOptionBlocks(blocks) # FIXME
 
-    logger.info("loaded {} / {} docu blocks".format(len(dokuBlocks[0]), len(dokuBlocks[1])))
+    logger.info("loaded {} / {} docu blocks".format(len(blocks.plain), len(blocks.inline)))
 
     # walk over .md files and replace blocks
     walk_on_files(conf, blocks)
@@ -115,6 +102,7 @@ class Config():
         self.book = book
         self.src = path_abs_norm(src)
         self.out =  path_abs_norm(out)
+        self.filter = None
 
         self.book_src = os.path.join(self.src ,"Documentation","Books", self.book)
         self.book_out = os.path.join(self.out , self.book)
@@ -171,11 +159,7 @@ class DocuBlocks():
 
     def block_replace_code(self, block):
         """clean up functions that needs to be run on each block"""
-        global thisVerb, route, verb ## why does it crash if these variables are not global
-                                     ## TODO look for function calls that use global STATE
-        #route = ''
-        #verb = ''
-        #thisVerb = {}
+        global route, verb ## why does it crash if these variables are not global
 
         thisVerb = {}
         foundRest = False
@@ -324,7 +308,7 @@ class DocuBlockReader():
             #logger.debug("start: " + str(block))
             try:
                 block.key = SEARCH_START.search(line).group(1).strip()
-                logger.error("adding {0.block_type.name} block with key {0.key}".format(block))
+                #logger.debug("adding {0.block_type.name} block with key {0.key}".format(block))
             except:
                 logger.error("failed to read startDocuBlock: [" + line + "]")
                 exit(1)
@@ -356,8 +340,6 @@ def walk_on_files(conf, blocks):
         files that are not skipped
     """
 
-    global fileFilter #do we want to modify this? why global
-
     count = 0
     skipped = 0
 
@@ -372,8 +354,8 @@ def walk_on_files(conf, blocks):
 
             if file.endswith(".md") and not file.endswith("SUMMARY.md"):
                 count += 1
-                if fileFilter != None:
-                    if fileFilter.match(in_full_path) == None:
+                if conf.filter:
+                    if conf.filter.match(in_full_path) == None:
                         skipped += 1
                         continue;
                 ## what are those 2 functions doing
@@ -427,7 +409,6 @@ def walk_find_start_code(in_full, out_full, conf, blocks):
 
 def walk_replace_text_inline(text, pathOfFile, searchText, blocks):
   ''' inserts docublocks into md '''
-  global dokuBlocks
   if not searchText in blocks.inline:
       logger.error("Failed to locate the inline docublock '" + searchText + "' for replacing it into the file '" + pathOfFile + "'\n have: ")
       logger.error("%s" %(blocks.inline.keys()))
@@ -453,12 +434,9 @@ def walk_replace_text_inline(text, pathOfFile, searchText, blocks):
 def walk_replace_text(text, pathOfFile, searchText, blocks):
   ''' inserts docublocks into md '''
   #logger.info('7'*80)
-  global dokuBlocks
   if not searchText in blocks.plain:
       logger.error("Failed to locate the docublock '" + searchText + "' for replacing it into the file '" +pathOfFile + "'\n have:")
       logger.error(blocks.plain.keys())
-      logger.error('*' * 80)
-      logger.error(dokuBlocks[0].keys())
       logger.error('*' * 80)
       logger.error(text)
       logger.error("Failed to locate the docublock '" + searchText + "' for replacing it into the file '" +pathOfFile + "' For details scroll up!")
@@ -522,11 +500,6 @@ def walk_handle_images(image_title, image_link, conf, in_full, out_full):
 #######################################################################################################
 #######################################################################################################
 #######################################################################################################
-
-fileFilter = None
-blockFilter = None
-dokuBlocks = [{},{}]
-thisVerb = {}
 
 route = ''
 verb = '' #    #TODO add path to examples'
@@ -854,204 +827,10 @@ def block_simple_repl(match, swagger, thisVerb):
                 return exectue_if_function(new_rest_replacement, swagger, thisVerb, param)
 
 
-
-#################################################################################
-####### to be deleted ###########################################################
-#################################################################################
-@unique
-class DocuSearchState(Enum):
-    START = 0
-    END = 1
-
-
-def readStartLine(line):
-    global thisBlockName, thisBlockType, thisBlock, dokuBlocks
-    if ("@startDocuBlock" in line):
-        if "@startDocuBlockInline" in line:
-            thisBlockType = 1
-        else:
-            thisBlockType = 0
-        try:
-            thisBlockName = SEARCH_START.search(line).group(1).strip()
-            logger.info('adding block with key {0}'.format(thisBlockName))
-        except:
-            logger.error("failed to read startDocuBlock: [" + line + "]")
-            exit(1)
-        dokuBlocks[thisBlockType][thisBlockName] = ""
-        return DocuSearchState.END
-    return DocuSearchState.START
-
-def readNextLine(line):
-    global thisBlockName, thisBlockType, thisBlock, dokuBlocks
-    if '@endDocuBlock' in line:
-        return DocuSearchState.START
-    dokuBlocks[thisBlockType][thisBlockName] += line
-    #logger.info("reading " + thisBlockName)
-    #logger.info(dokuBlocks[thisBlockType][thisBlockName])
-    return DocuSearchState.END
-
-def block_load_all(allComments, swagger):
-    state = DocuSearchState.START
-    f = io.open(allComments, "r", encoding="utf-8", newline=None)
-    count = 0
-    for line in f.readlines():
-        if state is DocuSearchState.START:
-            state = readStartLine(line)
-        elif state is DocuSearchState.END:
-            state = readNextLine(line)
-
-        #if state == DocuSearchState.START:
-        #    logger.info(dokuBlocks[thisBlockType].keys())
-
-    if blockFilter != None:
-        remainBlocks= {}
-        logger.info("filtering blocks")
-        for oneBlock in dokuBlocks[0]:
-            if blockFilter.match(oneBlock) != None:
-                logger.info("found block %s" % (oneBlock))
-                #logger.info(dokuBlocks[0][oneBlock])
-                remainBlocks[oneBlock] = dokuBlocks[0][oneBlock]
-        dokuBlocks[0] = remainBlocks
-
-
-    #TODO blocks.add(block)
-    for oneBlock in dokuBlocks[0]:
-        try:
-            #logger.info("processing %s" % oneBlock)
-            dokuBlocks[0][oneBlock] = block_replace_code(swagger, dokuBlocks[0][oneBlock], oneBlock)
-            #logger.info("6"*80)
-            #logger.info(dokuBlocks[0][oneBlock])
-            #logger.info("6"*80)
-        except:
-            logger.error("while parsing :\n"  + oneBlock)
-            raise
-
-    for oneBlock in dokuBlocks[1]:
-        try:
-            dokuBlocks[1][oneBlock] = block_replace_code(swagger, dokuBlocks[1][oneBlock], oneBlock)
-        except:
-            logger.error("while parsing :\n"  + oneBlock)
-            raise
-def block_replace_code(swagger, lines, blockName):
-    global thisVerb, route, verb
-    thisVerb = {}
-    foundRest = False
-    # first find the header:
-    headerMatch = match_RESTHEADER.search(lines)
-    if headerMatch and headerMatch.lastindex > 0:
-        foundRest = True
-        try:
-            (verb,route) =  headerMatch.group(1).split(',')[0].split(' ')
-            verb = verb.lower()
-        except:
-            logger.error("failed to parse header from: " + headerMatch.group(1) + " while analysing " + blockName)
-            raise
-
-        try:
-            thisVerb = swagger['paths'][route][verb]
-        except:
-            logger.error("failed to locate route in the swagger json: [" + verb + " " + route + "]" + " while analysing " + blockName)
-            logger.error(lines)
-            logger.error("Did you forget to run utils/generateSwagger.sh?")
-            raise
-
-    for (oneRX, repl) in RX:
-        lines = oneRX.sub(repl, lines)
-
-
-    if foundRest:
-        rcCode = None
-        foundRestBodyParam = False
-        foundRestReplyBodyParam = False
-        lineR = lines.split('\n')
-        #logger.info(lineR)
-        l = len(lineR)
-        r = 0
-        while (r < l):
-            # remove all but the first RESTBODYPARAM:
-            if have_RESTBODYPARAM.search(lineR[r]):
-                if foundRestBodyParam:
-                    lineR[r] = ''
-                else:
-                    lineR[r] = '@RESTDESCRIPTION'
-                foundRestBodyParam = True
-                r+=1
-                while ((len(lineR[r]) == 0) or
-                       ((lineR[r][0] != '@') or
-                       have_RESTBODYPARAM.search(lineR[r]))):
-                    # logger.info("xxx - %d %s" %(len(lineR[r]), lineR[r]))
-                    lineR[r] = ''
-                    r+=1
-
-            m = match_RESTRETURNCODE.search(lineR[r])
-            if m and m.lastindex > 0:
-                rcCode =  m.group(1)
-
-            # remove all but the first RESTREPLYBODY:
-            if have_RESTREPLYBODY.search(lineR[r]):
-                if foundRestReplyBodyParam != rcCode:
-                    lineR[r] = '@RESTREPLYBODY{' + rcCode + '}\n'
-                else:
-                    lineR[r] = ''
-                foundRestReplyBodyParam = rcCode
-                r+=1
-                while (len(lineR[r]) > 1):
-                    lineR[r] = ''
-                    r+=1
-                m = match_RESTRETURNCODE.search(lineR[r])
-                if m and m.lastindex > 0:
-                    rcCode =  m.group(1)
-
-            # remove all RESTSTRUCTS - they're referenced anyways:
-            if have_RESTSTRUCT.search(lineR[r]):
-                while (len(lineR[r]) > 1):
-                    lineR[r] = ''
-                    r+=1
-            r+=1
-        lines = "\n".join(lineR)
-    #logger.info("x" * 70)
-    #logger.info(lines)
-    try:
-        lines = SIMPLE_RX.sub(lambda match : block_simple_repl(match, swagger, thisVerb), lines)
-    except Exception as x:
-        logger.error("While working on: [" + verb + " " + route + "]" + " while analysing " + blockName)
-        logger.error("Did you forget to run utils/generateSwagger.sh?")
-        raise x
-
-
-    for (oneRX, repl) in RX2:
-        lines = oneRX.sub(repl, lines)
-
-    lines = remove_MULTICR.sub("\n\n", lines)
-    #logger.info(lines)
-    return lines
-
-# NOT USED
-#def replaceCodeIndex(lines):
-#  lines = re.sub(r"<!--(\s*.+\s)-->","", lines)
-#  #HTTP API changing code
-#  #lines = re.sub(r"@brief(.+)",r"\g<1>", lines)
-#  #lines = re.sub(r"@RESTHEADER{([\s\w\/\_{}-]*),([\s\w-]*)}", r"###\g<2>\n`\g<1>`", lines)
-#  return lines
-#################################################################################
-####### to be deleted - end #####################################################
-#################################################################################
-
-
-
-
-################################################################################
-# Read the docublocks into memory
-################################################################################
-
-
-
 def loadProgramOptionBlocks(blocks):
     from itertools import groupby, chain
     from cgi import escape
     from glob import glob
-
-    global dokuBlocks
 
     # Allows to test if a group will be empty with hidden options ignored
     def peekIterator(iterable, condition):
@@ -1151,7 +930,6 @@ def loadProgramOptionBlocks(blocks):
         block.key = 'program_options_' + program.lower()
         block.content = '\n'.join(output) + '\n\n'
         blocks.add(block)
-        dokuBlocks[0]['program_options_' + program.lower()] = '\n'.join(output) + '\n\n'
 
 #################################################################################
 
