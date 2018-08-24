@@ -31,10 +31,14 @@ import json
 import io
 import shutil
 import types
+import traceback
 
 from enum import Enum, unique
 from pprint import pprint as PP
 from pprint import pformat as PF
+
+
+
 
 ### set up of logging #########################################################
 import logging
@@ -52,6 +56,9 @@ logger.addHandler(ch)
 
 def log_multi(level, msg, *args, **kwargs):
     [ logger.log(level, x, *args, **kwargs) for x in msg.split('\n') ]
+
+def log_exception(level):
+    log_multi(level, traceback.format_exc(file=sys.stdout))
 
 ### set up of logging - END ####################################################
 
@@ -83,7 +90,7 @@ def main():
 
     block_load_all(conf.allComments, swagger) # FIXME "allComments.txt"
 
-    loadProgramOptionBlocks() # FIXME
+    loadProgramOptionBlocks(blocks) # FIXME
 
     logger.info("loaded {} / {} docu blocks".format(len(dokuBlocks[0]), len(dokuBlocks[1])))
 
@@ -138,27 +145,27 @@ class DocuBlocks():
     """
 
     def __init__(self, swagger):
-        self.plain_blocks = {}
-        self.inline_blocks = {}
+        self.plain = {}   #former 0
+        self.inline = {}  #former 1
         self.swagger = swagger
 
     def add(self, block):
         """ adds a block found by the parser"""
         #self.block_replace_code(block)
         if block.block_type is BlockType.PLAIN:
-            self.plain_blocks[block.key]=block
+            self.plain[block.key]=block
         elif block.block_type is BlockType.INLINE:
-            self.inline_blocks[block.key]=block
+            self.inline[block.key]=block
         else:
             print (repr(block))
             raise ValueError("invalid block type")
 
     def replace_code_in_blocks(self):
         """ should happen later during add block"""
-        PF(self.plain_blocks)
-        for _, block in self.plain_blocks.items():
+        PF(self.plain)
+        for _, block in self.plain.items():
             self.block_replace_code(block)
-        for _, block in self.inline_blocks.items():
+        for _, block in self.inline.items():
             self.block_replace_code(block)
 
 
@@ -310,13 +317,14 @@ class DocuBlockReader():
     def handle_line_start(self, line):
         if ("@startDocuBlock" in line):
             if "@startDocuBlockInline" in line:
-                block = DocuBLock(BlockType.PLAIN)
-            else:
                 block = DocuBLock(BlockType.INLINE)
+            else:
+                block = DocuBLock(BlockType.PLAIN)
 
             #logger.debug("start: " + str(block))
             try:
                 block.key = SEARCH_START.search(line).group(1).strip()
+                logger.error("adding {0.block_type.name} block with key {0.key}".format(block))
             except:
                 logger.error("failed to read startDocuBlock: [" + line + "]")
                 exit(1)
@@ -392,7 +400,7 @@ def walk_find_start_code(in_full, out_full, conf, blocks):
     matches = re.findall(r'@startDocuBlock\s*(\w+)', textFile)
     for match in matches:
         #logger.debug(in_full + " " + match)
-        textFile = walk_replace_text(textFile, in_full, match)
+        textFile = walk_replace_text(textFile, in_full, match, blocks)
 
     try:
         textFile = walk_replace_code_full_file(textFile)
@@ -420,9 +428,9 @@ def walk_find_start_code(in_full, out_full, conf, blocks):
 def walk_replace_text_inline(text, pathOfFile, searchText, blocks):
   ''' inserts docublocks into md '''
   global dokuBlocks
-  if not searchText in dokuBlocks[1]:
+  if not searchText in blocks.inline:
       logger.error("Failed to locate the inline docublock '" + searchText + "' for replacing it into the file '" + pathOfFile + "'\n have: ")
-      logger.error("%s" %(dokuBlocks[1].keys()))
+      logger.error("%s" %(blocks.inline.keys()))
       logger.error('*' * 80)
       logger.error(text)
       logger.error("Failed to locate the inline docublock '" + searchText + "' for replacing it into the file '" + pathOfFile + "' For details scroll up!")
@@ -440,23 +448,25 @@ def walk_replace_text_inline(text, pathOfFile, searchText, blocks):
       logger.error("failed to snap with '" + rePattern + "' on end docublock for " + searchText + " in " + pathOfFile + " our match is:\n" + subtext)
       exit(1)
 
-  return re.sub(rePattern, dokuBlocks[1][searchText], text)
+  return re.sub(rePattern, blocks.inline[searchText].content, text)
 
-def walk_replace_text(text, pathOfFile, searchText):
+def walk_replace_text(text, pathOfFile, searchText, blocks):
   ''' inserts docublocks into md '''
   #logger.info('7'*80)
   global dokuBlocks
-  if not searchText in dokuBlocks[0]:
+  if not searchText in blocks.plain:
       logger.error("Failed to locate the docublock '" + searchText + "' for replacing it into the file '" +pathOfFile + "'\n have:")
+      logger.error(blocks.plain.keys())
+      logger.error('*' * 80)
       logger.error(dokuBlocks[0].keys())
       logger.error('*' * 80)
       logger.error(text)
       logger.error("Failed to locate the docublock '" + searchText + "' for replacing it into the file '" +pathOfFile + "' For details scroll up!")
       exit(1)
   #logger.info('7'*80)
-  #logger.info(dokuBlocks[0][searchText])
+  #logger.info(blocks.plain[searchText])
   #logger.info('7'*80)
-  rc= re.sub("@startDocuBlock\s+"+ searchText + "(?:\s+|$)", dokuBlocks[0][searchText], text)
+  rc= re.sub("@startDocuBlock\s+"+ searchText + "(?:\s+|$)", blocks.plain[searchText].content, text)
   return rc
 
 #OK
@@ -863,6 +873,7 @@ def readStartLine(line):
             thisBlockType = 0
         try:
             thisBlockName = SEARCH_START.search(line).group(1).strip()
+            logger.info('adding block with key {0}'.format(thisBlockName))
         except:
             logger.error("failed to read startDocuBlock: [" + line + "]")
             exit(1)
@@ -1035,7 +1046,7 @@ def block_replace_code(swagger, lines, blockName):
 
 
 
-def loadProgramOptionBlocks():
+def loadProgramOptionBlocks(blocks):
     from itertools import groupby, chain
     from cgi import escape
     from glob import glob
@@ -1136,6 +1147,10 @@ def loadProgramOptionBlocks():
             output.append('</tbody></table>')
 
         # Join output and register as docublock (like 'program_options_arangosh')
+        block = DocuBLock(BlockType.PLAIN)
+        block.key = 'program_options_' + program.lower()
+        block.content = '\n'.join(output) + '\n\n'
+        blocks.add(block)
         dokuBlocks[0]['program_options_' + program.lower()] = '\n'.join(output) + '\n\n'
 
 #################################################################################
