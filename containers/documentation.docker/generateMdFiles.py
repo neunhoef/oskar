@@ -605,26 +605,13 @@ SIMPL_REPL_VALIDATE_DICT = {
 ###### validataion dict - END ########################################################
 
 ###### simple dict  ########################################################
-#def getRestBodyParam():
-#    rc = "\n**Body Parameters**\n"
-#    addText = ''
-#    for nParam in range(0, len(thisVerb['parameters'])):
-#        if thisVerb['parameters'][nParam]['in'] == 'body':
-#            descOffset = thisVerb['parameters'][nParam]['x-description-offset']
-#            addText = ''
-#            if 'additionalProperties' not in thisVerb['parameters'][nParam]['schema']:
-#                addText = unwrapPostJson(
-#                    getReference(thisVerb['parameters'][nParam]['schema'], route, verb),0)
-#    rc += addText
-#    return rc
-
 def getRestDescription(thisVerb, param):
-    #logger.error("RESTDESCRIPTION")
+    #logger.debug("RESTDESCRIPTION")
     if thisVerb['description']:
         #logger.error(thisVerb['description'])
         return RX3[0].sub(RX3[1], thisVerb['description'])
     else:
-        #logger.error("ELSE")
+        #logger.debug("rest description empty")
         return ""
 
 def getRestReplyBodyParam(thisVerb, param):
@@ -649,7 +636,7 @@ REST_REPLACEMENT_DICT = {
     "@RESTPARAMS"           : "",
     "@RESTURLPARAMS"        : "\n**Path Parameters**\n",
     "@RESTQUERYPARAMS"      : "\n**Query Parameters**\n",
-    "@RESTBODYPARAM"        : "", #getRestBodyParam,
+    "@RESTBODYPARAM"        : "",
     "@RESTREPLYBODY"        : getRestReplyBodyParam,
     "@RESTQUERYPARAM"       : "@RESTPARAM",
     "@RESTURLPARAM"         : "@RESTPARAM",
