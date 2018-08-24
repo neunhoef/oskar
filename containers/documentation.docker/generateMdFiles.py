@@ -50,11 +50,11 @@ formatter = logging.Formatter('%(name)s %(lineno)4d %(levelname)6s-> %(message)s
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
-def log_multi(level, msg, *args, **kwargs):
+def logger_multi(level, msg, *args, **kwargs):
     [ logger.log(level, x, *args, **kwargs) for x in msg.split('\n') ]
 
-def log_exception(level):
-    log_multi(level, traceback.format_exc(file=sys.stdout))
+def logger_exc((level):
+    logger_multi(level, traceback.format_exc(file=sys.stdout))
 
 ### set up of logging - END ####################################################
 
@@ -67,7 +67,7 @@ def main():
     #add filters
     conf = Config(sys.argv[1], sys.argv[2], sys.argv[3])
 
-    log_multi(logging.INFO, str(conf))
+    logger_multi(logging.INFO, str(conf))
 
     swagger=None
     with open(conf.swaggerJson, 'r', encoding='utf-8', newline=None) as f:
@@ -97,6 +97,17 @@ def path_abs_norm(path):
     """ returns absolute normalized path"""
     return os.path.normpath(os.path.abspath(path))
 
+def get_from_dict(nested, default, *access_path):
+    current = nested
+    for access in access_path:
+        current=current.get(access, None)
+        if not current:
+            return default
+    return current
+
+### helper - END ###############################################################
+
+### config #####################################################################
 class Config():
     def __init__(self,book, src, out):
         self.book = book
@@ -118,7 +129,7 @@ book_src   : {book_src}
 allComments: {allComments}
 swaggerJson: {swaggerJson}
 """.format(**(self.__dict__))
-### helper - END ###############################################################
+### config - END ###############################################################
 
 ## reading of DocuBlocks ######################################################
 @unique
@@ -159,9 +170,10 @@ class DocuBlocks():
 
     def block_replace_code(self, block):
         """clean up functions that needs to be run on each block"""
-        global route, verb ## why does it crash if these variables are not global
 
-        thisVerb = {}
+        thisVerb = None
+        verb=None
+        route=None
         foundRest = False
         # first find the header:
         headerMatch = match_RESTHEADER.search(block.content)
@@ -238,9 +250,9 @@ class DocuBlocks():
             block.content = "\n".join(lineR)
         #logger.info("x" * 70)
         #logger.info(block.content)
-        #log_multi(logging.ERROR, PF({ "thisVerb" : thisVerb, "verb" : verb, "route" : route}))
+        #logger_multi(logging.ERROR, PF({ "thisVerb" : thisVerb, "verb" : verb, "route" : route}))
         try:
-            block.content = SIMPLE_RX.sub(lambda match : block_simple_repl(match, self.swagger, thisVerb), block.content)
+            block.content = SIMPLE_RX.sub(lambda match : block_simple_repl(match, self.swagger, thisVerb, verb, route), block.content)
         except Exception as e:
             logger.error("While working on: [" + verb + " " + route + "]" + " while analysing " + block.key)
             logger.error(str(e))
@@ -487,23 +499,6 @@ def walk_handle_images(image_title, image_link, conf, in_full, out_full):
 
 ## replace blocks in .md-files - END ##########################################
 
-
-
-
-
-
-
-
-
-
-#######################################################################################################
-#######################################################################################################
-#######################################################################################################
-#######################################################################################################
-
-route = ''
-verb = '' #    #TODO add path to examples'
-
 defLen = len('#/definitions/')
 
 removeTrailingBR = re.compile("<br>$")
@@ -511,7 +506,18 @@ removeLeadingBR = re.compile("^<br>")
 removeDoubleLF = re.compile("\n\n")
 removeLF = re.compile("\n")
 
+match_RESTHEADER = re.compile(r"@RESTHEADER\{(.*)\}")
+match_RESTRETURNCODE = re.compile(r"@RESTRETURNCODE\{(.*)\}")
+have_RESTBODYPARAM = re.compile(r"@RESTBODYPARAM|@RESTDESCRIPTION")
+have_RESTREPLYBODY = re.compile(r"@RESTREPLYBODY")
+have_RESTSTRUCT = re.compile(r"@RESTSTRUCT")
+remove_MULTICR = re.compile(r'\n\n\n*')
 
+RXUnEscapeMDInLinks = re.compile("\\\\_")
+
+
+
+SEARCH_START = re.compile(r" *start[0-9a-zA-Z]*\s\s*([0-9a-zA-Z_ ]*)\s*$")
 
 
 
@@ -537,6 +543,46 @@ r'''
 @RESTREPLYBODY\{(.*)\}              # -> call body function
 ''', re.X)
 
+RX = [
+    ### match -> replace
+    # comments -> nothing
+    (re.compile(r"<!--(\s*.+\s)-->"), ""),
+
+    # <br > newline -> newline
+    (re.compile(r"<br />\n"), "\n"),
+
+    # multi line bullet lists should become one
+    (re.compile(r"\n\n-"), "\n-"),
+
+    #HTTP API changing code
+    # unwrap multi-line-briefs: (up to 3 lines supported by now ;-)
+    (re.compile(r"@brief(.+)\n(.+)\n(.+)\n\n"), r"@brief\g<1> \g<2> \g<3>\n\n"),
+    (re.compile(r"@brief(.+)\n(.+)\n\n"), r"@brief\g<1> \g<2>\n\n"),
+
+    # if there is an @brief above a RESTHEADER, swap the sequence
+    (re.compile(r"@brief(.+\n*)\n@RESTHEADER{([#\s\w\/\_{}-]*),([\s\w-]*)}"), r"###\g<3>\n\g<1>\n\n`\g<2>`"),
+
+    # else simply put it into the text
+    (re.compile(r"@brief(.+)"), r"\g<1>"),
+
+    # Format error codes from errors.dat
+    (re.compile(r"#####+\n"), r""),
+    (re.compile(r"## (.+\n\n)## (.+\n)"), r"## \g<1>\g<2>"),
+    #  (re.compile(r"- (\w+):\s*@LIT{(.+)}"), r"\n*\g<1>* - **\g<2>**:"),
+    (re.compile(r"(.+),(\d+),\"(.+)\",\"(.+)\""), r'\n* <a name="\g<1>"></a>**\g<2>** - **\g<1>**<br>\n  \g<4>'),
+
+    (re.compile(r"TODOSWAGGER.*"),r"")
+    ]
+
+
+RX2 = [
+    # parameters - extract their type and whether mandatory or not.
+    (re.compile(r"@RESTPARAM{(\s*[\w\-]*)\s*,\s*([\w\_\|-]*)\s*,\s*(required|optional)}"), r"* *\g<1>* (\g<3>):"),
+    (re.compile(r"@RESTALLBODYPARAM{(\s*[\w\-]*)\s*,\s*([\w\_\|-]*)\s*,\s*(required|optional)}"), r"\n**Request Body** (\g<3>)\n\n"),
+    (re.compile(r"@RESTRETURNCODE{(.*)}"), r"* *\g<1>*:")
+]
+
+RX3 = (re.compile(r'\*\*Example:\*\*((?:.|\n)*?)</code></pre>'), r"")
 
 
 ###### validataion dict ########################################################
@@ -588,7 +634,8 @@ SIMPL_REPL_VALIDATE_DICT = {
 ###### validataion dict - END ########################################################
 
 ###### simple dict  ########################################################
-def getRestDescription(swagger, thisVerb, param):
+
+def getRestDescription(swagger, thisVerb, verb, route, param):
     #logger.debug("RESTDESCRIPTION")
     if thisVerb['description']:
         #logger.error(thisVerb['description'])
@@ -597,15 +644,22 @@ def getRestDescription(swagger, thisVerb, param):
         #logger.debug("rest description empty")
         return ""
 
-def getRestReplyBodyParam(swagger, thisVerb, param):
+def getRestReplyBodyParam(swagger, thisVerb, verb, route, param):
     rc = "\n**Response Body**\n"
 
-    try:
-        rc += unwrapPostJson(swagger, getReference(swagger, thisVerb['responses'][param]['schema'], route, verb), 0)
-    except Exception:
+    schema_name = get_from_dict(thisVerb, None, 'responses', param, 'schema')
+    if not schema_name:
         logger.error("failed to search " + param + " in: ")
         logger.error(json.dumps(thisVerb, indent=4, separators=(', ',': '), sort_keys=True))
-        raise
+        sys.exit(1)
+
+    reference = getReference(swagger, schema_name, route, verb)
+    rc += unwrapPostJson(swagger, reference , 0)
+
+    logger.info(rc)
+    logger.info("name: " + str(schema_name))
+    logger.info("route: " + str(route))
+    logger.info("verb: " +str(verb))
     return rc + "\n"
 
 REST_REPLACEMENT_DICT = {
@@ -630,55 +684,6 @@ REST_REPLACEMENT_DICT = {
 }
 ###### simple dict - END ########################################################
 
-RX = [
-    ### match -> replace
-    # comments -> nothing
-    (re.compile(r"<!--(\s*.+\s)-->"), ""),
-
-    # <br > newline -> newline
-    (re.compile(r"<br />\n"), "\n"),
-
-    # multi line bullet lists should become one
-    (re.compile(r"\n\n-"), "\n-"),
-
-    #HTTP API changing code
-    # unwrap multi-line-briefs: (up to 3 lines supported by now ;-)
-    (re.compile(r"@brief(.+)\n(.+)\n(.+)\n\n"), r"@brief\g<1> \g<2> \g<3>\n\n"),
-    (re.compile(r"@brief(.+)\n(.+)\n\n"), r"@brief\g<1> \g<2>\n\n"),
-
-    # if there is an @brief above a RESTHEADER, swap the sequence
-    (re.compile(r"@brief(.+\n*)\n@RESTHEADER{([#\s\w\/\_{}-]*),([\s\w-]*)}"), r"###\g<3>\n\g<1>\n\n`\g<2>`"),
-
-    # else simply put it into the text
-    (re.compile(r"@brief(.+)"), r"\g<1>"),
-
-    # Format error codes from errors.dat
-    (re.compile(r"#####+\n"), r""),
-    (re.compile(r"## (.+\n\n)## (.+\n)"), r"## \g<1>\g<2>"),
-    #  (re.compile(r"- (\w+):\s*@LIT{(.+)}"), r"\n*\g<1>* - **\g<2>**:"),
-    (re.compile(r"(.+),(\d+),\"(.+)\",\"(.+)\""), r'\n* <a name="\g<1>"></a>**\g<2>** - **\g<1>**<br>\n  \g<4>'),
-
-    (re.compile(r"TODOSWAGGER.*"),r"")
-    ]
-
-
-RX2 = [
-    # parameters - extract their type and whether mandatory or not.
-    (re.compile(r"@RESTPARAM{(\s*[\w\-]*)\s*,\s*([\w\_\|-]*)\s*,\s*(required|optional)}"), r"* *\g<1>* (\g<3>):"),
-    (re.compile(r"@RESTALLBODYPARAM{(\s*[\w\-]*)\s*,\s*([\w\_\|-]*)\s*,\s*(required|optional)}"), r"\n**Request Body** (\g<3>)\n\n"),
-    (re.compile(r"@RESTRETURNCODE{(.*)}"), r"* *\g<1>*:")
-]
-
-RX3 = (re.compile(r'\*\*Example:\*\*((?:.|\n)*?)</code></pre>'), r"")
-
-match_RESTHEADER = re.compile(r"@RESTHEADER\{(.*)\}")
-match_RESTRETURNCODE = re.compile(r"@RESTRETURNCODE\{(.*)\}")
-have_RESTBODYPARAM = re.compile(r"@RESTBODYPARAM|@RESTDESCRIPTION")
-have_RESTREPLYBODY = re.compile(r"@RESTREPLYBODY")
-have_RESTSTRUCT = re.compile(r"@RESTSTRUCT")
-remove_MULTICR = re.compile(r'\n\n\n*')
-
-RXUnEscapeMDInLinks = re.compile("\\\\_")
 def setAnchor(param):
     unescapedParam = RXUnEscapeMDInLinks.sub("_", param)
     return "<a name=\"" + unescapedParam + "\">#</a>"
@@ -686,12 +691,7 @@ def setAnchor(param):
 RXFinal = [
     (re.compile(r"@anchor (.*)"), setAnchor),
 ]
-thisBlock = ""
-thisBlockName = ""
-thisBlockType = 0
 
-
-SEARCH_START = re.compile(r" *start[0-9a-zA-Z]*\s\s*([0-9a-zA-Z_ ]*)\s*$")
 
 
 
@@ -705,6 +705,7 @@ def brTrim(text):
 
 
 def getReference(swagger, name, source, verb):
+
     try:
         ref = name['$ref'][defLen:]
     except Exception as x:
@@ -730,7 +731,6 @@ def TrimThisParam(text, indent):
 
 def unwrapPostJson(swagger, reference, layer):
     swaggerDataTypes = ["number", "integer", "string", "boolean", "array", "object"]
-    ####
     # logger.error("xx" * layer + reference)
     rc = ''
     if not 'properties' in swagger['definitions'][reference]:
@@ -791,20 +791,17 @@ def unwrapPostJson(swagger, reference, layer):
                 rc += '  ' * layer + "- **" + param + "**: " + TrimThisParam(thisParam['description'], layer) + '\n'
     return rc
 
-
-
 def exectue_if_function(fun, *args, **kwargs):
     if type(fun) == types.FunctionType:
-        logging.info("execute function")
         return fun(*args, **kwargs)
     else:
         return fun
 
 
-def block_simple_repl(match, swagger, thisVerb):
+def block_simple_repl(match, swagger, thisVerb, verb, route):
     m = match.group(0)
     #logger.info('xxxxx [%s]' % m)
-    #log_multi(logging.ERROR, 'xxxxx [%s]' % thisVerb)
+    #logger_multi(logging.ERROR, 'xxxxx [%s]' % thisVerb)
 
     validation_function = SIMPL_REPL_VALIDATE_DICT.get(m, None)
     if validation_function:
@@ -813,7 +810,7 @@ def block_simple_repl(match, swagger, thisVerb):
 
     rest_replacement = REST_REPLACEMENT_DICT.get(m, None)
     if rest_replacement:
-        return exectue_if_function(rest_replacement, swagger, thisVerb, None)
+        return exectue_if_function(rest_replacement, swagger, thisVerb, verb, route, None)
     else:
         pos = m.find('{')
         if pos > 0:
@@ -824,7 +821,7 @@ def block_simple_repl(match, swagger, thisVerb):
             if new_rest_replacement == None:
                 raise Exception("failed to find regex while searching for: " + newMatch + " extracted from: " + m)
             else:
-                return exectue_if_function(new_rest_replacement, swagger, thisVerb, param)
+                return exectue_if_function(new_rest_replacement, swagger, thisVerb, verb, route, param)
 
 
 def loadProgramOptionBlocks(blocks):
