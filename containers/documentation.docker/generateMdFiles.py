@@ -88,7 +88,7 @@ def main():
     logger.info("loaded {} / {} docu blocks".format(len(dokuBlocks[0]), len(dokuBlocks[1])))
 
     # walk over .md files and replace blocks
-    walk_on_files(conf)
+    walk_on_files(conf, blocks)
 
     return 0
 ### main - END #################################################################
@@ -343,7 +343,7 @@ class DocuBlockReader():
 ## replace blocks in .md-files ################################################
 
 #OK
-def walk_on_files(conf):
+def walk_on_files(conf, blocks):
     """ walk over source tree and skip files and calculate output path for
         files that are not skipped
     """
@@ -370,11 +370,11 @@ def walk_on_files(conf):
                         continue;
                 ## what are those 2 functions doing
                 mkdir_recursive(os.path.dirname(out_full_path)) #create dir for output file
-                walk_find_start_code(in_full_path, out_full_path, conf)
+                walk_find_start_code(in_full_path, out_full_path, conf, blocks)
     logger.info( "Processed %d files, skipped %d" % (count, skipped))
 
 #OK - TODO - rename to something useful
-def walk_find_start_code(in_full, out_full, conf):
+def walk_find_start_code(in_full, out_full, conf, blocks):
     """ replace dcoublocks and images
     """
     baseInPath = conf.book_src
@@ -387,7 +387,7 @@ def walk_find_start_code(in_full, out_full, conf):
     matches = re.findall(r'@startDocuBlockInline\s*(\w+)', textFile)
     for match in matches:
         #logger.debug(in_full + " " + match)
-        textFile = walk_replace_text_inline(textFile, in_full, match)
+        textFile = walk_replace_text_inline(textFile, in_full, match, blocks)
 
     matches = re.findall(r'@startDocuBlock\s*(\w+)', textFile)
     for match in matches:
@@ -417,7 +417,7 @@ def walk_find_start_code(in_full, out_full, conf):
 
     return 0
 
-def walk_replace_text_inline(text, pathOfFile, searchText):
+def walk_replace_text_inline(text, pathOfFile, searchText, blocks):
   ''' inserts docublocks into md '''
   global dokuBlocks
   if not searchText in dokuBlocks[1]:
