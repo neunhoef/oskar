@@ -289,12 +289,12 @@ build_books() {
         local book_out="$ARANGO_BUILD_DOC_OUT/${book}"
 
         if $flushout; then
-            rm -fr "$book_out"
+            rm -fr "$book_out" || ferr "could not delete book output dir $book_out"
             mkdir -p "$book_out"
         fi
 
         if $flushpp; then
-            rm -fr "$book_pre"
+            rm -fr "$book_pre" || ferr "could not delete book preprocessing dir $book_pre"
             mkdir -p "$book_pre"
         fi
 
@@ -394,7 +394,7 @@ main(){
         for book_name in $ALLBOOKS; do
             for format in $OTHER_MIME; do
                 local out="${ARANGO_BUILD_DOC}/ArangoDB_${book_name}_${newVersionNumber}.${format}"
-                run_cmd run_gitbook "fake cache" "${GITBOOK_ARGS[@]}" "${format}" "$ARANGO_BUILD_DOC_PRE/$book_name" "${out}" || ferr "fail"
+                run_gitbook "fake cache" "${GITBOOK_ARGS[@]}" "${format}" "$ARANGO_BUILD_DOC_PRE/$book_name" "${out}" || ferr "fail"
             done
         done || ferr "failed to build all formats"
     fi
