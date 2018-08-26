@@ -36,9 +36,15 @@ from pprint import pprint as PP
 from pprint import pformat as PF
 
 
+###############################################################################
+# re.sub(repl,lines)
+#
+# repl - In this code repl is often a function that takes a match.
+#        the function calcualtes from that match a fitting replacement
+#
 ### set up of logging #########################################################
-import logging
 
+import logging
 logger = logging.getLogger("gmdf")
 logger.setLevel(logging.DEBUG)
 
@@ -111,6 +117,18 @@ def exectue_if_function(fun, *args, **kwargs):
     else:
         return fun
 
+def apply_dict_re_replacement(dictionary, text):
+    """
+        applies a dictionary containing regexes and fuctions or replacement text
+
+        Within the text the regular expressions are used to match
+        substrings to be replaced. The are replaced by the provided
+        replacement string/text or by the result of the function
+        that is called with the re's match
+    """
+    for (regex, text_or_function) in dictionary:
+        text = regex.sub(text_or_function, text)
+    return text
 ### helper - END ###############################################################
 
 ### config #####################################################################
@@ -200,8 +218,8 @@ class DocuBlocks():
                 logger.error("Did you forget to run utils/generateSwagger.sh?")
                 raise
 
-        for (oneRX, repl) in RX:
-            block.content = oneRX.sub(repl, block.content)
+        for (re, replacment) in g_dict_re_replacement_blocks:
+            block.content = re.sub(replacment, block.content)
 
 
         if foundRest:
@@ -214,7 +232,7 @@ class DocuBlocks():
             r = 0
             while (r < l):
                 # remove all but the first RESTBODYPARAM:
-                if have_RESTBODYPARAM.search(lineR[r]):
+                if g_re_RESTBODYPARAM.search(lineR[r]):
                     if foundRestBodyParam:
                         lineR[r] = ''
                     else:
@@ -223,17 +241,17 @@ class DocuBlocks():
                     r+=1
                     while ((len(lineR[r]) == 0) or
                            ((lineR[r][0] != '@') or
-                           have_RESTBODYPARAM.search(lineR[r]))):
+                           g_re_RESTBODYPARAM.search(lineR[r]))):
                         # logger.info("xxx - %d %s" %(len(lineR[r]), lineR[r]))
                         lineR[r] = ''
                         r+=1
 
-                m = match_RESTRETURNCODE.search(lineR[r])
+                m = g_re_RESTRETURNCODE.search(lineR[r])
                 if m and m.lastindex > 0:
                     rcCode =  m.group(1)
 
                 # remove all but the first RESTREPLYBODY:
-                if have_RESTREPLYBODY.search(lineR[r]):
+                if g_re_RESTREPLYBODY.search(lineR[r]):
                     if foundRestReplyBodyParam != rcCode:
                         lineR[r] = '@RESTREPLYBODY{' + rcCode + '}\n'
                     else:
@@ -243,12 +261,12 @@ class DocuBlocks():
                     while (len(lineR[r]) > 1):
                         lineR[r] = ''
                         r+=1
-                    m = match_RESTRETURNCODE.search(lineR[r])
+                    m = g_re_RESTRETURNCODE.search(lineR[r])
                     if m and m.lastindex > 0:
                         rcCode =  m.group(1)
 
                 # remove all RESTSTRUCTS - they're referenced anyways:
-                if have_RESTSTRUCT.search(lineR[r]):
+                if g_re_RESTSTRUCT.search(lineR[r]):
                     while (len(lineR[r]) > 1):
                         lineR[r] = ''
                         r+=1
@@ -259,7 +277,7 @@ class DocuBlocks():
         #logger.info(block.content)
         #logger_multi(logging.ERROR, PF({ "thisVerb" : thisVerb, "verb" : verb, "route" : route}))
         try:
-            block.content = SIMPLE_RX.sub(lambda match : block_simple_repl(match, self.swagger, thisVerb, verb, route), block.content)
+            block.content = g_re_SIMPLE_RX.sub(lambda match : block_simple_repl(match, self.swagger, thisVerb, verb, route), block.content)
         except Exception as e:
             logger.error("While working on: [" + verb + " " + route + "]" + " while analysing " + block.key)
             logger.error(str(e))
@@ -267,10 +285,10 @@ class DocuBlocks():
             raise e
 
 
-        for (oneRX, repl) in RX2:
+        for (oneRX, repl) in g_dict_re_replacement_blocks_2:
             block.content = oneRX.sub(repl, block.content)
 
-        block.content = remove_MULTICR.sub("\n\n", block.content)
+        block.content = g_re_MULTICR.sub("\n\n", block.content)
         #logger.info(block.content)
         return block.content
 
@@ -326,7 +344,7 @@ class DocuBlockReader(): #GOOD
 
             #logger.debug("start: " + str(block))
             try:
-                block.key = SEARCH_START.search(line).group(1).strip()
+                block.key = g_re_search_start.search(line).group(1).strip()
                 #logger.debug("adding {0.block_type.name} block with key {0.key}".format(block))
             except:
                 logger.error("failed to read startDocuBlock: [" + line + "]")
@@ -403,7 +421,8 @@ def walk_find_start_code(in_full, out_full, conf, blocks):
         textFile = walk_replace_text(textFile, in_full, match, blocks)
 
     try:
-        textFile = walk_replace_code_full_file(textFile)
+        textFile = apply_dict_re_replacement(g_dict_re_function_for_replacement, textFile)
+
     except Exception as e:
         logger.error("while parsing :      "  + in_full)
         logger.error(textFile)
@@ -515,18 +534,18 @@ def walk_handle_images(image_title, image_link, conf, in_full, out_full): #GOOD
 g_length_definitions = len('#/definitions/')
 g_re_trailing_br = re.compile("<br>$")
 g_re_leading_br = re.compile("^<br>")
-g_re_dobule_lf = re.compile("\n\n")
 g_re_lf = re.compile("\n")
+g_re_dobule_lf = re.compile("\n\n")
 g_re_RESTHEADER = re.compile(r"@RESTHEADER\{(.*)\}")
-match_RESTRETURNCODE = re.compile(r"@RESTRETURNCODE\{(.*)\}")
-have_RESTBODYPARAM = re.compile(r"@RESTBODYPARAM|@RESTDESCRIPTION")
-have_RESTREPLYBODY = re.compile(r"@RESTREPLYBODY")
-have_RESTSTRUCT = re.compile(r"@RESTSTRUCT")
-remove_MULTICR = re.compile(r'\n\n\n*')
-RXUnEscapeMDInLinks = re.compile("\\\\_")
-SEARCH_START = re.compile(r" *start[0-9a-zA-Z]*\s\s*([0-9a-zA-Z_ ]*)\s*$")
+g_re_RESTRETURNCODE = re.compile(r"@RESTRETURNCODE\{(.*)\}")
+g_re_RESTBODYPARAM = re.compile(r"@RESTBODYPARAM|@RESTDESCRIPTION")
+g_re_RESTREPLYBODY = re.compile(r"@RESTREPLYBODY")
+g_re_RESTSTRUCT = re.compile(r"@RESTSTRUCT")
+g_re_MULTICR = re.compile(r'\n\n\n*')
 
-SIMPLE_RX = re.compile(
+g_re_search_start = re.compile(r" *start[0-9a-zA-Z]*\s\s*([0-9a-zA-Z_ ]*)\s*$")
+
+g_re_SIMPLE_RX = re.compile(
 r'''
 \\|                                 # the backslash...
 @RESTDESCRIPTION|                   # -> <empty>
@@ -546,11 +565,12 @@ r'''
 @EXAMPLES|                          # -> \n**Examples**\n
 @RESTPARAMETERS|                    # -> <empty>
 @RESTREPLYBODY\{(.*)\}              # -> call body function
-''', re.X)
+''', re.X) ## re.X - be verobse
 ###### regular expressions - end ###############################################
 
 ###### match replace ###########################################################
-RX = [
+#used in block_replace_code
+g_dict_re_replacement_blocks = [
     ### match -> replace
     # comments -> nothing
     (re.compile(r"<!--(\s*.+\s)-->"), ""),
@@ -582,7 +602,8 @@ RX = [
     ]
 
 
-RX2 = [
+#used in block_replace_code
+g_dict_re_replacement_blocks_2 = [
     # parameters - extract their type and whether mandatory or not.
     (re.compile(r"@RESTPARAM{(\s*[\w\-]*)\s*,\s*([\w\_\|-]*)\s*,\s*(required|optional)}"), r"* *\g<1>* (\g<3>):"),
     (re.compile(r"@RESTALLBODYPARAM{(\s*[\w\-]*)\s*,\s*([\w\_\|-]*)\s*,\s*(required|optional)}"), r"\n**Request Body** (\g<3>)\n\n"),
@@ -628,7 +649,7 @@ def validateReturnCodes(thisVerb):
     else:
         raise Exception("@RESTRETURNCODES found in Swagger data without any documented returncodes %s " % json.dumps(thisVerb, indent=4, separators=(', ',': '), sort_keys=True))
 
-SIMPL_REPL_VALIDATE_DICT = {
+g_dict_text_function_for_validaiton = {
     "@RESTDESCRIPTION"      : noValidation,
     "@RESTURLPARAMETERS"    : validatePathParameters,
     "@RESTQUERYPARAMETERS"  : validateQueryParams,
@@ -667,7 +688,7 @@ def getRestReplyBodyParam(swagger, thisVerb, verb, route, param):
     #logger.info("verb: " +str(verb))
     return rc + "\n"
 
-REST_REPLACEMENT_DICT = {
+g_dict_text_replacement = {
     "\\"                    : "\\\\",
     "@RESTDESCRIPTION"      : getRestDescription,
     "@RESTURLPARAMETERS"    : "\n**Path Parameters**\n",
@@ -689,18 +710,19 @@ REST_REPLACEMENT_DICT = {
 }
 ###### simple dict - END ########################################################
 
-def setAnchor(param):
-    unescapedParam = RXUnEscapeMDInLinks.sub("_", param)
+###########
+g_re_unescape_md_in_links = re.compile("\\\\_")
+def setAnchor(match): ## TODO name
+    unescapedParam = g_re_unescape_md_in_links.sub("_", match)
     return "<a name=\"" + unescapedParam + "\">#</a>"
 
-RXFinal = [
+g_dict_re_function_for_replacement = [
     (re.compile(r"@anchor (.*)"), setAnchor),
 ]
+###########
 
-def walk_replace_code_full_file(lines):
-    for (oneRX, repl) in RXFinal:
-        lines = oneRX.sub(repl, lines)
-    return lines
+
+
 
 
 def trim_br(text):
@@ -798,12 +820,12 @@ def block_simple_repl(match, swagger, thisVerb, verb, route):
     #logger.info('xxxxx [%s]' % m)
     #logger_multi(logging.ERROR, 'xxxxx [%s]' % thisVerb)
 
-    validation_function = SIMPL_REPL_VALIDATE_DICT.get(m, None)
+    validation_function = g_dict_text_function_for_validaiton.get(m, None)
     if validation_function:
         validation_function(thisVerb)
 
 
-    rest_replacement = REST_REPLACEMENT_DICT.get(m, None)
+    rest_replacement = g_dict_text_replacement.get(m, None)
     if rest_replacement:
         return exectue_if_function(rest_replacement, swagger, thisVerb, verb, route, None)
     else:
@@ -813,7 +835,7 @@ def block_simple_repl(match, swagger, thisVerb, verb, route):
             newMatch = m[:pos]
             param = m[pos + 1 :].rstrip(' }')
 
-            new_rest_replacement = REST_REPLACEMENT_DICT.get(newMatch, None)
+            new_rest_replacement = g_dict_text_replacement.get(newMatch, None)
             if new_rest_replacement == None:
                 raise Exception("failed to find regex while searching for: " + newMatch + " extracted from: " + m)
             else:
