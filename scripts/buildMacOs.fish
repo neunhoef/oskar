@@ -40,6 +40,5 @@ cmake $argv \
 and echo "Finished cmake at "(date)", now starting build"
 and echo Running make, output in $INNERWORKDIR/buildArangoDB.log
 and nice make -j$PARALLELISM ^&1 | eval $TS > $INNERWORKDIR/buildArangoDB.log
-
-echo "Finished at "(date)
-ccache --show-stats
+and echo "Finished at "(date)
+and ccache --show-stats
