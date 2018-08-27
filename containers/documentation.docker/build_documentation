@@ -20,13 +20,18 @@
 ## get script dir
 script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 
-# Convert to Windows path in Cygwin, i.e. '/cygwin/c/...' to 'C:\...'
-# will wrap multiple path in one go
+# Convert to Windows path in Cygwin, i.e. '/cygdrive/c/...' to 'C:\...'
+# Will wrap multiple path in one go
+# Examples:
+# echo $(expand_cygpath "/cygdrive/c/path" "something" "/cygdrive/c/path/to/file.ext")
+# some_comand $(expand_cygpath "${args[@]}")
+# some_comand $(expand_cygpath "arg" "arg" "arg")
+
 expand_cygpath() {
     local path
     local out=()
     for path in "$@"; do
-        local matchre='/cygwin/'
+        local matchre='^/cygdrive/'
         if type cygpath 2>/dev/null; then
             if [[ "$path" =~ $matchre ]]; then
                 out+=("$(cygpath -w "$path")")
@@ -37,10 +42,6 @@ expand_cygpath() {
     done
     echo "${out[@]}"
 }
-
-echo $(expand_cygpath "/cygwin/c/lala" "moepse" "/cygwin/c/yg/win")
-#example" some_comand  $(expand_cygpath "${args[@]}")
-#example" some_comand  $(expand_cygpath "arg" "arg" "arg")
 
 ## set options for safety
 # fail on unset variables
