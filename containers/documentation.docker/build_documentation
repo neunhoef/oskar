@@ -289,12 +289,12 @@ build_books() {
         local book_out="$ARANGO_BUILD_DOC_OUT/${book}"
 
         if $flushout; then
-            rm -fr "$book_out"
+            rm -fr "$book_out" || ferr "could not delete book output dir $book_out"
             mkdir -p "$book_out"
         fi
 
         if $flushpp; then
-            rm -fr "$book_pre"
+            rm -fr "$book_pre" || ferr "could not delete book preprocessing dir $book_pre"
             mkdir -p "$book_pre"
         fi
 
@@ -386,7 +386,7 @@ main(){
 
     local out="${ARANGO_BUILD_DOC}/ArangoDB-${newVersionNumber}"
     cp -r "$ARANGO_BUILD_DOC_OUT" "$out" || ferr "failed to copy html docu" #rather move
-    tar -czf "$out.tar.gz" "$out" || ferr "failed to tar html docu"
+    run_cmd tar -czf "$out.tar.gz" "$out" || ferr "failed to tar html docu"
     rm -fr "$out" || err "failed to delete docu copy"
 
     # build other formats
