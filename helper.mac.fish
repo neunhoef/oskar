@@ -117,15 +117,15 @@ end
 
 function buildMacPackage
   # This assumes that a build has already happened
-  # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
-  # ARANGODB_FULL_VERSION, for example by running findArangoDBVersion.
-  set -l v "$ARANGODB_FULL_VERSION"
-  if test -z "$v"
-    echo Need one version argument in the form 3.3.3-1.
-    return 1
+  # Must have set ARANGODB_DARWIN_UPSTREAM and ARANGODB_DARWIN_REVISION,
+  # for example by running findArangoDBVersion.
+  if test -z "$ARANGODB_DARWIN_REVISION"
+    set v "$ARANGODB_DARWIN_UPSTREAM"
+  else  
+    set v "$ARANGODB_DARWIN_UPSTREAM-$ARANGODB_DARWIN_REVISION"
   end
 
-  and if test "$ENTERPRISEEDITION" = "On"
+  if test "$ENTERPRISEEDITION" = "On"
     echo Building enterprise edition MacOs bundle...
   else
     echo Building community edition MacOs bundle...

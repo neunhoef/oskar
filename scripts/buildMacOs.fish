@@ -14,7 +14,7 @@ cd $INNERWORKDIR/ArangoDB
 
 echo "Starting build at "(date)" on "(hostname)
 test -f $INNERWORKDIR/.ccache.mac.log 
-or mv $INNERWORKDIR/.ccache.log $INNERWORKDIR/.ccache.mac.log.old
+or mv $INNERWORKDIR/.ccache.mac.log $INNERWORKDIR/.ccache.mac.log.old
 ccache --zero-stats
 
 rm -rf build

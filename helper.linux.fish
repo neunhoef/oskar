@@ -216,10 +216,6 @@ function buildDebianPackage
   # for example by running findArangoDBVersion.
   set -l v "$ARANGODB_DEBIAN_UPSTREAM-$ARANGODB_DEBIAN_REVISION"
   set -l ch $WORKDIR/work/debian/changelog
-  if test -z "$v"
-    echo Need debian version in the form 3.3.3-1.
-    return 1
-  end
 
   # FIXME do not rely on relative paths
   cd $WORKDIR
