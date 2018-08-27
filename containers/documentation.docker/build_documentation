@@ -32,7 +32,7 @@ expand_cygpath() {
     local out=()
     for path in "$@"; do
         local matchre='^/cygdrive/'
-        if type cygpath 2>/dev/null; then
+        if type cygpath 1>/dev/null 2>/dev/null; then
             if [[ "$path" =~ $matchre ]]; then
                 out+=("$(cygpath -w "$path")")
                 continue
