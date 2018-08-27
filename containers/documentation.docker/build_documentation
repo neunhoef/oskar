@@ -20,20 +20,27 @@
 ## get script dir
 script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 
-# determine if this is run in Cygwin under Windows
-is_cygwin=false
-if [[ "$(uname -o || true)" == "Cygwin" ]]; then
-    is_cygwin=true
-fi
+# Convert to Windows path in Cygwin, i.e. '/cygdrive/c/...' to 'C:\...'
+# Will wrap multiple path in one go
+# Examples:
+# echo $(expand_cygpath "/cygdrive/c/path" "something" "/cygdrive/c/path/to/file.ext")
+# some_comand $(expand_cygpath "${args[@]}")
+# some_comand $(expand_cygpath "arg" "arg" "arg")
 
-# Convert to Windows path in Cygwin, i.e. '/cygwin/c/...' to 'C:\...'
 expand_cygpath() {
-    local any_path="$1"
-    if [[ -n $any_path ]] && $is_cygwin; then
-        echo "$(cygpath -w $any_path)"
-    else
-        echo "${any_path}"
-    fi
+    local path
+    local out=()
+    for path in "$@"; do
+        local matchre='^/cygdrive/'
+        if type cygpath 2>/dev/null; then
+            if [[ "$path" =~ $matchre ]]; then
+                out+=("$(cygpath -w "$path")")
+                continue
+            fi
+        fi
+        out+=("$path")
+    done
+    echo "${out[@]}"
 }
 
 ## set options for safety
@@ -79,7 +86,7 @@ BASH_LIB="${BASH_LIB:-"$ARANGO_INSTALL/bash_lib"}"
 
 if [ -f "$BASH_LIB" ]; then
     . "$BASH_LIB" || ferr "failed to source bash_lib"
-    ferr(){ _o_ferr "$@"; }
+    ferr(){ _o_ferrx "$@"; }
     err(){ _o_err "$@"; }
     section(){ _o_section "$@"; }
     say(){ _o_say "$@"; }
@@ -181,8 +188,7 @@ function build_book() {
     # - make script position independent
     say " - codeBlockReader: create AllCommands.txt"
     cd "$ARANGO_SOURCE_DOC_BOOKS" #TODO remove -- required by script below
-    python "$(expand_cygpath ${ARANGO_SOURCE}/Documentation/Scripts/codeBlockReader.py)" && echo || ferr "can not run codeBlockReader.py"
-
+    python "$(expand_cygpath "${ARANGO_SOURCE}/Documentation/Scripts/codeBlockReader.py")" && echo || ferr "can not run codeBlockReader.py"
 
     say " - copy directory structure"
     ## copy directroy structure of
@@ -216,11 +222,11 @@ function build_book() {
     say " - generate markdown"
     cd "$ARANGO_SOURCE_DOC_BOOKS"
     #echo " - generating MD-Filedds"
-    python "$(expand_cygpath ${ARANGO_SOURCE}/Documentation/Scripts/generateMdFiles.py)" \
-           "${book_name}" \
-           "$(expand_cygpath ${ARANGO_BUILD_DOC_PRE})" \
-           "$(expand_cygpath ${ARANGO_SOURCE}/js/apps/system/_admin/aardvark/APP/api-docs.json)" \
-           "${FILTER:-""}" || ferr "failed to generate md files"
+    python $(expand_cygpath "${ARANGO_SOURCE}/Documentation/Scripts/generateMdFiles.py" \
+                             "${book_name}" \
+                             "${ARANGO_BUILD_DOC_PRE}" \
+                             "${ARANGO_SOURCE}/js/apps/system/_admin/aardvark/APP/api-docs.json" \
+                             "${FILTER:-""}" ) || ferr "failed to generate md files"
 
     test -d "$ARANGO_BUILD_DOC_OUT" || mkdir -p "$ARANGO_BUILD_DOC_OUT"
 
@@ -255,7 +261,7 @@ function build_book() {
     cp -r "$cache/node_modules" "$book_pre" || ferr "failed to copy node modules"
 
     say " - run gitbook"
-    run_gitbook "$(expand_cygpath $cache)" build "$(expand_cygpath $book_pre)" "$(expand_cygpath $book_out)" || ferr "fail exectuting run_gitbook"
+    run_gitbook $(expand_cygpath "$cache" build "$book_pre" "$book_out") || ferr "fail exectuting run_gitbook"
 
     say " - delete FOOTER.html"
     rm -f "$book_pre/FOOTER.html"
@@ -386,7 +392,7 @@ main(){
         for book_name in $ALLBOOKS; do
             for format in $OTHER_MIME; do
                 local out="${ARANGO_BUILD_DOC}/ArangoDB_${book_name}_${newVersionNumber}.${format}"
-                run_gitbook "fake cache" "${GITBOOK_ARGS[@]}" "${format}" "$(expand_cygpath $ARANGO_BUILD_DOC_PRE/$book_name)" "$(expand_cygpath ${out})" || ferr "fail"
+                run_gitbook "fake cache" "${GITBOOK_ARGS[@]}" "${format}" $(expand_cygpath "$ARANGO_BUILD_DOC_PRE/$book_name" "${out}") || ferr "fail"
             done
         done || ferr "failed to build all formats"
     fi
