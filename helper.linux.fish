@@ -212,12 +212,12 @@ end
 
 function buildDebianPackage
   # This assumes that a static build has already happened
-  # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
-  # ARANGODB_FULL_VERSION, for example by running findArangoDBVersion.
-  set -l v "$ARANGODB_FULL_VERSION"
+  # Must have set ARANGODB_DEBIAN_UPSTREAM and ARANGODB_DEBIAN_REVISION,
+  # for example by running findArangoDBVersion.
+  set -l v "$ARANGODB_DEBIAN_UPSTREAM-$ARANGODB_DEBIAN_REVISION"
   set -l ch $WORKDIR/work/debian/changelog
   if test -z "$v"
-    echo Need one version argument in the form 3.3.3-1.
+    echo Need debian version in the form 3.3.3-1.
     return 1
   end
 
@@ -254,16 +254,16 @@ function transformSpec
   end
   # FIXME do not rely on relative paths
   cp "$argv[1]" "$argv[2]"
-  sed -i -e "s/@PACKAGE_VERSION@/$ARANGODB_VERSION/" "$argv[2]"
-  sed -i -e "s/@PACKAGE_REVISION@/$ARANGODB_PACKAGE_REVISION/" "$argv[2]"
+  sed -i -e "s/@PACKAGE_VERSION@/$ARANGODB_RPM_UPSTREAM/" "$argv[2]"
+  sed -i -e "s/@PACKAGE_REVISION@/$ARANGODB_RPM_REVISION/" "$argv[2]"
 end
 
 function buildRPMPackage
   # FIXME do not rely on relative paths
 
   # This assumes that a static build has already happened
-  # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
-  # ARANGODB_FULL_VERSION, for example by running findArangoDBVersion.
+  # Must have set ARANGODB_RPM_UPSTREAM and ARANGODB_RPM_REVISION,
+  # for example by running findArangoDBVersion.
   if test "$ENTERPRISEEDITION" = "On"
     transformSpec rpm/arangodb3e.spec.in $WORKDIR/work/arangodb3.spec
   else
@@ -272,7 +272,7 @@ function buildRPMPackage
   cp rpm/arangodb3.initd $WORKDIR/work
   cp rpm/arangodb3.service $WORKDIR/work
   cp rpm/arangodb3.logrotate $WORKDIR/work
-  and runInContainer -e ARANGODB_VERSION=$ARANGODB_VERSION -e ARANGODB_PACKAGE_REVISION=$ARANGODB_PACKAGE_REVISION -e ARANGODB_FULL_VERSION=$ARANGODB_FULL_VERSION $CENTOSPACKAGINGIMAGE $SCRIPTSDIR/buildRPMPackage.fish
+  and runInContainer $CENTOSPACKAGINGIMAGE $SCRIPTSDIR/buildRPMPackage.fish
 end
 
 function buildTarGzPackage
