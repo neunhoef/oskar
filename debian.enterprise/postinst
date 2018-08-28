@@ -23,9 +23,9 @@ fi
 sed -i /etc/arangodb3/arangod.conf -e "s;storage-engine = auto;storage-engine = $STORAGE_ENGINE;"
 
 if [ -d /run/systemd/system ] ; then
-    if deb-systemd-invoke is-active arangodb3.service 2>&1 >/dev/null ; then
-        deb-systemd-invoke stop arangodb3.service >/dev/null \
-            || ar_err "failed to stop arangodb3 service" $?
+    if deb-systemd-invoke is-active arangodb3e.service 2>&1 >/dev/null ; then
+        deb-systemd-invoke stop arangodb3e.service >/dev/null \
+            || ar_err "failed to stop arangodb3e service" $?
     fi
 else
     if [ -x "/etc/init.d/arangodb3" ]; then
@@ -102,21 +102,21 @@ db_stop
 
 if [ -d /run/systemd/system ] ; then
     # This will only remove masks created by d-s-h on package removal.
-    deb-systemd-helper unmask arangodb3.service >/dev/null || true
+    deb-systemd-helper unmask arangodb3e.service >/dev/null || true
     # was-enabled defaults to true, so new installations run enable.
-    if deb-systemd-helper --quiet was-enabled arangodb3.service; then
+    if deb-systemd-helper --quiet was-enabled arangodb3e.service; then
         # Enables the unit on first installation, creates new
         # symlinks on upgrades if the unit file has changed.
-        deb-systemd-helper enable arangodb3.service >/dev/null || true
+        deb-systemd-helper enable arangodb3e.service >/dev/null || true
     else
         # Update the statefile to add new symlinks (if any), which need to be
         # cleaned up on purge. Also remove old symlinks.
-        deb-systemd-helper update-state arangodb3.service >/dev/null || true
+        deb-systemd-helper update-state arangodb3e.service >/dev/null || true
     fi
     # Automatically added by dh_systemd_start
     if [ -d /run/systemd/system ]; then
         systemctl --system daemon-reload >/dev/null || true
-        deb-systemd-invoke start arangodb3.service >/dev/null || true
+        deb-systemd-invoke start arangodb3e.service >/dev/null || true
     fi
     # End automatically added section
 else

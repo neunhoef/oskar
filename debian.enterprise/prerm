@@ -7,6 +7,8 @@ if [ -x "/etc/init.d/arangodb3" ]; then
 fi
 
 if [ -d /run/systemd/system ] ; then
-        deb-systemd-invoke stop arangodb3.service >/dev/null
+        if systemctl list-unit-files | grep -q arangodb3e.service ; then
+            deb-systemd-invoke stop arangodb3e.service >/dev/null
+        fi
 fi
 # End automatically added section
