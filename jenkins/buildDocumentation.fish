@@ -2,7 +2,7 @@
 source jenkins/helper.jenkins.fish ; prepareOskar
 
 lockDirectory ; updateOskar ; clearResults
-rocksdb ; cluster ; maintainerOff, community
+rocksdb ; cluster ; maintainerOff ; community
 
 echo "--------------------------------------------------------------------------------"
 showConfig
