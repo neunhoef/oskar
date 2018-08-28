@@ -56,8 +56,8 @@ function launchSingleTests
     set -l t $argv[1]
     set -l tt $argv[2]
     set -e argv[1..2]
-    if grep $t UnitTests/OskarTestSuitesBlackList
-      echo Test suite $t skipped by UnitTests/OskarTestSuitesBlackList
+    if grep $t tests/OskarTestSuitesBlackList
+      echo Test suite $t skipped by tests/OskarTestSuitesBlackList
     else
       echo scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort (math $portBase + 99) $argv --skipNondeterministic true --skipTimeCritical true --testOutput $TMPDIR/"$t""$tt".out --writeXmlReport false
       scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE \
@@ -76,8 +76,8 @@ function launchSingleTests
     set -l t $argv[1]
     set -l tt $argv[2]
     set -e argv[1..2]
-    if grep $t UnitTests/OskarTestSuitesBlackList
-      echo Test suite $t skipped by UnitTests/OskarTestSuitesBlackList
+    if grep $t tests/OskarTestSuitesBlackList
+      echo Test suite $t skipped by tests/OskarTestSuitesBlackList
     else
       echo scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort (math $portBase + 99) $argv --skipNondeterministic true --skipTimeCritical true --testOutput $TMPDIR/"$t""$tt".out --writeXmlReport false --extraArgs:log.level replication=trace
       scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE \
@@ -136,8 +136,8 @@ function launchClusterTests
     set -l t $argv[1]
     set -l tt $argv[2]
     set -e argv[1..2]
-    if grep $t UnitTests/OskarTestSuitesBlackList
-      echo Test suite $t skipped by UnitTests/OskarTestSuitesBlackList
+    if grep $t tests/OskarTestSuitesBlackList
+      echo Test suite $t skipped by tests/OskarTestSuitesBlackList
     else
       echo scripts/unittest $t --cluster true --storageEngine $STORAGEENGINE --minPort $portBase --maxPort (math $portBase + 99) $argv --skipNondeterministic true --skipTimeCritical true --testOutput $TMPDIR/"$t""$tt".out --writeXmlReport false
       scripts/unittest $t --cluster true --storageEngine $STORAGEENGINE \
@@ -152,8 +152,8 @@ function launchClusterTests
 
   function test3
     if test $VERBOSEOSKAR = On ; echo Launching $argv ; end
-    if grep $argv[1] UnitTests/OskarTestSuitesBlackList
-      echo Test suite $t skipped by UnitTests/OskarTestSuitesBlackList
+    if grep $argv[1] tests/OskarTestSuitesBlackList
+      echo Test suite $t skipped by tests/OskarTestSuitesBlackList
     else
       echo scripts/unittest $argv[1] --test $argv[3] --storageEngine $STORAGEENGINE --cluster true --minPort $portBase --maxPort (math $portBase + 99) --skipNondeterministic true --testOutput "$TMPDIR/$argv[1]_$argv[2].out" --writeXmlReport false
       scripts/unittest $argv[1] --test $argv[3] \
