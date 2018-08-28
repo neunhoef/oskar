@@ -2,11 +2,16 @@
 
 ## unlock keychain to make code signing work
 if test -z "$MACOS_ADMIN_KEYCHAIN_PASS"
-  echo Need MACOS_ADMIN_KEYCHAIN_PASS environment variable set!
+  echo "Need MACOS_ADMIN_KEYCHAIN_PASS environment variable set!"
+  echo "Set to '-' for interactive mode"
   exit 1
 end
 
-security unlock-keychain -p $MACOS_ADMIN_KEYCHAIN_PASS
+if test "$MACOS_ADMIN_KEYCHAIN_PASS" = "-"
+  security unlock-keychain
+else
+  security unlock-keychain -p $MACOS_ADMIN_KEYCHAIN_PASS
+end
 
 ## NOTE: This script can obly ba called on an existing Build directory
 cd $INNERWORKDIR/ArangoDB/build

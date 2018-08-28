@@ -14,7 +14,7 @@ cd $INNERWORKDIR/ArangoDB
 
 echo "Starting build at "(date)" on "(hostname)
 test -f $INNERWORKDIR/.ccache.mac.log 
-or mv $INNERWORKDIR/.ccache.log $INNERWORKDIR/.ccache.mac.log.old
+and mv $INNERWORKDIR/.ccache.mac.log $INNERWORKDIR/.ccache.mac.log.old
 ccache --zero-stats
 
 rm -rf build
@@ -40,6 +40,5 @@ cmake $argv \
 and echo "Finished cmake at "(date)", now starting build"
 and echo Running make, output in $INNERWORKDIR/buildArangoDB.log
 and nice make -j$PARALLELISM ^&1 | eval $TS > $INNERWORKDIR/buildArangoDB.log
-
-echo "Finished at "(date)
-ccache --show-stats
+and echo "Finished at "(date)
+and ccache --show-stats
