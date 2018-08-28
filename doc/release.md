@@ -2,6 +2,17 @@
 
 ## Requirements
 
+## software
+-- TOD -- add all dependencies
+- nfs client
+- gnupg-agent
+- gnupg2
+- expect
+- createrepo
+- apt-utils
+
+## system
+
 The oskar root must contain symlinks to the former
 `localstore` to `reop_complete` and `fileserver` to
 `repo_incoming`
