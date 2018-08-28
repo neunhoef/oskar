@@ -280,10 +280,11 @@ end
 
 function buildTarGzPackage
   # This assumes that a static build has already happened
-  # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
-  # ARANGODB_FULL_VERSION, for example by running findArangoDBVersion.
-  set -l v "$ARANGODB_FULL_VERSION"
+  # Must have set ARANGODB_TGZ_UPSTREAM
+  # for example by running findArangoDBVersion.
+  set -l v "$ARANGODB_TGZ_UPSTREAM"
   set -l name
+
   if test "$ENTERPRISEEDITION" = "On"
     set name arangodb3e
   else
