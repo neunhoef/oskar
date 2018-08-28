@@ -14,4 +14,3 @@ if test -d /usr/share/arangodb3/js; then
   mv /usr/share/arangodb3/js /usr/share/arangodb3/js.old
 fi
 
-
