@@ -1,0 +1,34 @@
+ArangoDB
+--------
+
+In order to use a tar installation simply add the `arangodb-VERSION/bin`
+directory to your path.
+
+Single Server
+=============
+
+Use
+
+    arangodb --starter.mode single --starter.data-dir /tmp/mydata
+
+where `/tmp/mydata` should point to the directory containing the
+data. The database itself will be in `/tmp/mydata/single8529/data`.
+The apps will be stored in `/tmp/mydata/single8529/apps`.
+
+Active Failover
+===============
+
+Can be started using
+
+    ./bin/arangodb --starter.mode activefailover --starter.data-dir /tmp/mydata
+
+Cluster
+=======
+
+Can be started using
+
+    ./bin/arangodb --starter.mode cluster --starter.data-dir /tmp/mydata
+
+or as cluster is the default
+
+    ./bin/arangodb --starter.data-dir /tmp/mydata

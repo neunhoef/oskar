@@ -121,8 +121,8 @@ function buildDocumentation
     runInContainer -e "ARANGO_SPIN=$ARANGO_SPIN" \
                    --user "$UID" \
                    -v "$WORKDIR:/oskar" \
-                   -t "$DOCIMAGE" \
-                   -- "$argv"
+                   -it "$DOCIMAGE" \
+                   -- "$argv" | tee $WORKDIR/work/buid_documentation.log
 end
 
 function buildDocumentationInPr
@@ -295,12 +295,14 @@ function buildTarGzPackage
   and cd $WORKDIR/work/ArangoDB/build/install
   and rm -rf bin
   and cp -a $WORKDIR/binForTarGz bin
+  and rm -f bin/*~ bin/*.bak
+  and mv bin/README .
   and strip usr/sbin/arangod usr/bin/{arangobench,arangodump,arangoexport,arangoimp,arangorestore,arangosh,arangovpack}
   and cd $WORKDIR/work/ArangoDB/build
   and mv install "$name-$v"
   or begin ; cd $WORKDIR ; return 1 ; end
 
-  tar czvf "$WORKDIR/work/$name-binary-$v.tar.gz" "$name-$v"
+  tar -c -z -v -f "$WORKDIR/work/$name-binary-$v.tar.gz" --exclude "etc" --exclude "var" "$name-$v"
   set s $status
   mv "$name-$v" install
   cd $WORKDIR
