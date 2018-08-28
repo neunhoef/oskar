@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # Sample call in build documentatin script
-# #echo " - generating MD-Filedds"
+# #echo " - generating .md-files"
 # python3 ${ARANGO_SOURCE}/Documentation/Scripts/generateMdFiles.py \
 #        "${book_name}" \
 #        "$ARANGO_SOURCE" \
@@ -13,11 +13,13 @@
 #    srcDir                        - arango source source
 #    outDir                        - out directory
 #
-#   needs allComments
+#
+#   Info:
+#
+#   Documentation/Scripts/codeBlockReader.py -> creates AllComments.txt which is input to this script
 #
 #   TODO
 #   - add path to examples
-#   - kill global state
 #
 #
 
@@ -51,7 +53,6 @@ logger.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 
-#formatter = logging.Formatter('%(asctime)s-%(name)s:%(lineno)d-%(levelname)s - %(message)s',  datefmt='%H:%M:%S')
 formatter = logging.Formatter('%(name)s %(lineno)4d %(levelname)6s-> %(message)s',  datefmt='%H:%M:%S')
 ch.setFormatter(formatter)
 logger.addHandler(ch)
@@ -128,6 +129,22 @@ def apply_dict_re_replacement(dictionary, text):
     """
     for (regex, text_or_function) in dictionary:
         text = regex.sub(text_or_function, text)
+    return text
+
+def apply_dict_re_replacement_bind_params(dictionary, text, text_or_function, *args, **kwargs):
+    """
+        applies a dictionary containing regexes and fuctions or replacement text
+
+        Within the text the regular expressions are used to match
+        substrings to be replaced. The are replaced by the provided
+        replacement string/text or by the result of the function
+        that is called with the re's match
+    """
+    for (regex, text_or_function) in dictionary:
+        if type(text_or_function) == types.FunctionType:
+            text = regex.sub(lambda m : text_or_function(m, *args, **kwargs), text)
+        else:
+            text = regex.sub(text_or_function, text)
     return text
 ### helper - END ###############################################################
 
@@ -277,7 +294,7 @@ class DocuBlocks():
         #logger.info(block.content)
         #logger_multi(logging.ERROR, PF({ "thisVerb" : thisVerb, "verb" : verb, "route" : route}))
         try:
-            block.content = g_re_SIMPLE_RX.sub(lambda match : block_simple_repl(match, self.swagger, thisVerb, verb, route), block.content)
+            block.content = g_re_block_replacement_filter.sub(lambda match : block_simple_repl(match, self.swagger, thisVerb, verb, route), block.content)
         except Exception as e:
             logger.error("While working on: [" + verb + " " + route + "]" + " while analysing " + block.key)
             logger.error(str(e))
@@ -536,8 +553,8 @@ g_re_trailing_br = re.compile("<br>$")
 g_re_leading_br = re.compile("^<br>")
 g_re_lf = re.compile("\n")
 g_re_dobule_lf = re.compile("\n\n")
-g_re_RESTHEADER = re.compile(r"@RESTHEADER\{(.*)\}")
-g_re_RESTRETURNCODE = re.compile(r"@RESTRETURNCODE\{(.*)\}")
+g_re_RESTHEADER = re.compile(r"@RESTHEADER\{(?P<param>.*)\}")
+g_re_RESTRETURNCODE = re.compile(r"@RESTRETURNCODE\{(?P<param>.*)\}")
 g_re_RESTBODYPARAM = re.compile(r"@RESTBODYPARAM|@RESTDESCRIPTION")
 g_re_RESTREPLYBODY = re.compile(r"@RESTREPLYBODY")
 g_re_RESTSTRUCT = re.compile(r"@RESTSTRUCT")
@@ -545,7 +562,7 @@ g_re_MULTICR = re.compile(r'\n\n\n*')
 
 g_re_search_start = re.compile(r" *start[0-9a-zA-Z]*\s\s*([0-9a-zA-Z_ ]*)\s*$")
 
-g_re_SIMPLE_RX = re.compile(
+g_re_block_replacement_filter = re.compile(
 r'''
 \\|                                 # the backslash...
 @RESTDESCRIPTION|                   # -> <empty>
@@ -564,7 +581,7 @@ r'''
 @RESTHEADERPARAM|                   # -> @RESTPARAM
 @EXAMPLES|                          # -> \n**Examples**\n
 @RESTPARAMETERS|                    # -> <empty>
-@RESTREPLYBODY\{(.*)\}              # -> call body function
+@RESTREPLYBODY\{(?P<param>.*)\}     # -> call body function
 ''', re.X) ## re.X - be verobse
 ###### regular expressions - end ###############################################
 
@@ -713,8 +730,12 @@ g_dict_text_replacement = {
 ###########
 g_re_unescape_md_in_links = re.compile("\\\\_")
 def setAnchor(match): ## TODO name
+    logger.error(match)
     unescapedParam = g_re_unescape_md_in_links.sub("_", match)
-    return "<a name=\"" + unescapedParam + "\">#</a>"
+    rv = "<a name=\"" + unescapedParam + "\">#</a>"
+    logger.error(rv)
+    return rv
+    #return "<a name=\"" + unescapedParam + "\">#</a>"
 
 g_dict_re_function_for_replacement = [
     (re.compile(r"@anchor (.*)"), setAnchor),
@@ -816,28 +837,29 @@ def unwrapPostJson(swagger, reference, layer):
     return rc
 
 def block_simple_repl(match, swagger, thisVerb, verb, route):
-    m = match.group(0)
+    match_0 = match.group(0)
     #logger.info('xxxxx [%s]' % m)
     #logger_multi(logging.ERROR, 'xxxxx [%s]' % thisVerb)
 
-    validation_function = g_dict_text_function_for_validaiton.get(m, None)
+    validation_function = g_dict_text_function_for_validaiton.get(match_0, None)
     if validation_function:
         validation_function(thisVerb)
 
 
-    rest_replacement = g_dict_text_replacement.get(m, None)
+    rest_replacement = g_dict_text_replacement.get(match_0, None)
     if rest_replacement:
         return exectue_if_function(rest_replacement, swagger, thisVerb, verb, route, None)
     else:
-        pos = m.find('{')
-        ## what is done here
+        pos = match_0.find('{')
+        ## @EXAMPLE: RESTREPLYBODY{200} -> new_match = @RESTREPLYBODY
+        ##                              -> param = 200
         if pos > 0:
-            newMatch = m[:pos]
-            param = m[pos + 1 :].rstrip(' }')
+            new_match = match_0[:pos]
+            param = match_0[pos + 1:].rstrip(' }')
 
-            new_rest_replacement = g_dict_text_replacement.get(newMatch, None)
+            new_rest_replacement = g_dict_text_replacement.get(new_match, None)
             if new_rest_replacement == None:
-                raise Exception("failed to find regex while searching for: " + newMatch + " extracted from: " + m)
+                raise Exception("failed to find regex while searching for: " + new_match + " extracted from: " + m)
             else:
                 return exectue_if_function(new_rest_replacement, swagger, thisVerb, verb, route, param)
 
