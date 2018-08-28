@@ -47,7 +47,7 @@ ARANGO_DEBUG=false
 # path to "arangodb" source
 export ARANGO_SOURCE="${ARANGO_SOURCE:-"$ARANGO_WORK/ArangoDB"}"
 export ARANGO_SOURCE_DOC="${ARANGO_SOURCE_DOC:-"$ARANGO_SOURCE/Documentation"}"
-export ARANGO_SOURCE_DOC_BOOKS="${ARANGO_SOURCE_DOC_BOOKS:-"$ARANGO_SOURCE_DOC/Documentation/Books"}"
+export ARANGO_SOURCE_DOC_BOOKS="${ARANGO_SOURCE_DOC_BOOKS:-"$ARANGO_SOURCE_DOC/Books"}"
 
 # path to documentation build
 export ARANGO_BUILD_DOC="${ARANGO_BUILD_DOC:-"$ARANGO_WORK/build-documentation"}"
@@ -72,6 +72,7 @@ if [ -f "$BASH_LIB" ]; then
 
 else
     echo "could not source bash_lib"
+
     err(){ echo "Error: $@";  }
     section(){ echo "=================== $@ ================"; }
     say(){ echo "$@"; }
@@ -162,7 +163,7 @@ function build_book() {
 
     say   " - create images"
     run_ditaa "${book_name}" "$book_src" "$book_pre" "$book_out" && echo
-    rm -fr "$book_src/?" #TODO fix ditta
+    rm -fr "$book_src/?" #TODO fix / better remove ditta
 
     # copy / link SUMMARY.md and FOOTER.html
     say " - create SUMMARY.md"
@@ -181,8 +182,8 @@ function build_book() {
 
 
     # generateMdFiles
-    say " - generate markdown"
-    cd "$ARANGO_SOURCE_DOC_BOOKS"
+    say " - generate .md-files"
+    cd "$ARANGO_SOURCE_DOC_BOOKS" #must be run in that location
     #echo " - generating MD-Filedds"
     ensure_cmd python ${ARANGO_SOURCE}/Documentation/Scripts/generateMdFiles.py \
                     "${book_name}" \
