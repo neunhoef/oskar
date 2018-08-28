@@ -13,11 +13,3 @@ getent passwd arangodb >/dev/null || useradd -r -g arangodb -d /usr/share/arango
 install -o arangodb -g arangodb -m 755 -d /var/lib/arangodb3
 install -o arangodb -g arangodb -m 755 -d /var/lib/arangodb3-apps
 install -o arangodb -g arangodb -m 755 -d /var/log/arangodb3
-
-rm -rf /usr/share/arangodb3/js.old
-
-if test -d /usr/share/arangodb3/js; then
-  mv /usr/share/arangodb3/js /usr/share/arangodb3/js.old
-fi
-
-
