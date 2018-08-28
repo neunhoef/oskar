@@ -11,7 +11,7 @@ echo Working on branch $ARANGODB_BRANCH of main repository and
 echo on branch $ENTERPRISE_BRANCH of enterprise repository.
 
 switchBranches $ARANGODB_BRANCH $ENTERPRISE_BRANCH
-and buildDocumentationInPr
+and buildStaticArangoDB and buildDocumentationInPr
 
 set -l s $status
 if test $s != 0
