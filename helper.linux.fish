@@ -121,8 +121,8 @@ function buildDocumentation
     runInContainer -e "ARANGO_SPIN=$ARANGO_SPIN" \
                    --user "$UID" \
                    -v "$WORKDIR:/oskar" \
-                   -t "$DOCIMAGE" \
-                   -- "$argv"
+                   -it "$DOCIMAGE" \
+                   -- "$argv" | tee $WORKDIR/work/buid_documentation.log
 end
 
 function buildDocumentationInPr
