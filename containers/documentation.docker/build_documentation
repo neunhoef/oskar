@@ -47,7 +47,7 @@ ARANGO_DEBUG=false
 # path to "arangodb" source
 export ARANGO_SOURCE="${ARANGO_SOURCE:-"$ARANGO_WORK/ArangoDB"}"
 export ARANGO_SOURCE_DOC="${ARANGO_SOURCE_DOC:-"$ARANGO_SOURCE/Documentation"}"
-export ARANGO_SOURCE_DOC_BOOKS="${ARANGO_SOURCE_DOC_BOOKS:-"$ARANGO_SOURCE_DOC/Documentation/Books"}"
+export ARANGO_SOURCE_DOC_BOOKS="${ARANGO_SOURCE_DOC_BOOKS:-"$ARANGO_SOURCE_DOC/Books"}"
 
 # path to documentation build
 export ARANGO_BUILD_DOC="${ARANGO_BUILD_DOC:-"$ARANGO_WORK/build-documentation"}"
@@ -163,7 +163,7 @@ function build_book() {
 
     say   " - create images"
     run_ditaa "${book_name}" "$book_src" "$book_pre" "$book_out" && echo
-    rm -fr "$book_src/?" #TODO fix ditta
+    rm -fr "$book_src/?" #TODO fix / better remove ditta
 
     # copy / link SUMMARY.md and FOOTER.html
     say " - create SUMMARY.md"
@@ -191,7 +191,6 @@ function build_book() {
                "$ARANGO_BUILD_DOC_PRE" \
                "${FILTER:-""}" || ferr "could not generate md-files $?"
     test -d "$ARANGO_BUILD_DOC_OUT" || mkdir -p "$ARANGO_BUILD_DOC_OUT"
-    sleep 10 #TODO REMOVE
 
     ##########################################################################
     book_pre_checks "${book_name}" "$book_src" "$book_pre" "$book_out"
