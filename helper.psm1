@@ -383,27 +383,47 @@ Function showLog
 
 Function  findArangoDBVersion
 {
-    If($(Select-String -Path $INNERWORKDIR\ArangoDB\CMakeLists.txt -SimpleMatch "set(ARANGODB_VERSION_MAJOR") -match '.*"([0-9a-zA-Z]*)".*')
+    If($(Select-String -Path $INNERWORKDIR\ArangoDB\CMakeLists.txt -SimpleMatch "set(ARANGODB_VERSION_MAJOR")[0] -match '.*"([0-9a-zA-Z]*)".*')
     {
         $global:ARANGODB_VERSION_MAJOR = $Matches[1]
-        If($(Select-String -Path $INNERWORKDIR\ArangoDB\CMakeLists.txt -SimpleMatch "set(ARANGODB_VERSION_MINOR") -match '.*"([0-9a-zA-Z]*)".*')
+        If($(Select-String -Path $INNERWORKDIR\ArangoDB\CMakeLists.txt -SimpleMatch "set(ARANGODB_VERSION_MINOR")[0] -match '.*"([0-9a-zA-Z]*)".*')
         {
             $global:ARANGODB_VERSION_MINOR = $Matches[1]
-            If($(Select-String -Path $INNERWORKDIR\ArangoDB\CMakeLists.txt -SimpleMatch "set(ARANGODB_VERSION_REVISION") -match '.*"([0-9a-zA-Z]*)".*')
+            If($(Select-String -Path $INNERWORKDIR\ArangoDB\CMakeLists.txt -SimpleMatch "set(ARANGODB_VERSION_PATCH")[0] -match '.*"([0-9a-zA-Z]*)".*')
             {
-                $global:ARANGODB_VERSION_REVISION = $Matches[1]
-                If($(Select-String -Path $INNERWORKDIR\ArangoDB\CMakeLists.txt -SimpleMatch "set(ARANGODB_PACKAGE_REVISION") -match '.*"([0-9a-zA-Z]*)".*')
+                $global:ARANGODB_VERSION_PATCH = $Matches[1]
+                If($(Select-String -Path $INNERWORKDIR\ArangoDB\CMakeLists.txt -SimpleMatch "set(ARANGODB_VERSION_RELEASE_TYPE")[0] -match '.*"([0-9a-zA-Z]*)".*')
                 {
-                    $global:ARANGODB_PACKAGE_REVISION = $Matches[1]
-                    $global:ARANGODB_VERSION = "$global:ARANGODB_VERSION_MAJOR.$global:ARANGODB_VERSION_MINOR.$global:ARANGODB_VERSION_REVISION"
-                    $global:ARANGODB_FULL_VERSION = "$global:ARANGODB_VERSION-$global:ARANGODB_PACKAGE_REVISION"
-                    return $global:ARANGODB_FULL_VERSION
+                    $global:ARANGODB_VERSION_RELEASE_TYPE = $Matches[1]
+                    If($(Select-String -Path $INNERWORKDIR\ArangoDB\CMakeLists.txt -SimpleMatch "set(ARANGODB_VERSION_RELEASE_NUMBER")[0] -match '.*"([0-9a-zA-Z]*)".*')
+                    {
+                        $global:ARANGODB_VERSION_RELEASE_NUMBER = $Matches[1]  
+                    }
                 }
 
             }
         }
 
     }
+    $global:ARANGODB_VERSION = "$global:ARANGODB_VERSION_MAJOR.$global:ARANGODB_VERSION_MINOR.$global:ARANGODB_VERSION_PATCH"
+    If($global:ARANGODB_VERSION_RELEASE_TYPE)
+    {
+        If($global:ARANGODB_VERSION_RELEASE_NUMBER)
+        {
+            $global:ARANGODB_FULL_VERSION = "$global:ARANGODB_VERSION-$global:ARANGODB_VERSION_RELEASE_TYPE.$global:ARANGODB_VERSION_RELEASE_NUMBER"
+        }
+        Else
+        {
+            $global:ARANGODB_FULL_VERSION = "$global:ARANGODB_VERSION-$global:ARANGODB_VERSION_RELEASE_TYPE"
+        }
+        
+    }
+    Else
+    {
+        $ARANGODB_FULL_VERSION = $global:ARANGODB_VERSION   
+    }
+    $global:ARANGODB_FULL_VERSION
+    return $global:ARANGODB_FULL_VERSION
 }
 
 Function configureWindows
