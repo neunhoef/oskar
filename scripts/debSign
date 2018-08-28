@@ -16,13 +16,13 @@ debSign(){
         echo "signing file $file"
         rm -f "$asc"
 
-        if gpg2 --pinentry-mode=loopback --digest-algo SHA512 --passphrase-fd 0 --armor --detach-sign -u "$KEYNAME" "$file" <<<"XXXX"; then
+        if gpg2 --pinentry-mode=loopback --digest-algo SHA512 --passphrase-fd 0 --armor --detach-sign -u "$KEYNAME" "$file" <<<"$ARANGO_SIGN_PASSWD"; then
             return 0
         else
             echo "retry"
             setup_gpg
             file="$1"
-            gpg2 --pinentry-mode=loopback --digest-algo SHA512 --passphrase-fd 0 --armor --detach-sign -u "$KEYNAME" "$file" <<<"XXXXX
+            gpg2 --pinentry-mode=loopback --digest-algo SHA512 --passphrase-fd 0 --armor --detach-sign -u "$KEYNAME" "$file" <<<"$ARABGO_SIGN_PASSWD"
         fi
     fi
     return $?
