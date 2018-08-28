@@ -73,6 +73,7 @@ Function showConfig
 
 Function lockDirectory
 {
+    Push-Location $pwd
     Set-Location $WORKDIR
     If(-Not(Test-Path -PathType Leaf LOCK.$pid))
     {
@@ -98,10 +99,12 @@ Function lockDirectory
         }
     }
     comm 
+    Pop-Location
 }
 
 Function unlockDirectory
 {
+    Push-Location $pwd
     Set-Location $WORKDIR
     If(Test-Path -PathType Leaf LOCK.$pid)
     {
@@ -109,7 +112,8 @@ Function unlockDirectory
         Remove-Item LOCK.$pid
         Write-Host "Removed lock"
     }
-    comm   
+    comm
+    Pop-Location   
 }
 
 Function single
@@ -248,11 +252,13 @@ If(-Not($PARALLELISM))
 
 Function checkoutArangoDB
 {
+    Push-Location $pwd
     Set-Location $INNERWORKDIR
     If(-Not(Test-Path -PathType Container -Path "ArangoDB"))
     {
         proc -process "git" -argument "clone https://github.com/arangodb/ArangoDB" -logfile $false
     }
+    Pop-Location
 }
 
 Function checkoutEnterprise
@@ -260,6 +266,7 @@ Function checkoutEnterprise
     checkoutArangoDB
     if($global:ok)
     {
+        Push-Location $pwd
         Set-Location "$INNERWORKDIR\ArangoDB"
         If(-Not(Test-Path -PathType Container -Path "enterprise"))
         {
@@ -270,6 +277,7 @@ Function checkoutEnterprise
             }
             proc -process "git" -argument "clone ssh://git@github.com/arangodb/enterprise" -logfile $false
         }
+        Pop-Location
     }
 }
 
@@ -297,6 +305,7 @@ Function switchBranches($branch_c,$branch_e)
     checkoutIfNeeded
     if($global:ok)
     {
+        Push-Location $pwd
         Set-Location "$INNERWORKDIR\ArangoDB";comm
         If ($global:ok) 
         {
@@ -316,6 +325,7 @@ Function switchBranches($branch_c,$branch_e)
         }
         If($ENTERPRISEEDITION -eq "On")
         {
+            Push-Location $pwd
             Set-Location "$INNERWORKDIR\ArangoDB\enterprise";comm
             If ($global:ok) 
             {
@@ -333,12 +343,15 @@ Function switchBranches($branch_c,$branch_e)
             {
                 proc -process "git" -argument "reset --hard origin/$branch_e" -logfile $false
             }
+            Pop-Location
         }
+        Pop-Location
     }
 }
 
 Function updateOskar
 {
+    Push-Location $pwd
     Set-Location $WORKDIR
     If ($global:ok) 
     {
@@ -348,10 +361,12 @@ Function updateOskar
     {
         proc -process "git" -argument "reset --hard origin/master" -logfile $false
     }
+    Pop-Location
 }
 
 Function clearResults
 {
+    Push-Location $pwd
     Set-Location $INNERWORKDIR
     ForEach($report in $(Get-ChildItem -Filter testreport*))
     {
@@ -374,6 +389,7 @@ Function clearResults
         Remove-Item -Force testfailures.txt
     }
     comm
+    Pop-Location
 }
 
 Function showLog
@@ -420,9 +436,8 @@ Function  findArangoDBVersion
     }
     Else
     {
-        $ARANGODB_FULL_VERSION = $global:ARANGODB_VERSION   
+        $global:ARANGODB_FULL_VERSION = $global:ARANGODB_VERSION   
     }
-    $global:ARANGODB_FULL_VERSION
     return $global:ARANGODB_FULL_VERSION
 }
 
@@ -476,15 +491,15 @@ Function packageWindows
 Function signWindows
 {
     findArangoDBVersion
-    If(-Not(Test-Path -PathType Leaf "$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB3-`"$global:ARANGODB_FULL_VERSION`"_win64.exe"))
+    If(-Not(Test-Path -PathType Leaf "$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB3-$global:ARANGODB_FULL_VERSION`_win64.exe"))
     {
         packageWindows
     }
     Push-Location $pwd
     Set-Location "$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\"
     Write-Host "Time: $((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH.mm.ssZ'))"
-    Write-Host "Sign: cpack -C `"$BUILDMODE`""
-    #proc -process "cpack" -argument "-C `"$BUILDMODE`"" -logfile "$INNERWORKDIR\sign"
+    Write-Host "Sign: signtool sign /sm $INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB3-$global:ARANGODB_FULL_VERSION`_win64.exe"
+    proc -process "signtool" -argument "sign /sm $INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB3-$global:ARANGODB_FULL_VERSION`_win64.exe" -logfile "$INNERWORKDIR\sign"
     Pop-Location
 }
 
@@ -609,18 +624,21 @@ Function moveResultsToWorkspace
 
 Function getRepoState
 {
+    Push-Location $pwd
     Set-Location "$INNERWORKDIR\Arangodb"; comm
     $global:repoState = "$(git rev-parse HEAD)`r`n"+$(git status -b -s | Select-String -Pattern "^[?]" -NotMatch)
     If($ENTERPRISEEDITION -eq "On")
     {
+        Push-Location $pwd
         Set-Location "$INNERWORKDIR\ArangoDB\enterprise"; comm
         $global:repoStateEnterprise = "$(git rev-parse HEAD)`r`n$(git status -b -s | Select-String -Pattern "^[?]" -NotMatch)"
-        Set-Location "$INNERWORKDIR\Arangodb"; comm
+        Pop-Location
     }
     Else
     {
         $global:repoStateEnterprise = ""
     }
+    Pop-Location
 }
 
 Function noteStartAndRepoState
@@ -653,9 +671,11 @@ Function noteStartAndRepoState
 Function unittest($test,$output)
 {
     $PORT=Get-Random -Minimum 20000 -Maximum 65535
+    Push-Location $pwd
     Set-Location "$INNERWORKDIR\ArangoDB"; comm
     Write-Host "Test: $INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\arangosh.exe -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\UnitTests\unittest.js -- $test"
     [array]$global:UPIDS = [array]$global:UPIDS+$(Start-Process -FilePath "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\arangosh.exe" -ArgumentList " -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\UnitTests\unittest.js -- $test" -RedirectStandardOutput "$output.stdout.log" -RedirectStandardError "$output.stderr.log" -PassThru).Id; comm
+    Pop-Location
 }
 
 Function launchSingleTests
@@ -935,11 +955,13 @@ Function runTests
     {
         New-Item -ItemType Directory -Path $env:TMP
     }
+    Push-Location $pwd
     Set-Location "$INNERWORKDIR\ArangoDB"
     ForEach($log in $(Get-ChildItem -Filter "*.log"))
     {
         Remove-Item -Recurse -Force $log 
     }
+    Pop-Location
 
     Switch -Regex ($TESTSUITE)
     {
