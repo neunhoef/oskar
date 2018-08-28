@@ -117,7 +117,7 @@ function runInContainer
 end
 
 function buildDocumentation
-    set -l DOCIMAGE "obi/test" # TODO global var
+    set -l DOCIMAGE "arangodb/arangodb-documentation" # TODO global var
     runInContainer -e "ARANGO_SPIN=$ARANGO_SPIN" \
                    --user "$UID" \
                    -v "$WORKDIR:/oskar" \

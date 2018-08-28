@@ -1,35 +1,45 @@
-export arango_doc_container_default="obi/test"
+export arango_doc_container_default="arangodb/arangodb-documentation"
+
+err(){
+    echo "error: $@"
+}
 
 ferr(){
     echo "fatal error: $@"
     exit 1
 }
 
-ensure(){
-	"$@" && return
-	ferr "failed to run: createRepo $@"
+ensure_oskar(){
+       ensure create_repo "$@" && return
 }
 
-ensureOskar(){
-	ensure ./createRepo "$@" && return
-	ferr "failed to run: createRepo $@"
+ensure(){
+	"$@" && return
+	ferr "failed to run: $@"
 }
 
 setup_gpg(){
-    exec 3</tmp/createRepoFd3
+    error_info="$(mktemp)"
+    test_file="$(mktemp)"
     export KEYNAME=115E1684
     export GPG_TTY="$(tty)"
 
-    /usr/bin/gpg-agent --homedir=~/.gnupg --daemon --use-standard-socket --allow-loopback-pinentry 2>&3
-    gpg2 --import -v -v ~/.gnupg/secring.gpg 2>&3 || ferr "failed to import secret"
-    gpg2 --import -v -v ~/.gnupg/pubring.gpg 2>&3 || ferr "faild to import public key"
+    /usr/bin/gpg-agent --homedir=~/.gnupg --daemon \
+        --use-standard-socket --allow-loopback-pinentry 2>"$error_info"
+    gpg2 --import -v -v ~/.gnupg/secring.gpg 2>"$error_info" \
+        || err "failed to import secret"
+    gpg2 --import -v -v ~/.gnupg/pubring.gpg 2>"$error_info" \
+        || err "faild to import public key"
 
     cd /tmp/
-    echo "bla"> Release
+    echo "bla"> "$test_file"
     gpg2 --pinentry-mode=loopback --digest-algo SHA512 \
          --passphrase-fd 0 --yes -abs \
          -u "$KEYNAME" \
-         -o Release.gpg Release <<<"XXXXXXX" 2>&3
-    (( $? != 0 )) && { echo "failed test signing"; cat /tmp/createRepoFd3  exit 1; }
-    exec 3<&-
+         -o Release.gpg "$test_file" <<<"$ARANOG_SIGN_PASSWD" 2>"$error_info"
+    (( $? != 0 )) && {
+        echo "failed test signing";
+        cat "$error_info" exit 1;
+    }
+    rm -fr "$error_info"
 }
