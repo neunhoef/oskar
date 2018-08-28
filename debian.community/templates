@@ -34,12 +34,12 @@ Description: Password input error
 
 Template: arangodb3/storage_engine
 Type: select
-Choices: auto, mmfiles, rocksdb
+Choices: auto, rocksdb, mmfiles
 Default: auto
 Description: Database storage engine
  Choose which storage engine you want to use.
  Please note that you can't switch storage engines of existing installations,
  a dump and restore is required therefore.
  
- 'auto' will pick the existing one or default to mmfiles.
+ 'auto' will pick the existing one or default to rocksdb since ArangoDB 3.4, and to mmfiles before.
 

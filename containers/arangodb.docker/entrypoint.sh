@@ -30,7 +30,7 @@ if [ "$1" = 'arangod' ]; then
     fi
 
     if [ "$ARANGO_STORAGE_ENGINE" == "rocksdb" ]; then
-        echo "choosing Rocksdb storage engine"
+        echo "choosing RocksDB storage engine"
         sed -i /tmp/arangod.conf -e "s;storage-engine = auto;storage-engine = rocksdb;"
     elif [ "$ARANGO_STORAGE_ENGINE" == "mmfiles" ]; then
         echo "choosing MMFiles storage engine"
