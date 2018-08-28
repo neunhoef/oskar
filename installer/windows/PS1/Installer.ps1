@@ -130,3 +130,6 @@ If (-NOT((Get-ItemPropertyValue -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Mic
 #Rename-Item -Path "$clpath\clcheat.exe" -NewName "cl.exe"
 #[Environment]::SetEnvironmentVariable("CLCACHE_CL", "$($(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter clo.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx64\\x64"}).FullName)", "Machine")
 #Remove-Item "C:\Windows\Temp\clcache-4.1.0.zip"
+
+Write-Host "Import Codesign Certificate !!!"
+$Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
