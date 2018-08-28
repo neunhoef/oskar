@@ -1,4 +1,4 @@
-export arango_doc_container_default="obi/test"
+export arango_doc_container_default="arangodb/arangodb-documentation"
 
 ferr(){
     echo "fatal error: $@"
