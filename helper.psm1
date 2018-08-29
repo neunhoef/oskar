@@ -158,7 +158,7 @@ Function skipPackagingOff
 }
 If(-Not($SKIPPACKAGING))
 {
-    skipPackagingOn
+    skipPackagingOff
 }
 
 Function staticExecutablesOn
@@ -186,7 +186,7 @@ Function signPackageOff
 }
 If(-Not($SIGN))
 {
-    signPackageOff
+    signPackageOn
 }
 
 Function maintainerOn
@@ -489,31 +489,45 @@ Function buildWindows
 
 Function packageWindows
 {
-    If(-Not(Test-Path -PathType Container -Path "$INNERWORKDIR\ArangoDB\build"))
+    If($SKIPPACKAGING -eq "Off")
     {
-        buildWindows
+        If(-Not(Test-Path -PathType Container -Path "$INNERWORKDIR\ArangoDB\build"))
+        {
+            buildWindows
+        }
+        Push-Location $pwd
+        Set-Location "$INNERWORKDIR\ArangoDB\build"
+        Write-Host "Time: $((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH.mm.ssZ'))"
+        Write-Host "Package: cpack -C `"$BUILDMODE`""
+        proc -process "cpack" -argument "-C `"$BUILDMODE`"" -logfile "$INNERWORKDIR\package"
+        Pop-Location
     }
-    Push-Location $pwd
-    Set-Location "$INNERWORKDIR\ArangoDB\build"
-    Write-Host "Time: $((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH.mm.ssZ'))"
-    Write-Host "Package: cpack -C `"$BUILDMODE`""
-    proc -process "cpack" -argument "-C `"$BUILDMODE`"" -logfile "$INNERWORKDIR\package"
-    Pop-Location
+    Else
+    {
+        Write-Host "Call Function: skipPackagingOff"
+    }
 }
 
 Function signWindows
 {
-    findArangoDBVersion
-    If(-Not(Test-Path -PathType Leaf "$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB3-$global:ARANGODB_FULL_VERSION`_win64.exe"))
+    If($SIGN -eq "On")
     {
-        packageWindows
+        findArangoDBVersion
+        If(-Not(Test-Path -PathType Leaf "$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB3-$global:ARANGODB_FULL_VERSION`_win64.exe"))
+        {
+            packageWindows
+        }
+        Push-Location $pwd
+        Set-Location "$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\"
+        Write-Host "Time: $((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH.mm.ssZ'))"
+        Write-Host "Sign: signtool sign /sm $INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB3-$global:ARANGODB_FULL_VERSION`_win64.exe"
+        proc -process "signtool" -argument "sign /sm $INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB3-$global:ARANGODB_FULL_VERSION`_win64.exe" -logfile "$INNERWORKDIR\sign"
+        Pop-Location
     }
-    Push-Location $pwd
-    Set-Location "$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\"
-    Write-Host "Time: $((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH.mm.ssZ'))"
-    Write-Host "Sign: signtool sign /sm $INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB3-$global:ARANGODB_FULL_VERSION`_win64.exe"
-    proc -process "signtool" -argument "sign /sm $INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB3-$global:ARANGODB_FULL_VERSION`_win64.exe" -logfile "$INNERWORKDIR\sign"
-    Pop-Location
+    Else
+    {
+        Write-Host "Call Function: signPackageOn"
+    }
 }
 
 Function buildArangoDB
@@ -622,11 +636,11 @@ Function moveResultsToWorkspace
     if($SKIPPACKAGING -eq "Off")
     {
         findArangoDBVersion
-            If(Test-Path -PathType Leaf "$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB3-$global:ARANGODB_FULL_VERSION`_win64.exe")
-            {
-                Write-Host "Move $INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB3-$global:ARANGODB_FULL_VERSION`_win64.exe"
-                Move-Item -Path "$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB3-$global:ARANGODB_FULL_VERSION`_win64.exe" -Destination $env:WORKSPACE; comm 
-            }
+        If(Test-Path -PathType Leaf "$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB3-$global:ARANGODB_FULL_VERSION`_win64.exe")
+        {
+            Write-Host "Move $INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB3-$global:ARANGODB_FULL_VERSION`_win64.exe"
+            Move-Item -Path "$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB3-$global:ARANGODB_FULL_VERSION`_win64.exe" -Destination $env:WORKSPACE; comm 
+        }
     }
     If(Test-Path -PathType Leaf "$INNERWORKDIR\testfailures.log")
     {
