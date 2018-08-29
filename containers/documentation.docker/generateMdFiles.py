@@ -437,13 +437,13 @@ def walk_find_start_code(in_full, out_full, conf, blocks):
         #logger.debug(in_full + " " + match)
         textFile = walk_replace_text(textFile, in_full, match, blocks)
 
-    try:
-        textFile = apply_dict_re_replacement(g_dict_re_function_for_replacement, textFile)
+    #try:
+    #    textFile = apply_dict_re_replacement(g_dict_re_function_for_replacement, textFile)
 
-    except Exception as e:
-        logger.error("while parsing :      "  + in_full)
-        logger.error(textFile)
-        raise e
+    #except Exception as e:
+    #    logger.error("while parsing :      "  + in_full)
+    #    logger.error(textFile)
+    #    raise e
 
     re_images = re.compile(r".*\!\[([\d\s\w\/\. ()-]*)\]\(([\d\s\w\/\.-]*)\).*")
     textFile = re.sub(re_images
@@ -728,18 +728,15 @@ g_dict_text_replacement = {
 ###### simple dict - END ########################################################
 
 ###########
-g_re_unescape_md_in_links = re.compile("\\\\_")
-def setAnchor(match): ## TODO name
-    logger.error(match)
-    unescapedParam = g_re_unescape_md_in_links.sub("_", match)
-    rv = "<a name=\"" + unescapedParam + "\">#</a>"
-    logger.error(rv)
-    return rv
-    #return "<a name=\"" + unescapedParam + "\">#</a>"
-
-g_dict_re_function_for_replacement = [
-    (re.compile(r"@anchor (.*)"), setAnchor),
-]
+# g_re_unescape_md_in_links = re.compile("\\\\_")
+# def gen_html_anchor(match): ## TODO name
+#     logger.error(match)
+#     unescapedParam = g_re_unescape_md_in_links.sub("_", match)
+#     return "<a name=\"" + unescapedParam + "\">#</a>"
+#
+# g_dict_re_function_for_replacement = [
+#     (re.compile(r"@anchor (.*)"), gen_html_anchor),
+# ]
 ###########
 
 
