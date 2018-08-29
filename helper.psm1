@@ -53,21 +53,32 @@ Function 7zip($Path,$DestinationPath)
 
 Function showConfig
 {
-    Write-Host "System User           :"$env:USERDOMAIN\$env:USERNAME
-    Write-Host "Workdir               :"$WORKDIR
-    Write-Host "Inner workdir         :"$INNERWORKDIR
-    Write-Host "Cachedir              :"$env:CLCACHE_DIR
-    Write-Host "Cache                 :"$env:CLCACHE_CL
-    Write-Host "Generator             :"$GENERATOR
-    Write-Host "Maintainer            :"$MAINTAINER
-    Write-Host "Enterpriseedition     :"$ENTERPRISEEDITION
-    Write-Host "Buildmode             :"$BUILDMODE
-    Write-Host "Skip Packaging        :"$SKIPPACKAGING
-    Write-Host "Static Executables    :"$STATICEXECUTABLES
-    Write-Host "Test suite            :"$TESTSUITE
-    Write-Host "Storage engine        :"$STORAGEENGINE
-    Write-Host "Verbose               :"$VERBOSEOSKAR
-    Write-Host "Parallelism           :"$PARALLELISM
+	Write-Host "#################################"
+	Write-Host "Global Configuration"
+	Write-Host "- User           : "$env:USERDOMAIN\$env:USERNAME
+	Write-Host "- Cache          : "$env:CLCACHE_CL
+	Write-Host "- Cachedir       : "$env:CLCACHE_DIR
+	Write-Host " "
+	Write-Host "Build Configuration"
+	Write-Host "- Enterprise     : "$ENTERPRISEEDITION
+	Write-Host "- Buildmode      : "$BUILDMODE
+	Write-Host "- Maintainer     : "$MAINTAINER
+	Write-Host " "
+	Write-Host "- Generator      : "$GENERATOR
+	Write-Host "- Packaging      : "$PACKAGING
+	Write-Host "- Static         : "$STATICEXECUTABLES
+	Write-Host " "	
+	Write-Host "Test Configuration:"
+	Write-Host "- Storage engine : "$STORAGEENGINE
+	Write-Host "- Test suite     : "$TESTSUITE
+	Write-Host " "
+	Write-Host "Internal Configuration:"
+	Write-Host "- Workdir        : "$WORKDIR
+	Write-Host "- Inner workdir  : "$INNERWORKDIR
+	Write-Host "- Parallelism    : "$PARALLELISM
+	Write-Host "- Verbose        : "$VERBOSEOSKAR
+	Write-Host "#################################"
+	Write-Host " "
     comm
 }
 
@@ -136,11 +147,13 @@ If(-Not($TESTSUITE))
 Function skipPackagingOn
 {
     $global:SKIPPACKAGING = "On"
+	$global:PACKAGING = "Off"
     $global:USEFAILURETESTS = "On"
 }
 Function skipPackagingOff
 {
     $global:SKIPPACKAGING = "Off"
+	$global:PACKAGING = "On"
     $global:USEFAILURETESTS = "Off"
 }
 If(-Not($SKIPPACKAGING))
