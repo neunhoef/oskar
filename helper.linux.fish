@@ -266,34 +266,7 @@ function buildRPMPackage
 end
 
 function buildTarGzPackage
-  # This assumes that a static build has already happened
-  # Must have set ARANGODB_TGZ_UPSTREAM
-  # for example by running findArangoDBVersion.
-  set -l v "$ARANGODB_TGZ_UPSTREAM"
-  set -l name
-
-  if test "$ENTERPRISEEDITION" = "On"
-    set name arangodb3e
-  else
-    set name arangodb3
-  end
-
-  cd $WORKDIR
-  and cd $WORKDIR/work/ArangoDB/build/install
-  and rm -rf bin
-  and cp -a $WORKDIR/binForTarGz bin
-  and rm -f bin/*~ bin/*.bak
-  and mv bin/README .
-  and strip usr/sbin/arangod usr/bin/{arangobench,arangodump,arangoexport,arangoimp,arangorestore,arangosh,arangovpack}
-  and cd $WORKDIR/work/ArangoDB/build
-  and mv install "$name-$v"
-  or begin ; cd $WORKDIR ; return 1 ; end
-
-  tar -c -z -v -f "$WORKDIR/work/$name-binary-$v.tar.gz" --exclude "etc" --exclude "var" "$name-$v"
-  set s $status
-  mv "$name-$v" install
-  cd $WORKDIR
-  return $s 
+  buildTarGzPackageHelper "linux"
 end
 
 function interactiveContainer

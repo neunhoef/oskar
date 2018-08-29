@@ -133,6 +133,7 @@ function buildPackage
   end
 
   and runLocal $SCRIPTSDIR/buildMacOsPackage.fish
+  and buildTarGzPackage
 end
 
 function cleanupThirdParty
@@ -193,3 +194,8 @@ function buildCommunityPackage
     return 1
   end
 end
+
+function buildTarGzPackage
+  buildTarGzPackageHelper "macosx"
+end
+
