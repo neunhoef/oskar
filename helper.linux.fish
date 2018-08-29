@@ -120,25 +120,11 @@ end
 function buildDocumentation
     set -l DOCIMAGE "arangodb/arangodb-documentation" # TODO global var
     runInContainer -e "ARANGO_SPIN=$ARANGO_SPIN" \
+                   -e "ARANGO_NO_COLOR=$ARANGO_IN_JENKINS" \
                    --user "$UID" \
                    -v "$WORKDIR:/oskar" \
                    -it "$DOCIMAGE" \
-                   -- "$argv" | tee $WORKDIR/work/buid_documentation.log
-end
-
-function buildDocumentationInPr
-    #disable once enterprise only options are availalbe
-    if test $ENTERPRISEEDITION != On
-        if test (cd $WORKDIR/work/ArangoDB; and git rev-parse --abbrev-ref HEAD) = devel;
-            buildDocumentation
-            return $status
-        else
-            #TODO - make it available for more branches
-            echo "Documentation building documentation is only available for 'devel' branch!"
-        end
-    else
-        echo "Documentation building is not available for enterprise edition in PR tests"
-    end
+                   -- "$argv"
 end
 
 function buildDocumentationForRelease
@@ -177,7 +163,7 @@ function buildArangoDB
   checkoutIfNeeded
   runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/buildArangoDB.fish $argv
   set -l s $status
-  if test $s != 0
+  if test $s -ne 0
     echo Build error!
     return $s
   end
@@ -186,7 +172,7 @@ end
 function makeArangoDB
   runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/makeArangoDB.fish $argv
   set -l s $status
-  if test $s != 0
+  if test $s -ne 0
     echo Build error!
     return $s
   end
@@ -196,7 +182,7 @@ function buildStaticArangoDB
   checkoutIfNeeded
   runInContainer $ALPINEBUILDIMAGE $SCRIPTSDIR/buildAlpine.fish $argv
   set -l s $status
-  if test $s != 0
+  if test $s -ne 0
     echo Build error!
     return $s
   end
@@ -205,7 +191,7 @@ end
 function makeStaticArangoDB
   runInContainer $ALPINEBUILDIMAGE $SCRIPTSDIR/makeAlpine.fish $argv
   set -l s $status
-  if test $s != 0
+  if test $s -ne 0
     echo Build error!
     return $s
   end
@@ -238,7 +224,7 @@ function buildDebianPackage
   and date -R >> $ch
   and runInContainer $UBUNTUPACKAGINGIMAGE $SCRIPTSDIR/buildDebianPackage.fish
   set -l s $status
-  if test $s != 0
+  if test $s -ne 0
     echo Error when building a debian package
     return $s
   end
@@ -389,7 +375,7 @@ function makeDockerImage
     echo "Need to set environment variable DOWNLOAD_SYNC_USER."
     return 1
   end
-  if test (count $argv) = 0
+  if test (count $argv) -eq 0
     echo Must give image name as argument
     return 1
   end
@@ -397,7 +383,7 @@ function makeDockerImage
 
   cd $WORKDIR/work/ArangoDB/build/install
   and tar czvf $WORKDIR/containers/arangodb.docker/install.tar.gz *
-  if test $status != 0
+  if test $status -ne 0
     echo Could not create install tarball!
     return 1
   end
@@ -431,7 +417,7 @@ function buildEnterprisePackage
   and downloadSyncer
   and buildPackage
 
-  if test $status != 0
+  if test $status -ne 0
     echo Building enterprise release failed, stopping.
     return 1
   end
@@ -449,7 +435,7 @@ function buildCommunityPackage
   and downloadStarter
   and buildPackage
 
-  if test $status != 0
+  if test $status -ne 0
     echo Building community release failed.
     return 1
   end
