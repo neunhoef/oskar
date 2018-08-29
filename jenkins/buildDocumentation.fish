@@ -11,7 +11,7 @@ end
 echo "--------------------------------------------------------------------------------"
 showConfig
 
-set -gl ARANGO_IN_JENKINS true
+set -xg ARANGO_IN_JENKINS true
 
 echo Working on branch $ARANGODB_BRANCH of main repository
 echo on branch $ENTERPRISE_BRANCH of enterprise repository.
