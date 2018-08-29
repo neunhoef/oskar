@@ -279,7 +279,7 @@ function createReport
   set cores core*
   set archives *.tar.gz
   set logs *.log
-  if test (count $cores) != 0
+  if test (count $cores) -ne 0
     set binaries build/bin/arangod build/bin/arangodbtests
     echo tar czvf "$INNERWORKDIR/crashreport-$d.tar.gz" $cores $binaries
     tar czvf "$INNERWORKDIR/crashreport-$d.tar.gz" $cores $binaries
