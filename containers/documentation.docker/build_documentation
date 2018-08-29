@@ -113,9 +113,9 @@ debug(){ $ARANGO_DEBUG && say "#-# DEBUG #-# " "$@" && return 0; return 1; }
 . $NVM_DIR/nvm.sh || ferr "could not source nvm"
 nvm use default || ferr "could not use nvm"
 
-echo "================================================================================"
+section "" | sed 's/-/=/g'
 section "ArangoDB Documenation Build script" | sed 's/-/=/g'
-echo "================================================================================"
+section "" | sed 's/-/=/g'
 
 #### GLOBAL VARS THAT SHOULD NOT BE MODIFIED BY USERS ########################################################
 ALLBOOKS="HTTP AQL Cookbook Drivers" #TODO reactivate Manual
