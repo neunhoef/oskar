@@ -2,9 +2,13 @@
 me=$(realpath $0)
 program=$(basename $me)
 installation=$(dirname $(dirname $me))
-executable=$installation/usr/sbin/$program
+executable=$installation/usr/bin/$program
 if [ -x $executable ] ; then
-  exec $executable -c none "$@"
+  exec $executable \
+       --configuration none \
+       --server.endpoint tcp://127.0.0.1:8529 \
+       --server.authentication true \
+       "$@"
 fi
 echo "Could not find executable!"
 exit 1

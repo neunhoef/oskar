@@ -193,6 +193,8 @@ function findArangoDBVersion
     set -xg ARANGODB_DARWIN_UPSTREAM "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_PATCH"
     set -xg ARANGODB_DARWIN_REVISION "$ARANGODB_PACKAGE_REVISION"
 
+    set -xg ARANGODB_TGZ_UPSTREAM "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_PATCH"
+
   # new version scheme (from 3.4.x)  
   else
     set -xg ARANGODB_VERSION_PATCH (grep "$AV""_PATCH" $CMAKELIST | grep -v unset | sed -e $SEDFIX)
@@ -205,6 +207,8 @@ function findArangoDBVersion
 
       set -xg ARANGODB_DARWIN_UPSTREAM "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_PATCH"
       set -xg ARANGODB_DARWIN_REVISION ""
+
+      set -xg ARANGODB_TGZ_UPSTREAM "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_PATCH"
 
       # devel or nightly
       if test "$ARANGODB_VERSION_PATCH" = "devel" \
@@ -263,6 +267,8 @@ function findArangoDBVersion
       set -xg ARANGODB_DARWIN_UPSTREAM "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_PATCH"
       set -xg ARANGODB_DARWIN_REVISION "$ARANGODB_VERSION_RELEASE_TYPE.$ARANGODB_VERSION_RELEASE_NUMBER"
 
+      set -xg ARANGODB_TGZ_UPSTREAM "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_PATCH-$ARANGODB_VERSION_RELEASE_TYPE.$ARANGODB_VERSION_RELEASE_NUMBER"
+
     # hot-fix
     else
       if test "$ARANGODB_VERSION_RELEASE_NUMBER" != ""
@@ -280,6 +286,8 @@ function findArangoDBVersion
 
       set -xg ARANGODB_DARWIN_UPSTREAM "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_PATCH.$ARANGODB_VERSION_RELEASE_TYPE"
       set -xg ARANGODB_DARWIN_REVISION ""
+
+      set -xg ARANGODB_TGZ_UPSTREAM "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_PATCH-$ARANGODB_VERSION_RELEASE_TYPE"
     end
   end
 
@@ -287,6 +295,7 @@ function findArangoDBVersion
   echo "Debian:   $ARANGODB_DEBIAN_UPSTREAM / $ARANGODB_DEBIAN_REVISION"
   echo "RPM:      $ARANGODB_RPM_UPSTREAM / $ARANGODB_RPM_REVISION"
   echo "DARWIN:   $ARANGODB_DARWIN_UPSTREAM / $ARANGODB_DARWIN_REVISION"
+  echo "TGZ:      $ARANGODB_TGZ_UPSTREAM"
 end
 
 function makeRelease
@@ -346,6 +355,9 @@ function moveResultsToWorkspace
   for f in $WORKDIR/work/*.dmg ; echo "mv $f" ; mv $f $WORKSPACE ; end
   for f in $WORKDIR/work/*.rpm ; echo "mv $f" ; mv $f $WORKSPACE ; end
   for f in $WORKDIR/work/*.tar.gz ; echo "mv $f" ; mv $f $WORKSPACE ; end
+
+  mv $WORKDIR/work/*documentation* $WORKSPACE; or true # this changes should not make the copy fail
+
   if test -f $WORKDIR/work/testfailures.txt
     echo "mv $WORKDIR/work/testfailures.txt" ; mv $WORKDIR/work/testfailures.txt $WORKSPACE
   end

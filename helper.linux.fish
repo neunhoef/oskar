@@ -119,10 +119,11 @@ end
 function buildDocumentation
     set -l DOCIMAGE "arangodb/arangodb-documentation" # TODO global var
     runInContainer -e "ARANGO_SPIN=$ARANGO_SPIN" \
+                   -e "ARANGO_NO_COLOR=$ARANGO_IN_JENKINS" \
                    --user "$UID" \
                    -v "$WORKDIR:/oskar" \
-                   -t "$DOCIMAGE" \
-                   -- "$argv"
+                   -it "$DOCIMAGE" \
+                   -- "$argv" | tee $WORKDIR/work/buid_documentation.log
 end
 
 function buildDocumentationInPr
@@ -280,10 +281,11 @@ end
 
 function buildTarGzPackage
   # This assumes that a static build has already happened
-  # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
-  # ARANGODB_FULL_VERSION, for example by running findArangoDBVersion.
-  set -l v "$ARANGODB_FULL_VERSION"
+  # Must have set ARANGODB_TGZ_UPSTREAM
+  # for example by running findArangoDBVersion.
+  set -l v "$ARANGODB_TGZ_UPSTREAM"
   set -l name
+
   if test "$ENTERPRISEEDITION" = "On"
     set name arangodb3e
   else
@@ -294,12 +296,14 @@ function buildTarGzPackage
   and cd $WORKDIR/work/ArangoDB/build/install
   and rm -rf bin
   and cp -a $WORKDIR/binForTarGz bin
+  and rm -f bin/*~ bin/*.bak
+  and mv bin/README .
   and strip usr/sbin/arangod usr/bin/{arangobench,arangodump,arangoexport,arangoimp,arangorestore,arangosh,arangovpack}
   and cd $WORKDIR/work/ArangoDB/build
   and mv install "$name-$v"
   or begin ; cd $WORKDIR ; return 1 ; end
 
-  tar czvf "$WORKDIR/work/$name-binary-$v.tar.gz" "$name-$v"
+  tar -c -z -v -f "$WORKDIR/work/$name-binary-$v.tar.gz" --exclude "etc" --exclude "var" "$name-$v"
   set s $status
   mv "$name-$v" install
   cd $WORKDIR

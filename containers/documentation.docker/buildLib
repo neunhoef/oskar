@@ -71,7 +71,6 @@ ensure_cmd(){
 
 spin_cmd() {
     ARANGO_SPIN=${ARANGO_SPIN:-false}
-    echo $ARANGO_SPIN
     if $ARANGO_SPIN; then
         {   local scount=1
             local arr=( "Was ist denn jetzt mit gitbook?"
@@ -165,7 +164,7 @@ run_ditaa() {
         # if dest dir is not available then the creation of the
         # directory structures did most proably not work correctly
         if $use_ditaa; then
-            run_cmd ditaa "$file" "$dest" || ferr "ditaa for $file to $dest failed"
+            run_cmd ditaa $(expand_cygpath "$file" "$dest") || ferr "ditaa for $file to $dest failed"
         else
             local fake="$ARANGO_SOURCE/js/node/node_modules/mocha/images/error.png"
             cp "$fake" "$dest" || ferr "fake ditaa for $file to $dest failed"
@@ -670,6 +669,7 @@ cross_out_check_dangling_anchors() {
     echo "  - check if tags (files in /tmp/tags) are unique" #OK
     local error_occured=false
     debug "look for empty files" && find /tmp/tags -empty
+    debug "look for empty files"
     while IFS= read -r htmlf; do
         local errors=$( comm -3  <(sort    "${htmlf}" | grep -v ^$ ) \
                                  <(sort -u "${htmlf}" | grep -v ^$ )
