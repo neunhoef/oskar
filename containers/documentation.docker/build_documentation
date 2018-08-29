@@ -70,6 +70,12 @@ if [ -f "$BASH_LIB" ]; then
     say(){ _o_say "$@"; }
     success(){ _o_success "$@"; }
 
+    if [[ -v ARANGO_NO_COLOR ]]; then
+        for _c in _black _red _green _yellow _blue _magenta _cyan _white _bold; do
+            printf -v "$_c" %s ""
+        done
+        unset _c
+    fi
 else
     echo "could not source bash_lib"
 

@@ -119,6 +119,7 @@ end
 function buildDocumentation
     set -l DOCIMAGE "arangodb/arangodb-documentation" # TODO global var
     runInContainer -e "ARANGO_SPIN=$ARANGO_SPIN" \
+                   -e "ARANGO_NO_COLOR=$ARANGO_IN_JENKINS" \
                    --user "$UID" \
                    -v "$WORKDIR:/oskar" \
                    -it "$DOCIMAGE" \
