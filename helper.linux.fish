@@ -123,7 +123,7 @@ function buildDocumentation
                    --user "$UID" \
                    -v "$WORKDIR:/oskar" \
                    -it "$DOCIMAGE" \
-                   -- "$argv" | tee $WORKDIR/work/buid_documentation.log
+                   -- "$argv"
 end
 
 function buildDocumentationInPr
