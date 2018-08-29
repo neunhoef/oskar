@@ -126,21 +126,6 @@ function buildDocumentation
                    -- "$argv"
 end
 
-function buildDocumentationInPr
-    #disable once enterprise only options are availalbe
-    if test $ENTERPRISEEDITION != On
-        if test (cd $WORKDIR/work/ArangoDB; and git rev-parse --abbrev-ref HEAD) = devel;
-            buildDocumentation
-            return $status
-        else
-            #TODO - make it available for more branches
-            echo "Documentation building documentation is only available for 'devel' branch!"
-        end
-    else
-        echo "Documentation building is not available for enterprise edition in PR tests"
-    end
-end
-
 function buildDocumentationForRelease
     buildDocumentation --all-formats
 end
