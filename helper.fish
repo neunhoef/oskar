@@ -310,30 +310,9 @@ function makeRelease
     set -xg ARANGODB_PACKAGE_REVISION "$argv[2]"
     set -xg ARANGODB_FULL_VERSION "$argv[1]-$argv[2]"
   end
-  maintainerOff
-  releaseMode
 
-  enterprise
-  set -xg NOSTRIP dont
-  buildStaticArangoDB -DTARGET_ARCHITECTURE=nehalem
-  and downloadStarter
-  and downloadSyncer
-  and buildPackage
-
-  if test $status != 0
-    echo Building enterprise release failed, stopping.
-    return 1
-  end
-
-  community
-  buildStaticArangoDB -DTARGET_ARCHITECTURE=nehalem
-  and downloadStarter
-  and buildPackage
-
-  if test $status != 0
-    echo Building community release failed.
-    return 1
-  end
+  buildEnterprisePackage
+  and buildCommunityPackage
 end
 
 function moveResultsToWorkspace

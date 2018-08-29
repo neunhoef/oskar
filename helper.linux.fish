@@ -1,4 +1,5 @@
 set -gx INNERWORKDIR /work
+set -gx THIRDPARTY_BIN $INNERWORKDIR/ArangoDB/build/install/usr/bin
 set -gx SCRIPTSDIR /scripts
 set -gx PLATFORM linux
 set -gx ARCH (uname -m)
@@ -376,11 +377,11 @@ function updateOskar
 end
 
 function downloadStarter
-  runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/downloadStarter.fish $argv
+  runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/downloadStarter.fish $THIRDPARTY_BIN $argv
 end
 
 function downloadSyncer
-  runInContainer -e DOWNLOAD_SYNC_USER=$DOWNLOAD_SYNC_USER $UBUNTUBUILDIMAGE $SCRIPTSDIR/downloadSyncer.fish $argv
+  runInContainer -e DOWNLOAD_SYNC_USER=$DOWNLOAD_SYNC_USER $UBUNTUBUILDIMAGE $SCRIPTSDIR/downloadSyncer.fish $THIRDPARTY_BIN $argv
 end
 
 function makeDockerImage
@@ -411,6 +412,47 @@ function buildPackage
   buildDebianPackage
   and buildRPMPackage
   and buildTarGzPackage
+end
+
+function buildEnterprisePackage
+  if test "$DOWNLOAD_SYNC_USER" = ""
+    echo "Need to set environment variable DOWNLOAD_SYNC_USER."
+    return 1
+  end
+ 
+  # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
+  # ARANGODB_FULL_VERSION, for example by running findArangoDBVersion.
+  maintainerOff
+  releaseMode
+  enterprise
+  set -xg NOSTRIP dont
+  buildStaticArangoDB -DTARGET_ARCHITECTURE=nehalem
+  and downloadStarter
+  and downloadSyncer
+  and buildPackage
+
+  if test $status != 0
+    echo Building enterprise release failed, stopping.
+    return 1
+  end
+end
+
+function buildCommunityPackage
+  # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
+  # ARANGODB_FULL_VERSION, for example by running findArangoDBVersion.
+  maintainerOff
+  releaseMode
+  community
+  set -xg NOSTRIP dont
+
+  buildStaticArangoDB -DTARGET_ARCHITECTURE=nehalem
+  and downloadStarter
+  and buildPackage
+
+  if test $status != 0
+    echo Building community release failed.
+    return 1
+  end
 end
 
 # Set PARALLELISM in a sensible way:

@@ -1,5 +1,8 @@
 #!/usr/bin/env fish
 
+# On Linux: downloadSyncer $INNERWORKDIR/ArangoDB/build/install/usr/bin
+# On Mac: downloadSyncer $INNERWORKDIR/third_party/bin
+
 echo Hello, syncer here, arguments are: $argv
 
 if test -z "$DOWNLOAD_SYNC_USER"
@@ -12,10 +15,16 @@ if test -f $INNERWORKDIR/ArangoDB/STARTER_REV
   exit 0
 end
 
-if test (count $argv) = 0
+if test (count $argv) -lt 1
+  echo "You need to supply a path where to download the starter"
+  exit 1
+end
+set -l SYNCER_FOLDER $argv[1]
+
+if test (count $argv) = 1
   eval "set "(grep SYNCER_REV $INNERWORKDIR/ArangoDB/VERSIONS)
 else
-  set SYNCER_REV "$argv[1]"
+  set SYNCER_REV "$argv[2]"
 end
 if test "$SYNCER_REV" = latest
   set -l meta (curl -s -L "https://$DOWNLOAD_SYNC_USER@api.github.com/repos/arangodb/arangosync/releases/latest")
@@ -39,7 +48,7 @@ if test $status != 0
   exit 1
 end
 echo Downloading: Asset with ID $asset_id
-set -l SYNCER_PATH $INNERWORKDIR/ArangoDB/build/install/usr/bin/arangosync
+set -l SYNCER_PATH $SYNCER_FOLDER/arangosync
 
 curl -s -L -H "Accept: application/octet-stream" "https://$DOWNLOAD_SYNC_USER@api.github.com/repos/arangodb/arangosync/releases/assets/$asset_id" -o "$SYNCER_PATH"
 
