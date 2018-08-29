@@ -94,7 +94,7 @@ if [ -f "$BASH_LIB" ]; then
     success(){ _o_success "$@"; }
 
     if [[ -v ARANGO_NO_COLOR ]]; then
-        for _c in _black _red _green _yellow _blue _magenta _cyan _white _bold; do
+        for _c in _black _red _green _yellow _blue _magenta _cyan _white _bold _reset; do
             printf -v "$_c" %s ""
         done
         unset _c
