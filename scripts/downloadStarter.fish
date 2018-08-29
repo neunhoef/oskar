@@ -9,15 +9,14 @@ if test (count $argv) -lt 1
   exit 1
 end
 set -l STARTER_FOLDER $argv[1]
-
-if test "$argv[2]" = ""
+if test (count $argv) -lt 2
   if test -f $INNERWORKDIR/ArangoDB/STARTER_REV
     set STARTER_REV (cat $INNERWORKDIR/ArangoDB/STARTER_REV)
   else
     eval "set "(grep STARTER_REV $INNERWORKDIR/ArangoDB/VERSIONS)
   end
 else
-  set STARTER_REV "$argv[1]"
+  set STARTER_REV "$argv[2]"
 end
 if test "$STARTER_REV" = latest
   set -l meta (curl -s -L "https://api.github.com/repos/arangodb-helper/arangodb/releases/latest")
