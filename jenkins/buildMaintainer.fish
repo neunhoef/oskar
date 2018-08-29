@@ -16,7 +16,7 @@ switchBranches $ARANGODB_BRANCH $ENTERPRISE_BRANCH
 and buildStaticArangoDB
 
 set -l s $status
-if test $s != 0
+if test $s -ne 0
   echo Build failure with maintainer mode on in community.
 end
 cd "$HOME/$NODE_NAME/oskar" ; moveResultsToWorkspace ; unlockDirectory 

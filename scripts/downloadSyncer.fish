@@ -12,7 +12,7 @@ if test -f $INNERWORKDIR/ArangoDB/STARTER_REV
   exit 0
 end
 
-if test (count $argv) = 0
+if test (count $argv) -eq 0
   eval "set "(grep SYNCER_REV $INNERWORKDIR/ArangoDB/VERSIONS)
 else
   set SYNCER_REV "$argv[1]"
@@ -34,7 +34,7 @@ or begin ; echo Finding download asset failed ; exit 1 ; end
 echo $meta > $INNERWORKDIR/assets.json
 
 set -l asset_id (echo $meta | jq ".assets | map(select(.name == \"arangosync-$PLATFORM-amd64\"))[0].id")
-if test $status != 0
+if test $status -ne 0
   echo Downloaded JSON cannot be parsed
   exit 1
 end

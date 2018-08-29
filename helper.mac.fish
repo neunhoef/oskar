@@ -48,7 +48,7 @@ function buildArangoDB
   checkoutIfNeeded
   runLocal $SCRIPTSDIR/buildMacOs.fish $argv
   set -l s $status
-  if test $s != 0
+  if test $s -ne 0
     echo Build error!
     return $s
   end
@@ -57,7 +57,7 @@ end
 function makeArangoDB
   runLocal $SCRIPTSDIR/makeArangoDB.fish $argv
   set -l s $status
-  if test $s != 0
+  if test $s -ne 0
     echo Build error!
     return $s
   end
@@ -68,7 +68,7 @@ function buildStaticArangoDB
   runLocal $SCRIPTSDIR/buildMacOs.fish $argv
 #  runLocal $SCRIPTSDIR/buildAlpine.fish $argv
   set -l s $status
-  if test $s != 0
+  if test $s -ne 0
     echo Build error!
     return $s
   end
@@ -77,7 +77,7 @@ end
 function makeStaticArangoDB
   runLocal $SCRIPTSDIR/makeArangoDB.fish $argv
   set -l s $status
-  if test $s != 0
+  if test $s -ne 0
     echo Build error!
     return $s
   end

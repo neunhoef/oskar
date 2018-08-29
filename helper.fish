@@ -320,7 +320,7 @@ function makeRelease
   and downloadSyncer
   and buildPackage
 
-  if test $status != 0
+  if test $status -ne 0
     echo Building enterprise release failed, stopping.
     return 1
   end
@@ -330,7 +330,7 @@ function makeRelease
   and downloadStarter
   and buildPackage
 
-  if test $status != 0
+  if test $status -ne 0
     echo Building community release failed.
     return 1
   end
