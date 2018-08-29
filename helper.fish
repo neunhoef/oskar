@@ -339,7 +339,7 @@ function buildTarGzPackageHelper
   and cd $WORKDIR/work/ArangoDB/build/install
   and rm -rf bin
   and cp -a $WORKDIR/binForTarGz bin
-  and rm -f bin/*~ bin/*.bak
+  and rm -f "bin/*~" "bin/*.bak"
   and mv bin/README .
   and strip usr/sbin/arangod usr/bin/{arangobench,arangodump,arangoexport,arangoimp,arangorestore,arangosh,arangovpack}
   and cd $WORKDIR/work/ArangoDB/build
