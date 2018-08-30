@@ -1,5 +1,5 @@
 #!/usr/bin/env fish
-set TS (which ts; and echo -- -s [\\%.T]; or echo /usr/bin/cat)
+set TS (which ts; and echo -- -s [\\%.T]; or echo /usr/bin/env cat)
 
 cd $INNERWORKDIR
 mkdir -p .ccache.mac
