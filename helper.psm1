@@ -5,7 +5,7 @@ If(-Not(Test-Path -PathType Container -Path "work"))
 }
 If(-Not($ENV:WORKSPACE))
 {
-    $ENV:WORKSPACE = $global:WORKDIR
+    $ENV:WORKSPACE = $(Split-Path -Parent $global:WORKDIR)
 }
 $global:INNERWORKDIR = "$WORKDIR\work"
 $global:GENERATOR = "Visual Studio 15 2017 Win64"
