@@ -3,6 +3,10 @@ If(-Not(Test-Path -PathType Container -Path "work"))
 {
     New-Item -ItemType Directory -Path "work"
 }
+If(-Not($ENV:WORKSPACE))
+{
+    $ENV:WORKSPACE = $global:WORKDIR
+}
 $global:INNERWORKDIR = "$WORKDIR\work"
 $global:GENERATOR = "Visual Studio 15 2017 Win64"
 Import-Module VSSetup -ErrorAction Stop
@@ -499,19 +503,13 @@ Function packageWindows
 
 Function signWindows
 {
+    Push-Location $pwd
+    Set-Location "$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\"
+    $EXE = (Get-ChildItem -Filter ArangoDB*.exe).FullName
     Write-Host "Time: $((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH.mm.ssZ'))"
-    If($ENTERPRISEEDITION -eq "On")
-    {
-        findArangoDBVersion | Out-Null
-        Write-Host "Sign: signtool sign /sm `"$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB3e-$global:ARANGODB_FULL_VERSION`_win64.exe`""
-        proc -process "signtool" -argument "sign /sm `"$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB3e-$global:ARANGODB_FULL_VERSION`_win64.exe`"" -logfile "$INNERWORKDIR\sign"
-    }
-    Else
-    {
-        findArangoDBVersion | Out-Null
-        Write-Host "Sign: signtool sign /sm `"$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB3-$global:ARANGODB_FULL_VERSION`_win64.exe`""
-        proc -process "signtool" -argument "sign /sm `"$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB3e-$global:ARANGODB_FULL_VERSION`_win64.exe`"" -logfile "$INNERWORKDIR\sign"
-    }
+    Write-Host "Sign: signtool sign /sm `"$EXE`""
+    proc -process "signtool" -argument "sign /sm `"$EXE`"" -logfile "$INNERWORKDIR\sign"
+    Pop-Location
 }
 
 Function buildArangoDB
