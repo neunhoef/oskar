@@ -499,7 +499,6 @@ Function signWindows
 {
     Push-Location $pwd
     Set-Location "$INNERWORKDIR\ArangoDB\build\"
-    $ = 
     Write-Host "Time: $((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH.mm.ssZ'))"
     ForEach($PACKAGE in $(Get-ChildItem -Filter ArangoDB*.exe).FullName)
     {
