@@ -15,6 +15,7 @@ function runLocal
   else
     set -l agentstarted ""
   end
+  set -xg GIT_SSH_COMMAND "ssh -o StrictHostKeyChecking=no"
   eval $argv 
   set -l s $status
   if test -n "$agentstarted"
