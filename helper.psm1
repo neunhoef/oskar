@@ -3,6 +3,10 @@ If(-Not(Test-Path -PathType Container -Path "work"))
 {
     New-Item -ItemType Directory -Path "work"
 }
+If(-Not($ENV:WORKSPACE))
+{
+    $ENV:WORKSPACE = $(Split-Path -Parent $global:WORKDIR)
+}
 $global:INNERWORKDIR = "$WORKDIR\work"
 $global:GENERATOR = "Visual Studio 15 2017 Win64"
 Import-Module VSSetup -ErrorAction Stop
@@ -315,11 +319,28 @@ Function checkoutIfNeeded
 
 Function switchBranches($branch_c,$branch_e)
 {
-    checkoutIfNeeded
-    if($global:ok)
+    Push-Location $pwd
+    Set-Location "$INNERWORKDIR\ArangoDB";comm
+    If ($global:ok) 
+    {
+        proc -process "git" -argument "checkout -- ." -logfile $false
+    }
+    If ($global:ok) 
+    {
+        proc -process "git" -argument "fetch" -logfile $false
+    }
+    If ($global:ok) 
+    {
+        proc -process "git" -argument "checkout $branch_c" -logfile $false
+    }
+    If ($global:ok) 
+    {
+        proc -process "git" -argument "reset --hard origin/$branch_c" -logfile $false
+    }
+    If($ENTERPRISEEDITION -eq "On")
     {
         Push-Location $pwd
-        Set-Location "$INNERWORKDIR\ArangoDB";comm
+        Set-Location "$INNERWORKDIR\ArangoDB\enterprise";comm
         If ($global:ok) 
         {
             proc -process "git" -argument "checkout -- ." -logfile $false
@@ -330,36 +351,15 @@ Function switchBranches($branch_c,$branch_e)
         }
         If ($global:ok) 
         {
-            proc -process "git" -argument "checkout $branch_c" -logfile $false
+            proc -process "git" -argument "checkout $branch_e" -logfile $false
         }
         If ($global:ok) 
         {
-            proc -process "git" -argument "reset --hard origin/$branch_c" -logfile $false
-        }
-        If($ENTERPRISEEDITION -eq "On")
-        {
-            Push-Location $pwd
-            Set-Location "$INNERWORKDIR\ArangoDB\enterprise";comm
-            If ($global:ok) 
-            {
-                proc -process "git" -argument "checkout -- ." -logfile $false
-            }
-            If ($global:ok) 
-            {
-                proc -process "git" -argument "fetch" -logfile $false
-            }
-            If ($global:ok) 
-            {
-                proc -process "git" -argument "checkout $branch_e" -logfile $false
-            }
-            If ($global:ok) 
-            {
-                proc -process "git" -argument "reset --hard origin/$branch_e" -logfile $false
-            }
-            Pop-Location
+            proc -process "git" -argument "reset --hard origin/$branch_e" -logfile $false
         }
         Pop-Location
     }
+    Pop-Location
 }
 
 Function updateOskar
@@ -487,32 +487,23 @@ Function packageWindows
     Push-Location $pwd
     Set-Location "$INNERWORKDIR\ArangoDB\build"
     Write-Host "Time: $((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH.mm.ssZ'))"
-    Write-Host "Package: cpack -C `"$BUILDMODE`""
-    proc -process "cpack" -argument "-C `"$BUILDMODE`"" -logfile "$INNERWORKDIR\package"
-    #If(Test-Path -PathType Container "$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB3-*win64\")
-    #{
-    #    findArangoDBVersion | Out-Null
-    #    7zip $INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB3-*win64\ $INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB3-$global:ARANGODB_FULL_VERSION`_win64.zip
-    #}
+    ForEach($TARGET in @("package-arangodb-server-nsis","package-arangodb-server-zip","package-arangodb-client-nsis"))
+    {
+        Write-Host "Build: cmake --build . --config `"$BUILDMODE`" --target `"$TARGET`""
+        proc -process "cmake" -argument "--build . --config `"$BUILDMODE`" --target `"$TARGET`"" -logfile "$INNERWORKDIR\$TARGET-package"
+    }
     Pop-Location
 }
 
 Function signWindows
 {
     Push-Location $pwd
-    Set-Location "$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\"
+    Set-Location "$INNERWORKDIR\ArangoDB\build\"
     Write-Host "Time: $((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH.mm.ssZ'))"
-    If($ENTERPRISEEDITION -eq "On")
+    ForEach($PACKAGE in $(Get-ChildItem -Filter ArangoDB*.exe).FullName)
     {
-        findArangoDBVersion | Out-Null
-        Write-Host "Sign: signtool sign /sm ArangoDB3e-$global:ARANGODB_FULL_VERSION`_win64.exe"
-        proc -process "signtool" -argument "sign /sm ArangoDB3e-$global:ARANGODB_FULL_VERSION`_win64.exe" -logfile "$INNERWORKDIR\sign"
-    }
-    Else
-    {
-        findArangoDBVersion | Out-Null
-        Write-Host "Sign: signtool sign /sm ArangoDB3-$global:ARANGODB_FULL_VERSION`_win64.exe"
-        proc -process "signtool" -argument "sign /sm ArangoDB3-$global:ARANGODB_FULL_VERSION`_win64.exe" -logfile "$INNERWORKDIR\sign"
+        Write-Host "Sign: signtool sign /tr `"http://sha256timestamp.ws.symantec.com/sha256/timestamp`" `"$PACKAGE`""
+        proc -process "signtool" -argument "sign /tr `"http://sha256timestamp.ws.symantec.com/sha256/timestamp`" `"$PACKAGE`"" -logfile "$INNERWORKDIR\$PACKAGE-sign"
     }
     Pop-Location
 }
@@ -527,6 +518,7 @@ Function buildArangoDB
     configureWindows
     If($global:ok)
     {
+        Write-Host "Configure OK."
         buildWindows
         if($global:ok)
         {
@@ -622,15 +614,15 @@ Function moveResultsToWorkspace
     }
     if($SKIPPACKAGING -eq "Off")
     {
-        If(Test-Path -PathType Leaf "$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB*win64.exe")
+        If(Test-Path -PathType Leaf "$INNERWORKDIR\ArangoDB\build\ArangoDB*win64.exe")
         {
-            Write-Host "Move $INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB*win64.exe"
-            Move-Item -Force -Path "$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB*win64.exe" -Destination $env:WORKSPACE; comm 
+            Write-Host "Move $INNERWORKDIR\ArangoDB\build\ArangoDB*win64.exe"
+            Move-Item -Force -Path "$INNERWORKDIR\ArangoDB\build\ArangoDB*win64.exe" -Destination $env:WORKSPACE; comm 
         }
-        If(Test-Path -PathType Leaf "$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB*win64.zip")
+        If(Test-Path -PathType Leaf "$INNERWORKDIR\ArangoDB\build\ArangoDB*win64.zip")
         {
-            Write-Host "Move $INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB*win64.zip"
-            Move-Item -Force -Path "$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB*win64.zip" -Destination $env:WORKSPACE; comm 
+            Write-Host "Move $INNERWORKDIR\ArangoDB\build\ArangoDB*win64.zip"
+            Move-Item -Force -Path "$INNERWORKDIR\ArangoDB\build\ArangoDB*win64.zip" -Destination $env:WORKSPACE; comm 
         }
     }
     If(Test-Path -PathType Leaf "$INNERWORKDIR\testfailures.log")

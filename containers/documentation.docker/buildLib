@@ -451,31 +451,32 @@ out_markdown_leftovers() { #TODO REVIEW
     local errors
     echo "+ bo 01 checking for remaining markdown snippets in the HTML in ${book_name} "
 
-    echo "  - Willi please add a short description"
+    echo "  - looking for unconverted markdown titles"
+    #looks for ## lalal
     errors=$(find "$book_out" -name '*.html' -exec grep -- '^##' {} \; -print) \
-        || ferr "markdown leftovers 1"
+        || ferr "checking titles"
     if [[ -n "${errors}" ]]; then
         err "found these unconverted markdown titles"
         echo "${errors}"
         exit 1
     fi
 
-    echo "  - Willi please add a short description"
+    echo "  - looking for sobuel converted > signs"
     errors=$(find "$book_out" -name '*.html' -exec grep -- '&amp;gt;' {} \; -print) \
-        || ferr "markdown leftovers 2"
+        || ferr "checking double converted > sings"
     if [[ -n "${errors}" ]]; then
         err "found these double converted > signs"
         echo "${errors}"
         exit 1
     fi
 
-    echo "  - Willi please add a short description"
+    echo "  - looking for dangling markdown leftovers"
     local errorsa=()
     while IFS= read -r line; do
         grep '"[a-zA-Z/\.]*\.md\"[ />]' "$line" | grep -v data-filepath
         local rv=$?
         (( rv == 0 )) && errorsa+=( "$line" )
-        (( rv == 2 )) && ferr "markdown leftovers 3"
+        (( rv == 2 )) && ferr "checking dangling markdown leftovers"
     done < <(find "$book_out" -name '*.html')
 
     if [[ -n "${errorsa[@]}" ]]; then
@@ -485,36 +486,36 @@ out_markdown_leftovers() { #TODO REVIEW
 
     fi
 
-    echo "  - Willi please add a short description"
+    echo "  - looking for dangling markdown links"
     errors=$(find "$book_out" -name '*.html' -exec grep '"[a-zA-Z/\.]*\.md#' {} \; -print) \
-        || ferr "markdown leftovers 4"
+        || ferr "checking dangling markdown links"
     if [[ -n "${errors}" ]]; then
         err "found dangling markdown links: "
         echo "${errors}"
         exit 1
     fi
 
-    echo "  - Willi please add a short description"
+    echo "  - lookgin for dangling markdown code sections"
     errors=$(find "$book_out" -name '*.html' -exec grep "${TRIPPLETICS}" {} \; -print) \
-        || ferr "markdown leftovers 5"
+        || ferr "checking dangling markdown code sections"
     if [[ -n "${errors}" ]]; then
         err "found dangling markdown code sections: "
         echo "${errors}"
         exit 1
     fi
 
-    echo "  - Willi please add a short description"
+    echo "  - looking for unconverted markdown links"
     ERRORS=$(find "$book_out" -name '*.html' -exec grep '\]<a href' {} \; -print) \
-        || ferr "markdown leftovers 6"
+        || ferr "checking unconverted markdown links"
     if [[ -n "${ERRORS}" ]]; then
         err "found unconverted markdown links: "
         echo "${ERRORS}"
         exit 1
     fi
 
-    echo "  - Willi please add a short description"
+    echo "  - looking for markdown leftovers"
     ERRORS=$(find "$book_out" -name '*.html' -exec grep '\[.*\](.*[\.html|\.md|http|#.*])' {} \; -print) \
-        || ferr "markdown leftovers 7"
+        || ferr "checking markdown leftovers"
     if [[ -n "${ERRORS}" ]]; then
         err "found unconverted markdown links: "
         echo "${ERRORS}"
@@ -743,7 +744,9 @@ cross_out_check_dangling_anchors() {
         fi
 
         if  ! [[ -f "/tmp/tags/${check_filename}" ]]; then
-            err "File referenced by $anchor doesn't exist."
+            err "File '/tmp/tags/${check_filename}' referenced by '$anchor' doesn't exist."
+            err "full: '$full_filename' relative: '$relative_filename'"
+            err ""
             debug "file missing" && exit 1
             (( dangling_anchor_count++ ))
         else

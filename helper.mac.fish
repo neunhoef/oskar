@@ -197,6 +197,14 @@ function buildCommunityPackage
 end
 
 function buildTarGzPackage
-  buildTarGzPackageHelper "macosx"
+  cd $INNERWORKDIR/ArangoDB/build
+  and rm -rf install
+  and make install DESTDIR=install
+  and mkdir install/usr
+  and mv install/opt/arangodb/bin install/usr
+  and mv install/opt/arangodb/sbin install/usr
+  and mv install/opt/arangodb/share install/usr
+  and mv install/opt/arangodb/etc install
+  and rm -rf install/opt
+  and buildTarGzPackageHelper "macosx"
 end
-
