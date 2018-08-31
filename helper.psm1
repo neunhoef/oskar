@@ -493,11 +493,10 @@ Function packageWindows
     Write-Host "Time: $((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH.mm.ssZ'))"
     Write-Host "Package: cpack -C `"$BUILDMODE`""
     proc -process "cpack" -argument "-C `"$BUILDMODE`"" -logfile "$INNERWORKDIR\package"
-    #If(Test-Path -PathType Container "$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB3-*win64\")
-    #{
-    #    findArangoDBVersion | Out-Null
-    #    7zip $INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB3-*win64\ $INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB3-$global:ARANGODB_FULL_VERSION`_win64.zip
-    #}
+    If(Test-Path -PathType Container "$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB*win64\")
+    {
+        7zip (Get-ChildItem -Path "$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS" -Directory -Filter ArangoDB*win64).FullName $((Get-ChildItem -Path "$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS" -Directory -Filter ArangoDB*win64).FullName)+".zip"
+    }
     Pop-Location
 }
 
