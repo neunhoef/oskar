@@ -491,7 +491,6 @@ Function packageWindows
     Push-Location $pwd
     Set-Location "$INNERWORKDIR\ArangoDB\build"
     Write-Host "Time: $((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH.mm.ssZ'))"
-    cmake --build . --config "RelWithDebInfo" --target "package-arangodb-server-nsis"
     ForEach($TARGET in @("package-arangodb-server-nsis","package-arangodb-server-zip","package-arangodb-client-nsis"))
     {
         Write-Host "Build: cmake --build . --config `"$BUILDMODE`" --target `"$TARGET`""
