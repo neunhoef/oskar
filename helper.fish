@@ -372,9 +372,7 @@ function moveResultsToWorkspace
   for f in $WORKDIR/work/*.dmg ; echo "mv $f" ; mv $f $WORKSPACE ; end
   for f in $WORKDIR/work/*.rpm ; echo "mv $f" ; mv $f $WORKSPACE ; end
   for f in $WORKDIR/work/*.tar.gz ; echo "mv $f" ; mv $f $WORKSPACE ; end
-
-  #TODO -- REVIEW by some fish expert
-  mv $WORKDIR/work/*documentation*/* $WORKSPACE; or  true # this changes should not make the copy fail
+  for f in $WORKDIR/work/*documentation*/* ; mv $f $WORKSPACE; end
 
   if test -f $WORKDIR/work/testfailures.txt
     echo "mv $WORKDIR/work/testfailures.txt" ; mv $WORKDIR/work/testfailures.txt $WORKSPACE
