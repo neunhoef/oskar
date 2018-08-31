@@ -319,11 +319,28 @@ Function checkoutIfNeeded
 
 Function switchBranches($branch_c,$branch_e)
 {
-    checkoutIfNeeded
-    if($global:ok)
+    Push-Location $pwd
+    Set-Location "$INNERWORKDIR\ArangoDB";comm
+    If ($global:ok) 
+    {
+        proc -process "git" -argument "checkout -- ." -logfile $false
+    }
+    If ($global:ok) 
+    {
+        proc -process "git" -argument "fetch" -logfile $false
+    }
+    If ($global:ok) 
+    {
+        proc -process "git" -argument "checkout $branch_c" -logfile $false
+    }
+    If ($global:ok) 
+    {
+        proc -process "git" -argument "reset --hard origin/$branch_c" -logfile $false
+    }
+    If($ENTERPRISEEDITION -eq "On")
     {
         Push-Location $pwd
-        Set-Location "$INNERWORKDIR\ArangoDB";comm
+        Set-Location "$INNERWORKDIR\ArangoDB\enterprise";comm
         If ($global:ok) 
         {
             proc -process "git" -argument "checkout -- ." -logfile $false
@@ -334,36 +351,15 @@ Function switchBranches($branch_c,$branch_e)
         }
         If ($global:ok) 
         {
-            proc -process "git" -argument "checkout $branch_c" -logfile $false
+            proc -process "git" -argument "checkout $branch_e" -logfile $false
         }
         If ($global:ok) 
         {
-            proc -process "git" -argument "reset --hard origin/$branch_c" -logfile $false
-        }
-        If($ENTERPRISEEDITION -eq "On")
-        {
-            Push-Location $pwd
-            Set-Location "$INNERWORKDIR\ArangoDB\enterprise";comm
-            If ($global:ok) 
-            {
-                proc -process "git" -argument "checkout -- ." -logfile $false
-            }
-            If ($global:ok) 
-            {
-                proc -process "git" -argument "fetch" -logfile $false
-            }
-            If ($global:ok) 
-            {
-                proc -process "git" -argument "checkout $branch_e" -logfile $false
-            }
-            If ($global:ok) 
-            {
-                proc -process "git" -argument "reset --hard origin/$branch_e" -logfile $false
-            }
-            Pop-Location
+            proc -process "git" -argument "reset --hard origin/$branch_e" -logfile $false
         }
         Pop-Location
     }
+    Pop-Location
 }
 
 Function updateOskar
