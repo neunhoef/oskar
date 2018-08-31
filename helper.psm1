@@ -505,7 +505,7 @@ Function signWindows
     Set-Location "$INNERWORKDIR\ArangoDB\build\"
     $ = 
     Write-Host "Time: $((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH.mm.ssZ'))"
-    ForEach($PACKAGE in $(Get-ChildItem -Filter ArangoDB*.exe -Filter ArangoDB*.zip).FullName)
+    ForEach($PACKAGE in $(Get-ChildItem -Filter ArangoDB*.exe).FullName)
     {
         Write-Host "Sign: signtool sign /sm `"$PACKAGE`""
         proc -process "signtool" -argument "sign /sm `"$PACKAGE`"" -logfile "$INNERWORKDIR\$PACKAGE-sign"
@@ -619,15 +619,15 @@ Function moveResultsToWorkspace
     }
     if($SKIPPACKAGING -eq "Off")
     {
-        If(Test-Path -PathType Leaf "$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB*win64.exe")
+        If(Test-Path -PathType Leaf "$INNERWORKDIR\ArangoDB\build\ArangoDB*win64.exe")
         {
-            Write-Host "Move $INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB*win64.exe"
-            Move-Item -Force -Path "$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB*win64.exe" -Destination $env:WORKSPACE; comm 
+            Write-Host "Move $INNERWORKDIR\ArangoDB\build\ArangoDB*win64.exe"
+            Move-Item -Force -Path "$INNERWORKDIR\ArangoDB\build\ArangoDB*win64.exe" -Destination $env:WORKSPACE; comm 
         }
-        If(Test-Path -PathType Leaf "$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB*win64.zip")
+        If(Test-Path -PathType Leaf "$INNERWORKDIR\ArangoDB\build\ArangoDB*win64.zip")
         {
-            Write-Host "Move $INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB*win64.zip"
-            Move-Item -Force -Path "$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB*win64.zip" -Destination $env:WORKSPACE; comm 
+            Write-Host "Move $INNERWORKDIR\ArangoDB\build\ArangoDB*win64.zip"
+            Move-Item -Force -Path "$INNERWORKDIR\ArangoDB\build\ArangoDB*win64.zip" -Destination $env:WORKSPACE; comm 
         }
     }
     If(Test-Path -PathType Leaf "$INNERWORKDIR\testfailures.log")
