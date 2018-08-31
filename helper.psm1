@@ -491,11 +491,11 @@ Function packageWindows
     Push-Location $pwd
     Set-Location "$INNERWORKDIR\ArangoDB\build"
     Write-Host "Time: $((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH.mm.ssZ'))"
-    Write-Host "Package: cpack -C `"$BUILDMODE`""
-    proc -process "cpack" -argument "-C `"$BUILDMODE`"" -logfile "$INNERWORKDIR\package"
-    If(Test-Path -PathType Container "$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\ArangoDB*win64\")
+    cmake --build . --config "RelWithDebInfo" --target "package-arangodb-server-nsis"
+    ForEach($TARGET in @("package-arangodb-server-nsis","package-arangodb-server-zip","package-arangodb-client-nsis"))
     {
-        7zip (Get-ChildItem -Path "$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS" -Directory -Filter ArangoDB*win64).FullName $((Get-ChildItem -Path "$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS" -Directory -Filter ArangoDB*win64).FullName)+".zip"
+        Write-Host "Build: cmake --build . --config `"$BUILDMODE`" --target `"$TARGET`""
+        proc -process "cmake" -argument "--build . --config `"$BUILDMODE`" --target `"$TARGET`"" -logfile "$INNERWORKDIR\$TARGET-package"
     }
     Pop-Location
 }
@@ -503,11 +503,14 @@ Function packageWindows
 Function signWindows
 {
     Push-Location $pwd
-    Set-Location "$INNERWORKDIR\ArangoDB\build\_CPack_Packages\win64\NSIS\"
-    $EXE = (Get-ChildItem -Filter ArangoDB*.exe).FullName
+    Set-Location "$INNERWORKDIR\ArangoDB\build\"
+    $ = 
     Write-Host "Time: $((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH.mm.ssZ'))"
-    Write-Host "Sign: signtool sign /sm `"$EXE`""
-    proc -process "signtool" -argument "sign /sm `"$EXE`"" -logfile "$INNERWORKDIR\sign"
+    ForEach($PACKAGE in $(Get-ChildItem -Filter ArangoDB*.exe -Filter ArangoDB*.zip).FullName)
+    {
+        Write-Host "Sign: signtool sign /sm `"$PACKAGE`""
+        proc -process "signtool" -argument "sign /sm `"$PACKAGE`"" -logfile "$INNERWORKDIR\$PACKAGE-sign"
+    }
     Pop-Location
 }
 
