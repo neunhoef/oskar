@@ -144,7 +144,7 @@ After that, essentially all resources used by oskar are freed again.
 
 # Reference
 
-## Branche
+## Branches
 
 ### switchBranches
 
