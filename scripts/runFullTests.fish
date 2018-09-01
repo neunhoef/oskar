@@ -144,16 +144,15 @@ function launchSingleTests
     case 49 ; test1 replication_random ""
     case 50 ; test1 resilience ""
     case 51 ; test1 client_resilience ""
-    case 52 ; test1 cluster_sync ""
-    case 53 ; test1 active_failover ""
-    case 54 ; test1 upgrade ""
-    case 55 ; test1 foxx_manager ""
-    case 56 ; test1 ldap ""
-    case 57 ; test1 ldaprole ""
-    case 58 ; test1 ldapsearch ""
-    case 59 ; test1 ldaprolesimple ""
-    case 60 ; test1 ldapsearchsimple ""
-    case 61 ; jslint
+    case 52 ; test1 active_failover ""
+    case 53 ; test1 upgrade ""
+    case 54 ; test1 foxx_manager ""
+    case 55 ; test1 ldap ""
+    case 56 ; test1 ldaprole ""
+    case 57 ; test1 ldapsearch ""
+    case 58 ; test1 ldaprolesimple ""
+    case 59 ; test1 ldapsearchsimple ""
+    case 60 ; jslint
     case '*' ; return 0
   end
   set -g launchCount (math $launchCount + 1)
