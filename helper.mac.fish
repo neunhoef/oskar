@@ -7,6 +7,8 @@ set -gx THIRDPARTY_BIN $INNERWORKDIR/third_party/bin
 set -gx CCACHEBINPATH /usr/local/opt/ccache/libexec
 set -gx CMAKE_INSTALL_PREFIX /opt/arangodb
 
+if test -z "$PARALLELISM" ; parallelism 8
+
 function runLocal
   if test -z "$SSH_AUTH_SOCK"
     eval (ssh-agent -c) > /dev/null
