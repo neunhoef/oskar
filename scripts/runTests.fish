@@ -300,7 +300,6 @@ function createReport
     set -g result BAD
   end
   log "$d $TESTSUITE $result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE" $repoState $repoStateEnterprise $badtests ""
-
 end
 
 cd $INNERWORKDIR
