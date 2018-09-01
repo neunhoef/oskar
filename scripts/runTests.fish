@@ -168,13 +168,13 @@ function launchClusterTests
   end
 
   switch $launchCount
-    case 0 ; test3 resilience move js/server/tests/resilience/moving-shards-cluster.js
-    case 1 ; test3 resilience failover js/server/tests/resilience/resilience-synchronous-repl-cluster.js
+    case 0 ; test3 resilience move moving-shards-cluster.js
+    case 1 ; test3 resilience failover resilience-synchronous-repl-cluster.js
     case 2 ; test1 shell_client ""
     case 3 ; test1 shell_server ""
     case 4 ; test1 http_server ""
     case 5 ; test1 ssl_server ""
-    case 6 ; test3 resilience sharddist js/server/tests/resilience/shard-distribution-spec.js
+    case 6 ; test3 resilience sharddist shard-distribution-spec.js
     case 7 ; test1 shell_server_aql 0 --testBuckets 5/0
     case 8 ; test1 shell_server_aql 1 --testBuckets 5/1
     case 9 ; test1 shell_server_aql 2 --testBuckets 5/2
