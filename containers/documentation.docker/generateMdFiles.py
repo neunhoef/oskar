@@ -212,28 +212,25 @@ class DocuBlocks():
     def block_replace_code(self, block): # TODO - cleanup
         """clean up functions that needs to be run on each block"""
 
-        thisVerb = None
         verb=None
         route=None
+        thisVerb = None
+
         foundRest = False
         # first find the header:
         headerMatch = g_re_RESTHEADER.search(block.content)
-        if headerMatch and headerMatch.lastindex > 0:
-            foundRest = True
-            try:
-                (verb,route) =  headerMatch.group(1).split(',')[0].split(' ')
-                verb = verb.lower()
-            except:
-                logger.error("failed to parse header from: " + headerMatch.group(1) + " while analysing " + block.key)
-                raise
+        if headerMatch:
+            verb = headerMatch.group('verb').lower()
+            route = headerMatch.group('route')
 
-            try:
-                thisVerb = self.swagger['paths'][route][verb]
-            except:
+            thisVerb = get_from_dict(self.swagger, None, 'paths', route, verb)
+            if not thisVerb:
                 logger.error("failed to locate route in the swagger json: [" + verb + " " + route + "]" + " while analysing " + block.key)
                 logger.error(block.content)
                 logger.error("Did you forget to run utils/generateSwagger.sh?")
-                raise
+                sys.exit(0)
+
+            foundRest = True
 
         for (re, replacment) in g_dict_re_replacement_blocks:
             block.content = re.sub(replacment, block.content)
@@ -290,9 +287,6 @@ class DocuBlocks():
                 r+=1
             block.content = "\n".join(lineR)
 
-        #logger.info("x" * 70)
-        #logger.info(block.content)
-        #logger_multi(logging.ERROR, PF({ "thisVerb" : thisVerb, "verb" : verb, "route" : route}))
         try:
             block.content = g_re_block_replacement_filter.sub(lambda match : block_simple_repl(match, self.swagger, thisVerb, verb, route), block.content)
         except Exception as e:
@@ -440,12 +434,12 @@ def walk_replace_blocks_in_file(in_full, out_full, conf, blocks):
         textFile = walk_replace_text(textFile, in_full, match, blocks)
 
     textFile = re.sub(g_re_images
-                     ,lambda match: walk_handle_images(match.groups()[0]
-                                                 ,match.groups()[1]
-                                                 ,conf
-                                                 ,in_full
-                                                 ,out_full
-                                                 )
+                     ,lambda match: walk_handle_images(match.group('title')
+                                                      ,match.group('link')
+                                                      ,conf
+                                                      ,in_full
+                                                      ,out_full
+                                                      )
                      ,textFile
                      )
 
@@ -546,7 +540,7 @@ g_re_trailing_br = re.compile("<br>$")                                          
 g_re_leading_br = re.compile("^<br>")                                            # trim_br
 g_re_lf = re.compile("\n")                                                       # TrimThisParam
 g_re_dobule_lf = re.compile("\n\n")                                              # TrimThisParam
-g_re_RESTHEADER = re.compile(r"@RESTHEADER\{(?P<param>.*)\}")                    # DocuBlockReader.block_replace_code
+g_re_RESTHEADER = re.compile(r"@RESTHEADER\{(?P<param>(?P<verb>.*) (?P<route>.*),.*)\}")                    # DocuBlockReader.block_replace_code
 g_re_RESTRETURNCODE = re.compile(r"@RESTRETURNCODE\{(?P<param>.*)\}")            # DocuBlockReader.block_replace_code
 g_re_RESTBODYPARAM = re.compile(r"@RESTBODYPARAM|@RESTDESCRIPTION")              # DocuBlockReader.block_replace_code
 g_re_RESTREPLYBODY = re.compile(r"@RESTREPLYBODY")                               # DocuBlockReader.block_replace_code
@@ -554,7 +548,7 @@ g_re_RESTSTRUCT = re.compile(r"@RESTSTRUCT")                                    
 g_re_MULTICR = re.compile(r'\n\n\n*')                                            # DocuBlockReader.block_replace_code
 g_re_search_start = re.compile(r" *start[0-9a-zA-Z]*\s\s*([0-9a-zA-Z_ ]*)\s*$")  # DocuBlockReader.handle_line_start
 g_re_example_code_pre = re.compile(r'\*\*Example:\*\*((?:.|\n)*?)</code></pre>') # get_rest_description
-g_re_images = re.compile(r".*\!\[([\d\s\w\/\. ()-]*)\]\(([\d\s\w\/\.-]*)\).*")   # walk_replace_blocks_in_file
+g_re_images = re.compile(r".*\!\[(?P<title>[\d\s\w\/\. ()-]*)\]\((?P<link>[\d\s\w\/\.-]*)\).*")   # walk_replace_blocks_in_file
 
 # DocuBlockReader.block_replace_code
 g_re_block_replacement_filter = re.compile(
