@@ -375,7 +375,9 @@ function moveResultsToWorkspace
   for f in $WORKDIR/work/*documentation*/* ; mv $f $WORKSPACE; end
 
   if test -f $WORKDIR/work/testfailures.txt
-    echo "mv $WORKDIR/work/testfailures.txt" ; mv $WORKDIR/work/testfailures.txt $WORKSPACE
+    if grep -q -v '^[ \t]*$' $WORKDIR/work/testfailures.txt
+      echo "mv $WORKDIR/work/testfailures.txt" ; mv $WORKDIR/work/testfailures.txt $WORKSPACE
+    end
   end
 end
 

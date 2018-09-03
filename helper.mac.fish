@@ -7,6 +7,8 @@ set -gx THIRDPARTY_BIN $INNERWORKDIR/third_party/bin
 set -gx CCACHEBINPATH /usr/local/opt/ccache/libexec
 set -gx CMAKE_INSTALL_PREFIX /opt/arangodb
 
+if test -z "$PARALLELISM" ; parallelism 8 ; end
+
 function runLocal
   if test -z "$SSH_AUTH_SOCK"
     eval (ssh-agent -c) > /dev/null
@@ -15,6 +17,7 @@ function runLocal
   else
     set -l agentstarted ""
   end
+  set -xg GIT_SSH_COMMAND "ssh -o StrictHostKeyChecking=no"
   eval $argv 
   set -l s $status
   if test -n "$agentstarted"
