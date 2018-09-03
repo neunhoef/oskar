@@ -107,7 +107,7 @@ def path_abs_norm(path):
 def get_from_dict(nested, default, *access_path):
     current = nested
     for access in access_path:
-        current=current.get(access, None)
+        current = current.get(access, None)
         if not current:
             return default
     return current
@@ -559,8 +559,8 @@ g_re_RESTBODYPARAM = re.compile(r"@RESTBODYPARAM|@RESTDESCRIPTION")
 g_re_RESTREPLYBODY = re.compile(r"@RESTREPLYBODY")
 g_re_RESTSTRUCT = re.compile(r"@RESTSTRUCT")
 g_re_MULTICR = re.compile(r'\n\n\n*')
-
 g_re_search_start = re.compile(r" *start[0-9a-zA-Z]*\s\s*([0-9a-zA-Z_ ]*)\s*$")
+g_re_example_code_pre = re.compile(r'\*\*Example:\*\*((?:.|\n)*?)</code></pre>')
 
 g_re_block_replacement_filter = re.compile(
 r'''
@@ -627,14 +627,13 @@ g_dict_re_replacement_blocks_2 = [
     (re.compile(r"@RESTRETURNCODE{(.*)}"), r"* *\g<1>*:")
 ]
 
-RX3 = (re.compile(r'\*\*Example:\*\*((?:.|\n)*?)</code></pre>'), r"")
 ###### match replace - end #####################################################
 
 ###### validataion dict ########################################################
-def noValidation(thisVerb):
+def validate_none(thisVerb):
     pass
 
-def validatePathParameters(thisVerb):
+def validate_path_parameters(thisVerb):
     # logger.info(thisVerb)
     for nParam in range(0, len(thisVerb['parameters'])):
         if thisVerb['parameters'][nParam]['in'] == 'path':
@@ -642,7 +641,7 @@ def validatePathParameters(thisVerb):
     else:
         raise Exception("@RESTPATHPARAMETERS found in Swagger data without any parameter following in %s " % json.dumps(thisVerb, indent=4, separators=(', ',': '), sort_keys=True))
 
-def validateQueryParams(thisVerb):
+def validate_query_parameters(thisVerb):
     # logger.info(thisVerb)
     for nParam in range(0, len(thisVerb['parameters'])):
         if thisVerb['parameters'][nParam]['in'] == 'query':
@@ -650,7 +649,7 @@ def validateQueryParams(thisVerb):
     else:
         raise Exception("@RESTQUERYPARAMETERS found in Swagger data without any parameter following in %s " % json.dumps(thisVerb, indent=4, separators=(', ',': '), sort_keys=True))
 
-def validateHeaderParams(thisVerb):
+def validate_header_parameters(thisVerb):
     # logger.info(thisVerb)
     for nParam in range(0, len(thisVerb['parameters'])):
         if thisVerb['parameters'][nParam]['in'] == 'header':
@@ -658,7 +657,7 @@ def validateHeaderParams(thisVerb):
     else:
         raise Exception("@RESTHEADERPARAMETERS found in Swagger data without any parameter following in %s " % json.dumps(thisVerb, indent=4, separators=(', ',': '), sort_keys=True))
 
-def validateReturnCodes(thisVerb):
+def validate_return_codes(thisVerb):
     # logger.info(thisVerb)
     for nParam in range(0, len(thisVerb['responses'])):
         if len(thisVerb['responses'].keys()) != 0:
@@ -667,27 +666,64 @@ def validateReturnCodes(thisVerb):
         raise Exception("@RESTRETURNCODES found in Swagger data without any documented returncodes %s " % json.dumps(thisVerb, indent=4, separators=(', ',': '), sort_keys=True))
 
 g_dict_text_function_for_validaiton = {
-    "@RESTDESCRIPTION"      : noValidation,
-    "@RESTURLPARAMETERS"    : validatePathParameters,
-    "@RESTQUERYPARAMETERS"  : validateQueryParams,
-    "@RESTHEADERPARAMETERS" : validateHeaderParams,
-    "@RESTRETURNCODES"      : validateReturnCodes,
-    "@RESTURLPARAMS"        : validatePathParameters,
-    "@EXAMPLES"             : noValidation
+    "@RESTDESCRIPTION"      : validate_none,
+    "@RESTURLPARAMETERS"    : validate_path_parameters,
+    "@RESTQUERYPARAMETERS"  : validate_query_parameters,
+    "@RESTHEADERPARAMETERS" : validate_header_parameters,
+    "@RESTRETURNCODES"      : validate_return_codes,
+    "@RESTURLPARAMS"        : validate_path_parameters,
+    "@EXAMPLES"             : validate_none
 }
 ###### validataion dict - END ########################################################
 
+def get_verify_reference(swagger, name, source, verb):
+    """ get '$ref' key of json object and cut of '#/definitions/' from value
+        check if found ref is part of swagger['definitions']
+        {'$ref': '#/definitions/admin_echo_client_struct'} -> admin_echo_client_struct
+    """
+
+    ref = get_from_dict(name, None, '$ref')
+    if not ref:
+        logger.error("No reference in: " + name)
+        sys.exit(1)
+
+    ref = ref[g_length_definitions:] #cut off '#/definitions/'
+
+    # extra checking
+    if not ref in swagger['definitions']:
+        function_name = ""
+        try:
+            if verb:
+                function_name = swagger['paths'][route][verb]['x-filename']
+            else:
+                function_name = swagger['definitions'][source]['x-filename']
+        except:
+            pass
+
+        logger.error(json.dumps(swagger['definitions'], indent=4, separators=(', ',': '), sort_keys=True))
+        logger.error("invalid reference: " + ref + " in " + function_name)
+        sys.exit(1)
+        raise Exception("invalid reference: " + ref + " in " + function_name) #TODO - better execption handling
+
+    return ref
+
+
+
 ###### simple dict  ########################################################
-def getRestDescription(swagger, thisVerb, verb, route, param):
+def get_rest_description(swagger, thisVerb, verb, route, param):
+    """gets rest description and removes
+       **Example** ... </code></pre> before returning
+    """
     #logger.debug("RESTDESCRIPTION")
-    if thisVerb['description']:
-        #logger.error(thisVerb['description'])
-        return RX3[0].sub(RX3[1], thisVerb['description'])
+    description = thisVerb.get('description', None)
+    if description:
+        #logger.error(description)
+        return g_re_example_code_pre.sub(r'', description)
     else:
         #logger.debug("rest description empty")
         return ""
 
-def getRestReplyBodyParam(swagger, thisVerb, verb, route, param):
+def get_rest_reply_body_parameter(swagger, thisVerb, verb, route, param):
     rc = "\n**Response Body**\n"
 
     schema_name = get_from_dict(thisVerb, None, 'responses', param, 'schema')
@@ -696,18 +732,14 @@ def getRestReplyBodyParam(swagger, thisVerb, verb, route, param):
         logger.error(json.dumps(thisVerb, indent=4, separators=(', ',': '), sort_keys=True))
         sys.exit(1)
 
-    reference = getReference(swagger, schema_name, route, verb)
+    reference = get_verify_reference(swagger, schema_name, route, verb)
     rc += unwrapPostJson(swagger, reference , 0)
 
-    #logger.info(rc)
-    #logger.info("name: " + str(schema_name))
-    #logger.info("route: " + str(route))
-    #logger.info("verb: " +str(verb))
     return rc + "\n"
 
 g_dict_text_replacement = {
     "\\"                    : "\\\\",
-    "@RESTDESCRIPTION"      : getRestDescription,
+    "@RESTDESCRIPTION"      : get_rest_description,
     "@RESTURLPARAMETERS"    : "\n**Path Parameters**\n",
     "@RESTQUERYPARAMETERS"  : "\n**Query Parameters**\n",
     "@RESTHEADERPARAMETERS" : "\n**Header Parameters**\n",
@@ -717,7 +749,7 @@ g_dict_text_replacement = {
     "@RESTURLPARAMS"        : "\n**Path Parameters**\n",
     "@RESTQUERYPARAMS"      : "\n**Query Parameters**\n",
     "@RESTBODYPARAM"        : "",
-    "@RESTREPLYBODY"        : getRestReplyBodyParam,
+    "@RESTREPLYBODY"        : get_rest_reply_body_parameter,
     "@RESTQUERYPARAM"       : "@RESTPARAM",
     "@RESTURLPARAM"         : "@RESTPARAM",
     "@PARAM"                : "@RESTPARAM",
@@ -727,42 +759,11 @@ g_dict_text_replacement = {
 }
 ###### simple dict - END ########################################################
 
-###########
-# g_re_unescape_md_in_links = re.compile("\\\\_")
-# def gen_html_anchor(match): ## TODO name
-#     logger.error(match)
-#     unescapedParam = g_re_unescape_md_in_links.sub("_", match)
-#     return "<a name=\"" + unescapedParam + "\">#</a>"
-#
-# g_dict_re_function_for_replacement = [
-#     (re.compile(r"@anchor (.*)"), gen_html_anchor),
-# ]
-###########
-
-
 
 
 
 def trim_br(text):
     return g_re_leading_br.sub("", g_re_trailing_br.sub("", text.strip(' ')))
-
-def getReference(swagger, name, source, verb):
-
-    try:
-        ref = name['$ref'][g_length_definitions:]
-    except Exception as x:
-        logger.error("No reference in: " + name)
-        raise
-    if not ref in swagger['definitions']:
-        fn = ''
-        if verb:
-            fn = swagger['paths'][route][verb]['x-filename']
-        else:
-            fn = swagger['definitions'][source]['x-filename']
-        logger.error(json.dumps(swagger['definitions'], indent=4, separators=(', ',': '), sort_keys=True))
-        raise Exception("invalid reference: " + ref + " in " + fn)
-    return ref
-
 
 def TrimThisParam(text, indent):
     text = text.rstrip('\n').lstrip('\n')
@@ -779,7 +780,7 @@ def unwrapPostJson(swagger, reference, layer):
         if 'items' in swagger['definitions'][reference]:
             if swagger['definitions'][reference]['type'] == 'array':
                 rc += '[\n'
-            subStructRef = getReference(swagger, swagger['definitions'][reference]['items'], reference, None)
+            subStructRef = get_verify_reference(swagger, swagger['definitions'][reference]['items'], reference, None)
             rc += unwrapPostJson(swagger, subStructRef, layer + 1)
             if swagger['definitions'][reference]['type'] == 'array':
                 rc += ']\n'
@@ -791,7 +792,7 @@ def unwrapPostJson(swagger, reference, layer):
 
             # logger.error(thisParam)
             if '$ref' in thisParam:
-                subStructRef = getReference(swagger, thisParam, reference, None)
+                subStructRef = get_verify_reference(swagger, thisParam, reference, None)
 
                 rc += '  ' * layer + "- **" + param + "**:\n"
                 ####
@@ -819,7 +820,7 @@ def unwrapPostJson(swagger, reference, layer):
                 if trySubStruct:
                     subStructRef = None
                     try:
-                        subStructRef = getReference(swagger, thisParam['items'], reference, None)
+                        subStructRef = get_verify_reference(swagger, thisParam['items'], reference, None)
                     except Exception as e:
                         logger.error("while analyzing: " + param)
                         logger.error(thisParam)
