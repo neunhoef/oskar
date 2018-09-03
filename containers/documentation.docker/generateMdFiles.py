@@ -181,8 +181,83 @@ class BlockType(Enum):
 
 class DocuBlocks():
     #TODO rename allComments.txt - to intermeadiate Docublocks
+    ###### regular expressions #####################################################
     """ Structure that holds plain and inline docublocks that are found in the allComments.txt files
     """
+
+    re_RESTHEADER = re.compile(r"@RESTHEADER\{(?P<verb>.*) (?P<route>.*),.*\}")    # DocuBlockReader.block_replace_code
+    re_RESTRETURNCODE = re.compile(r"@RESTRETURNCODE\{(?P<code>.*)\}")             # DocuBlockReader.block_replace_code
+    re_RESTBODYPARAM = re.compile(r"@RESTBODYPARAM|@RESTDESCRIPTION")              # DocuBlockReader.block_replace_code
+    re_RESTREPLYBODY = re.compile(r"@RESTREPLYBODY")                               # DocuBlockReader.block_replace_code
+    re_RESTSTRUCT = re.compile(r"@RESTSTRUCT")                                     # DocuBlockReader.block_replace_code
+    re_MULTICR = re.compile(r'\n\n\n*')                                            # DocuBlockReader.block_replace_code
+
+    # DocuBlockReader.block_replace_code
+    re_block_replacement_filter = re.compile(
+    r'''
+    \\|                                 # the backslash...
+    @RESTDESCRIPTION|                   # -> <empty>
+    @RESTURLPARAMETERS|                 # -> \n**Path Parameters**\n
+    @RESTQUERYPARAMETERS|               # -> \n**Query Parameters**\n
+    @RESTHEADERPARAMETERS|              # -> \n**Header Parameters**\n
+    @RESTBODYPARAM|                     # empty now, comes with the post body -> call post body param
+    @RESTRETURNCODES|                   # -> \n**Return Codes**\n
+    @PARAMS|                            # -> \n**Parameters**\n
+    @RESTPARAMS|                        # -> <empty>
+    @RESTURLPARAMS|                     # -> <empty>
+    @RESTQUERYPARAMS|                   # -> <empty>
+    @PARAM|                             # -> @RESTPARAM
+    @RESTURLPARAM|                      # -> @RESTPARAM
+    @RESTQUERYPARAM|                    # -> @RESTPARAM
+    @RESTHEADERPARAM|                   # -> @RESTPARAM
+    @EXAMPLES|                          # -> \n**Examples**\n
+    @RESTPARAMETERS|                    # -> <empty>
+    @RESTREPLYBODY\{(?P<param>.*)\}     # -> call body function
+    ''', re.X) ## re.X - be verobse
+    ###### regular expressions - end ###############################################
+
+    ###### match replace ###########################################################
+    #used in block_replace_code
+    dict_re_replacement_blocks = [
+        ### match -> replace
+        # comments -> nothing
+        (re.compile(r"<!--(\s*.+\s)-->"), ""),
+
+        # <br > newline -> newline
+        (re.compile(r"<br />\n"), "\n"),
+
+        # multi line bullet lists should become one
+        (re.compile(r"\n\n-"), "\n-"),
+
+        #HTTP API changing code
+        # unwrap multi-line-briefs: (up to 3 lines supported by now ;-)
+        (re.compile(r"@brief(.+)\n(.+)\n(.+)\n\n"), r"@brief\g<1> \g<2> \g<3>\n\n"),
+        (re.compile(r"@brief(.+)\n(.+)\n\n"), r"@brief\g<1> \g<2>\n\n"),
+
+        # if there is an @brief above a RESTHEADER, swap the sequence
+        (re.compile(r"@brief(.+\n*)\n@RESTHEADER{([#\s\w\/\_{}-]*),([\s\w-]*)}"), r"###\g<3>\n\g<1>\n\n`\g<2>`"),
+
+        # else simply put it into the text
+        (re.compile(r"@brief(.+)"), r"\g<1>"),
+
+        # Format error codes from errors.dat
+        (re.compile(r"#####+\n"), r""),
+        (re.compile(r"## (.+\n\n)## (.+\n)"), r"## \g<1>\g<2>"),
+        #  (re.compile(r"- (\w+):\s*@LIT{(.+)}"), r"\n*\g<1>* - **\g<2>**:"),
+        (re.compile(r"(.+),(\d+),\"(.+)\",\"(.+)\""), r'\n* <a name="\g<1>"></a>**\g<2>** - **\g<1>**<br>\n  \g<4>'),
+
+        (re.compile(r"TODOSWAGGER.*"),r"")
+        ]
+
+    #used in block_replace_code
+    dict_re_replacement_blocks_2 = [
+        # parameters - extract their type and whether mandatory or not.
+        (re.compile(r"@RESTPARAM{(\s*[\w\-]*)\s*,\s*([\w\_\|-]*)\s*,\s*(required|optional)}"), r"* *\g<1>* (\g<3>):"),
+        (re.compile(r"@RESTALLBODYPARAM{(\s*[\w\-]*)\s*,\s*([\w\_\|-]*)\s*,\s*(required|optional)}"), r"\n**Request Body** (\g<3>)\n\n"),
+        (re.compile(r"@RESTRETURNCODE{(.*)}"), r"* *\g<1>*:")
+    ]
+    ###### match replace ###########################################################
+
 
     def __init__(self, swagger): #GOOD
         self.plain = {}   #former 0
@@ -218,7 +293,7 @@ class DocuBlocks():
 
         foundRest = False
         # first find the header:
-        headerMatch = g_re_RESTHEADER.search(block.content)
+        headerMatch = DocuBlocks.re_RESTHEADER.search(block.content)
         if headerMatch:
             verb = headerMatch.group('verb').lower()
             route = headerMatch.group('route')
@@ -232,63 +307,99 @@ class DocuBlocks():
 
             foundRest = True
 
-        for (re, replacment) in g_dict_re_replacement_blocks:
+        for (re, replacment) in DocuBlocks.dict_re_replacement_blocks:
             block.content = re.sub(replacment, block.content)
 
 
         if foundRest:
-            rcCode = None
-            foundRestBodyParam = False
-            foundRestReplyBodyParam = False
-            lineR = block.content.split('\n')
-            #logger.info(lineR)
-            l = len(lineR)
-            r = 0
-            while (r < l):
-                # remove all but the first RESTBODYPARAM:
-                if g_re_RESTBODYPARAM.search(lineR[r]):
-                    if foundRestBodyParam:
-                        lineR[r] = ''
+            rest_lines_split = block.content.split('\n')
+            current_line_num = 0
+
+            rest_code = None
+            found_first_RestBodyParameter = False
+            maybe_rest_code_first_RestReplyBodyParam = False #false or rest_code
+
+            while (current_line_num < len(rest_lines_split)):
+                ###############################################################
+                # remove all but the first RESTBODYPARAM: #####################
+                if DocuBlocks.re_RESTBODYPARAM.search(rest_lines_split[current_line_num]):
+
+                    if found_first_RestBodyParameter:
+                        # remove if already found
+                        rest_lines_split[current_line_num] = ''
                     else:
-                        lineR[r] = '@RESTDESCRIPTION'
-                    foundRestBodyParam = True
-                    r+=1
-                    while ((len(lineR[r]) == 0) or
-                           ((lineR[r][0] != '@') or
-                           g_re_RESTBODYPARAM.search(lineR[r]))):
-                        # logger.info("xxx - %d %s" %(len(lineR[r]), lineR[r]))
-                        lineR[r] = ''
-                        r+=1
+                        # replace RESTBODYPARAM with RESTDESCRIPTION
+                        rest_lines_split[current_line_num] = '@RESTDESCRIPTION'
 
-                m = g_re_RESTRETURNCODE.search(lineR[r])
-                if m and m.lastindex > 0:
-                    rcCode =  m.group(1)
+                    found_first_RestBodyParameter = True
+                    current_line_num += 1 #advance line
 
-                # remove all but the first RESTREPLYBODY:
-                if g_re_RESTREPLYBODY.search(lineR[r]):
-                    if foundRestReplyBodyParam != rcCode:
-                        lineR[r] = '@RESTREPLYBODY{' + rcCode + '}\n'
+                    good = True
+                    current = current_line_num
+                    while (good):
+                        a = len(rest_lines_split[current]) == 0
+                        b = rest_lines_split[current]
+                        if bool(a) != bool(not b):
+                            logger.error("sdfsdfsdfsdfsdf" + str(a) + str(b))
+                            sys.exit(0)
+                        if b:
+                            good = False
+                        current += 1
+
+                    #skip empty lines
+                    #skip lines starting with @
+                    #skip lines containing RESTBODYPARAM
+                    line = rest_lines_split[current_line_num]
+                    while (not line or line[0] != '@' or DocuBlocks.re_RESTBODYPARAM.search(line)):
+                        rest_lines_split[current_line_num] = ''
+                        current_line_num += 1
+                        line = rest_lines_split[current_line_num]
+
+                match = DocuBlocks.re_RESTRETURNCODE.search(rest_lines_split[current_line_num])
+                if match:
+                    rest_code =  match.group('code')
+
+                ###############################################################
+                # remove all but the first RESTREPLYBODY: #####################
+                if DocuBlocks.re_RESTREPLYBODY.search(rest_lines_split[current_line_num]):
+
+                    if maybe_rest_code_first_RestReplyBodyParam != rest_code:
+                        # if not set or same code - paste '@RESTREPLYBODY{' + rest_code + '}\n'
+                        rest_lines_split[current_line_num] = '@RESTREPLYBODY{' + rest_code + '}\n'
                     else:
-                        lineR[r] = ''
-                    foundRestReplyBodyParam = rcCode
-                    r+=1
-                    while (len(lineR[r]) > 1):
-                        lineR[r] = ''
-                        r+=1
-                    m = g_re_RESTRETURNCODE.search(lineR[r])
-                    if m and m.lastindex > 0:
-                        rcCode =  m.group(1)
+                        # if we already have found the the code delete the line
+                        rest_lines_split[current_line_num] = ''
 
-                # remove all RESTSTRUCTS - they're referenced anyways:
-                if g_re_RESTSTRUCT.search(lineR[r]):
-                    while (len(lineR[r]) > 1):
-                        lineR[r] = ''
-                        r+=1
-                r+=1
-            block.content = "\n".join(lineR)
+                    maybe_rest_code_first_RestReplyBodyParam = rest_code
+                    current_line_num += 1
+
+                    #skip lines with more thatn 1 char
+                    # delete rest of bolck
+                    # if blocks are not separated by empty lines it will be very very broken
+                    while len(rest_lines_split[current_line_num]) > 1:
+                        rest_lines_split[current_line_num] = ''
+                        current_line_num += 1
+
+                    #try to match new code
+                    match = DocuBlocks.re_RESTRETURNCODE.search(rest_lines_split[current_line_num])
+                    if match:
+                        rest_code =  match.group('code')
+
+                ###############################################################
+                # remove all RESTSTRUCTS - they're referenced anyways: ########
+                if DocuBlocks.re_RESTSTRUCT.search(rest_lines_split[current_line_num]):
+                    while (len(rest_lines_split[current_line_num]) > 1):
+                        rest_lines_split[current_line_num] = ''
+                        current_line_num+=1
+
+                current_line_num += 1
+                ## while - end ################################################
+
+            block.content = "\n".join(rest_lines_split)
+            ## found rest - end ###############################################
 
         try:
-            block.content = g_re_block_replacement_filter.sub(lambda match : block_simple_repl(match, self.swagger, thisVerb, verb, route), block.content)
+            block.content = DocuBlocks.re_block_replacement_filter.sub(lambda match : block_simple_repl(match, self.swagger, thisVerb, verb, route), block.content)
         except Exception as e:
             logger.error("While working on: [" + verb + " " + route + "]" + " while analysing " + block.key)
             logger.error(str(e))
@@ -296,10 +407,10 @@ class DocuBlocks():
             raise e
 
 
-        for (oneRX, repl) in g_dict_re_replacement_blocks_2:
+        for (oneRX, repl) in DocuBlocks.dict_re_replacement_blocks_2:
             block.content = oneRX.sub(repl, block.content)
 
-        block.content = g_re_MULTICR.sub("\n\n", block.content)
+        block.content = DocuBlocks.re_MULTICR.sub("\n\n", block.content)
         #logger.info(block.content)
         return block.content
 
@@ -313,6 +424,9 @@ class DocuBLock(): #GOOD
         self.key = None          # block key or name
 
 class DocuBlockReader(): #GOOD
+    # DocuBlockReader.handle_line_start
+    re_search_start = re.compile(r" *start[0-9a-zA-Z]*\s\s*(?P<block_name>[0-9a-zA-Z_ ]*)\s*$")
+
     def __init__(self):
         self.blocks = None
 
@@ -348,22 +462,24 @@ class DocuBlockReader(): #GOOD
 
     def handle_line_start(self, line): #GOOD
         if ("@startDocuBlock" in line):
+            block = None
+
             if "@startDocuBlockInline" in line:
                 block = DocuBLock(BlockType.INLINE)
             else:
                 block = DocuBLock(BlockType.PLAIN)
 
-            #logger.debug("start: " + str(block))
-            try:
-                block.key = g_re_search_start.search(line).group(1).strip()
-                #logger.debug("adding {0.block_type.name} block with key {0.key}".format(block))
-            except:
+            match = DocuBlockReader.re_search_start.search(line)
+            if match:
+                block.key = match.group('block_name').strip()
+            else:
                 logger.error("failed to read startDocuBlock: [" + line + "]")
                 exit(1)
-
             #logger.debug("starting block with key {}".format(block.key))
             return block
+
         return None
+
 
     def handle_line_follow(self, line,block): #GOOD
         if '@endDocuBlock' in line:
@@ -488,6 +604,8 @@ def walk_replace_text(text, pathOfFile, searchText, blocks):
   rc= re.sub("@startDocuBlock\s+"+ searchText + "(?:\s+|$)", blocks.plain[searchText].content, text)
   return rc
 
+
+g_re_images = re.compile(r".*\!\[(?P<title>[\d\s\w\/\. ()-]*)\]\((?P<link>[\d\s\w\/\.-]*)\).*")
 def walk_handle_images(image_title, image_link, conf, in_full, out_full): #GOOD
     """ copy images from source to pp dir, copy book external images
         to <book>/assets and update image links accordingly.
@@ -525,98 +643,43 @@ def walk_handle_images(image_title, image_link, conf, in_full, out_full): #GOOD
     #logger.debug("image_link:   " + image_link)
     return str('![' + image_title + '](' + image_link + ')')
 
-## replace blocks in .md-files - END ##########################################
+
+g_length_definitions = len('#/definitions/')
+def get_verify_reference(swagger, name, source, verb):
+    """ get '$ref' key of json object and cut of '#/definitions/' from value
+        check if found ref is part of swagger['definitions']
+        {'$ref': '#/definitions/admin_echo_client_struct'} -> admin_echo_client_struct
+    """
+
+    ref = get_from_dict(name, None, '$ref')
+    if not ref:
+        logger.error("No reference in: " + name)
+        sys.exit(1)
+
+    ref = ref[g_length_definitions:] #cut off '#/definitions/'
+
+    # extra checking
+    if not ref in swagger['definitions']:
+        function_name = ""
+        try:
+            if verb:
+                function_name = swagger['paths'][route][verb]['x-filename']
+            else:
+                function_name = swagger['definitions'][source]['x-filename']
+        except:
+            pass
+
+        logger.error(json.dumps(swagger['definitions'], indent=4, separators=(', ',': '), sort_keys=True))
+        logger.error("invalid reference: " + ref + " in " + function_name)
+        sys.exit(1)
+        raise Exception("invalid reference: " + ref + " in " + function_name) #TODO - better execption handling
+
+    return ref
 
 
-###############################################################################
-###############################################################################
-########################## REVIEW EVERYTHING BELOW ############################
-###############################################################################
-###############################################################################
-
-###### regular expressions #####################################################
-g_length_definitions = len('#/definitions/')                                     # get_verify_reference
-g_re_trailing_br = re.compile("<br>$")                                           # trim_br
-g_re_leading_br = re.compile("^<br>")                                            # trim_br
-g_re_lf = re.compile("\n")                                                       # TrimThisParam
-g_re_dobule_lf = re.compile("\n\n")                                              # TrimThisParam
-g_re_RESTHEADER = re.compile(r"@RESTHEADER\{(?P<param>(?P<verb>.*) (?P<route>.*),.*)\}")                    # DocuBlockReader.block_replace_code
-g_re_RESTRETURNCODE = re.compile(r"@RESTRETURNCODE\{(?P<param>.*)\}")            # DocuBlockReader.block_replace_code
-g_re_RESTBODYPARAM = re.compile(r"@RESTBODYPARAM|@RESTDESCRIPTION")              # DocuBlockReader.block_replace_code
-g_re_RESTREPLYBODY = re.compile(r"@RESTREPLYBODY")                               # DocuBlockReader.block_replace_code
-g_re_RESTSTRUCT = re.compile(r"@RESTSTRUCT")                                     # DocuBlockReader.block_replace_code
-g_re_MULTICR = re.compile(r'\n\n\n*')                                            # DocuBlockReader.block_replace_code
-g_re_search_start = re.compile(r" *start[0-9a-zA-Z]*\s\s*([0-9a-zA-Z_ ]*)\s*$")  # DocuBlockReader.handle_line_start
-g_re_example_code_pre = re.compile(r'\*\*Example:\*\*((?:.|\n)*?)</code></pre>') # get_rest_description
-g_re_images = re.compile(r".*\!\[(?P<title>[\d\s\w\/\. ()-]*)\]\((?P<link>[\d\s\w\/\.-]*)\).*")   # walk_replace_blocks_in_file
-
-# DocuBlockReader.block_replace_code
-g_re_block_replacement_filter = re.compile(
-r'''
-\\|                                 # the backslash...
-@RESTDESCRIPTION|                   # -> <empty>
-@RESTURLPARAMETERS|                 # -> \n**Path Parameters**\n
-@RESTQUERYPARAMETERS|               # -> \n**Query Parameters**\n
-@RESTHEADERPARAMETERS|              # -> \n**Header Parameters**\n
-@RESTBODYPARAM|                     # empty now, comes with the post body -> call post body param
-@RESTRETURNCODES|                   # -> \n**Return Codes**\n
-@PARAMS|                            # -> \n**Parameters**\n
-@RESTPARAMS|                        # -> <empty>
-@RESTURLPARAMS|                     # -> <empty>
-@RESTQUERYPARAMS|                   # -> <empty>
-@PARAM|                             # -> @RESTPARAM
-@RESTURLPARAM|                      # -> @RESTPARAM
-@RESTQUERYPARAM|                    # -> @RESTPARAM
-@RESTHEADERPARAM|                   # -> @RESTPARAM
-@EXAMPLES|                          # -> \n**Examples**\n
-@RESTPARAMETERS|                    # -> <empty>
-@RESTREPLYBODY\{(?P<param>.*)\}     # -> call body function
-''', re.X) ## re.X - be verobse
-###### regular expressions - end ###############################################
-
-###### match replace ###########################################################
-#used in block_replace_code
-g_dict_re_replacement_blocks = [
-    ### match -> replace
-    # comments -> nothing
-    (re.compile(r"<!--(\s*.+\s)-->"), ""),
-
-    # <br > newline -> newline
-    (re.compile(r"<br />\n"), "\n"),
-
-    # multi line bullet lists should become one
-    (re.compile(r"\n\n-"), "\n-"),
-
-    #HTTP API changing code
-    # unwrap multi-line-briefs: (up to 3 lines supported by now ;-)
-    (re.compile(r"@brief(.+)\n(.+)\n(.+)\n\n"), r"@brief\g<1> \g<2> \g<3>\n\n"),
-    (re.compile(r"@brief(.+)\n(.+)\n\n"), r"@brief\g<1> \g<2>\n\n"),
-
-    # if there is an @brief above a RESTHEADER, swap the sequence
-    (re.compile(r"@brief(.+\n*)\n@RESTHEADER{([#\s\w\/\_{}-]*),([\s\w-]*)}"), r"###\g<3>\n\g<1>\n\n`\g<2>`"),
-
-    # else simply put it into the text
-    (re.compile(r"@brief(.+)"), r"\g<1>"),
-
-    # Format error codes from errors.dat
-    (re.compile(r"#####+\n"), r""),
-    (re.compile(r"## (.+\n\n)## (.+\n)"), r"## \g<1>\g<2>"),
-    #  (re.compile(r"- (\w+):\s*@LIT{(.+)}"), r"\n*\g<1>* - **\g<2>**:"),
-    (re.compile(r"(.+),(\d+),\"(.+)\",\"(.+)\""), r'\n* <a name="\g<1>"></a>**\g<2>** - **\g<1>**<br>\n  \g<4>'),
-
-    (re.compile(r"TODOSWAGGER.*"),r"")
-    ]
-
-
-#used in block_replace_code
-g_dict_re_replacement_blocks_2 = [
-    # parameters - extract their type and whether mandatory or not.
-    (re.compile(r"@RESTPARAM{(\s*[\w\-]*)\s*,\s*([\w\_\|-]*)\s*,\s*(required|optional)}"), r"* *\g<1>* (\g<3>):"),
-    (re.compile(r"@RESTALLBODYPARAM{(\s*[\w\-]*)\s*,\s*([\w\_\|-]*)\s*,\s*(required|optional)}"), r"\n**Request Body** (\g<3>)\n\n"),
-    (re.compile(r"@RESTRETURNCODE{(.*)}"), r"* *\g<1>*:")
-]
-
-###### match replace - end #####################################################
+#===============================================================================
+###### block_simple_repl #######################################################
+#===============================================================================
 
 ###### validataion dict ########################################################
 def validate_none(thisVerb):
@@ -654,6 +717,7 @@ def validate_return_codes(thisVerb):
     else:
         raise Exception("@RESTRETURNCODES found in Swagger data without any documented returncodes %s " % json.dumps(thisVerb, indent=4, separators=(', ',': '), sort_keys=True))
 
+#block_simple_repl
 g_dict_text_function_for_validaiton = {
     "@RESTDESCRIPTION"      : validate_none,
     "@RESTURLPARAMETERS"    : validate_path_parameters,
@@ -663,42 +727,10 @@ g_dict_text_function_for_validaiton = {
     "@RESTURLPARAMS"        : validate_path_parameters,
     "@EXAMPLES"             : validate_none
 }
-###### validataion dict - END ########################################################
-
-def get_verify_reference(swagger, name, source, verb):
-    """ get '$ref' key of json object and cut of '#/definitions/' from value
-        check if found ref is part of swagger['definitions']
-        {'$ref': '#/definitions/admin_echo_client_struct'} -> admin_echo_client_struct
-    """
-
-    ref = get_from_dict(name, None, '$ref')
-    if not ref:
-        logger.error("No reference in: " + name)
-        sys.exit(1)
-
-    ref = ref[g_length_definitions:] #cut off '#/definitions/'
-
-    # extra checking
-    if not ref in swagger['definitions']:
-        function_name = ""
-        try:
-            if verb:
-                function_name = swagger['paths'][route][verb]['x-filename']
-            else:
-                function_name = swagger['definitions'][source]['x-filename']
-        except:
-            pass
-
-        logger.error(json.dumps(swagger['definitions'], indent=4, separators=(', ',': '), sort_keys=True))
-        logger.error("invalid reference: " + ref + " in " + function_name)
-        sys.exit(1)
-        raise Exception("invalid reference: " + ref + " in " + function_name) #TODO - better execption handling
-
-    return ref
-
-
+###### validataion dict - END ##################################################
 
 ###### simple dict  ########################################################
+g_re_example_code_pre = re.compile(r'\*\*Example:\*\*((?:.|\n)*?)</code></pre>')
 def get_rest_description(swagger, thisVerb, verb, route, param):
     """gets rest description and removes
        **Example** ... </code></pre> before returning
@@ -712,59 +744,26 @@ def get_rest_description(swagger, thisVerb, verb, route, param):
         #logger.debug("rest description empty")
         return ""
 
-def get_rest_reply_body_parameter(swagger, thisVerb, verb, route, param):
-    rc = "\n**Response Body**\n"
-
-    schema_name = get_from_dict(thisVerb, None, 'responses', param, 'schema')
-    if not schema_name:
-        logger.error("failed to search " + param + " in: ")
-        logger.error(json.dumps(thisVerb, indent=4, separators=(', ',': '), sort_keys=True))
-        sys.exit(1)
-
-    reference = get_verify_reference(swagger, schema_name, route, verb)
-    rc += unwrapPostJson(swagger, reference , 0)
-
-    return rc + "\n"
-
-g_dict_text_replacement = {
-    "\\"                    : "\\\\",
-    "@RESTDESCRIPTION"      : get_rest_description,
-    "@RESTURLPARAMETERS"    : "\n**Path Parameters**\n",
-    "@RESTQUERYPARAMETERS"  : "\n**Query Parameters**\n",
-    "@RESTHEADERPARAMETERS" : "\n**Header Parameters**\n",
-    "@RESTRETURNCODES"      : "\n**Return Codes**\n",
-    "@PARAMS"               : "\n**Parameters**\n",
-    "@RESTPARAMS"           : "",
-    "@RESTURLPARAMS"        : "\n**Path Parameters**\n",
-    "@RESTQUERYPARAMS"      : "\n**Query Parameters**\n",
-    "@RESTBODYPARAM"        : "",
-    "@RESTREPLYBODY"        : get_rest_reply_body_parameter,
-    "@RESTQUERYPARAM"       : "@RESTPARAM",
-    "@RESTURLPARAM"         : "@RESTPARAM",
-    "@PARAM"                : "@RESTPARAM",
-    "@RESTHEADERPARAM"      : "@RESTPARAM",
-    "@EXAMPLES"             : "\n**Examples**\n",
-    "@RESTPARAMETERS"       : ""
-}
-###### simple dict - END ########################################################
-
-
-
-
-def trim_br(text):
-    return g_re_leading_br.sub("", g_re_trailing_br.sub("", text.strip(' ')))
-
-def TrimThisParam(text, indent):
+###### unwarpPostJson
+g_re_lf = re.compile("\n")
+g_re_dobule_lf = re.compile("\n\n")
+def trim_this_parameter(text, indent):
     text = text.rstrip('\n').lstrip('\n')
     text = g_re_dobule_lf.sub("\n", text)
     if (indent > 0):
         indent = (indent + 2) # align the text right of the list...
     return g_re_lf.sub("\n" + ' ' * indent, text)
 
+g_re_trailing_br = re.compile("<br>$")
+g_re_leading_br = re.compile("^<br>")
+def trim_br(text):
+    return g_re_leading_br.sub("", g_re_trailing_br.sub("", text.strip(' ')))
+
 def unwrapPostJson(swagger, reference, layer):
     swaggerDataTypes = ["number", "integer", "string", "boolean", "array", "object"]
     # logger.error("xx" * layer + reference)
     rc = ''
+
     if not 'properties' in swagger['definitions'][reference]:
         if 'items' in swagger['definitions'][reference]:
             if swagger['definitions'][reference]['type'] == 'array':
@@ -789,7 +788,7 @@ def unwrapPostJson(swagger, reference, layer):
                 rc += unwrapPostJson(swagger, subStructRef, layer + 1)
 
             elif thisParam['type'] == 'object':
-                rc += '  ' * layer + "- **" + param + "**: " + TrimThisParam(trim_br(thisParam['description']), layer) + "\n"
+                rc += '  ' * layer + "- **" + param + "**: " + trim_this_parameter(trim_br(thisParam['description']), layer) + "\n"
             elif thisParam['type'] == 'array':
                 rc += '  ' * layer + "- **" + param + "**"
                 trySubStruct = False
@@ -805,7 +804,7 @@ def unwrapPostJson(swagger, reference, layer):
                         lf="\n"
                     else:
                         trySubStruct = True
-                rc += ": " + TrimThisParam(trim_br(thisParam['description']), layer) + lf
+                rc += ": " + trim_this_parameter(trim_br(thisParam['description']), layer) + lf
                 if trySubStruct:
                     subStructRef = None
                     try:
@@ -820,8 +819,47 @@ def unwrapPostJson(swagger, reference, layer):
                     logger.error("while analyzing: " + param)
                     logger.error(thisParam['type'] + " is not a valid swagger datatype; supported ones: " + str(swaggerDataTypes))
                     raise Exception("invalid swagger type")
-                rc += '  ' * layer + "- **" + param + "**: " + TrimThisParam(thisParam['description'], layer) + '\n'
+                rc += '  ' * layer + "- **" + param + "**: " + trim_this_parameter(thisParam['description'], layer) + '\n'
     return rc
+
+###### unwarpPostJson - END
+
+def get_rest_reply_body_parameter(swagger, thisVerb, verb, route, param):
+    rc = "\n**Response Body**\n"
+
+    schema_name = get_from_dict(thisVerb, None, 'responses', param, 'schema')
+    if not schema_name:
+        logger.error("failed to search " + param + " in: ")
+        logger.error(json.dumps(thisVerb, indent=4, separators=(', ',': '), sort_keys=True))
+        sys.exit(1)
+
+    reference = get_verify_reference(swagger, schema_name, route, verb)
+    rc += unwrapPostJson(swagger, reference , 0)
+
+    return rc + "\n"
+
+# block_simple_repl
+g_dict_text_replacement = {
+    "\\"                    : "\\\\",
+    "@RESTDESCRIPTION"      : get_rest_description,
+    "@RESTURLPARAMETERS"    : "\n**Path Parameters**\n",
+    "@RESTQUERYPARAMETERS"  : "\n**Query Parameters**\n",
+    "@RESTHEADERPARAMETERS" : "\n**Header Parameters**\n",
+    "@RESTRETURNCODES"      : "\n**Return Codes**\n",
+    "@PARAMS"               : "\n**Parameters**\n",
+    "@RESTPARAMS"           : "",
+    "@RESTURLPARAMS"        : "\n**Path Parameters**\n",
+    "@RESTQUERYPARAMS"      : "\n**Query Parameters**\n",
+    "@RESTBODYPARAM"        : "",
+    "@RESTREPLYBODY"        : get_rest_reply_body_parameter,
+    "@RESTQUERYPARAM"       : "@RESTPARAM",
+    "@RESTURLPARAM"         : "@RESTPARAM",
+    "@PARAM"                : "@RESTPARAM",
+    "@RESTHEADERPARAM"      : "@RESTPARAM",
+    "@EXAMPLES"             : "\n**Examples**\n",
+    "@RESTPARAMETERS"       : ""
+}
+###### simple dict - END ########################################################
 
 def block_simple_repl(match, swagger, thisVerb, verb, route):
     match_0 = match.group(0)
@@ -850,6 +888,12 @@ def block_simple_repl(match, swagger, thisVerb, verb, route):
             else:
                 return exectue_if_function(new_rest_replacement, swagger, thisVerb, verb, route, param)
 
+#===============================================================================
+###### block_simple_repl - END #################################################
+#===============================================================================
+
+
+## replace blocks in .md-files - END ##########################################
 
 def loadProgramOptionBlocks(blocks):
     from itertools import groupby, chain
@@ -964,4 +1008,3 @@ def loadProgramOptionBlocks(blocks):
 
 if __name__ == '__main__':
     sys.exit(main())
-
