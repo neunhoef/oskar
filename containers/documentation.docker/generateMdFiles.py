@@ -89,7 +89,7 @@ def main():
     logger.info("loaded {} / {} docu blocks".format(len(blocks.plain), len(blocks.inline)))
 
     # walk over .md files and replace blocks
-    walk_on_files(conf, blocks)
+    walk_over_book_source(conf, blocks)
 
     return 0
 ### main - END #################################################################
@@ -388,9 +388,10 @@ class DocuBlockReader(): #GOOD
 
 ## replace blocks in .md-files ################################################
 
-def walk_on_files(conf, blocks): #GOOD
-    """ walk over source tree and skip files and calculate output path for
-        files that are not skipped
+def walk_over_book_source(conf, blocks): #GOOD
+    """ walk over book source tree find .md-files
+        skip SUMMARY.md and other files that match the filter in conf
+        calculate output path and do replacements
     """
 
     count = 0
@@ -413,12 +414,11 @@ def walk_on_files(conf, blocks): #GOOD
                         continue;
                 ## what are those 2 functions doing
                 mkdir_recursive(os.path.dirname(out_full_path)) #create dir for output file
-                walk_find_start_code(in_full_path, out_full_path, conf, blocks)
+                walk_replace_blocks_in_file(in_full_path, out_full_path, conf, blocks)
     logger.info( "Processed %d files, skipped %d" % (count, skipped))
 
-#TODO - rename to something useful
-def walk_find_start_code(in_full, out_full, conf, blocks):
-    """ replace dcoublocks and images
+def walk_replace_blocks_in_file(in_full, out_full, conf, blocks):
+    """ replace dcoublocks and images in file and wirte it into preprocessing directory
     """
     baseInPath = conf.book_src
 
@@ -427,26 +427,19 @@ def walk_find_start_code(in_full, out_full, conf, blocks):
         textFile = fd.read()
 
     #logger.debug(textFile)
+    # handle inline blocks
     matches = re.findall(r'@startDocuBlockInline\s*(\w+)', textFile)
     for match in matches:
         #logger.debug(in_full + " " + match)
         textFile = walk_replace_text_inline(textFile, in_full, match, blocks)
 
+    # handle blocks
     matches = re.findall(r'@startDocuBlock\s*(\w+)', textFile)
     for match in matches:
         #logger.debug(in_full + " " + match)
         textFile = walk_replace_text(textFile, in_full, match, blocks)
 
-    #try:
-    #    textFile = apply_dict_re_replacement(g_dict_re_function_for_replacement, textFile)
-
-    #except Exception as e:
-    #    logger.error("while parsing :      "  + in_full)
-    #    logger.error(textFile)
-    #    raise e
-
-    re_images = re.compile(r".*\!\[([\d\s\w\/\. ()-]*)\]\(([\d\s\w\/\.-]*)\).*")
-    textFile = re.sub(re_images
+    textFile = re.sub(g_re_images
                      ,lambda match: walk_handle_images(match.groups()[0]
                                                  ,match.groups()[1]
                                                  ,conf
@@ -548,20 +541,22 @@ def walk_handle_images(image_title, image_link, conf, in_full, out_full): #GOOD
 ###############################################################################
 
 ###### regular expressions #####################################################
-g_length_definitions = len('#/definitions/')
-g_re_trailing_br = re.compile("<br>$")
-g_re_leading_br = re.compile("^<br>")
-g_re_lf = re.compile("\n")
-g_re_dobule_lf = re.compile("\n\n")
-g_re_RESTHEADER = re.compile(r"@RESTHEADER\{(?P<param>.*)\}")
-g_re_RESTRETURNCODE = re.compile(r"@RESTRETURNCODE\{(?P<param>.*)\}")
-g_re_RESTBODYPARAM = re.compile(r"@RESTBODYPARAM|@RESTDESCRIPTION")
-g_re_RESTREPLYBODY = re.compile(r"@RESTREPLYBODY")
-g_re_RESTSTRUCT = re.compile(r"@RESTSTRUCT")
-g_re_MULTICR = re.compile(r'\n\n\n*')
-g_re_search_start = re.compile(r" *start[0-9a-zA-Z]*\s\s*([0-9a-zA-Z_ ]*)\s*$")
-g_re_example_code_pre = re.compile(r'\*\*Example:\*\*((?:.|\n)*?)</code></pre>')
+g_length_definitions = len('#/definitions/')                                     # get_verify_reference
+g_re_trailing_br = re.compile("<br>$")                                           # trim_br
+g_re_leading_br = re.compile("^<br>")                                            # trim_br
+g_re_lf = re.compile("\n")                                                       # TrimThisParam
+g_re_dobule_lf = re.compile("\n\n")                                              # TrimThisParam
+g_re_RESTHEADER = re.compile(r"@RESTHEADER\{(?P<param>.*)\}")                    # DocuBlockReader.block_replace_code
+g_re_RESTRETURNCODE = re.compile(r"@RESTRETURNCODE\{(?P<param>.*)\}")            # DocuBlockReader.block_replace_code
+g_re_RESTBODYPARAM = re.compile(r"@RESTBODYPARAM|@RESTDESCRIPTION")              # DocuBlockReader.block_replace_code
+g_re_RESTREPLYBODY = re.compile(r"@RESTREPLYBODY")                               # DocuBlockReader.block_replace_code
+g_re_RESTSTRUCT = re.compile(r"@RESTSTRUCT")                                     # DocuBlockReader.block_replace_code
+g_re_MULTICR = re.compile(r'\n\n\n*')                                            # DocuBlockReader.block_replace_code
+g_re_search_start = re.compile(r" *start[0-9a-zA-Z]*\s\s*([0-9a-zA-Z_ ]*)\s*$")  # DocuBlockReader.handle_line_start
+g_re_example_code_pre = re.compile(r'\*\*Example:\*\*((?:.|\n)*?)</code></pre>') # get_rest_description
+g_re_images = re.compile(r".*\!\[([\d\s\w\/\. ()-]*)\]\(([\d\s\w\/\.-]*)\).*")   # walk_replace_blocks_in_file
 
+# DocuBlockReader.block_replace_code
 g_re_block_replacement_filter = re.compile(
 r'''
 \\|                                 # the backslash...
