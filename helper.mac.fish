@@ -3,7 +3,11 @@ set -gx PLATFORM darwin
 set -gx UID (id -u)
 set -gx GID (id -g)
 set -gx INNERWORKDIR $WORKDIR/work
+set -gx THIRDPARTY_BIN $INNERWORKDIR/third_party/bin
 set -gx CCACHEBINPATH /usr/local/opt/ccache/libexec
+set -gx CMAKE_INSTALL_PREFIX /opt/arangodb
+
+if test -z "$PARALLELISM" ; parallelism 8 ; end
 
 function runLocal
   if test -z "$SSH_AUTH_SOCK"
@@ -13,6 +17,7 @@ function runLocal
   else
     set -l agentstarted ""
   end
+  set -xg GIT_SSH_COMMAND "ssh -o StrictHostKeyChecking=no"
   eval $argv 
   set -l s $status
   if test -n "$agentstarted"
@@ -66,7 +71,6 @@ end
 function buildStaticArangoDB
   checkoutIfNeeded
   runLocal $SCRIPTSDIR/buildMacOs.fish $argv
-#  runLocal $SCRIPTSDIR/buildAlpine.fish $argv
   set -l s $status
   if test $s -ne 0
     echo Build error!
@@ -108,14 +112,14 @@ function updateOskar
 end
 
 function downloadStarter
-  runLocal $SCRIPTSDIR/downloadStarter.fish $argv
+  runLocal $SCRIPTSDIR/downloadStarter.fish $THIRDPARTY_BIN $argv
 end
 
 function downloadSyncer
-  runLocal $SCRIPTSDIR/downloadSyncer.fish $argv
+  runLocal $SCRIPTSDIR/downloadSyncer.fish $THIRDPARTY_BIN $argv
 end
 
-function buildMacPackage
+function buildPackage
   # This assumes that a build has already happened
   # Must have set ARANGODB_DARWIN_UPSTREAM and ARANGODB_DARWIN_REVISION,
   # for example by running findArangoDBVersion.
@@ -132,8 +136,77 @@ function buildMacPackage
   end
 
   and runLocal $SCRIPTSDIR/buildMacOsPackage.fish
+  and buildTarGzPackage
 end
 
-function buildPackage
-  buildMacPackage $argv
+function cleanupThirdParty
+  rm -rf $THIRDPARTY_BIN
+end
+
+function buildEnterprisePackage
+  if test "$DOWNLOAD_SYNC_USER" = ""
+    echo "Need to set environment variable DOWNLOAD_SYNC_USER."
+    return 1
+  end
+ 
+  # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
+  # ARANGODB_FULL_VERSION, for example by running findArangoDBVersion.
+  maintainerOff
+  releaseMode
+  enterprise
+  set -xg NOSTRIP dont
+
+  cleanupThirdParty
+  and downloadStarter
+  and downloadSyncer
+  and buildStaticArangoDB \
+      -DTARGET_ARCHITECTURE=nehalem \
+      -DPACKAGING=Bundle \
+      -DPACKAGE_TARGET_DIR=$INNERWORKDIR \
+      -DTHIRDPARTY_SBIN=$THIRDPARTY_BIN/arangosync \
+      -DTHIRDPARTY_BIN=$THIRDPARTY_BIN/arangodb \
+      -DCMAKE_INSTALL_PREFIX=$CMAKE_INSTALL_PREFIX
+  and buildPackage
+
+  if test $status != 0
+    echo Building enterprise release failed, stopping.
+    return 1
+  end
+end
+
+function buildCommunityPackage
+  # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
+  # ARANGODB_FULL_VERSION, for example by running findArangoDBVersion.
+  maintainerOff
+  releaseMode
+  community
+  set -xg NOSTRIP dont
+
+  cleanupThirdParty
+  and downloadStarter
+  and buildStaticArangoDB \
+      -DTARGET_ARCHITECTURE=nehalem \
+      -DPACKAGING=Bundle \
+      -DPACKAGE_TARGET_DIR=$INNERWORKDIR \
+      -DTHIRDPARTY_BIN=$THIRDPARTY_BIN/arangodb \
+      -DCMAKE_INSTALL_PREFIX=$CMAKE_INSTALL_PREFIX
+  and buildPackage
+
+  if test $status != 0
+    echo Building community release failed.
+    return 1
+  end
+end
+
+function buildTarGzPackage
+  cd $INNERWORKDIR/ArangoDB/build
+  and rm -rf install
+  and make install DESTDIR=install
+  and mkdir install/usr
+  and mv install/opt/arangodb/bin install/usr
+  and mv install/opt/arangodb/sbin install/usr
+  and mv install/opt/arangodb/share install/usr
+  and mv install/opt/arangodb/etc install
+  and rm -rf install/opt
+  and buildTarGzPackageHelper "macosx"
 end

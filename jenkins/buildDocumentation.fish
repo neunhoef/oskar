@@ -2,7 +2,8 @@
 #source helper.fish
 source jenkins/helper.jenkins.fish
 and prepareOskar; and lockDirectory; and updateOskar; and clearResults
-and rocksdb; and cluster; and maintainerOff; and community
+and rocksdb; and cluster; and maintainerOff
+
 if test $status -ne 0
     echo "failed to prepare environement"
     exit 1
@@ -18,7 +19,11 @@ echo on branch $ENTERPRISE_BRANCH of enterprise repository.
 
 switchBranches $ARANGODB_BRANCH $ENTERPRISE_BRANCH
 and buildStaticArangoDB
-and buildDocumentationInPr
+and if $RELEASE
+    buildDocumentationForRelease
+else 
+    buildDocumentation
+end
 
 set -l status_build $status
 if test $status_build -ne 0

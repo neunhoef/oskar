@@ -122,38 +122,35 @@ function launchSingleTests
     case 27 ; test1 arangobench  ""
     case 28 ; test1 arangosh ""
     case 29 ; test1 audit ""
-    case 30 ; test1 auditlog ""
-    case 31 ; test1 authentication_server ""
-    case 32 ; test1 authentication_parameters ""
-    case 33 ; test1 BackupNoAuthSysTests ""
-    case 34 ; test1 BackupNoAuthNoSysTests ""
-    case 35 ; test1 BackupAuthSysTests ""
-    case 36 ; test1 BackupAuthNoSysTests ""
-    case 37 ; test1 boost ""
-    case 38 ; test1 config ""
-    case 39 ; test1 dfdb ""
-    case 40 ; test1 dump_encrypted "" 
-    case 41 ; test1 export ""
-    case 42 ; test1 importing ""
-    case 43 ; test1 load_balancing ""
-    case 44 ; test1 load_balancing_auth ""
-    case 45 ; test1 queryCacheAuthorization ""
-    case 46 ; test1 readOnly ""
-    case 47 ; test1 replication_aql ""
-    case 48 ; test1 replication_fuzz ""
-    case 49 ; test1 replication_random ""
-    case 50 ; test1 resilience ""
-    case 51 ; test1 client_resilience ""
-    case 52 ; test1 cluster_sync ""
-    case 53 ; test1 active_failover ""
-    case 54 ; test1 upgrade ""
-    case 55 ; test1 foxx_manager ""
-    case 56 ; test1 ldap ""
-    case 57 ; test1 ldaprole ""
-    case 58 ; test1 ldapsearch ""
-    case 59 ; test1 ldaprolesimple ""
-    case 60 ; test1 ldapsearchsimple ""
-    case 61 ; jslint
+    case 30 ; test1 authentication_server ""
+    case 31 ; test1 authentication_parameters ""
+    case 32 ; test1 BackupNoAuthSysTests ""
+    case 33 ; test1 BackupNoAuthNoSysTests ""
+    case 34 ; test1 BackupAuthSysTests ""
+    case 35 ; test1 BackupAuthNoSysTests ""
+    case 36 ; test1 config ""
+    case 37 ; test1 dfdb ""
+    case 38 ; test1 dump_encrypted "" 
+    case 39 ; test1 export ""
+    case 40 ; test1 importing ""
+    case 41 ; test1 load_balancing ""
+    case 42 ; test1 load_balancing_auth ""
+    case 43 ; test1 queryCacheAuthorization ""
+    case 44 ; test1 readOnly ""
+    case 45 ; test1 replication_aql ""
+    case 46 ; test1 replication_fuzz ""
+    case 47 ; test1 replication_random ""
+    case 48 ; test1 resilience ""
+    case 49 ; test1 client_resilience ""
+    case 50 ; test1 active_failover ""
+    case 51 ; test1 upgrade ""
+    case 52 ; test1 foxx_manager ""
+    case 53 ; test1 ldap ""
+    case 54 ; test1 ldaprole ""
+    case 55 ; test1 ldapsearch ""
+    case 56 ; test1 ldaprolesimple ""
+    case 57 ; test1 ldapsearchsimple ""
+    case 58 ; jslint
     case '*' ; return 0
   end
   set -g launchCount (math $launchCount + 1)
@@ -198,13 +195,13 @@ function launchClusterTests
   end
 
   switch $launchCount
-    case 0 ; test3 resilience move js/server/tests/resilience/moving-shards-cluster.js
-    case 1 ; test3 resilience failover js/server/tests/resilience/resilience-synchronous-repl-cluster.js
+    case 0 ; test3 resilience move moving-shards-cluster.js
+    case 1 ; test3 resilience failover resilience-synchronous-repl-cluster.js
     case 2 ; test1 shell_client ""
     case 3 ; test1 shell_server ""
     case 4 ; test1 http_server ""
     case 5 ; test1 ssl_server ""
-    case 6 ; test3 resilience sharddist js/server/tests/resilience/shard-distribution-spec.js
+    case 6 ; test3 resilience sharddist resilience/shard-distribution-spec.js
     case 7 ; test1 shell_server_aql 0 --testBuckets 5/0
     case 8 ; test1 shell_server_aql 1 --testBuckets 5/1
     case 9 ; test1 shell_server_aql 2 --testBuckets 5/2
@@ -330,7 +327,6 @@ function createReport
     set -g result BAD
   end
   log "$d $TESTSUITE $result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE" $repoState $repoStateEnterprise $badtests ""
-
 end
 
 cd $INNERWORKDIR

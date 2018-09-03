@@ -1,4 +1,5 @@
 set -gx INNERWORKDIR /work
+set -gx THIRDPARTY_BIN $INNERWORKDIR/ArangoDB/build/install/usr/bin
 set -gx SCRIPTSDIR /scripts
 set -gx PLATFORM linux
 set -gx ARCH (uname -m)
@@ -124,21 +125,6 @@ function buildDocumentation
                    -v "$WORKDIR:/oskar" \
                    -it "$DOCIMAGE" \
                    -- "$argv"
-end
-
-function buildDocumentationInPr
-    #disable once enterprise only options are availalbe
-    if test $ENTERPRISEEDITION != On
-        if test (cd $WORKDIR/work/ArangoDB; and git rev-parse --abbrev-ref HEAD) = devel;
-            buildDocumentation
-            return $status
-        else
-            #TODO - make it available for more branches
-            echo "Documentation building documentation is only available for 'devel' branch!"
-        end
-    else
-        echo "Documentation building is not available for enterprise edition in PR tests"
-    end
 end
 
 function buildDocumentationForRelease
@@ -280,34 +266,7 @@ function buildRPMPackage
 end
 
 function buildTarGzPackage
-  # This assumes that a static build has already happened
-  # Must have set ARANGODB_TGZ_UPSTREAM
-  # for example by running findArangoDBVersion.
-  set -l v "$ARANGODB_TGZ_UPSTREAM"
-  set -l name
-
-  if test "$ENTERPRISEEDITION" = "On"
-    set name arangodb3e
-  else
-    set name arangodb3
-  end
-
-  cd $WORKDIR
-  and cd $WORKDIR/work/ArangoDB/build/install
-  and rm -rf bin
-  and cp -a $WORKDIR/binForTarGz bin
-  and rm -f bin/*~ bin/*.bak
-  and mv bin/README .
-  and strip usr/sbin/arangod usr/bin/{arangobench,arangodump,arangoexport,arangoimp,arangorestore,arangosh,arangovpack}
-  and cd $WORKDIR/work/ArangoDB/build
-  and mv install "$name-$v"
-  or begin ; cd $WORKDIR ; return 1 ; end
-
-  tar -c -z -v -f "$WORKDIR/work/$name-binary-$v.tar.gz" --exclude "etc" --exclude "var" "$name-$v"
-  set s $status
-  mv "$name-$v" install
-  cd $WORKDIR
-  return $s 
+  buildTarGzPackageHelper "linux"
 end
 
 function interactiveContainer
@@ -377,11 +336,11 @@ function updateOskar
 end
 
 function downloadStarter
-  runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/downloadStarter.fish $argv
+  runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/downloadStarter.fish $THIRDPARTY_BIN $argv
 end
 
 function downloadSyncer
-  runInContainer -e DOWNLOAD_SYNC_USER=$DOWNLOAD_SYNC_USER $UBUNTUBUILDIMAGE $SCRIPTSDIR/downloadSyncer.fish $argv
+  runInContainer -e DOWNLOAD_SYNC_USER=$DOWNLOAD_SYNC_USER $UBUNTUBUILDIMAGE $SCRIPTSDIR/downloadSyncer.fish $THIRDPARTY_BIN $argv
 end
 
 function makeDockerImage
@@ -412,6 +371,47 @@ function buildPackage
   buildDebianPackage
   and buildRPMPackage
   and buildTarGzPackage
+end
+
+function buildEnterprisePackage
+  if test "$DOWNLOAD_SYNC_USER" = ""
+    echo "Need to set environment variable DOWNLOAD_SYNC_USER."
+    return 1
+  end
+ 
+  # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
+  # ARANGODB_FULL_VERSION, for example by running findArangoDBVersion.
+  maintainerOff
+  releaseMode
+  enterprise
+  set -xg NOSTRIP dont
+  buildStaticArangoDB -DTARGET_ARCHITECTURE=nehalem
+  and downloadStarter
+  and downloadSyncer
+  and buildPackage
+
+  if test $status -ne 0
+    echo Building enterprise release failed, stopping.
+    return 1
+  end
+end
+
+function buildCommunityPackage
+  # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
+  # ARANGODB_FULL_VERSION, for example by running findArangoDBVersion.
+  maintainerOff
+  releaseMode
+  community
+  set -xg NOSTRIP dont
+
+  buildStaticArangoDB -DTARGET_ARCHITECTURE=nehalem
+  and downloadStarter
+  and buildPackage
+
+  if test $status -ne 0
+    echo Building community release failed.
+    return 1
+  end
 end
 
 # Set PARALLELISM in a sensible way:

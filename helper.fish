@@ -310,30 +310,47 @@ function makeRelease
     set -xg ARANGODB_PACKAGE_REVISION "$argv[2]"
     set -xg ARANGODB_FULL_VERSION "$argv[1]-$argv[2]"
   end
-  maintainerOff
-  releaseMode
 
-  enterprise
-  set -xg NOSTRIP dont
-  buildStaticArangoDB -DTARGET_ARCHITECTURE=nehalem
-  and downloadStarter
-  and downloadSyncer
-  and buildPackage
+  buildEnterprisePackage
+  and buildCommunityPackage
+end
 
-  if test $status -ne 0
-    echo Building enterprise release failed, stopping.
+function buildTarGzPackageHelper
+  set -l os "$argv[1]"
+
+  if test -z "$os"
+    echo "need operating system as first name"
     return 1
   end
 
-  community
-  buildStaticArangoDB -DTARGET_ARCHITECTURE=nehalem
-  and downloadStarter
-  and buildPackage
+  # This assumes that a static build has already happened
+  # Must have set ARANGODB_TGZ_UPSTREAM
+  # for example by running findArangoDBVersion.
+  set -l v "$ARANGODB_TGZ_UPSTREAM"
+  set -l name
 
-  if test $status -ne 0
-    echo Building community release failed.
-    return 1
+  if test "$ENTERPRISEEDITION" = "On"
+    set name arangodb3e
+  else
+    set name arangodb3
   end
+
+  cd $WORKDIR
+  and cd $WORKDIR/work/ArangoDB/build/install
+  and rm -rf bin
+  and cp -a $WORKDIR/binForTarGz bin
+  and rm -f "bin/*~" "bin/*.bak"
+  and mv bin/README .
+  and strip usr/sbin/arangod usr/bin/{arangobench,arangodump,arangoexport,arangoimp,arangorestore,arangosh,arangovpack}
+  and cd $WORKDIR/work/ArangoDB/build
+  and mv install "$name-$v"
+  or begin ; cd $WORKDIR ; return 1 ; end
+
+  tar -c -z -v -f "$WORKDIR/work/$name-$os-$v.tar.gz" --exclude "etc" --exclude "var" "$name-$v"
+  set s $status
+  mv "$name-$v" install
+  cd $WORKDIR
+  return $s 
 end
 
 function moveResultsToWorkspace
@@ -355,12 +372,12 @@ function moveResultsToWorkspace
   for f in $WORKDIR/work/*.dmg ; echo "mv $f" ; mv $f $WORKSPACE ; end
   for f in $WORKDIR/work/*.rpm ; echo "mv $f" ; mv $f $WORKSPACE ; end
   for f in $WORKDIR/work/*.tar.gz ; echo "mv $f" ; mv $f $WORKSPACE ; end
-
-  #TODO -- REVIEW by some fish expert
-  mv $WORKDIR/work/*documentation*/* $WORKSPACE; or  true # this changes should not make the copy fail
+  for f in $WORKDIR/work/*documentation*/* ; mv $f $WORKSPACE; end
 
   if test -f $WORKDIR/work/testfailures.txt
-    echo "mv $WORKDIR/work/testfailures.txt" ; mv $WORKDIR/work/testfailures.txt $WORKSPACE
+    if grep -q -v '^[ \t]*$' $WORKDIR/work/testfailures.txt
+      echo "mv $WORKDIR/work/testfailures.txt" ; mv $WORKDIR/work/testfailures.txt $WORKSPACE
+    end
   end
 end
 

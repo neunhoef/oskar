@@ -1,5 +1,5 @@
 #!/usr/bin/env fish
-set TS (which ts; and echo -- -s [\\%.T]; or echo /usr/bin/cat)
+set TS (which ts; and echo -- -s [\\%.T]; or echo /usr/bin/env cat)
 
 cd $INNERWORKDIR
 mkdir -p .ccache.mac
@@ -20,9 +20,8 @@ ccache --zero-stats
 rm -rf build
 mkdir -p build
 cd build
-set -l CMAKE_INSTALL_PREFIX /opt/arangodb
 
-echo cmake $argv -DCMAKE_BUILD_TYPE=$BUILDMODE -DCMAKE_CXX_COMPILER=$CCACHEBINPATH/g++ -DCMAKE_C_COMPILER=$CCACHEBINPATH/gcc -DUSE_MAINTAINER_MODE=$MAINTAINER -DUSE_ENTERPRISE=$ENTERPRISEEDITION -DUSE_JEMALLOC=Off -DCMAKE_SKIP_RPATH=On -DPACKAGING=Bundle -DPACKAGE_TARGET_DIR=$INNERWORKDIR -DOPENSSL_USE_STATIC_LIBS=On -DCMAKE_INSTALL_PREFIX=$CMAKE_INSTALL_PREFIX ..
+echo cmake $argv -DCMAKE_BUILD_TYPE=$BUILDMODE -DCMAKE_CXX_COMPILER=$CCACHEBINPATH/g++ -DCMAKE_C_COMPILER=$CCACHEBINPATH/gcc -DUSE_MAINTAINER_MODE=$MAINTAINER -DUSE_ENTERPRISE=$ENTERPRISEEDITION -DUSE_JEMALLOC=Off -DCMAKE_SKIP_RPATH=On -DOPENSSL_USE_STATIC_LIBS=On ..
 
 echo cmake output in $INNERWORKDIR/cmakeArangoDB.log
 
@@ -34,9 +33,6 @@ cmake $argv \
       -DUSE_ENTERPRISE=$ENTERPRISEEDITION \
       -DUSE_JEMALLOC=Off \
       -DCMAKE_SKIP_RPATH=On \
-      -DPACKAGING=Bundle \
-      -DPACKAGE_TARGET_DIR=$INNERWORKDIR \
-      -DCMAKE_INSTALL_PREFIX=$CMAKE_INSTALL_PREFIX \
       -DOPENSSL_USE_STATIC_LIBS=On \
       .. ^&1 | eval $TS > $INNERWORKDIR/cmakeArangoDB.log
 and echo "Finished cmake at "(date)", now starting build"
