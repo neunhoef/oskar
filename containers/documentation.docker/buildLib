@@ -707,7 +707,7 @@ cross_out_check_dangling_anchors() {
             sed -r -n -e '/.*id="page-footer".*/q;p' | \
             grep_ignore_empty '<a href="' | \
             grep_ignore_empty -v 'target="_blank"' | \
-            sed -e 's;.*href=";;' -e 's;".*;;' > /tmp/thisdoc.txt || { ls -lisah "$file"; ferr "fail cat $file"; }
+            sed -e 's;.*href=";;' -e 's;".*;;' > /tmp/thisdoc.txt || { ls -lisah "$file"; ferr "fail cat $file"; cat "$file"; }
 
         if [[ -f /tmp/thisdoc.txt ]]; then
             # Links with anchors:  foo#bar - foo might be empty, then it refers to this page
