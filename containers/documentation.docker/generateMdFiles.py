@@ -747,12 +747,11 @@ def get_rest_description(swagger, thisVerb, verb, route, param):
 ###### unwarpPostJson
 g_re_lf = re.compile("\n")
 g_re_dobule_lf = re.compile("\n\n")
-def trim_this_parameter(text, indent):
+def trim_and_indent(text, layer):
     text = text.rstrip('\n').lstrip('\n')
     text = g_re_dobule_lf.sub("\n", text)
-    if (indent > 0):
-        indent = (indent + 2) # align the text right of the list...
-    return g_re_lf.sub("\n" + ' ' * indent, text)
+    indent =  ' ' * (layer + 2) if layer > 0 else ""
+    return g_re_lf.sub("\n" + indent, text)
 
 g_re_trailing_br = re.compile("<br>$")
 g_re_leading_br = re.compile("^<br>")
@@ -760,6 +759,7 @@ def trim_br(text):
     return g_re_leading_br.sub("", g_re_trailing_br.sub("", text.strip(' ')))
 
 def unwrapPostJson(swagger, reference, layer):
+    #TODO - create an description / takl about the format with willi
     swaggerDataTypes = ["number", "integer", "string", "boolean", "array", "object"]
     # logger.error("xx" * layer + reference)
     unwrapped = ''
@@ -780,7 +780,6 @@ def unwrapPostJson(swagger, reference, layer):
 
             # is this a mandatory parameter
             required = ('required' in swagger_defs_ref and param in swagger_defs_ref['required'])
-
             # logger.error(thisParam)
             if '$ref' in thisParam:
                 subStructRef = get_verify_reference(swagger, thisParam, reference, None)
@@ -789,10 +788,11 @@ def unwrapPostJson(swagger, reference, layer):
                 unwrapped += unwrapPostJson(swagger, subStructRef, layer + 1)
 
             elif thisParam['type'] == 'object':
-                unwrapped += "{indent}- **{param}**: {trimmed}\n".format(
+                description = trim_and_indent(trim_br(thisParam['description']), layer)
+                unwrapped += "{indent}- **{param}**: {description}\n".format(
                         indent = '  ' * layer,
                         param = param,
-                        trimmed = trim_this_parameter(trim_br(thisParam['description']), layer)
+                        description = description
                 )
 
             elif thisParam['type'] == 'array':
@@ -809,7 +809,8 @@ def unwrapPostJson(swagger, reference, layer):
                         trySubStruct = True
                         line_ending=""
 
-                unwrapped += ": " + trim_this_parameter(trim_br(thisParam['description']), layer) + line_ending
+                description = trim_and_indent(trim_br(thisParam['description']), layer)
+                unwrapped += ": {description}{ending}".format(description = description, ending = line_ending)
 
                 if trySubStruct:
                     subStructRef = None
@@ -821,12 +822,18 @@ def unwrapPostJson(swagger, reference, layer):
                         raise e
                     unwrapped += "\n" + unwrapPostJson(swagger, subStructRef, layer + 1)
 
-            else:
+            else: #if not $ref, object or array
                 if thisParam['type'] not in swaggerDataTypes:
                     logger.error("while analyzing: " + param)
                     logger.error(thisParam['type'] + " is not a valid swagger datatype; supported ones: " + str(swaggerDataTypes))
                     raise Exception("invalid swagger type")
-                unwrapped += '  ' * layer + "- **" + param + "**: " + trim_this_parameter(thisParam['description'], layer) + '\n'
+
+                description = trim_and_indent(trim_br(thisParam['description']), layer)
+                unwrapped += "{indent}- **{param}**: {description}\n".format(
+                        indent = '  ' * layer,
+                        param = param,
+                        description = description
+                )
 
     return unwrapped
 
