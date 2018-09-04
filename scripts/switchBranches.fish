@@ -1,6 +1,6 @@
 #!/usr/bin/env fish
 cd $INNERWORKDIR/ArangoDB
-adn git clean -dfx
+and git clean -dfx
 and git checkout -- .
 and git fetch
 and git checkout $argv[1]
