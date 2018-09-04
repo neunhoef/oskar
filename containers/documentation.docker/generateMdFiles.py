@@ -762,49 +762,55 @@ def trim_br(text):
 def unwrapPostJson(swagger, reference, layer):
     swaggerDataTypes = ["number", "integer", "string", "boolean", "array", "object"]
     # logger.error("xx" * layer + reference)
-    rc = ''
+    unwrapped = ''
 
-    if not 'properties' in swagger['definitions'][reference]:
-        if 'items' in swagger['definitions'][reference]:
-            if swagger['definitions'][reference]['type'] == 'array':
-                rc += '[\n'
-            subStructRef = get_verify_reference(swagger, swagger['definitions'][reference]['items'], reference, None)
-            rc += unwrapPostJson(swagger, subStructRef, layer + 1)
-            if swagger['definitions'][reference]['type'] == 'array':
-                rc += ']\n'
-    else:
-        for param in swagger['definitions'][reference]['properties'].keys():
-            thisParam = swagger['definitions'][reference]['properties'][param]
-            required = ('required' in swagger['definitions'][reference] and
-                        param in swagger['definitions'][reference]['required'])
+    swagger_defs_ref = swagger['definitions'][reference]
+
+    if not 'properties' in swagger_defs_ref:
+        if 'items' in swagger_defs_ref:
+            if swagger_defs_ref['type'] == 'array': unwrapped += '[\n'
+
+            subStructRef = get_verify_reference(swagger, swagger_defs_ref['items'], reference, None)
+            unwrapped += unwrapPostJson(swagger, subStructRef, layer + 1)
+
+            if swagger_defs_ref['type'] == 'array': unwrapped += ']\n'
+
+    else: # if properties in swagger_defs_ref
+        for param, thisParam in swagger_defs_ref['properties'].items():
+
+            # is this a mandatory parameter
+            required = ('required' in swagger_defs_ref and param in swagger_defs_ref['required'])
 
             # logger.error(thisParam)
             if '$ref' in thisParam:
                 subStructRef = get_verify_reference(swagger, thisParam, reference, None)
 
-                rc += '  ' * layer + "- **" + param + "**:\n"
-                ####
-                # logger.error("yy" * layer + param)
-                rc += unwrapPostJson(swagger, subStructRef, layer + 1)
+                unwrapped += "{indent}- **{param}**:\n".format( indent = '  ' * layer, param = param)
+                unwrapped += unwrapPostJson(swagger, subStructRef, layer + 1)
 
             elif thisParam['type'] == 'object':
-                rc += '  ' * layer + "- **" + param + "**: " + trim_this_parameter(trim_br(thisParam['description']), layer) + "\n"
+                unwrapped += "{indent}- **{param}**: {trimmed}\n".format(
+                        indent = '  ' * layer,
+                        param = param,
+                        trimmed = trim_this_parameter(trim_br(thisParam['description']), layer)
+                )
+
             elif thisParam['type'] == 'array':
-                rc += '  ' * layer + "- **" + param + "**"
+                unwrapped += "{indent}- **{param}**:".format( indent = '  ' * layer, param = param)
                 trySubStruct = False
-                lf=""
-                ####
-                # logger.error("zz" * layer + param)
+                line_ending="\n"
+
                 if 'type' in thisParam['items']:
-                    rc += " (" + thisParam['items']['type']  + ")"
-                    lf="\n"
+                    unwrapped += " (" + thisParam['items']['type']  + ")"
                 else:
                     if len(thisParam['items']) == 0:
-                        rc += " (anonymous json object)"
-                        lf="\n"
+                        unwrapped += " (anonymous json object)"
                     else:
                         trySubStruct = True
-                rc += ": " + trim_this_parameter(trim_br(thisParam['description']), layer) + lf
+                        line_ending=""
+
+                unwrapped += ": " + trim_this_parameter(trim_br(thisParam['description']), layer) + line_ending
+
                 if trySubStruct:
                     subStructRef = None
                     try:
@@ -813,19 +819,21 @@ def unwrapPostJson(swagger, reference, layer):
                         logger.error("while analyzing: " + param)
                         logger.error(thisParam)
                         raise e
-                    rc += "\n" + unwrapPostJson(swagger, subStructRef, layer + 1)
+                    unwrapped += "\n" + unwrapPostJson(swagger, subStructRef, layer + 1)
+
             else:
                 if thisParam['type'] not in swaggerDataTypes:
                     logger.error("while analyzing: " + param)
                     logger.error(thisParam['type'] + " is not a valid swagger datatype; supported ones: " + str(swaggerDataTypes))
                     raise Exception("invalid swagger type")
-                rc += '  ' * layer + "- **" + param + "**: " + trim_this_parameter(thisParam['description'], layer) + '\n'
-    return rc
+                unwrapped += '  ' * layer + "- **" + param + "**: " + trim_this_parameter(thisParam['description'], layer) + '\n'
+
+    return unwrapped
 
 ###### unwarpPostJson - END
 
 def get_rest_reply_body_parameter(swagger, thisVerb, verb, route, param):
-    rc = "\n**Response Body**\n"
+    response_body = "\n**Response Body**\n"
 
     schema_name = get_from_dict(thisVerb, None, 'responses', param, 'schema')
     if not schema_name:
@@ -834,9 +842,9 @@ def get_rest_reply_body_parameter(swagger, thisVerb, verb, route, param):
         sys.exit(1)
 
     reference = get_verify_reference(swagger, schema_name, route, verb)
-    rc += unwrapPostJson(swagger, reference , 0)
+    response_body += unwrapPostJson(swagger, reference , 0)
 
-    return rc + "\n"
+    return response_body + "\n"
 
 # block_simple_repl
 g_dict_text_replacement = {
