@@ -319,8 +319,13 @@ Function checkoutIfNeeded
 
 Function switchBranches($branch_c,$branch_e)
 {
+    checkoutIfNeeded
     Push-Location $pwd
     Set-Location "$INNERWORKDIR\ArangoDB";comm
+    If ($global:ok) 
+    {
+        proc -process "git" -argument "clean -dfx" -logfile $false
+    }
     If ($global:ok) 
     {
         proc -process "git" -argument "checkout -- ." -logfile $false
@@ -341,6 +346,10 @@ Function switchBranches($branch_c,$branch_e)
     {
         Push-Location $pwd
         Set-Location "$INNERWORKDIR\ArangoDB\enterprise";comm
+        If ($global:ok) 
+        {
+            proc -process "git" -argument "clean -dfx" -logfile $false
+        }
         If ($global:ok) 
         {
             proc -process "git" -argument "checkout -- ." -logfile $false

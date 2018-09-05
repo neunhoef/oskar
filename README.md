@@ -186,5 +186,20 @@ if supported, set numer of concurrent builds to `PARALLELISM`
 
 ## Packaging
 
+    makeRelease
+
+creates all release packages.
+
+Under linux:
+
+- RPM, Debian and tar.gz
+- server and client
+- community and enterprise
+
+Under MacOSX:
+
+- DMG and tar.gz
+- community and enterprise
+
 ## Internals
 
