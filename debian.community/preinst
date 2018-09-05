@@ -8,7 +8,8 @@ getent passwd arangodb >/dev/null || useradd -r -g arangodb -d /usr/share/arango
 # if not, then the arangod binary will very likely try to open a socket
 # connection to nscd to query the group information from there.
 # if there is no nscd running, starting the arangod binary will fail
-(grep "^arangodb:" /etc/group >/dev/null) || (nscd -g >/dev/null 2>&1) || ar_err "Unable to query nscd service for user 'arangodb'. As a consequence, it is very likely that starting the arangod server will fail because it can neither find user 'arangodb' in /etc/group nor via an nscd group lookup." $?
+(grep "^arangodb:" /etc/passwd >/dev/null) || (nscd -g >/dev/null 2>&1) || echo "Unable to query nscd service for user 'arangodb'. As a consequence, it is very likely that starting the arangod server will fail because it can neither find user 'arangodb' in /etc/group nor via an nscd group lookup." $? 1>&2
+(grep "^arangodb:" /etc/group >/dev/null) || (nscd -g >/dev/null 2>&1) || echo "Unable to query nscd service for group 'arangodb'. As a consequence, it is very likely that starting the arangod server will fail because it can neither find user 'arangodb' in /etc/group nor via an nscd group lookup." $? 1>&2
 
 install -o arangodb -g arangodb -m 755 -d /var/lib/arangodb3
 install -o arangodb -g arangodb -m 755 -d /var/lib/arangodb3-apps
