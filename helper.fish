@@ -75,8 +75,6 @@ if test -z "$STORAGEENGINE" ; rocksdb
 else ; set -gx STORAGEENGINE $STORAGEENGINE ; end
 
 function parallelism ; set -gx PARALLELISM $argv[1] ; end
-if test -z "$PARALLELISM" ; parallelism 64
-else ; set -gx PARALLELISM $PARALLELISM ; end
 
 function verbose ; set -gx VERBOSEOSKAR On ; end
 function silent ; set -gx VERBOSEOSKAR Off ; end
