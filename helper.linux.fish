@@ -369,10 +369,10 @@ function buildPackage
   # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
   # ARANGODB_FULL_VERSION, for example by running findArangoDBVersion.
   buildDebianPackage
-  and buildDebianSniplet
   and buildRPMPackage
-  and buildRPMSniplet
   and buildTarGzPackage
+  and buildDebianSniplet
+  and buildRPMSniplet
   and buildTarGzSniplet
 end
 
