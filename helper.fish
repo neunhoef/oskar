@@ -177,6 +177,8 @@ function findArangoDBVersion
   set -xg ARANGODB_VERSION_MAJOR (grep "$AV""_MAJOR" $CMAKELIST | sed -e $SEDFIX)
   set -xg ARANGODB_VERSION_MINOR (grep "$AV""_MINOR" $CMAKELIST | sed -e $SEDFIX)
 
+  set -xg ARANGODB_SNIPLETS "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR"
+
   # old version scheme (upto 3.3.x)
   if grep -q "$APR" $CMAKELIST
     set -xg ARANGODB_VERSION_PATCH (grep "$AV""_REVISION" $CMAKELIST | sed -e $SEDFIX)
@@ -296,6 +298,7 @@ function findArangoDBVersion
   echo "RPM:      $ARANGODB_RPM_UPSTREAM / $ARANGODB_RPM_REVISION"
   echo "DARWIN:   $ARANGODB_DARWIN_UPSTREAM / $ARANGODB_DARWIN_REVISION"
   echo "TGZ:      $ARANGODB_TGZ_UPSTREAM"
+  echo "SNIPLETS: $ARANGODB_SNIPLETS"
 end
 
 function makeRelease
@@ -319,7 +322,7 @@ function buildTarGzPackageHelper
   set -l os "$argv[1]"
 
   if test -z "$os"
-    echo "need operating system as first name"
+    echo "need operating system as first argument"
     return 1
   end
 
