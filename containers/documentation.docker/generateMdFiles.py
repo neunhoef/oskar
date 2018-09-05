@@ -334,18 +334,6 @@ class DocuBlocks():
                     found_first_RestBodyParameter = True
                     current_line_num += 1 #advance line
 
-                    good = True
-                    current = current_line_num
-                    while (good):
-                        a = len(rest_lines_split[current]) == 0
-                        b = rest_lines_split[current]
-                        if bool(a) != bool(not b):
-                            logger.error("sdfsdfsdfsdfsdf" + str(a) + str(b))
-                            sys.exit(0)
-                        if b:
-                            good = False
-                        current += 1
-
                     #skip empty lines
                     #skip lines starting with @
                     #skip lines containing RESTBODYPARAM
