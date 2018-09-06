@@ -14,6 +14,8 @@ $env:CLCACHE_DIR="$INNERWORKDIR\.clcache.windows"
 $global:GENERATOR = "Visual Studio 15 2017 Win64"
 Import-Module VSSetup -ErrorAction Stop
 
+While (Test-Path Alias:curl) {Remove-Item Alias:curl}
+
 Function proc($process,$argument,$logfile)
 {
     If($logfile -eq $false)
@@ -486,7 +488,6 @@ Function downloadStarter
 Function downloadSyncer
 {
     Write-Host "Time: $((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH.mm.ssZ'))"
-    Remove-Item Alias:\curl -ErrorAction SilentlyContinue
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     If(-Not($env:DOWNLOAD_SYNC_USER))
     {
@@ -563,10 +564,11 @@ Function signWindows
     Push-Location $pwd
     Set-Location "$INNERWORKDIR\ArangoDB\build\"
     Write-Host "Time: $((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH.mm.ssZ'))"
+    $SIGNTOOL = $(Get-ChildItem C:\ -Recurse "signtool.exe" -ErrorAction SilentlyContinue).FullName[0]
     ForEach($PACKAGE in $(Get-ChildItem -Filter ArangoDB3*.exe).FullName)
     {
-        Write-Host "Sign: signtool sign /tr `"http://sha256timestamp.ws.symantec.com/sha256/timestamp`" `"$PACKAGE`""
-        proc -process "signtool" -argument "sign /tr `"http://sha256timestamp.ws.symantec.com/sha256/timestamp`" `"$PACKAGE`"" -logfile "$INNERWORKDIR\$PACKAGE-sign"
+        Write-Host "Sign: $SIGNTOOL sign /tr `"http://sha256timestamp.ws.symantec.com/sha256/timestamp`" `"$PACKAGE`""
+        proc -process "$SIGNTOOL" -argument "sign /tr `"http://sha256timestamp.ws.symantec.com/sha256/timestamp`" `"$PACKAGE`"" -logfile "$INNERWORKDIR\$PACKAGE-sign"
     }
     Pop-Location
 }
