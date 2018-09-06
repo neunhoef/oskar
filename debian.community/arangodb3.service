@@ -40,7 +40,8 @@ ExecStartPre=/usr/bin/env chmod 700 /var/lib/arangodb3
 ExecStartPre=/usr/bin/env chown -R arangodb:arangodb /var/lib/arangodb3-apps
 ExecStartPre=/usr/bin/env chmod 700 /var/lib/arangodb3-apps
 
-ExecStart=/bin/sh -c 'exec /usr/sbin/arangod --uid=$(getent passwd arangodb | cut -f 3 -d :) --gid=$(getent group arangodb | cut -f 3 -d :) --pid-file /var/run/arangodb3/arangod.pid --temp.path /var/tmp/arangodb3 --log.foreground-tty true'
+User=arangodb
+ExecStart=/usr/bin/env sh -c 'exec /usr/sbin/arangod --uid=$(getent passwd arangodb | cut -f 3 -d :) --gid=$(getent group arangodb | cut -f 3 -d :) --pid-file /var/run/arangodb3/arangod.pid --temp.path /var/tmp/arangodb3 --log.foreground-tty true'
 
 TimeoutStopSec=3600
 TimeoutSec=3600
