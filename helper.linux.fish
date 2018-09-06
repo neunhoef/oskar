@@ -72,7 +72,7 @@ function runInContainer
     set -l agentstarted ""
   end
 
-  if set -v JENKINS_HOME
+  if set -q JENKINS_HOME
     set -l jenkin_home '-e' "JENKINS_HOME=$JENKINS_HOME"
   end
 

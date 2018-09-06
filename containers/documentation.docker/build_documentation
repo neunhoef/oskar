@@ -420,7 +420,7 @@ main(){
     local out="${ARANGO_BUILD_DOC}/ArangoDB-${newVersionNumber}"
     cp -r "$ARANGO_BUILD_DOC_OUT" "$out" || ferr "failed to copy html documentation" #rather move
 
-    run_cmd tar -czf "$out.tar.gz" "$out" -C "$ARANGO_BUILD_DOC" . \
+    run_cmd tar -C "$ARANGO_BUILD_DOC" -czf "$out.tar.gz" "ArangoDB-${newVersionNumber}" \
         || ferr "failed to tar html documentation"
     rm -fr "$out" || err "failed to delete documentation copy"
 
