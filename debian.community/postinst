@@ -105,6 +105,16 @@ fi
 
 db_stop
 
+# Set up some permissions and ownerships:
+/usr/bin/install -g arangodb -o arangodb -d /var/tmp/arangodb3
+/usr/bin/install -g arangodb -o arangodb -d /var/run/arangodb3
+chown -R arangodb:arangodb /var/log/arangodb3
+chmod 700 /var/log/arangodb3
+chown -R arangodb:arangodb /var/lib/arangodb3
+chmod 700 /var/lib/arangodb3
+chown -R arangodb:arangodb /var/lib/arangodb3-apps
+chmod 700 /var/lib/arangodb3-apps
+
 if [ -d /run/systemd/system ] ; then
     # This will only remove masks created by d-s-h on package removal.
     deb-systemd-helper unmask arangodb3.service >/dev/null || true
