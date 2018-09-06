@@ -236,9 +236,15 @@ fi
 # if not, then the arangod binary will very likely try to open a socket
 # connection to nscd to query the group information from there.
 # if there is no nscd running, starting the arangod binary will fail
-if ! grep "^arangodb:" /etc/group >/dev/null; then
+if ! grep "^arangodb:" /etc/passwd >/dev/null; then
   if ! nscd -g >/dev/null 2>&1; then
-    echo "Unable to query nscd service for user 'arangodb'. As a consequence, it is very likely that starting the arangod server will fail because it can neither find user 'arangodb' in /etc/group nor via an nscd group lookup."
+    echo "Unable to query nscd service for user 'arangodb'. As a consequence, it is very likely that installing or starting the arangod server will fail because it can neither find user 'arangodb' in /etc/group nor via an nscd group lookup."
+  fi
+else
+  if ! grep "^arangodb:" /etc/group >/dev/null; then
+    if ! nscd -g >/dev/null 2>&1; then
+      echo "Unable to query nscd service for group 'arangodb'. As a consequence, it is very likely that installing or starting the arangod server will fail because it can neither find user 'arangodb' in /etc/group nor via an nscd group lookup."
+    fi
   fi
 fi
 

@@ -142,9 +142,9 @@ To erase the build directories and checked out sources, use
 
 After that, essentially all resources used by oskar are freed again.
 
-# Reference
+# Reference Manual
 
-## Branches
+## Select Branches
 
 ### switchBranches
 
@@ -195,11 +195,13 @@ Under linux:
 - RPM, Debian and tar.gz
 - server and client
 - community and enterprise
+- html sniplets for debian, rpm, generic linux
 
 Under MacOSX:
 
 - DMG and tar.gz
 - community and enterprise
+- html sniplets for macosx
 
 ## Internals
 
