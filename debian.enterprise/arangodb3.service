@@ -31,14 +31,14 @@ Environment=GLIBCXX_FORCE_NEW=1
 # Protect users from making their installation unusable by
 # starting arangod with wrong permissions (e.g. as root).
 # This will reset the permissions to the working default.
-ExecStartPre=/usr/bin/install -g arangodb -o arangodb -d /var/tmp/arangodb3
-ExecStartPre=/usr/bin/install -g arangodb -o arangodb -d /var/run/arangodb3
-ExecStartPre=/usr/bin/env chown -R arangodb:arangodb /var/log/arangodb3
-ExecStartPre=/usr/bin/env chmod 700 /var/log/arangodb3
-ExecStartPre=/usr/bin/env chown -R arangodb:arangodb /var/lib/arangodb3
-ExecStartPre=/usr/bin/env chmod 700 /var/lib/arangodb3
-ExecStartPre=/usr/bin/env chown -R arangodb:arangodb /var/lib/arangodb3-apps
-ExecStartPre=/usr/bin/env chmod 700 /var/lib/arangodb3-apps
+ExecStartPre=+/usr/bin/install -g arangodb -o arangodb -d /var/tmp/arangodb3
+ExecStartPre=+/usr/bin/install -g arangodb -o arangodb -d /var/run/arangodb3
+ExecStartPre=+/usr/bin/env chown -R arangodb:arangodb /var/log/arangodb3
+ExecStartPre=+/usr/bin/env chmod 700 /var/log/arangodb3
+ExecStartPre=+/usr/bin/env chown -R arangodb:arangodb /var/lib/arangodb3
+ExecStartPre=+/usr/bin/env chmod 700 /var/lib/arangodb3
+ExecStartPre=+/usr/bin/env chown -R arangodb:arangodb /var/lib/arangodb3-apps
+ExecStartPre=+/usr/bin/env chmod 700 /var/lib/arangodb3-apps
 
 User=arangodb
 Group=arangodb
