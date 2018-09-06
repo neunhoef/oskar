@@ -1,18 +1,18 @@
+If(-Not($ENV:WORKSPACE))
+{
+    $ENV:WORKSPACE = $(Split-Path -Parent $global:WORKDIR)
+}
 $global:WORKDIR = $pwd
 If(-Not(Test-Path -PathType Container -Path "work"))
 {
     New-Item -ItemType Directory -Path "work"
 }
-If(-Not($ENV:WORKSPACE))
-{
-    $ENV:WORKSPACE = $(Split-Path -Parent $global:WORKDIR)
-}
 $global:INNERWORKDIR = "$WORKDIR\work"
-$global:GENERATOR = "Visual Studio 15 2017 Win64"
-Remove-Item Alias:\curl -ErrorAction SilentlyContinue
-Import-Module VSSetup -ErrorAction Stop
-$env:CLCACHE_DIR="$INNERWORKDIR\.clcache.windows"
 $env:TMP = "$INNERWORKDIR\tmp"
+$env:CLCACHE_DIR="$INNERWORKDIR\.clcache.windows"
+
+$global:GENERATOR = "Visual Studio 15 2017 Win64"
+Import-Module VSSetup -ErrorAction Stop
 
 Function proc($process,$argument,$logfile)
 {
@@ -470,11 +470,11 @@ Function transformBundleSniplet
 
 Function downloadStarter
 {
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     (Select-String -Path "$INNERWORKDIR\ArangoDB\VERSIONS" -SimpleMatch "STARTER_REV")[0] -match '([0-9]+.[0-9]+.[0-9]+)|latest' | Out-Null
     $global:STARTER_REV = $Matches[0]
     If($global:STARTER_REV -eq "latest")
     {
-        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         $JSON = Invoke-WebRequest -Uri 'https://api.github.com/repos/arangodb-helper/arangodb/releases/latest' -UseBasicParsing | ConvertFrom-Json
         $global:STARTER_REV = $JSON.name
     }
@@ -483,6 +483,8 @@ Function downloadStarter
 
 Function downloadSyncer
 {
+    Remove-Item Alias:\curl -ErrorAction SilentlyContinue
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     If(-Not($env:DOWNLOAD_SYNC_USER))
     {
         Write-Host "Need  environment variable set!"
@@ -491,8 +493,7 @@ Function downloadSyncer
     $global:SYNCER_REV = $Matches[0]
     If($global:SYNCER_REV -eq "latest")
     {
-        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-        $JSON = curl -s -L "https://arangodb-release-bot:Rah6iePotheo7PoTAif4aipaThahXai5@api.github.com/repos/arangodb/arangosync/releases/latest" | ConvertFrom-Json
+        $JSON = curl -s -L "https://$env:DOWNLOAD_SYNC_USER@api.github.com/repos/arangodb/arangosync/releases/latest" | ConvertFrom-Json
         $global:SYNCER_REV = $JSON.name
     }
     $ASSET = curl -s -L "https://$env:DOWNLOAD_SYNC_USER@api.github.com/repos/arangodb/arangosync/releases/tags/$SYNCER_REV" | ConvertFrom-Json
