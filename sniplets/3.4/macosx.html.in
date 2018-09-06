@@ -1,0 +1,17 @@
+<p>
+  We provide a single package containing the server and the client tools. For a
+  standard server setup, download the package <strong>Server</strong> and
+  install it using the package manager.
+
+  As an alternative there is a <strong>Tar</strong> containing the server and
+  client tools which can be install in any location.
+</p>
+<hr/>
+<p class="ara_package_line">Packages for the <strong>DMG</strong> package:</p>
+<ul>
+  <li><a href="@DOWNLOAD_LINK@/arangodb34/@DOWNLOAD_EDITION@/MacOSX/@BUNDLE_NAME_SERVER@">Server (@BUNDLE_SIZE_SERVER@ MByte)</li>
+</ul>
+<p class="ara_package_line"><strong>Tar</strong> based packages:</p>
+<ul>
+  <li><a href="@DOWNLOAD_LINK@/arangodb34/@DOWNLOAD_EDITION@/MacOSX/@TARGZ_NAME_SERVER@">Server (@TARGZ_SIZE_SERVER@ MByte)</li>
+</ul>
