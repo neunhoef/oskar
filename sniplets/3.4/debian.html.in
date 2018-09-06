@@ -12,11 +12,11 @@
 <hr/>
 <p class="ara_package_line">Packages for the <strong>Debian</strong> package manager:</p>
 <ul>
-  <li><a href="@DOWNLOAD_LINK@/arangodb34/debian/amd64/@DEBIAN_NAME_SERVER@">Server (@DEBIAN_SIZE_SERVER@ MByte)</li>
-  <li><a href="@DOWNLOAD_LINK@/arangodb34/debian/amd64/@DEBIAN_NAME_CLIENT@">Client Tools (@DEBIAN_SIZE_CLIENT@ MByte)</li>
-  <li><a href="@DOWNLOAD_LINK@/arangodb34/debian/amd64/@DEBIAN_NAME_DEBUG_SYMBOLS@">Debug Symbols (@DEBIAN_SIZE_DEBUG_SYMBOLS@ MByte)</li>
+  <li><a href="@DOWNLOAD_LINK@/arangodb34/@DOWNLOAD_EDITION@/Linux/@DEBIAN_NAME_SERVER@">Server (@DEBIAN_SIZE_SERVER@ MByte)</li>
+  <li><a href="@DOWNLOAD_LINK@/arangodb34/@DOWNLOAD_EDITION@/Linux/@DEBIAN_NAME_CLIENT@">Client Tools (@DEBIAN_SIZE_CLIENT@ MByte)</li>
+  <li><a href="@DOWNLOAD_LINK@/arangodb34/@DOWNLOAD_EDITION@/Linux/@DEBIAN_NAME_DEBUG_SYMBOLS@">Debug Symbols (@DEBIAN_SIZE_DEBUG_SYMBOLS@ MByte)</li>
 </ul>
 <p class="ara_package_line"><strong>Tar</strong> based packages:</p>
 <ul>
-  <li><a href="@DOWNLOAD_LINK@/arangodb34/linux/@TARGZ_NAME_SERVER@">Server (@TARGZ_SIZE_SERVER@ MByte)</li>
+  <li><a href="@DOWNLOAD_LINK@/arangodb34/@DOWNLOAD_EDITION@/Linux/@TARGZ_NAME_SERVER@">Server (@TARGZ_SIZE_SERVER@ MByte)</li>
 </ul>

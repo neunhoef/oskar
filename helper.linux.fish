@@ -423,15 +423,17 @@ function buildCommunityPackage
 end
 
 function transformDebianSniplet
-  if test -z "$DOWNLOAD_LINK"
-    echo "you need to set the variable DOWNLOAD_LINK"
-    return 1
-  end
-
   cd $WORKDIR
   set -l DEBIAN_NAME_CLIENT "$argv[1]-client_$argv[2]_amd64.deb"
   set -l DEBIAN_NAME_SERVER "$argv[1]_$argv[2]_amd64.deb"
   set -l DEBIAN_NAME_DEBUG_SYMBOLS "$argv[1]-dbg_$argv[2]_amd64.deb"
+  set -l DOWNLOAD_LINK "$argv[4]"
+
+  if test "$ENTERPRISEEDITION" = "On"
+    set DOWNLOAD_EDITION "Enterprise"
+  else
+    set DOWNLOAD_EDITION "Community"
+  end
 
   if test ! -f "work/$DEBIAN_NAME_SERVER"; echo "Debian package '$DEBIAN_NAME_SERVER' is missing"; return 1; end
   if test ! -f "work/$DEBIAN_NAME_CLIENT"; echo "Debian package '$DEBIAN_NAME_CLIENT' is missing"; return 1; end
@@ -449,15 +451,16 @@ function transformDebianSniplet
 
   set -l n "work/download-$argv[1]-debian.html"
 
-  sed -e "s/@DEBIAN_NAME_SERVER@/$DEBIAN_NAME_SERVER/" \
-      -e "s/@DEBIAN_NAME_CLIENT@/$DEBIAN_NAME_CLIENT/" \
-      -e "s/@DEBIAN_NAME_DEBUG_SYMBOLS@/$DEBIAN_NAME_DEBUG_SYMBOLS/" \
-      -e "s/@DEBIAN_SIZE_SERVER@/$DEBIAN_SIZE_SERVER/" \
-      -e "s/@DEBIAN_SIZE_CLIENT@/$DEBIAN_SIZE_CLIENT/" \
-      -e "s/@DEBIAN_SIZE_DEBUG_SYMBOLS@/$DEBIAN_SIZE_DEBUG_SYMBOLS/" \
-      -e "s/@TARGZ_NAME_SERVER@/$TARGZ_NAME_SERVER/" \
-      -e "s/@TARGZ_SIZE_SERVER@/$TARGZ_SIZE_SERVER/" \
-      -e "s~@DOWNLOAD_LINK@~$DOWNLOAD_LINK~" \
+  sed -e "s|@DEBIAN_NAME_SERVER@|$DEBIAN_NAME_SERVER|" \
+      -e "s|@DEBIAN_NAME_CLIENT@|$DEBIAN_NAME_CLIENT|" \
+      -e "s|@DEBIAN_NAME_DEBUG_SYMBOLS@|$DEBIAN_NAME_DEBUG_SYMBOLS|" \
+      -e "s|@DEBIAN_SIZE_SERVER@|$DEBIAN_SIZE_SERVER|" \
+      -e "s|@DEBIAN_SIZE_CLIENT@|$DEBIAN_SIZE_CLIENT|" \
+      -e "s|@DEBIAN_SIZE_DEBUG_SYMBOLS@|$DEBIAN_SIZE_DEBUG_SYMBOLS|" \
+      -e "s|@TARGZ_NAME_SERVER@|$TARGZ_NAME_SERVER|" \
+      -e "s|@TARGZ_SIZE_SERVER@|$TARGZ_SIZE_SERVER|" \
+      -e "s|@DOWNLOAD_LINK@|$DOWNLOAD_LINK|" \
+      -e "s|@DOWNLOAD_EDITION@|$DOWNLOAD_EDITION|" \
       < sniplets/$ARANGODB_SNIPLETS/debian.html.in > $n
 
   echo "Debian Sniplet: $n"
@@ -467,24 +470,36 @@ function buildDebianSniplet
   # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
   # ARANGODB_SNIPLETS, for example by running findArangoDBVersion.
   if test "$ENTERPRISEEDITION" = "On"
-    transformDebianSniplet "arangodb3e" "$ARANGODB_DEBIAN_UPSTREAM-$ARANGODB_DEBIAN_REVISION" "$ARANGODB_TGZ_UPSTREAM"
+    if test -z "$ENTERPRISE_DOWNLOAD_LINK"
+      echo "you need to set the variable ENTERPRISE_DOWNLOAD_LINK"
+      return 1
+    end
+
+    transformDebianSniplet "arangodb3e" "$ARANGODB_DEBIAN_UPSTREAM-$ARANGODB_DEBIAN_REVISION" "$ARANGODB_TGZ_UPSTREAM" "$ENTERPRISE_DOWNLOAD_LINK"
     or return 1
   else
-    transformDebianSniplet "arangodb3" "$ARANGODB_DEBIAN_UPSTREAM-$ARANGODB_DEBIAN_REVISION" "$ARANGODB_TGZ_UPSTREAM"
+    if test -z "$COMMUNITY_DOWNLOAD_LINK"
+      echo "you need to set the variable COMMUNITY_DOWNLOAD_LINK"
+      return 1
+    end
+
+    transformDebianSniplet "arangodb3" "$ARANGODB_DEBIAN_UPSTREAM-$ARANGODB_DEBIAN_REVISION" "$ARANGODB_TGZ_UPSTREAM" "$COMMUNITY_DOWNLOAD_LINK"
     or return 1
   end
 end
 
 function transformRPMSniplet
-  if test -z "$DOWNLOAD_LINK"
-    echo "you need to set the variable DOWNLOAD_LINK"
-    return 1
-  end
-
   cd $WORKDIR
   set -l RPM_NAME_CLIENT "$argv[1]-client-$argv[2].x86_64.rpm"
   set -l RPM_NAME_SERVER "$argv[1]-$argv[2].x86_64.rpm"
   set -l RPM_NAME_DEBUG_SYMBOLS "$argv[1]-debuginfo-$argv[2].x86_64.rpm"
+  set -l DOWNLOAD_LINK "$argv[4]"
+
+  if test "$ENTERPRISEEDITION" = "On"
+    set DOWNLOAD_EDITION "Enterprise"
+  else
+    set DOWNLOAD_EDITION "Community"
+  end
 
   if test ! -f "work/$RPM_NAME_SERVER"; echo "RPM package '$RPM_NAME_SERVER' is missing"; return 1; end
   if test ! -f "work/$RPM_NAME_CLIENT"; echo "RPM package '$RPM_NAME_CLIENT' is missing"; return 1; end
@@ -502,15 +517,16 @@ function transformRPMSniplet
 
   set -l n "work/download-$argv[1]-rpm.html"
 
-  sed -e "s/@RPM_NAME_SERVER@/$RPM_NAME_SERVER/" \
-      -e "s/@RPM_NAME_CLIENT@/$RPM_NAME_CLIENT/" \
-      -e "s/@RPM_NAME_DEBUG_SYMBOLS@/$RPM_NAME_DEBUG_SYMBOLS/" \
-      -e "s/@RPM_SIZE_SERVER@/$RPM_SIZE_SERVER/" \
-      -e "s/@RPM_SIZE_CLIENT@/$RPM_SIZE_CLIENT/" \
-      -e "s/@RPM_SIZE_DEBUG_SYMBOLS@/$RPM_SIZE_DEBUG_SYMBOLS/" \
-      -e "s/@TARGZ_NAME_SERVER@/$TARGZ_NAME_SERVER/" \
-      -e "s/@TARGZ_SIZE_SERVER@/$TARGZ_SIZE_SERVER/" \
-      -e "s~@DOWNLOAD_LINK@~$DOWNLOAD_LINK~" \
+  sed -e "s|@RPM_NAME_SERVER@|$RPM_NAME_SERVER|" \
+      -e "s|@RPM_NAME_CLIENT@|$RPM_NAME_CLIENT|" \
+      -e "s|@RPM_NAME_DEBUG_SYMBOLS@|$RPM_NAME_DEBUG_SYMBOLS|" \
+      -e "s|@RPM_SIZE_SERVER@|$RPM_SIZE_SERVER|" \
+      -e "s|@RPM_SIZE_CLIENT@|$RPM_SIZE_CLIENT|" \
+      -e "s|@RPM_SIZE_DEBUG_SYMBOLS@|$RPM_SIZE_DEBUG_SYMBOLS|" \
+      -e "s|@TARGZ_NAME_SERVER@|$TARGZ_NAME_SERVER|" \
+      -e "s|@TARGZ_SIZE_SERVER@|$TARGZ_SIZE_SERVER|" \
+      -e "s|@DOWNLOAD_LINK@|$DOWNLOAD_LINK|" \
+      -e "s|@DOWNLOAD_EDITION@|$DOWNLOAD_EDITION|" \
       < sniplets/$ARANGODB_SNIPLETS/rpm.html.in > $n
 
   echo "RPM Sniplet: $n"
@@ -520,22 +536,34 @@ function buildRPMSniplet
   # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
   # ARANGODB_SNIPLETS, for example by running findArangoDBVersion.
   if test "$ENTERPRISEEDITION" = "On"
-    transformRPMSniplet "arangodb3e" "$ARANGODB_RPM_UPSTREAM-$ARANGODB_RPM_REVISION" "$ARANGODB_TGZ_UPSTREAM"
+    if test -z "$ENTERPRISE_DOWNLOAD_LINK"
+      echo "you need to set the variable ENTERPRISE_DOWNLOAD_LINK"
+      return 1
+    end
+
+    transformRPMSniplet "arangodb3e" "$ARANGODB_RPM_UPSTREAM-$ARANGODB_RPM_REVISION" "$ARANGODB_TGZ_UPSTREAM" "$ENTERPRISE_DOWNLOAD_LINK"
     or return 1
   else
-    transformRPMSniplet "arangodb3" "$ARANGODB_RPM_UPSTREAM-$ARANGODB_RPM_REVISION" "$ARANGODB_TGZ_UPSTREAM"
+    if test -z "$COMMUNITY_DOWNLOAD_LINK"
+      echo "you need to set the variable COMMUNITY_DOWNLOAD_LINK"
+      return 1
+    end
+
+    transformRPMSniplet "arangodb3" "$ARANGODB_RPM_UPSTREAM-$ARANGODB_RPM_REVISION" "$ARANGODB_TGZ_UPSTREAM" "$COMMUNITY_DOWNLOAD_LINK"
     or return 1
   end
 end
 
 function transformTarGzSniplet
-  if test -z "$DOWNLOAD_LINK"
-    echo "you need to set the variable DOWNLOAD_LINK"
-    return 1
-  end
-
   cd $WORKDIR
   set -l TARGZ_NAME_SERVER "$argv[1]-linux-$argv[2].tar.gz"
+  set -l DOWNLOAD_LINK "$argv[3]"
+
+  if test "$ENTERPRISEEDITION" = "On"
+    set DOWNLOAD_EDITION "Enterprise"
+  else
+    set DOWNLOAD_EDITION "Community"
+  end
 
   if test ! -f "work/$TARGZ_NAME_SERVER"; echo "TAR.GZ '$TARGZ_NAME_SERVER' is missing"; return 1; end
 
@@ -543,9 +571,10 @@ function transformTarGzSniplet
 
   set -l n "work/download-$argv[1]-linux.html"
 
-  sed -e "s/@TARGZ_NAME_SERVER@/$TARGZ_NAME_SERVER/" \
-      -e "s/@TARGZ_SIZE_SERVER@/$TARGZ_SIZE_SERVER/" \
-      -e "s~@DOWNLOAD_LINK@~$DOWNLOAD_LINK~" \
+  sed -e "s|@TARGZ_NAME_SERVER@|$TARGZ_NAME_SERVER|" \
+      -e "s|@TARGZ_SIZE_SERVER@|$TARGZ_SIZE_SERVER|" \
+      -e "s|@DOWNLOAD_LINK@|$DOWNLOAD_LINK|" \
+      -e "s|@DOWNLOAD_EDITION@|$DOWNLOAD_EDITION|" \
       < sniplets/$ARANGODB_SNIPLETS/linux.html.in > $n
 
   echo "TarGZ Sniplet: $n"
@@ -555,12 +584,43 @@ function buildTarGzSniplet
   # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
   # ARANGODB_SNIPLETS, for example by running findArangoDBVersion.
   if test "$ENTERPRISEEDITION" = "On"
-    transformTarGzSniplet "arangodb3e" "$ARANGODB_TGZ_UPSTREAM"
+    if test -z "$ENTERPRISE_DOWNLOAD_LINK"
+      echo "you need to set the variable ENTERPRISE_DOWNLOAD_LINK"
+      return 1
+    end
+
+    transformTarGzSniplet "arangodb3e" "$ARANGODB_TGZ_UPSTREAM" "$ENTERPRISE_DOWNLOAD_LINK"
     or return 1
   else
-    transformTarGzSniplet "arangodb3" "$ARANGODB_TGZ_UPSTREAM"
+    if test -z "$COMMUNITY_DOWNLOAD_LINK"
+      echo "you need to set the variable COMMUNITY_DOWNLOAD_LINK"
+      return 1
+    end
+
+    transformTarGzSniplet "arangodb3" "$ARANGODB_TGZ_UPSTREAM" "$COMMUNITY_DOWNLOAD_LINK"
     or return 1
   end
+end
+
+function makeSniplets
+  if test -z "$ENTERPRISE_DOWNLOAD_LINK"
+    echo "you need to set the variable ENTERPRISE_DOWNLOAD_LINK"
+    return 1
+  end
+
+  if test -z "$COMMUNITY_DOWNLOAD_LINK"
+    echo "you need to set the variable COMMUNITY_DOWNLOAD_LINK"
+    return 1
+  end
+
+  community
+  and buildDebianSniplet
+  and buildRPMSniplet
+  and buildTarGzSniplet
+  and enterprise
+  and buildDebianSniplet
+  and buildRPMSniplet
+  and buildTarGzSniplet
 end
 
 # Set PARALLELISM in a sensible way:
