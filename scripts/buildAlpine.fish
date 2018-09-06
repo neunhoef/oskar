@@ -42,6 +42,7 @@ mkdir install
 set -x DESTDIR (pwd)/install
 echo Running make for static build, output in work/buildArangoDB.log
 nice make -j$PARALLELISM install > ../../buildArangoDB.log ^&1
+and cp -a ../Installation/debian/arangodb.init install/etc/init.d/arangod3
 and cd install
 and if test -z "$NOSTRIP"
   echo Stripping executables...
