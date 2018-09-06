@@ -679,15 +679,15 @@ Function moveResultsToWorkspace
     }
     if($SKIPPACKAGING -eq "Off")
     {
-        If(Test-Path -PathType Leaf "$INNERWORKDIR\ArangoDB\build\ArangoDB*win64.exe")
+        ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter "ArangoDB3*.exe"))
         {
-            Write-Host "Move $INNERWORKDIR\ArangoDB\build\ArangoDB*win64.exe"
-            Move-Item -Force -Path "$INNERWORKDIR\ArangoDB\build\ArangoDB*win64.exe" -Destination $env:WORKSPACE; comm 
+            Write-Host "Move $INNERWORKDIR\$file"
+            Move-Item -Force -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE; comm 
         }
-        If(Test-Path -PathType Leaf "$INNERWORKDIR\ArangoDB\build\ArangoDB*win64.zip")
+        ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter "ArangoDB3*.zip"))
         {
-            Write-Host "Move $INNERWORKDIR\ArangoDB\build\ArangoDB*win64.zip"
-            Move-Item -Force -Path "$INNERWORKDIR\ArangoDB\build\ArangoDB*win64.zip" -Destination $env:WORKSPACE; comm 
+            Write-Host "Move $INNERWORKDIR\$file"
+            Move-Item -Force -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE; comm 
         }
     }
     If(Test-Path -PathType Leaf "$INNERWORKDIR\testfailures.log")
