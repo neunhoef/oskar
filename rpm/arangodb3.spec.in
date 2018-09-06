@@ -113,6 +113,7 @@ fi
 /usr/share/doc/arangodb3/LICENSES-OTHER-COMPONENTS.md
 /usr/share/doc/arangodb3/README.md
 /usr/share/doc/arangodb3/README.txt
+/etc/init.d/arangodb3
 
 %attr(0755,arangodb,arangodb) %{_databasedir}
 %attr(0755,arangodb,arangodb) %{_appdir}
