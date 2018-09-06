@@ -470,7 +470,7 @@ Function transformBundleSniplet
 
 Function downloadStarter
 {
-    (Select-String -Path "$INNERWORKDIR\ArangoDB\build\VERSIONS" -SimpleMatch "STARTER_REV")[0] -match '([0-9]+.[0-9]+.[0-9]+)|latest' | Out-Null
+    (Select-String -Path "$INNERWORKDIR\ArangoDB\VERSIONS" -SimpleMatch "STARTER_REV")[0] -match '([0-9]+.[0-9]+.[0-9]+)|latest' | Out-Null
     $global:STARTER_REV = $Matches[0]
     If($global:STARTER_REV -eq "latest")
     {
@@ -487,7 +487,7 @@ Function downloadSyncer
     {
         Write-Host "Need  environment variable set!"
     }
-    (Select-String -Path "$INNERWORKDIR\ArangoDB\build\VERSIONS" -SimpleMatch "SYNCER_REV")[0] -match '([0-9]+.[0-9]+.[0-9]+)|latest' | Out-Null
+    (Select-String -Path "$INNERWORKDIR\ArangoDB\VERSIONS" -SimpleMatch "SYNCER_REV")[0] -match '([0-9]+.[0-9]+.[0-9]+)|latest' | Out-Null
     $global:SYNCER_REV = $Matches[0]
     If($global:SYNCER_REV -eq "latest")
     {
