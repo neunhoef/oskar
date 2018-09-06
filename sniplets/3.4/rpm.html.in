@@ -12,11 +12,11 @@
 <hr/>
 <p class="ara_package_line">Packages for the <strong>RPM</strong> package manager:</p>
 <ul>
-  <li><a href="@DOWNLOAD_LINK@/arangodb34/rpm/x86_64/@RPM_NAME_SERVER@">Server (@RPM_SIZE_SERVER@ MByte)</li>
-  <li><a href="@DOWNLOAD_LINK@/arangodb34/rpm/x86_64/@RPM_NAME_CLIENT@">Client Tools (@RPM_SIZE_CLIENT@ MByte)</li>
-  <li><a href="@DOWNLOAD_LINK@/arangodb34/rpm/x86_64/@RPM_NAME_DEBUG_SYMBOLS@">Debug Symbols (@RPM_SIZE_DEBUG_SYMBOLS@ MByte)</li>
+  <li><a href="@DOWNLOAD_LINK@/arangodb34/@DOWNLOAD_EDITION@/Linux/@RPM_NAME_SERVER@">Server (@RPM_SIZE_SERVER@ MByte)</li>
+  <li><a href="@DOWNLOAD_LINK@/arangodb34/@DOWNLOAD_EDITION@/Linux/@RPM_NAME_CLIENT@">Client Tools (@RPM_SIZE_CLIENT@ MByte)</li>
+  <li><a href="@DOWNLOAD_LINK@/arangodb34/@DOWNLOAD_EDITION@/Linux/@RPM_NAME_DEBUG_SYMBOLS@">Debug Symbols (@RPM_SIZE_DEBUG_SYMBOLS@ MByte)</li>
 </ul>
 <p class="ara_package_line"><strong>Tar</strong> based packages:</p>
 <ul>
-  <li><a href="@DOWNLOAD_LINK@/arangodb34/linux/@TARGZ_NAME_SERVER@">Server (@TARGZ_SIZE_SERVER@ MByte)</li>
+  <li><a href="@DOWNLOAD_LINK@/arangodb34/@DOWNLOAD_EDITION@/Linux/@TARGZ_NAME_SERVER@">Server (@TARGZ_SIZE_SERVER@ MByte)</li>
 </ul>
