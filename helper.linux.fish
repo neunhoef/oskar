@@ -72,6 +72,10 @@ function runInContainer
     set -l agentstarted ""
   end
 
+  if set -v JENKINS_HOME
+    set -l jenkin_home '-e' "JENKINS_HOME=$JENKINS_HOME"
+  end
+
   # Run script in container in background, but print output and react to
   # a TERM signal to the shell or to a foreground subcommand. Note that the
   # container process itself will run as root and will be immune to SIGTERM
@@ -95,7 +99,7 @@ function runInContainer
              -e ENTERPRISEEDITION=$ENTERPRISEEDITION \
              -e SCRIPTSDIR=$SCRIPTSDIR \
              -e PLATFORM=$PLATFORM \
-             $argv)
+             $jenkin_home $argv)
   function termhandler --on-signal TERM --inherit-variable c
     if test -n "$c" ; docker stop $c >/dev/null ; end
   end
