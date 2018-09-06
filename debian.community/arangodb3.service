@@ -33,7 +33,7 @@ Group=arangodb
 
 WorkingDirectory=/var/tmp/arangodb3
 
-ExecStart=/usr/sbin/arangod --pid-file /var/run/arangodb3/arangod.pid --temp.path /var/tmp/arangodb3 --log.foreground-tty true'
+ExecStart=/usr/sbin/arangod --pid-file /var/run/arangodb3/arangod.pid --temp.path /var/tmp/arangodb3 --log.foreground-tty true
 
 TimeoutStopSec=3600
 TimeoutSec=3600
