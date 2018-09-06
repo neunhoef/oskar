@@ -14,7 +14,10 @@ $env:CLCACHE_DIR="$INNERWORKDIR\.clcache.windows"
 $global:GENERATOR = "Visual Studio 15 2017 Win64"
 Import-Module VSSetup -ErrorAction Stop
 
-While (Test-Path Alias:curl) {Remove-Item Alias:curl}
+While (Test-Path Alias:curl) 
+{
+    Remove-Item Alias:curl
+}
 
 Function proc($process,$argument,$logfile)
 {
@@ -679,15 +682,15 @@ Function moveResultsToWorkspace
     }
     if($SKIPPACKAGING -eq "Off")
     {
-        ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter "ArangoDB3*.exe"))
+        ForEach ($file in $(Get-ChildItem "$INNERWORKDIR\ArangoDB\build" -Filter "ArangoDB3*.exe"))
         {
-            Write-Host "Move $INNERWORKDIR\$file"
-            Move-Item -Force -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE; comm 
+            Write-Host "Move $INNERWORKDIR\ArangoDB\build\$file"
+            Move-Item -Force -Path "$INNERWORKDIR\ArangoDB\build\$file" -Destination $env:WORKSPACE; comm 
         }
-        ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter "ArangoDB3*.zip"))
+        ForEach ($file in $(Get-ChildItem "$INNERWORKDIR\ArangoDB\build" -Filter "ArangoDB3*.zip"))
         {
-            Write-Host "Move $INNERWORKDIR\$file"
-            Move-Item -Force -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE; comm 
+            Write-Host "Move $INNERWORKDIR\ArangoDB\build\$file"
+            Move-Item -Force -Path "$INNERWORKDIR\ArangoDB\build\$file" -Destination $env:WORKSPACE; comm 
         }
     }
     If(Test-Path -PathType Leaf "$INNERWORKDIR\testfailures.log")
