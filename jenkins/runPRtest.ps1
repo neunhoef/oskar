@@ -35,7 +35,7 @@ clearResults
 . $env:STORAGE_ENGINE
 . $env:TEST_SUITE
 
-switchBranches $env:ARANGODB_BRANCH $env:ENTERPRISE_BRANCH true
+switchBranches $env:ARANGODB_BRANCH $env:ENTERPRISE_BRANCH
 If ($global:ok) 
 {
     oskar1
