@@ -17,7 +17,7 @@ set -xg ARANGO_IN_JENKINS true
 echo Working on branch $ARANGODB_BRANCH of main repository
 echo on branch $ENTERPRISE_BRANCH of enterprise repository.
 
-switchBranches $ARANGODB_BRANCH $ENTERPRISE_BRANCH
+switchBranches $ARANGODB_BRANCH $ENTERPRISE_BRANCH true
 and buildStaticArangoDB
 and if $RELEASE
     buildDocumentationForRelease

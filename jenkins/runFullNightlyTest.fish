@@ -6,7 +6,7 @@ lockDirectory ; updateOskar ; clearResults
 eval $EDITION ; eval $STORAGE_ENGINE ; eval $TEST_SUITE
 parallelism 20
 
-switchBranches $ARANGODB_BRANCH $ENTERPRISE_BRANCH
+switchBranches $ARANGODB_BRANCH $ENTERPRISE_BRANCH true
 and oskar1Full
 
 set -l s $status

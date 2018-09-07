@@ -1,27 +1,39 @@
 #!/usr/bin/env fish
 
-if set -q JENKINS_HOME
+if test (count $argv) -lt 2
+    echo "you did not provide enough arguments"
+end
+
+set -l arango $argvp[1]
+set -l enterprise $argvp[2]
+set -l force_clean false
+
+if test (count $argv) -eq 3
+    set -l force_clean $argv[3]
+end
+
+if $force_clean
   cd $INNERWORKDIR/ArangoDB
   and git checkout -- .
   and git fetch
-  and git checkout $argv[1]
-  and git reset --hard origin/$argv[1]
+  and git checkout $arango
+  and git reset --hard origin/$arango
   and git clean -fdx
   and if test $ENTERPRISEEDITION = On
     cd enterprise
     and git checkout -- .
     and git fetch
-    and git checkout $argv[2]
-    and git reset --hard origin/$argv[2]
+    and git checkout $enterprise
+    and git reset --hard origin/$enterprise
     and git clean -fdx
   end
 else
   cd $INNERWORKDIR/ArangoDB
-  and git checkout $argv[1]
+  and git checkout $arango
   and git pull
   and if test $ENTERPRISEEDITION = On
     cd enterprise
-    and git checkout $argv[2]
+    and git checkout $enterprise
     and git pull
   end
 end
