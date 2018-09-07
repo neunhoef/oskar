@@ -209,4 +209,83 @@ function buildTarGzPackage
   and buildTarGzPackageHelper "macosx"
 end
 
+function transformBundleSniplet
+  cd $WORKDIR
+  set -l BUNDLE_NAME_SERVER "$argv[1]-$argv[2].x86_64.dmg"
+  set -l DOWNLOAD_LINK "$argv[4]"
+
+  if test "$ENTERPRISEEDITION" = "On"
+    set DOWNLOAD_EDITION "Enterprise"
+  else
+    set DOWNLOAD_EDITION "Community"
+  end
+
+  if test ! -f "work/$BUNDLE_NAME_SERVER"; echo "DMG package '$BUNDLE_NAME_SERVER' is missing"; return 1; end
+
+  set -l BUNDLE_SIZE_SERVER (expr (wc -c < work/$BUNDLE_NAME_SERVER | tr -d " ") / 1024 / 1024)
+
+  set -l TARGZ_NAME_SERVER "$argv[1]-macosx-$argv[3].tar.gz"
+
+  if test ! -f "work/$TARGZ_NAME_SERVER"; echo "TAR.GZ '$TARGZ_NAME_SERVER' is missing"; return 1; end
+
+  set -l TARGZ_SIZE_SERVER (expr (wc -c < work/$TARGZ_NAME_SERVER | tr -d " ") / 1024 / 1024)
+
+  set -l n "work/download-$argv[1]-macosx.html"
+
+  sed -e "s|@BUNDLE_NAME_SERVER@|$BUNDLE_NAME_SERVER|" \
+      -e "s|@BUNDLE_SIZE_SERVER@|$BUNDLE_SIZE_SERVER|" \
+      -e "s|@TARGZ_NAME_SERVER@|$TARGZ_NAME_SERVER|" \
+      -e "s|@TARGZ_SIZE_SERVER@|$TARGZ_SIZE_SERVER|" \
+      -e "s|@DOWNLOAD_LINK@|$DOWNLOAD_LINK|" \
+      -e "s|@DOWNLOAD_EDITION@|$DOWNLOAD_EDITION|" \
+      < sniplets/$ARANGODB_SNIPLETS/macosx.html.in > $n
+
+  echo "MacOSX Bundle Sniplet: $n"
+end
+
+function buildBundleSniplet
+  # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
+  # ARANGODB_SNIPLETS, for example by running findArangoDBVersion.
+  if test -z "$ARANGODB_DARWIN_REVISION"
+    set n "$ARANGODB_DARWIN_UPSTREAM"
+  else
+    set n "$ARANGODB_DARWIN_UPSTREAM-$ARANGODB_DARWIN_REVISION"
+  end
+
+  if test "$ENTERPRISEEDITION" = "On"
+    if test -z "$ENTERPRISE_DOWNLOAD_LINK"
+      echo "you need to set the variable ENTERPRISE_DOWNLOAD_LINK"
+      return 1
+    end
+
+    transformBundleSniplet "arangodb3e" "$n" "$ARANGODB_TGZ_UPSTREAM" "$ENTERPRISE_DOWNLOAD_LINK"
+    or return 1
+  else
+    if test -z "$COMMUNITY_DOWNLOAD_LINK"
+      echo "you need to set the variable COMMUNITY_DOWNLOAD_LINK"
+      return 1
+    end
+
+    transformBundleSniplet "arangodb3" "$n" "$ARANGODB_TGZ_UPSTREAM" "$COMMUNITY_DOWNLOAD_LINK"
+    or return 1
+  end
+end
+
+function makeSniplets
+  if test -z "$ENTERPRISE_DOWNLOAD_LINK"
+    echo "you need to set the variable ENTERPRISE_DOWNLOAD_LINK"
+    return 1
+  end
+
+  if test -z "$COMMUNITY_DOWNLOAD_LINK"
+    echo "you need to set the variable COMMUNITY_DOWNLOAD_LINK"
+    return 1
+  end
+
+  community
+  and buildBundleSniplet
+  and enterprise
+  and buildBundleSniplet
+end
+
 parallelism 8

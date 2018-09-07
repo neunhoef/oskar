@@ -1,17 +1,23 @@
+If(-Not($ENV:WORKSPACE))
+{
+    $ENV:WORKSPACE = $(Split-Path -Parent $global:WORKDIR)
+}
 $global:WORKDIR = $pwd
 If(-Not(Test-Path -PathType Container -Path "work"))
 {
     New-Item -ItemType Directory -Path "work"
 }
-If(-Not($ENV:WORKSPACE))
-{
-    $ENV:WORKSPACE = $(Split-Path -Parent $global:WORKDIR)
-}
 $global:INNERWORKDIR = "$WORKDIR\work"
+$env:TMP = "$INNERWORKDIR\tmp"
+$env:CLCACHE_DIR="$INNERWORKDIR\.clcache.windows"
+
 $global:GENERATOR = "Visual Studio 15 2017 Win64"
 Import-Module VSSetup -ErrorAction Stop
-$env:CLCACHE_DIR="$INNERWORKDIR\.clcache.windows"
-$env:TMP = "$INNERWORKDIR\tmp"
+
+While (Test-Path Alias:curl) 
+{
+    Remove-Item Alias:curl
+}
 
 Function proc($process,$argument,$logfile)
 {
@@ -463,6 +469,46 @@ Function  findArangoDBVersion
     return $global:ARANGODB_FULL_VERSION
 }
 
+Function transformBundleSniplet
+{   
+}
+
+Function downloadStarter
+{
+    Write-Host "Time: $((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH.mm.ssZ'))"
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    (Select-String -Path "$INNERWORKDIR\ArangoDB\VERSIONS" -SimpleMatch "STARTER_REV")[0] -match '([0-9]+.[0-9]+.[0-9]+)|latest' | Out-Null
+    $global:STARTER_REV = $Matches[0]
+    If($global:STARTER_REV -eq "latest")
+    {
+        $JSON = Invoke-WebRequest -Uri 'https://api.github.com/repos/arangodb-helper/arangodb/releases/latest' -UseBasicParsing | ConvertFrom-Json
+        $global:STARTER_REV = $JSON.name
+    }
+    Write-Host "Download: Starter"
+    (New-Object System.Net.WebClient).DownloadFile("https://github.com/arangodb-helper/arangodb/releases/download/$STARTER_REV/arangodb-windows-amd64.exe","$INNERWORKDIR\ArangoDB\build\arangodb.exe")
+}
+
+Function downloadSyncer
+{
+    Write-Host "Time: $((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH.mm.ssZ'))"
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    If(-Not($env:DOWNLOAD_SYNC_USER))
+    {
+        Write-Host "Need  environment variable set!"
+    }
+    (Select-String -Path "$INNERWORKDIR\ArangoDB\VERSIONS" -SimpleMatch "SYNCER_REV")[0] -match '([0-9]+.[0-9]+.[0-9]+)|latest' | Out-Null
+    $global:SYNCER_REV = $Matches[0]
+    If($global:SYNCER_REV -eq "latest")
+    {
+        $JSON = curl -s -L "https://$env:DOWNLOAD_SYNC_USER@api.github.com/repos/arangodb/arangosync/releases/latest" | ConvertFrom-Json
+        $global:SYNCER_REV = $JSON.name
+    }
+    $ASSET = curl -s -L "https://$env:DOWNLOAD_SYNC_USER@api.github.com/repos/arangodb/arangosync/releases/tags/$SYNCER_REV" | ConvertFrom-Json
+    $ASSET_ID = $(($ASSET.assets) | Where-Object -Property name -eq arangosync-windows-amd64.exe).id
+    Write-Host "Download: Syncer"
+    curl -s -L -H "Accept: application/octet-stream" "https://$env:DOWNLOAD_SYNC_USER@api.github.com/repos/arangodb/arangosync/releases/assets/$ASSET_ID" -o "$INNERWORKDIR\ArangoDB\build\arangosync.exe"
+}
+
 Function configureWindows
 {
     If(-Not(Test-Path -PathType Container -Path "$INNERWORKDIR\ArangoDB\build"))
@@ -471,9 +517,21 @@ Function configureWindows
     }
     Push-Location $pwd
     Set-Location "$INNERWORKDIR\ArangoDB\build"
-    Write-Host "Time: $((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH.mm.ssZ'))"
-    Write-Host "Configure: cmake -G `"$GENERATOR`" -T `"v141,host=x64`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DPACKAGING=NSIS -DCMAKE_INSTALL_PREFIX=/ -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DUSE_FAILURE_TESTS=`"$USEFAILURETESTS`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES`" -DOPENSSL_USE_STATIC_LIBS=`"$STATICLIBS`" `"$INNERWORKDIR\ArangoDB`""
-	proc -process "cmake" -argument "-G `"$GENERATOR`" -T `"v141,host=x64`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DPACKAGING=NSIS -DCMAKE_INSTALL_PREFIX=/ -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DUSE_FAILURE_TESTS=`"$USEFAILURETESTS`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES`" -DOPENSSL_USE_STATIC_LIBS=`"$STATICLIBS`" `"$INNERWORKDIR\ArangoDB`"" -logfile "$INNERWORKDIR\cmake"
+    If($ENTERPRISEEDITION -eq "On")
+    {
+        downloadStarter
+        downloadSyncer
+        Write-Host "Time: $((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH.mm.ssZ'))"   
+        Write-Host "Configure: cmake -G `"$GENERATOR`" -T `"v141,host=x64`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DPACKAGING=NSIS -DCMAKE_INSTALL_PREFIX=/ -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DUSE_FAILURE_TESTS=`"$USEFAILURETESTS`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES`" -DOPENSSL_USE_STATIC_LIBS=`"$STATICLIBS`" -DTHIRDPARTY_BIN=`"$INNERWORKDIR\ArangoDB\build\arangodb.exe`" -DTHIRDPARTY_SBIN=`"$INNERWORKDIR\ArangoDB\build\arangosync.exe`" `"$INNERWORKDIR\ArangoDB`""
+	    proc -process "cmake" -argument "-G `"$GENERATOR`" -T `"v141,host=x64`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DPACKAGING=NSIS -DCMAKE_INSTALL_PREFIX=/ -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DUSE_FAILURE_TESTS=`"$USEFAILURETESTS`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES`" -DOPENSSL_USE_STATIC_LIBS=`"$STATICLIBS`" -DTHIRDPARTY_BIN=`"$INNERWORKDIR\ArangoDB\build\arangodb.exe`" -DTHIRDPARTY_SBIN=`"$INNERWORKDIR\ArangoDB\build\arangosync.exe`" `"$INNERWORKDIR\ArangoDB`"" -logfile "$INNERWORKDIR\cmake"
+    }
+    Else
+    {
+        downloadStarter
+        Write-Host "Time: $((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH.mm.ssZ'))"
+        Write-Host "Configure: cmake -G `"$GENERATOR`" -T `"v141,host=x64`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DPACKAGING=NSIS -DCMAKE_INSTALL_PREFIX=/ -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DUSE_FAILURE_TESTS=`"$USEFAILURETESTS`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES`" -DOPENSSL_USE_STATIC_LIBS=`"$STATICLIBS`" -DTHIRDPARTY_BIN=`"$INNERWORKDIR\ArangoDB\build\arangodb.exe`" `"$INNERWORKDIR\ArangoDB`""
+	    proc -process "cmake" -argument "-G `"$GENERATOR`" -T `"v141,host=x64`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DPACKAGING=NSIS -DCMAKE_INSTALL_PREFIX=/ -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DUSE_FAILURE_TESTS=`"$USEFAILURETESTS`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES`" -DOPENSSL_USE_STATIC_LIBS=`"$STATICLIBS`" -DTHIRDPARTY_BIN=`"$INNERWORKDIR\ArangoDB\build\arangodb.exe`" `"$INNERWORKDIR\ArangoDB`"" -logfile "$INNERWORKDIR\cmake"
+    }
     Pop-Location
 }
 
@@ -509,10 +567,11 @@ Function signWindows
     Push-Location $pwd
     Set-Location "$INNERWORKDIR\ArangoDB\build\"
     Write-Host "Time: $((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH.mm.ssZ'))"
-    ForEach($PACKAGE in $(Get-ChildItem -Filter ArangoDB*.exe).FullName)
+    $SIGNTOOL = $(Get-ChildItem C:\ -Recurse "signtool.exe" -ErrorAction SilentlyContinue).FullName[0]
+    ForEach($PACKAGE in $(Get-ChildItem -Filter ArangoDB3*.exe).FullName)
     {
-        Write-Host "Sign: signtool sign /tr `"http://sha256timestamp.ws.symantec.com/sha256/timestamp`" `"$PACKAGE`""
-        proc -process "signtool" -argument "sign /tr `"http://sha256timestamp.ws.symantec.com/sha256/timestamp`" `"$PACKAGE`"" -logfile "$INNERWORKDIR\$PACKAGE-sign"
+        Write-Host "Sign: $SIGNTOOL sign /tr `"http://sha256timestamp.ws.symantec.com/sha256/timestamp`" `"$PACKAGE`""
+        proc -process "$SIGNTOOL" -argument "sign /tr `"http://sha256timestamp.ws.symantec.com/sha256/timestamp`" `"$PACKAGE`"" -logfile "$INNERWORKDIR\$PACKAGE-sign"
     }
     Pop-Location
 }
@@ -623,15 +682,15 @@ Function moveResultsToWorkspace
     }
     if($SKIPPACKAGING -eq "Off")
     {
-        If(Test-Path -PathType Leaf "$INNERWORKDIR\ArangoDB\build\ArangoDB*win64.exe")
+        ForEach ($file in $(Get-ChildItem "$INNERWORKDIR\ArangoDB\build" -Filter "ArangoDB3*.exe"))
         {
-            Write-Host "Move $INNERWORKDIR\ArangoDB\build\ArangoDB*win64.exe"
-            Move-Item -Force -Path "$INNERWORKDIR\ArangoDB\build\ArangoDB*win64.exe" -Destination $env:WORKSPACE; comm 
+            Write-Host "Move $INNERWORKDIR\ArangoDB\build\$file"
+            Move-Item -Force -Path "$INNERWORKDIR\ArangoDB\build\$file" -Destination $env:WORKSPACE; comm 
         }
-        If(Test-Path -PathType Leaf "$INNERWORKDIR\ArangoDB\build\ArangoDB*win64.zip")
+        ForEach ($file in $(Get-ChildItem "$INNERWORKDIR\ArangoDB\build" -Filter "ArangoDB3*.zip"))
         {
-            Write-Host "Move $INNERWORKDIR\ArangoDB\build\ArangoDB*win64.zip"
-            Move-Item -Force -Path "$INNERWORKDIR\ArangoDB\build\ArangoDB*win64.zip" -Destination $env:WORKSPACE; comm 
+            Write-Host "Move $INNERWORKDIR\ArangoDB\build\$file"
+            Move-Item -Force -Path "$INNERWORKDIR\ArangoDB\build\$file" -Destination $env:WORKSPACE; comm 
         }
     }
     If(Test-Path -PathType Leaf "$INNERWORKDIR\testfailures.log")
