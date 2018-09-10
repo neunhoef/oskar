@@ -1,4 +1,4 @@
-#!/usr/bin/env fish
+!/usr/bin/env fish
 
 set -g repoState ""
 set -g repoStateEnterprise ""
@@ -322,7 +322,7 @@ function createReport
   rm -rf $INNERWORKDIR/testfailures.txt
   touch $INNERWORKDIR/testfailures.txt
   for f in "$INNERWORKDIR"/tmp/*.out/testfailures.txt
-    cat $f >> $INNERWORKDIR/testfailures.txt
+    cat -s $f >> $INNERWORKDIR/testfailures.txt
   end
   if grep "unclean shutdown" "$INNERWORKDIR/testfailures.txt"
     set -g result BAD
