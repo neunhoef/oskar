@@ -212,6 +212,7 @@ function launchClusterTests
     case 14 ; test1 dump_authentication ""
     case 15 ; test1 server_http ""
     case 16 ; test1 agency ""
+    case 17 ; test1 authentication ""
     case '*' ; return 0
   end
   set -g launchCount (math $launchCount + 1)
