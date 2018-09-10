@@ -24,6 +24,8 @@
 %define _logdir %{_localstatedir}/log/arangodb3
 %define _piddir %{_localstatedir}/run/arangodb
 
+%define _uses_systemd %( rpm -q --quiet systemd )
+
 ## -----------------------------------------------------------------------------
 ## --SECTION--                                                      package data
 ## -----------------------------------------------------------------------------
@@ -112,8 +114,13 @@ fi
 /usr/share/doc/arangodb3/LICENSE.txt
 /usr/share/doc/arangodb3/LICENSES-OTHER-COMPONENTS.md
 /usr/share/doc/arangodb3/README.md
-/usr/share/doc/arangodb3/README.txt
-/etc/init.d/arangodb3
+
+
+%if %{_uses_systemd}
+    /etc/init.d/arangodb3
+%else
+    %{_sysconfdir}/systemd/system/arangodb3.service
+%endif
 
 %attr(0755,arangodb,arangodb) %{_databasedir}
 %attr(0755,arangodb,arangodb) %{_appdir}
@@ -161,7 +168,6 @@ fi
 ## -----------------------------------------------------------------------------
 ## --SECTION--                                                              post
 ## -----------------------------------------------------------------------------
-
 %post
 if rpm -q --quiet systemd ; then
   cp /usr/share/arangodb3/arangodb3.service %{_sysconfdir}/systemd/system/arangodb3.service
@@ -248,7 +254,7 @@ fi
 ## -----------------------------------------------------------------------------
 
 %preun
-if rpm -q --quiet systemd ; then
+if %{_uses_systemd} ; then
   systemctl stop arangodb3
   rm %{_sysconfdir}/systemd/system/arangodb3.service
   systemctl daemon-reload
