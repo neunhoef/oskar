@@ -142,9 +142,9 @@ To erase the build directories and checked out sources, use
 
 After that, essentially all resources used by oskar are freed again.
 
-# Reference
+# Reference Manual
 
-## Branches
+## Select Branches
 
 ### switchBranches
 
@@ -190,16 +190,34 @@ if supported, set numer of concurrent builds to `PARALLELISM`
 
 creates all release packages.
 
+### Requirements
+
+You need to set the following environment variables:
+
+    set -xg COMMUNITY_DOWNLOAD_LINK "https://download.arangodb.com"
+    set -xg ENTERPRISE_DOWNLOAD_LINK "https://download.arangodb.com"
+
+The prefix for the link of the community and enterprise edition that
+is used to construct the download link in the sniplets.
+
+    set -xg DOWNLOAD_SYNC_USER username:password
+
+A github user that can download the syncer executable from github.
+
+### Results
+
 Under linux:
 
 - RPM, Debian and tar.gz
 - server and client
 - community and enterprise
+- html sniplets for debian, rpm, generic linux
 
 Under MacOSX:
 
 - DMG and tar.gz
 - community and enterprise
+- html sniplets for macosx
 
 ## Internals
 
