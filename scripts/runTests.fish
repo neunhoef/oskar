@@ -92,38 +92,38 @@ function launchSingleTests
   end
 
   switch $launchCount
-    case 0 ; test1 shell_server ""
-    case 1 ; test1 shell_client ""
-    case 2 ; test1 recovery 0 --testBuckets 4/0
-    case 3 ; test1 recovery 1 --testBuckets 4/1
-    case 4 ; test1 recovery 2 --testBuckets 4/2
-    case 5 ; test1 recovery 3 --testBuckets 4/3
-    case 6 ; test1MoreLogs replication_sync ""
-    case 7 ; test1MoreLogs replication_static ""
-    case 8 ; test1MoreLogs replication_ongoing ""
-    case 9 ; test1 http_server ""
-    case 10 ; test1 ssl_server ""
-    case 11 ; test1 shell_server_aql 0 --testBuckets 5/0
-    case 12 ; test1 shell_server_aql 1 --testBuckets 5/1
-    case 13 ; test1 shell_server_aql 2 --testBuckets 5/2
-    case 14 ; test1 shell_server_aql 3 --testBuckets 5/3
-    case 15 ; test1 shell_server_aql 4 --testBuckets 5/4
-    case 16 ; test1 shell_client_aql ""
-    case 17 ; test1 dump ""
-    case 18 ; test1 server_http ""
-    case 19 ; test1 agency ""
-    case 20 ; test1 shell_replication ""
-    case 21 ; test1 http_replication ""
-    case 22 ; test1 catch ""
-    case 23 ; test1 authentication ""
-    case 24 ; test1 dump_authentication ""
-    case 25 ; test1 version ""
-    case 26 ; test1 endpoints "" --skipEndpointsIpv6 true
-    case 27 ; test1 BackupNoAuthSysTests ""
-    case 28 ; test1 BackupNoAuthNoSysTests ""
-    case 29 ; test1 BackupAuthSysTests ""
-    case 30 ; test1 BackupAuthNoSysTests ""
-    case 31 ; jslint
+    case  0 ; jslint
+    case  1 ; test1         BackupAuthNoSysTests ""
+    case  2 ; test1         BackupAuthSysTests ""
+    case  3 ; test1         BackupNoAuthNoSysTests ""
+    case  4 ; test1         BackupNoAuthSysTests ""
+    case  5 ; test1         agency ""
+    case  6 ; test1         authentication ""
+    case  7 ; test1         catch ""
+    case  8 ; test1         dump ""
+    case  9 ; test1         dump_authentication ""
+    case 10 ; test1         endpoints "" --skipEndpointsIpv6 true
+    case 11 ; test1         http_replication ""
+    case 12 ; test1         http_server ""
+    case 13 ; test1         recovery 0 --testBuckets 4/0
+    case 14 ; test1         recovery 1 --testBuckets 4/1
+    case 15 ; test1         recovery 2 --testBuckets 4/2
+    case 16 ; test1         recovery 3 --testBuckets 4/3
+    case 17 ; test1MoreLogs replication_ongoing ""
+    case 18 ; test1MoreLogs replication_static ""
+    case 19 ; test1MoreLogs replication_sync ""
+    case 20 ; test1         server_http ""
+    case 21 ; test1         shell_client ""
+    case 22 ; test1         shell_client_aql ""
+    case 23 ; test1         shell_replication ""
+    case 24 ; test1         shell_server ""
+    case 25 ; test1         shell_server_aql 0 --testBuckets 5/0
+    case 26 ; test1         shell_server_aql 1 --testBuckets 5/1
+    case 27 ; test1         shell_server_aql 2 --testBuckets 5/2
+    case 28 ; test1         shell_server_aql 3 --testBuckets 5/3
+    case 29 ; test1         shell_server_aql 4 --testBuckets 5/4
+    case 30 ; test1         ssl_server ""
+    case 31 ; test1         version ""
     case '*' ; return 0
   end
   set -g launchCount (math $launchCount + 1)
@@ -168,23 +168,23 @@ function launchClusterTests
   end
 
   switch $launchCount
-    case 0 ; test3 resilience move moving-shards-cluster.js
-    case 1 ; test3 resilience failover resilience-synchronous-repl-cluster.js
-    case 2 ; test1 shell_client ""
-    case 3 ; test1 shell_server ""
-    case 4 ; test1 http_server ""
-    case 5 ; test1 ssl_server ""
-    case 6 ; test3 resilience sharddist shard-distribution-spec.js
-    case 7 ; test1 shell_server_aql 0 --testBuckets 5/0
-    case 8 ; test1 shell_server_aql 1 --testBuckets 5/1
-    case 9 ; test1 shell_server_aql 2 --testBuckets 5/2
-    case 10 ; test1 shell_server_aql 3 --testBuckets 5/3
-    case 11 ; test1 shell_server_aql 4 --testBuckets 5/4
-    case 12 ; test1 shell_client_aql ""
-    case 13 ; test1 dump ""
-    case 14 ; test1 dump_authentication ""
-    case 15 ; test1 server_http ""
-    case 16 ; test1 agency ""
+    case  0 ; test1 agency ""
+    case  1 ; test1 dump ""
+    case  2 ; test1 dump_authentication ""
+    case  3 ; test1 http_server ""
+    case  4 ; test3 resilience move moving-shards-cluster.js
+    case  5 ; test3 resilience failover resilience-synchronous-repl-cluster.js
+    case  6 ; test3 resilience sharddist shard-distribution-spec.js
+    case  7 ; test1 server_http ""
+    case  8 ; test1 shell_client ""
+    case  9 ; test1 shell_client_aql ""
+    case 10 ; test1 shell_server ""
+    case 11 ; test1 shell_server_aql 0 --testBuckets 5/0
+    case 12 ; test1 shell_server_aql 1 --testBuckets 5/1
+    case 13 ; test1 shell_server_aql 2 --testBuckets 5/2
+    case 14 ; test1 shell_server_aql 3 --testBuckets 5/3
+    case 15 ; test1 shell_server_aql 4 --testBuckets 5/4
+    case 16 ; test1 ssl_server ""
     case '*' ; return 0
   end
   set -g launchCount (math $launchCount + 1)
@@ -294,7 +294,7 @@ function createReport
   rm -rf $INNERWORKDIR/testfailures.txt
   touch $INNERWORKDIR/testfailures.txt
   for f in "$INNERWORKDIR"/tmp/*.out/testfailures.txt
-    cat $f >> $INNERWORKDIR/testfailures.txt
+    cat -s $f >> $INNERWORKDIR/testfailures.txt
   end
   if grep "unclean shutdown" "$INNERWORKDIR/testfailures.txt"
     set -g result BAD
