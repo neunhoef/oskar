@@ -82,10 +82,7 @@ While((Get-WmiObject win32_process | Where {$_.Name -eq "vs_installer.exe"}) -or
 }
 Remove-Item "C:\Windows\Temp\vs_community.exe"
 
-$arguments = @'
--NoProfile -ExecutionPolicy Bypass -Command "Invoke-Expression -Command '.\iResearch.ps1'"
-'@
-ExternalProcess -process Powershell -arguments $arguments -wait $true
+. "$PSScriptRoot\iResearch.ps1"
 
 ExternalProcess -process cmd -arguments "/c $PSScriptRoot\..\CMD\buildssl.bat" -wait $true
 
