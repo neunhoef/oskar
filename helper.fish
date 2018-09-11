@@ -34,6 +34,14 @@ function showConfig
   echo "- Enterprise     : $ENTERPRISEEDITION"
   echo "- Buildmode      : $BUILDMODE"
   echo "- Maintainer     : $MAINTAINER"
+  echo "- ASAN:          : $ASAN"
+
+  if test -z "$NO_RM_BUILD"
+    echo "- Clear build    : On"
+  else
+    echo "- Clear build    : Off"
+  end
+  
   echo
   echo "Test Configuration:"
   echo "- Storage engine : $STORAGEENGINE"
@@ -43,7 +51,8 @@ function showConfig
   echo "- Workdir        : $WORKDIR"
   echo "- Inner workdir  : $INNERWORKDIR"
   echo "- Parallelism    : $PARALLELISM"
-  echo "- Verbose        : $VERBOSEOSKAR"
+  echo "- Verbose Build  : $VERBOSEBUILD"
+  echo "- Verbose Oskar  : $VERBOSEOSKAR"
   echo "#################################"
   echo
 end
