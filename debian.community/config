@@ -15,7 +15,7 @@ DO_CONFIGURE=no
 
 if test -n "$version"; then
     # do we want to reconfigure?
-    short_version="$(echo "$version" | sed -e 's/[a-zA-Z.-]//g' -e 's;ubuntu;;')"
+    short_version="$(echo "$version" | sed -e 's/[^0-9]//g' -e 's/ubuntu//')"
     if test "$short_version" -lt 127 -o "$action" = reconfigure; then
         DO_CONFIGURE=yes
     fi

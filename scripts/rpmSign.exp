@@ -5,9 +5,14 @@
 
 ### rpm-sign.exp -- Sign RPMs by sending the passphrase.
 set timeout -1
-spawn rpm --define "_gpg_name <info@arangodb.com>" --addsign {*}$argv
-expect -exact "Enter pass phrase: "
-send -- "XXXXXX\r"
-expect eof
 
+set password $env(ARANGO_SIGN_PASSWD)
+send_user "## EXPECT ## '$password'\n"
+spawn rpm --define "_gpg_name <info@arangodb.com>" --addsign {*}$argv
+
+expect {
+    "Enter pass phrase:" {
+        send -- "$password\r"
+    }
+}
 ## end of rpm-sign.exp

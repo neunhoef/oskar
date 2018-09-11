@@ -18,9 +18,9 @@ brew install moreutils --without-parallel
 
 brew cask install java8
 
-gem install rspec
-gem install httparty
-gem install persistent_httparty
+sudo gem install rspec
+sudo gem install httparty
+sudo gem install persistent_httparty
 
 brew upgrade
 brew link --overwrite python@2

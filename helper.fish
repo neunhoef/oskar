@@ -80,8 +80,6 @@ if test -z "$STORAGEENGINE" ; rocksdb
 else ; set -gx STORAGEENGINE $STORAGEENGINE ; end
 
 function parallelism ; set -gx PARALLELISM $argv[1] ; end
-if test -z "$PARALLELISM" ; parallelism 64
-else ; set -gx PARALLELISM $PARALLELISM ; end
 
 function verbose ; set -gx VERBOSEOSKAR On ; end
 function silent ; set -gx VERBOSEOSKAR Off ; end
@@ -182,13 +180,136 @@ function showLog
 end
 
 function findArangoDBVersion
-  set -xg ARANGODB_VERSION_MAJOR (grep "set(ARANGODB_VERSION_MAJOR" $WORKDIR/work/ArangoDB/CMakeLists.txt | sed -e 's/.*"\([0-9a-zA-Z]*\)".*$/\1/')
-  and set -xg ARANGODB_VERSION_MINOR (grep "set(ARANGODB_VERSION_MINOR" $WORKDIR/work/ArangoDB/CMakeLists.txt | sed -e 's/.*"\([0-9a-zA-Z]*\)".*$/\1/')
-  and set -xg ARANGODB_VERSION_REVISION (grep "set(ARANGODB_VERSION_REVISION" $WORKDIR/work/ArangoDB/CMakeLists.txt | sed -e 's/.*"\([0-9a-zA-Z]*\)".*$/\1/')
-  and set -xg ARANGODB_PACKAGE_REVISION (grep "set(ARANGODB_PACKAGE_REVISION" $WORKDIR/work/ArangoDB/CMakeLists.txt | sed -e 's/.*"\([0-9a-zA-Z]*\)".*$/\1/')
-  and set -xg ARANGODB_VERSION "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_REVISION"
-  and set -xg ARANGODB_FULL_VERSION "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_REVISION-$ARANGODB_PACKAGE_REVISION"
-  and echo $ARANGODB_FULL_VERSION
+  set -l CMAKELIST "$WORKDIR/work/ArangoDB/CMakeLists.txt"
+  set -l AV "set(ARANGODB_VERSION"
+  set -l APR "set(ARANGODB_PACKAGE_REVISION"
+  set -l SEDFIX 's/.*"\([0-9a-zA-Z]*\)".*$/\1/'
+
+  set -xg ARANGODB_VERSION_MAJOR (grep "$AV""_MAJOR" $CMAKELIST | sed -e $SEDFIX)
+  set -xg ARANGODB_VERSION_MINOR (grep "$AV""_MINOR" $CMAKELIST | sed -e $SEDFIX)
+
+  set -xg ARANGODB_SNIPLETS "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR"
+
+  # old version scheme (upto 3.3.x)
+  if grep -q "$APR" $CMAKELIST
+    set -xg ARANGODB_VERSION_PATCH (grep "$AV""_REVISION" $CMAKELIST | sed -e $SEDFIX)
+    set -l  ARANGODB_PACKAGE_REVISION (grep "$APR" $CMAKELIST | sed -e $SEDFIX)
+
+    set -xg ARANGODB_VERSION "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_PATCH"
+
+    set -xg ARANGODB_DEBIAN_UPSTREAM "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_PATCH"
+    set -xg ARANGODB_DEBIAN_REVISION "$ARANGODB_PACKAGE_REVISION"
+
+    set -xg ARANGODB_RPM_UPSTREAM "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_PATCH"
+    set -xg ARANGODB_RPM_REVISION "$ARANGODB_PACKAGE_REVISION"
+
+    set -xg ARANGODB_DARWIN_UPSTREAM "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_PATCH"
+    set -xg ARANGODB_DARWIN_REVISION "$ARANGODB_PACKAGE_REVISION"
+
+    set -xg ARANGODB_TGZ_UPSTREAM "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_PATCH"
+
+  # new version scheme (from 3.4.x)  
+  else
+    set -xg ARANGODB_VERSION_PATCH (grep "$AV""_PATCH" $CMAKELIST | grep -v unset | sed -e $SEDFIX)
+    set -l  ARANGODB_VERSION_RELEASE_TYPE (grep "$AV""_RELEASE_TYPE" $CMAKELIST | grep -v unset | sed -e $SEDFIX)
+    set -l  ARANGODB_VERSION_RELEASE_NUMBER (grep "$AV""_RELEASE_NUMBER" $CMAKELIST | grep -v unset | sed -e $SEDFIX)
+
+    # stable release, devel or nightly
+    if test "$ARANGODB_VERSION_RELEASE_TYPE" = ""
+      set -xg ARANGODB_VERSION "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_PATCH"
+
+      set -xg ARANGODB_DARWIN_UPSTREAM "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_PATCH"
+      set -xg ARANGODB_DARWIN_REVISION ""
+
+      set -xg ARANGODB_TGZ_UPSTREAM "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_PATCH"
+
+      # devel or nightly
+      if test "$ARANGODB_VERSION_PATCH" = "devel" \
+           -o "$ARANGODB_VERSION_PATCH" = "nightly"
+        set -xg ARANGODB_DEBIAN_UPSTREAM "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.0~~$ARANGODB_VERSION_PATCH"
+        set -xg ARANGODB_DEBIAN_REVISION "1"
+
+        if test "$ARANGODB_VERSION_PATCH" = "devel"
+          set -xg ARANGODB_RPM_UPSTREAM "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.0"
+          set -xg ARANGODB_RPM_REVISION "0.1"
+        else if test "$ARANGODB_VERSION_PATCH" = "nightly"
+          set -xg ARANGODB_RPM_UPSTREAM "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.0"
+          set -xg ARANGODB_RPM_REVISION "0.2"
+	end
+
+      # stable release
+      else
+        set -xg ARANGODB_DEBIAN_UPSTREAM "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_PATCH"
+        set -xg ARANGODB_DEBIAN_REVISION "1"
+
+        set -xg ARANGODB_RPM_UPSTREAM "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_PATCH"
+        set -xg ARANGODB_RPM_REVISION "1.0"
+      end
+
+    # unstable release
+    else if test "$ARANGODB_VERSION_RELEASE_TYPE" = "alpha" \
+              -o "$ARANGODB_VERSION_RELEASE_TYPE" = "beta" \
+              -o "$ARANGODB_VERSION_RELEASE_TYPE" = "milestone" \
+              -o "$ARANGODB_VERSION_RELEASE_TYPE" = "preview" \
+              -o "$ARANGODB_VERSION_RELEASE_TYPE" = "rc"
+      if test "$ARANGODB_VERSION_RELEASE_NUMBER" = ""
+        echo "ERROR: missing ARANGODB_VERSION_RELEASE_NUMBER for type $ARANGODB_VERSION_RELEASE_TYPE"
+        return
+      end
+
+      if test "$ARANGODB_VERSION_RELEASE_TYPE" = "alpha"
+        set N 100
+      else if test "$ARANGODB_VERSION_RELEASE_TYPE" = "beta"
+        set N 200
+      else if test "$ARANGODB_VERSION_RELEASE_TYPE" = "milestone"
+        set N 300
+      else if test "$ARANGODB_VERSION_RELEASE_TYPE" = "preview"
+        set N 400
+      else if test "$ARANGODB_VERSION_RELEASE_TYPE" = "rc"
+        set N 500
+      end
+
+      set -xg ARANGODB_VERSION "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_PATCH-$ARANGODB_VERSION_RELEASE_TYPE.$ARANGODB_VERSION_RELEASE_NUMBER"
+
+      set -xg ARANGODB_DEBIAN_UPSTREAM "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_PATCH~$ARANGODB_VERSION_RELEASE_TYPE.$ARANGODB_VERSION_RELEASE_NUMBER"
+      set -xg ARANGODB_DEBIAN_REVISION "1"
+
+      set -xg ARANGODB_RPM_UPSTREAM "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_PATCH"
+      set -xg ARANGODB_RPM_REVISION "0."(expr $N + $ARANGODB_VERSION_RELEASE_NUMBER)".$ARANGODB_VERSION_RELEASE_TYPE$ARANGODB_VERSION_RELEASE_NUMBER"
+
+      set -xg ARANGODB_DARWIN_UPSTREAM "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_PATCH"
+      set -xg ARANGODB_DARWIN_REVISION "$ARANGODB_VERSION_RELEASE_TYPE.$ARANGODB_VERSION_RELEASE_NUMBER"
+
+      set -xg ARANGODB_TGZ_UPSTREAM "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_PATCH-$ARANGODB_VERSION_RELEASE_TYPE.$ARANGODB_VERSION_RELEASE_NUMBER"
+
+    # hot-fix
+    else
+      if test "$ARANGODB_VERSION_RELEASE_NUMBER" != ""
+        echo "ERROR: ARANGODB_VERSION_RELEASE_NUMBER ($ARANGODB_VERSION_RELEASE_NUMBER) must be empty for type $ARANGODB_VERSION_RELEASE_TYPE"
+        return
+      end
+
+      set -xg ARANGODB_VERSION "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_PATCH-$ARANGODB_VERSION_RELEASE_TYPE"
+
+      set -xg ARANGODB_DEBIAN_UPSTREAM "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_PATCH.$ARANGODB_VERSION_RELEASE_TYPE"
+      set -xg ARANGODB_DEBIAN_REVISION "1"
+
+      set -xg ARANGODB_RPM_UPSTREAM "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_PATCH"
+      set -xg ARANGODB_RPM_REVISION "1.$ARANGODB_VERSION_RELEASE_TYPE"
+
+      set -xg ARANGODB_DARWIN_UPSTREAM "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_PATCH.$ARANGODB_VERSION_RELEASE_TYPE"
+      set -xg ARANGODB_DARWIN_REVISION ""
+
+      set -xg ARANGODB_TGZ_UPSTREAM "$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_PATCH-$ARANGODB_VERSION_RELEASE_TYPE"
+    end
+  end
+
+  echo "ArangoDB: $ARANGODB_VERSION"
+  echo "Debian:   $ARANGODB_DEBIAN_UPSTREAM / $ARANGODB_DEBIAN_REVISION"
+  echo "RPM:      $ARANGODB_RPM_UPSTREAM / $ARANGODB_RPM_REVISION"
+  echo "DARWIN:   $ARANGODB_DARWIN_UPSTREAM / $ARANGODB_DARWIN_REVISION"
+  echo "TGZ:      $ARANGODB_TGZ_UPSTREAM"
+  echo "SNIPLETS: $ARANGODB_SNIPLETS"
 end
 
 function makeRelease
@@ -203,31 +324,47 @@ function makeRelease
     set -xg ARANGODB_PACKAGE_REVISION "$argv[2]"
     set -xg ARANGODB_FULL_VERSION "$argv[1]-$argv[2]"
   end
-  asanOff
-  maintainerOff
-  releaseMode
 
-  enterprise
-  set -xg NOSTRIP dont
-  buildStaticArangoDB -DTARGET_ARCHITECTURE=nehalem
-  and downloadStarter
-  and downloadSyncer
-  and buildPackage
+  buildEnterprisePackage
+  and buildCommunityPackage
+end
 
-  if test $status != 0
-    echo Building enterprise release failed, stopping.
+function buildTarGzPackageHelper
+  set -l os "$argv[1]"
+
+  if test -z "$os"
+    echo "need operating system as first argument"
     return 1
   end
 
-  community
-  buildStaticArangoDB -DTARGET_ARCHITECTURE=nehalem
-  and downloadStarter
-  and buildPackage
+  # This assumes that a static build has already happened
+  # Must have set ARANGODB_TGZ_UPSTREAM
+  # for example by running findArangoDBVersion.
+  set -l v "$ARANGODB_TGZ_UPSTREAM"
+  set -l name
 
-  if test $status != 0
-    echo Building community release failed.
-    return 1
+  if test "$ENTERPRISEEDITION" = "On"
+    set name arangodb3e
+  else
+    set name arangodb3
   end
+
+  cd $WORKDIR
+  and cd $WORKDIR/work/ArangoDB/build/install
+  and rm -rf bin
+  and cp -a $WORKDIR/binForTarGz bin
+  and rm -f "bin/*~" "bin/*.bak"
+  and mv bin/README .
+  and strip usr/sbin/arangod usr/bin/{arangobench,arangodump,arangoexport,arangoimp,arangorestore,arangosh,arangovpack}
+  and cd $WORKDIR/work/ArangoDB/build
+  and mv install "$name-$v"
+  or begin ; cd $WORKDIR ; return 1 ; end
+
+  tar -c -z -v -f "$WORKDIR/work/$name-$os-$v.tar.gz" --exclude "etc" --exclude "var" "$name-$v"
+  set s $status
+  mv "$name-$v" install
+  cd $WORKDIR
+  return $s 
 end
 
 function moveResultsToWorkspace
@@ -249,8 +386,12 @@ function moveResultsToWorkspace
   for f in $WORKDIR/work/*.dmg ; echo "mv $f" ; mv $f $WORKSPACE ; end
   for f in $WORKDIR/work/*.rpm ; echo "mv $f" ; mv $f $WORKSPACE ; end
   for f in $WORKDIR/work/*.tar.gz ; echo "mv $f" ; mv $f $WORKSPACE ; end
+  for f in $WORKDIR/work/*documentation*/* ; mv $f $WORKSPACE; end
+
   if test -f $WORKDIR/work/testfailures.txt
-    echo "mv $WORKDIR/work/testfailures.txt" ; mv $WORKDIR/work/testfailures.txt $WORKSPACE
+    if grep -q -v '^[ \t]*$' $WORKDIR/work/testfailures.txt
+      echo "mv $WORKDIR/work/testfailures.txt" ; mv $WORKDIR/work/testfailures.txt $WORKSPACE
+    end
   end
 end
 

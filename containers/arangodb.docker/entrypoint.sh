@@ -21,7 +21,6 @@ if [ "$1" = 'arangod' ]; then
     # Make a copy of the configuration file to patch it, note that this
     # must work regardless under which user we run:
     cp /etc/arangodb3/arangod.conf /tmp/arangod.conf
-    cp /etc/arangodb3/arango-init-database.conf /tmp/arango-init-database.conf
 
     if [ ! -z "$ARANGO_ENCRYPTION_KEYFILE" ]; then
         echo "Using encrypted database"
@@ -30,7 +29,7 @@ if [ "$1" = 'arangod' ]; then
     fi
 
     if [ "$ARANGO_STORAGE_ENGINE" == "rocksdb" ]; then
-        echo "choosing Rocksdb storage engine"
+        echo "choosing RocksDB storage engine"
         sed -i /tmp/arangod.conf -e "s;storage-engine = auto;storage-engine = rocksdb;"
     elif [ "$ARANGO_STORAGE_ENGINE" == "mmfiles" ]; then
         echo "choosing MMFiles storage engine"
@@ -60,7 +59,7 @@ if [ "$1" = 'arangod' ]; then
         
         if [ ! -z "${ARANGO_ROOT_PASSWORD+x}" ]; then
             echo "Initializing root user...Hang on..."
-            ARANGODB_DEFAULT_ROOT_PASSWORD="$ARANGO_ROOT_PASSWORD" /usr/sbin/arango-init-database -c /tmp/arangod.conf || true
+            ARANGODB_DEFAULT_ROOT_PASSWORD="$ARANGO_ROOT_PASSWORD" /usr/sbin/arango-init-database -c /tmp/arangod.conf --server.rest-server false --log.level error --database.init-database true || true
             export ARANGO_ROOT_PASSWORD
         
             if [ ! -z "${ARANGO_ROOT_PASSWORD}" ]; then

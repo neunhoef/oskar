@@ -8,5 +8,5 @@ function prepareOskar
     git fetch ; and git reset --hard origin/master
   end
   and source helper.fish
-  if test $status != 0 ; echo Did not find oskar and helpers ; exit 1 ; end
+  if test $status -ne 0 ; echo Did not find oskar and helpers ; exit 1 ; end
 end

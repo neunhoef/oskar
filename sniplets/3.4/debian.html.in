@@ -1,0 +1,24 @@
+<div>
+  <p>
+    We provide a single package containing the server and the client tools. For a
+    standard server setup, download the package <strong>Server</strong> and
+    install it using the package manager. The <strong>Client Tools</strong>
+    package only contain the tools, like arangosh, arangodump, but nor the
+    server.
+
+    As an alternative there is a <strong>Tar</strong> containing the server and
+    client tools which can be install in any location and which does not
+    require root rights for installation.
+  </p>
+  <hr/>
+  <p class="ara_package_line">Packages for the <strong>Debian</strong> package manager:</p>
+  <ul>
+    <li><a href="@DOWNLOAD_LINK@/arangodb34/@DOWNLOAD_EDITION@/Linux/@DEBIAN_NAME_SERVER@">Server (@DEBIAN_SIZE_SERVER@ MByte)</a></li>
+    <li><a href="@DOWNLOAD_LINK@/arangodb34/@DOWNLOAD_EDITION@/Linux/@DEBIAN_NAME_CLIENT@">Client Tools (@DEBIAN_SIZE_CLIENT@ MByte)</a></li>
+    <li><a href="@DOWNLOAD_LINK@/arangodb34/@DOWNLOAD_EDITION@/Linux/@DEBIAN_NAME_DEBUG_SYMBOLS@">Debug Symbols (@DEBIAN_SIZE_DEBUG_SYMBOLS@ MByte)</a></li>
+  </ul>
+  <p class="ara_package_line"><strong>Tar</strong> based packages:</p>
+  <ul>
+    <li><a href="@DOWNLOAD_LINK@/arangodb34/@DOWNLOAD_EDITION@/Linux/@TARGZ_NAME_SERVER@">Server (@TARGZ_SIZE_SERVER@ MByte)</a></li>
+  </ul>
+</div>

@@ -129,28 +129,33 @@ fi
 %files client
 %defattr(-,root,root,0755)
 
-%config(noreplace) %attr(-,arangodb,arangodb) %{_cfgdir}/arangosh.conf
-%config(noreplace) %attr(-,arangodb,arangodb) %{_cfgdir}/arangoexp*
-%config(noreplace) %attr(-,arangodb,arangodb) %{_cfgdir}/arangoimp*
-%config(noreplace) %attr(-,arangodb,arangodb) %{_cfgdir}/arangodump.conf
-%config(noreplace) %attr(-,arangodb,arangodb) %{_cfgdir}/arangorestore.conf
-%config(noreplace) %attr(-,arangodb,arangodb) %{_cfgdir}/arangobench.conf
-%config(noreplace) %attr(-,arangodb,arangodb) %{_cfgdir}/foxx-manager.conf
-%{_bindir}/arangosh
-%{_bindir}/arangoimp*
-%{_bindir}/arangoexp*
-%{_bindir}/arangodump
-%{_bindir}/arangorestore
+%config(noreplace) %{_cfgdir}/arangobench.conf
+%config(noreplace) %{_cfgdir}/arangodump.conf
+%config(noreplace) %{_cfgdir}/arangoexp*.conf
+%config(noreplace) %{_cfgdir}/arangoimp*.conf
+%config(noreplace) %{_cfgdir}/arangoinspect.conf
+%config(noreplace) %{_cfgdir}/arangorestore.conf
+%config(noreplace) %{_cfgdir}/arangosh.conf
+%config(noreplace) %{_cfgdir}/arangovpack.conf
+%config(noreplace) %{_cfgdir}/foxx-manager.conf
 %{_bindir}/arangobench
+%{_bindir}/arangodump
+%{_bindir}/arangoexp*
+%{_bindir}/arangoimp*
+%{_bindir}/arangoinspect
+%{_bindir}/arangorestore
+%{_bindir}/arangosh
+%{_bindir}/arangovpack
 %{_bindir}/foxx-manager
-%{_mandir}/*/arangosh*
-%{_mandir}/*/arangorestore*
 %{_mandir}/*/arangobench*
 %{_mandir}/*/arangodump*
 %{_mandir}/*/arangoimp*
-%{_datadir}/arangodb3/js/common
-%{_datadir}/arangodb3/js/client
-%{_datadir}/arangodb3/js/node
+%{_mandir}/*/arangorestore*
+%{_mandir}/*/arangosh*
+%{_datadir}/arangodb3/js@JS_DIR@/common
+%{_datadir}/arangodb3/js@JS_DIR@/client
+%{_datadir}/arangodb3/js@JS_DIR@/node
+%{_datadir}/arangodb3/icudtl.dat
 
 ## -----------------------------------------------------------------------------
 ## --SECTION--                                                              post
@@ -225,6 +230,22 @@ fi
 if ! getent passwd arangodb >/dev/null 2>&1; then
         /usr/sbin/useradd -r -g arangodb --home %{_localstatedir}/arangodb arangodb
         /usr/sbin/usermod -c "Arango Server" arangodb
+fi
+
+# check if the arangodb group was added locally in /etc/group
+# if not, then the arangod binary will very likely try to open a socket
+# connection to nscd to query the group information from there.
+# if there is no nscd running, starting the arangod binary will fail
+if ! grep "^arangodb:" /etc/passwd >/dev/null; then
+  if ! nscd -g >/dev/null 2>&1; then
+    echo "Unable to query nscd service for user 'arangodb'. As a consequence, it is very likely that installing or starting the arangod server will fail because it can neither find user 'arangodb' in /etc/group nor via an nscd group lookup."
+  fi
+else
+  if ! grep "^arangodb:" /etc/group >/dev/null; then
+    if ! nscd -g >/dev/null 2>&1; then
+      echo "Unable to query nscd service for group 'arangodb'. As a consequence, it is very likely that installing or starting the arangod server will fail because it can neither find user 'arangodb' in /etc/group nor via an nscd group lookup."
+    fi
+  fi
 fi
 
 ## -----------------------------------------------------------------------------

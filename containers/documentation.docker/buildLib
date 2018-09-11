@@ -71,7 +71,6 @@ ensure_cmd(){
 
 spin_cmd() {
     ARANGO_SPIN=${ARANGO_SPIN:-false}
-    echo $ARANGO_SPIN
     if $ARANGO_SPIN; then
         {   local scount=1
             local arr=( "Was ist denn jetzt mit gitbook?"
@@ -165,7 +164,7 @@ run_ditaa() {
         # if dest dir is not available then the creation of the
         # directory structures did most proably not work correctly
         if $use_ditaa; then
-            run_cmd ditaa "$file" "$dest" || ferr "ditaa for $file to $dest failed"
+            run_cmd ditaa $(expand_cygpath "$file" "$dest") || ferr "ditaa for $file to $dest failed"
         else
             local fake="$ARANGO_SOURCE/js/node/node_modules/mocha/images/error.png"
             cp "$fake" "$dest" || ferr "fake ditaa for $file to $dest failed"
@@ -443,7 +442,6 @@ pp_check_html_link() {
 
 out_markdown_leftovers() { #TODO REVIEW
     # checks output for markdown leftovers
-    # TODO Willi - annotate separate steps
     local book_name="$1"
     local book_src="$2"
     local book_pre="$3"
@@ -452,72 +450,75 @@ out_markdown_leftovers() { #TODO REVIEW
     local errors
     echo "+ bo 01 checking for remaining markdown snippets in the HTML in ${book_name} "
 
-    echo "  - Willi please add a short description"
+    echo "  - looking for unconverted markdown titles"
+    #looks for - ## lalal (multiple ####)
     errors=$(find "$book_out" -name '*.html' -exec grep -- '^##' {} \; -print) \
-        || ferr "markdown leftovers 1"
+        || ferr "checking titles"
     if [[ -n "${errors}" ]]; then
         err "found these unconverted markdown titles"
         echo "${errors}"
         exit 1
     fi
 
-    echo "  - Willi please add a short description"
+    #check that > is not already converted
+    echo "  - looking for double converted > signs"
     errors=$(find "$book_out" -name '*.html' -exec grep -- '&amp;gt;' {} \; -print) \
-        || ferr "markdown leftovers 2"
+        || ferr "checking double converted > sings"
     if [[ -n "${errors}" ]]; then
         err "found these double converted > signs"
         echo "${errors}"
         exit 1
     fi
 
-    echo "  - Willi please add a short description"
+    echo "  - looking for links to plain .md-files (no anchor)"
     local errorsa=()
     while IFS= read -r line; do
         grep '"[a-zA-Z/\.]*\.md\"[ />]' "$line" | grep -v data-filepath
         local rv=$?
         (( rv == 0 )) && errorsa+=( "$line" )
-        (( rv == 2 )) && ferr "markdown leftovers 3"
+        (( rv == 2 )) && ferr "checking links to plain .md-files"
     done < <(find "$book_out" -name '*.html')
 
     if [[ -n "${errorsa[@]}" ]]; then
-        err "found dangling markdown links"
+        err "The files referenced do not exist or are parts of other books"
         echo "${errorsa[@]}"
         exit 1
 
     fi
 
-    echo "  - Willi please add a short description"
+    echo "  - looking for links to plain .md-files (with anchor)"
     errors=$(find "$book_out" -name '*.html' -exec grep '"[a-zA-Z/\.]*\.md#' {} \; -print) \
-        || ferr "markdown leftovers 4"
+        || ferr "checking dangling markdown links"
     if [[ -n "${errors}" ]]; then
-        err "found dangling markdown links: "
+        err "The files referenced do not exist or are parts of other books"
         echo "${errors}"
         exit 1
     fi
 
-    echo "  - Willi please add a short description"
+    echo "  - lookgin for dangling markdown code sections"
     errors=$(find "$book_out" -name '*.html' -exec grep "${TRIPPLETICS}" {} \; -print) \
-        || ferr "markdown leftovers 5"
+        || ferr "checking dangling markdown code sections"
     if [[ -n "${errors}" ]]; then
-        err "found dangling markdown code sections: "
+        err "found dangling markdown code sections ( \`\`\` code \`\`\` ) in:"
         echo "${errors}"
         exit 1
     fi
 
-    echo "  - Willi please add a short description"
+    echo "  - looking for unconverted markdown links"
     ERRORS=$(find "$book_out" -name '*.html' -exec grep '\]<a href' {} \; -print) \
-        || ferr "markdown leftovers 6"
+        || ferr "checking unconverted markdown links"
     if [[ -n "${ERRORS}" ]]; then
-        err "found unconverted markdown links: "
+        err "found unconverted markdown links ([link desciption]< a href): "
+        err "maybe you are missing a [ or you use some special char in the decription"
         echo "${ERRORS}"
         exit 1
     fi
 
-    echo "  - Willi please add a short description"
+    echo "  - looking for markdown leftovers"
     ERRORS=$(find "$book_out" -name '*.html' -exec grep '\[.*\](.*[\.html|\.md|http|#.*])' {} \; -print) \
-        || ferr "markdown leftovers 7"
+        || ferr "checking markdown leftovers"
     if [[ -n "${ERRORS}" ]]; then
-        err "found unconverted markdown links: "
+        err "found unconverted markdown links [something](something):"
         echo "${ERRORS}"
         exit 1
     fi
@@ -663,12 +664,14 @@ cross_out_check_dangling_anchors() {
         mkdir -p "/tmp/tags/${dir}"
         grep_ignore_empty '<h. ' "${html_file_full}" | \
             sed -e 's;.*id=";;' -e 's;".*;;' > "/tmp/tags/${dir}/${file_name}" \
-            || ferr "failed creating tag structure"
+            || ferr "failed creating tag structure for ${html_file_full}"
     done < <(find "$ARANGO_BUILD_DOC_OUT" -name '*.html')
 
 
     echo "  - check if tags (files in /tmp/tags) are unique" #OK
     local error_occured=false
+    debug "look for empty files" && find /tmp/tags -empty
+    debug "look for empty files"
     while IFS= read -r htmlf; do
         local errors=$( comm -3  <(sort    "${htmlf}" | grep -v ^$ ) \
                                  <(sort -u "${htmlf}" | grep -v ^$ )
@@ -689,28 +692,30 @@ cross_out_check_dangling_anchors() {
     fi
 
 
-    ### TODO REVIEW - End ############################################################
     echo "  - fetching anchors from generated http files"
     rm -f /tmp/anchorlist.txt
     for file in $(find "$ARANGO_BUILD_DOC_OUT" -name \*.html); do
-        # - strip of the menu
-        # - then the page tail.
-        # - remove links to external pages
+        # go through html files (all books) in final dcoumentation and
+        # strip off everything up to normal markdown-section (strips off menu)
+        # strip off everything past page-footer
+        # look for links a a href
+        # exclude links with target _blank - links that go outside
+        # just keep the link
+
         cat $file | \
             sed -r -n -e '/normal markdown-section/,${p}'| \
             sed -r -n -e '/.*id="page-footer".*/q;p' | \
             grep_ignore_empty '<a href="' | \
             grep_ignore_empty -v 'target="_blank"' | \
-            sed -e 's;.*href=";;' -e 's;".*;;' > /tmp/thisdoc.txt || { ls -lisah "$file"; ferr "fail cat $file"; }
+            sed -e 's;.*href=";;' -e 's;".*;;' > /tmp/thisdoc.txt || { ls -lisah "$file"; ferr "fail cat $file"; cat "$file"; }
 
         if [[ -f /tmp/thisdoc.txt ]]; then
-            # Links with anchors:
+            # Links with anchors:  foo#bar - foo might be empty, then it refers to this page
             cat /tmp/thisdoc.txt | grep_ignore_empty '#' | sed "s;\(.*\)#\(.*\);${file},\1,\2;" >> /tmp/anchorlist.txt || ferr "fail 1 cat thisdoc.txt for: $file"
             # links without anchors:
             cat /tmp/thisdoc.txt | grep_ignore_empty -v '#' | sed "s;\(.*\);${file},\1,;" >> /tmp/anchorlist.txt || ferr "fail 2 cat thisdoc.txt for file: $file"
         fi
     done
-    ### TODO - End ##################################################################
 
     echo "  - cross checking anchors" # OK
     local debug_anchors=false
@@ -742,7 +747,9 @@ cross_out_check_dangling_anchors() {
         fi
 
         if  ! [[ -f "/tmp/tags/${check_filename}" ]]; then
-            err "File referenced by $anchor doesn't exist."
+            err "File '/tmp/tags/${check_filename}' referenced by '$anchor' doesn't exist."
+            err "full: '$full_filename' relative: '$relative_filename'"
+            err ""
             debug "file missing" && exit 1
             (( dangling_anchor_count++ ))
         else

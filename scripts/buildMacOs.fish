@@ -1,5 +1,5 @@
 #!/usr/bin/env fish
-set TS (which ts; and echo -- -s [\\%.T]; or echo /bin/cat)
+set TS (which ts; and echo -- -s [\\%.T]; or echo /usr/bin/env cat)
 
 if test "$PARALLELISM" = ""
     set -xg PARALLELISM 64
@@ -13,7 +13,7 @@ if test "$CCACHEBINPATH" = ""
   set -xg CCACHEBINPATH /usr/lib/ccache
 end
 ccache -M 100G
-#ccache -o log_file=$INNERWORKDIR/.ccache.log
+#ccache -o log_file=$INNERWORKDIR/.ccache.mac.log
 ccache -o cache_dir_levels=1
 cd $INNERWORKDIR/ArangoDB
 
@@ -24,16 +24,12 @@ end
 
 echo "Starting build at "(date)" on "(hostname)
 test -f $INNERWORKDIR/.ccache.mac.log 
-or mv $INNERWORKDIR/.ccache.log $INNERWORKDIR/.ccache.mac.log.old
+and mv $INNERWORKDIR/.ccache.mac.log $INNERWORKDIR/.ccache.mac.log.old
 ccache --zero-stats
 
 rm -rf build
 mkdir -p build
 cd build
-
-echo "Starting build at "(date)" on "(hostname)
-rm -f $INNERWORKDIR/.ccache.log
-ccache --zero-stats
 
 set -g FULLARGS $argv \
       -DCMAKE_BUILD_TYPE=$BUILDMODE \
@@ -65,8 +61,7 @@ if test "$VERBOSEBUILD" = "On"
   set -g MAKEFLAGS $MAKEFLAGS V=1 VERBOSE=1 Verbose=1
 end
 
-and echo Running make, output in $INNERWORKDIR/buildArangoDB.log
+echo Running make, output in $INNERWORKDIR/buildArangoDB.log
 and nice make -j$MAKEFALGS ^&1 | eval $TS > $INNERWORKDIR/buildArangoDB.log
-
-echo "Finished at "(date)
-ccache --show-stats
+and echo "Finished at "(date)
+and ccache --show-stats

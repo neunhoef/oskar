@@ -20,6 +20,29 @@
 ## get script dir
 script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 
+# Convert to Windows path in Cygwin, i.e. '/cygdrive/c/...' to 'C:\...'
+# Will wrap multiple path in one go
+# Examples:
+# echo $(expand_cygpath "/cygdrive/c/path" "something" "/cygdrive/c/path/to/file.ext")
+# some_comand $(expand_cygpath "${args[@]}")
+# some_comand $(expand_cygpath "arg" "arg" "arg")
+
+expand_cygpath() {
+    local path
+    local out=()
+    for path in "$@"; do
+        local matchre='^/cygdrive/'
+        if type cygpath 1>/dev/null 2>/dev/null; then
+            if [[ "$path" =~ $matchre ]]; then
+                out+=("$(cygpath -w "$path")")
+                continue
+            fi
+        fi
+        out+=("$path")
+    done
+    echo "${out[@]}"
+}
+
 ## set options for safety
 # fail on unset variables
 set -u
@@ -47,7 +70,7 @@ ARANGO_DEBUG=false
 # path to "arangodb" source
 export ARANGO_SOURCE="${ARANGO_SOURCE:-"$ARANGO_WORK/ArangoDB"}"
 export ARANGO_SOURCE_DOC="${ARANGO_SOURCE_DOC:-"$ARANGO_SOURCE/Documentation"}"
-export ARANGO_SOURCE_DOC_BOOKS="${ARANGO_SOURCE_DOC_BOOKS:-"$ARANGO_SOURCE_DOC/Documentation/Books"}"
+export ARANGO_SOURCE_DOC_BOOKS="${ARANGO_SOURCE_DOC_BOOKS:-"$ARANGO_SOURCE_DOC/Books"}"
 
 # path to documentation build
 export ARANGO_BUILD_DOC="${ARANGO_BUILD_DOC:-"$ARANGO_WORK/build-documentation"}"
@@ -70,8 +93,15 @@ if [ -f "$BASH_LIB" ]; then
     say(){ _o_say "$@"; }
     success(){ _o_success "$@"; }
 
+    if [[ -v ARANGO_NO_COLOR ]]; then
+        for _c in _black _red _green _yellow _blue _magenta _cyan _white _bold _reset; do
+            printf -v "$_c" %s ""
+        done
+        unset _c
+    fi
 else
     echo "could not source bash_lib"
+
     err(){ echo "Error: $@";  }
     section(){ echo "=================== $@ ================"; }
     say(){ echo "$@"; }
@@ -83,9 +113,9 @@ debug(){ $ARANGO_DEBUG && say "#-# DEBUG #-# " "$@" && return 0; return 1; }
 . $NVM_DIR/nvm.sh || ferr "could not source nvm"
 nvm use default || ferr "could not use nvm"
 
-echo "================================================================================"
+section "" | sed 's/-/=/g'
 section "ArangoDB Documenation Build script" | sed 's/-/=/g'
-echo "================================================================================"
+section "" | sed 's/-/=/g'
 
 #### GLOBAL VARS THAT SHOULD NOT BE MODIFIED BY USERS ########################################################
 ALLBOOKS="HTTP AQL Cookbook Drivers" #TODO reactivate Manual
@@ -162,7 +192,7 @@ function build_book() {
 
     say   " - create images"
     run_ditaa "${book_name}" "$book_src" "$book_pre" "$book_out" && echo
-    rm -fr "$book_src/?" #TODO fix ditta
+    rm -fr "$book_src/?" #TODO fix / better remove ditta
 
     # copy / link SUMMARY.md and FOOTER.html
     say " - create SUMMARY.md"
@@ -181,14 +211,16 @@ function build_book() {
 
 
     # generateMdFiles
-    say " - generate markdown"
-    cd "$ARANGO_SOURCE_DOC_BOOKS"
+    say " - generate .md-files"
+    cd "$ARANGO_SOURCE_DOC_BOOKS" #must be run in that location
     #echo " - generating MD-Filedds"
-    ensure_cmd python ${ARANGO_SOURCE}/Documentation/Scripts/generateMdFiles.py \
-                    "${book_name}" \
-                    "$ARANGO_BUILD_DOC_PRE" \
-                    "$ARANGO_SOURCE/js/apps/system/_admin/aardvark/APP/api-docs.json" \
-                    "${FILTER:-""}"
+    ensure_cmd python $(expand_cygpath \
+        "${ARANGO_SOURCE}/Documentation/Scripts/generateMdFiles.py" \
+        "${book_name}" \
+        "${ARANGO_BUILD_DOC_PRE}" \
+        "${ARANGO_SOURCE}/js/apps/system/_admin/aardvark/APP/api-docs.json" \
+        "${FILTER:-""}" ) || ferr "failed to generate md files"
+
     test -d "$ARANGO_BUILD_DOC_OUT" || mkdir -p "$ARANGO_BUILD_DOC_OUT"
 
 
@@ -248,7 +280,8 @@ function build_book() {
     cp -r "$book_cache/node_modules" "$book_pre" || ferr "failed to copy node modules"
 
     say " - run gitbook"
-    run_gitbook "$book_cache" build "$book_pre" "$book_out" || ferr "fail exectuting run_gitbook"
+
+    run_gitbook $(expand_cygpath "$book_cache" build "$book_pre" "$book_out") || ferr "fail exectuting run_gitbook"
     unset cache
 
     say " - delete FOOTER.html"
@@ -281,7 +314,7 @@ build_books() {
     # - make script position independent
     say " - codeBlockReader: create AllCommands.txt"
     cd "$ARANGO_SOURCE_DOC_BOOKS" #TODO remove -- required by script below
-    run_cmd python $ARANGO_SOURCE/Documentation/Scripts/codeBlockReader.py && echo || ferr "can not run codeBlockReader.py"
+    run_cmd python $(expand_cygpath "$ARANGO_SOURCE/Documentation/Scripts/codeBlockReader.py") && echo || ferr "can not run codeBlockReader.py"
 
     for book in $books; do
         local book_src="$ARANGO_SOURCE_DOC_BOOKS/${book}"
@@ -394,7 +427,7 @@ main(){
         for book_name in $ALLBOOKS; do
             for format in $OTHER_MIME; do
                 local out="${ARANGO_BUILD_DOC}/ArangoDB_${book_name}_${newVersionNumber}.${format}"
-                run_gitbook "fake cache" "${GITBOOK_ARGS[@]}" "${format}" "$ARANGO_BUILD_DOC_PRE/$book_name" "${out}" || ferr "fail"
+                run_gitbook "fake cache" "${GITBOOK_ARGS[@]}" "${format}" $(expand_cygpath "$ARANGO_BUILD_DOC_PRE/$book_name" "${out}") || ferr "fail"
             done
         done || ferr "failed to build all formats"
     fi

@@ -92,68 +92,63 @@ function launchSingleTests
   end
 
   switch $launchCount
-    case 0 ; test1 shell_server ""
-    case 1 ; test1 shell_client ""
-    case 2 ; test1 recovery 0 --testBuckets 4/0
-    case 3 ; test1 recovery 1 --testBuckets 4/1
-    case 4 ; test1 recovery 2 --testBuckets 4/2
-    case 5 ; test1 recovery 3 --testBuckets 4/3
-    case 6 ; test1MoreLogs replication_sync ""
-    case 7 ; test1MoreLogs replication_static ""
-    case 8 ; test1MoreLogs replication_ongoing ""
-    case 9 ; test1 http_server ""
-    case 10 ; test1 ssl_server ""
-    case 11 ; test1 shell_server_aql 0 --testBuckets 5/0
-    case 12 ; test1 shell_server_aql 1 --testBuckets 5/1
-    case 13 ; test1 shell_server_aql 2 --testBuckets 5/2
-    case 14 ; test1 shell_server_aql 3 --testBuckets 5/3
-    case 15 ; test1 shell_server_aql 4 --testBuckets 5/4
-    case 16 ; test1 shell_client_aql ""
-    case 17 ; test1 dump ""
-    case 18 ; test1 server_http ""
-    case 19 ; test1 agency ""
-    case 20 ; test1 shell_replication ""
-    case 21 ; test1 http_replication ""
-    case 22 ; test1 catch ""
-    case 23 ; test1 authentication ""
-    case 24 ; test1 dump_authentication ""
-    case 25 ; test1 version ""
-    case 26 ; test1 endpoints "" --skipEndpointsIpv6 true
-    case 27 ; test1 arangobench  ""
-    case 28 ; test1 arangosh ""
-    case 29 ; test1 audit ""
-    case 30 ; test1 auditlog ""
-    case 31 ; test1 authentication_server ""
-    case 32 ; test1 authentication_parameters ""
-    case 33 ; test1 BackupNoAuthSysTests ""
-    case 34 ; test1 BackupNoAuthNoSysTests ""
-    case 35 ; test1 BackupAuthSysTests ""
-    case 36 ; test1 BackupAuthNoSysTests ""
-    case 37 ; test1 boost ""
-    case 38 ; test1 config ""
-    case 39 ; test1 dfdb ""
-    case 40 ; test1 dump_encrypted "" 
-    case 41 ; test1 export ""
-    case 42 ; test1 importing ""
-    case 43 ; test1 load_balancing ""
-    case 44 ; test1 load_balancing_auth ""
-    case 45 ; test1 queryCacheAuthorization ""
-    case 46 ; test1 readOnly ""
-    case 47 ; test1 replication_aql ""
-    case 48 ; test1 replication_fuzz ""
-    case 49 ; test1 replication_random ""
-    case 50 ; test1 resilience ""
-    case 51 ; test1 client_resilience ""
-    case 52 ; test1 cluster_sync ""
-    case 53 ; test1 active_failover ""
-    case 54 ; test1 upgrade ""
-    case 55 ; test1 foxx_manager ""
-    case 56 ; test1 ldap ""
-    case 57 ; test1 ldaprole ""
-    case 58 ; test1 ldapsearch ""
-    case 59 ; test1 ldaprolesimple ""
-    case 60 ; test1 ldapsearchsimple ""
-    case 61 ; jslint
+    case  0 ; jslint
+    case  1 ; test1         BackupAuthNoSysTests ""
+    case  2 ; test1         BackupAuthSysTests ""
+    case  3 ; test1         BackupNoAuthNoSysTests ""
+    case  4 ; test1         BackupNoAuthSysTests ""
+    case  5 ; test1         active_failover ""
+    case  6 ; test1         agency ""
+    case  7 ; test1         arangobench  ""
+    case  8 ; test1         arangosh ""
+    case  9 ; test1         audit ""
+    case 10 ; test1         authentication ""
+    case 11 ; test1         authentication_parameters ""
+    case 12 ; test1         authentication_server ""
+    case 13 ; test1         catch ""
+    case 14 ; test1         config ""
+    case 15 ; test1         dfdb ""
+    case 16 ; test1         dump ""
+    case 17 ; test1         dump_authentication ""
+    case 18 ; test1         dump_encrypted "" 
+    case 19 ; test1         endpoints "" --skipEndpointsIpv6 true
+    case 20 ; test1         export ""
+    case 21 ; test1         foxx_manager ""
+    case 22 ; test1         http_replication ""
+    case 23 ; test1         http_server ""
+    case 24 ; test1         importing ""
+    case 25 ; test1         ldap ""
+    case 26 ; test1         ldaprole ""
+    case 27 ; test1         ldaprolesimple ""
+    case 28 ; test1         ldapsearch ""
+    case 29 ; test1         ldapsearchsimple ""
+    case 30 ; test1         load_balancing ""
+    case 31 ; test1         load_balancing_auth ""
+    case 32 ; test1         queryCacheAuthorization ""
+    case 33 ; test1         readOnly ""
+    case 34 ; test1         recovery 0 --testBuckets 4/0
+    case 35 ; test1         recovery 1 --testBuckets 4/1
+    case 36 ; test1         recovery 2 --testBuckets 4/2
+    case 37 ; test1         recovery 3 --testBuckets 4/3
+    case 38 ; test1         replication_aql ""
+    case 39 ; test1         replication_fuzz ""
+    case 40 ; test1MoreLogs replication_ongoing ""
+    case 41 ; test1         replication_random ""
+    case 42 ; test1MoreLogs replication_static ""
+    case 43 ; test1MoreLogs replication_sync ""
+    case 44 ; test1         server_http ""
+    case 45 ; test1         shell_client ""
+    case 46 ; test1         shell_client_aql ""
+    case 47 ; test1         shell_replication ""
+    case 48 ; test1         shell_server ""
+    case 49 ; test1         shell_server_aql 0 --testBuckets 5/0
+    case 50 ; test1         shell_server_aql 1 --testBuckets 5/1
+    case 51 ; test1         shell_server_aql 2 --testBuckets 5/2
+    case 52 ; test1         shell_server_aql 3 --testBuckets 5/3
+    case 53 ; test1         shell_server_aql 4 --testBuckets 5/4
+    case 54 ; test1         ssl_server ""
+    case 55 ; test1         upgrade ""
+    case 56 ; test1         version ""
     case '*' ; return 0
   end
   set -g launchCount (math $launchCount + 1)
@@ -198,23 +193,28 @@ function launchClusterTests
   end
 
   switch $launchCount
-    case 0 ; test3 resilience move js/server/tests/resilience/moving-shards-cluster.js
-    case 1 ; test3 resilience failover js/server/tests/resilience/resilience-synchronous-repl-cluster.js
-    case 2 ; test1 shell_client ""
-    case 3 ; test1 shell_server ""
-    case 4 ; test1 http_server ""
-    case 5 ; test1 ssl_server ""
-    case 6 ; test3 resilience sharddist js/server/tests/resilience/shard-distribution-spec.js
-    case 7 ; test1 shell_server_aql 0 --testBuckets 5/0
-    case 8 ; test1 shell_server_aql 1 --testBuckets 5/1
-    case 9 ; test1 shell_server_aql 2 --testBuckets 5/2
-    case 10 ; test1 shell_server_aql 3 --testBuckets 5/3
-    case 11 ; test1 shell_server_aql 4 --testBuckets 5/4
-    case 12 ; test1 shell_client_aql ""
-    case 13 ; test1 dump ""
-    case 14 ; test1 dump_authentication ""
-    case 15 ; test1 server_http ""
-    case 16 ; test1 agency ""
+    case  0 ; test1 agency ""
+    case  1 ; test1 authentication ""
+    case  2 ; test1 client_resilience ""
+    case  3 ; test1 dump ""
+    case  4 ; test1 dump_authentication ""
+    case  5 ; test1 http_server ""
+    case  6 ; test3 resilience failover      resilience-synchronous-repl-cluster.js
+    case  7 ; test3 resilience failover-view resilience-synchronous-repl-cluster-with-arangosearch-view-cluster.js
+    case  8 ; test3 resilience move          moving-shards-cluster.js
+    case  9 ; test3 resilience move-view     moving-shards-with-arangosearch-view-cluster-nondeterministic.js
+    case 10 ; test3 resilience repair        repair-distribute-shards-like-spec.js
+    case 11 ; test3 resilience sharddist     shard-distribution-spec.js
+    case 12 ; test1 server_http ""
+    case 13 ; test1 shell_client ""
+    case 14 ; test1 shell_client_aql ""
+    case 15 ; test1 shell_server ""
+    case 16 ; test1 shell_server_aql 0 --testBuckets 5/0
+    case 17 ; test1 shell_server_aql 1 --testBuckets 5/1
+    case 16 ; test1 shell_server_aql 2 --testBuckets 5/2
+    case 19 ; test1 shell_server_aql 3 --testBuckets 5/3
+    case 20 ; test1 shell_server_aql 4 --testBuckets 5/4
+    case 21 ; test1 ssl_server ""
     case '*' ; return 0
   end
   set -g launchCount (math $launchCount + 1)
@@ -309,7 +309,7 @@ function createReport
   set cores core*
   set archives *.tar.gz
   set logs *.log
-  if test (count $cores) != 0
+  if test (count $cores) -ne 0
     set binaries build/bin/arangod build/bin/arangodbtests
     echo tar czvf "$INNERWORKDIR/crashreport-$d.tar.gz" $cores $binaries
     tar czvf "$INNERWORKDIR/crashreport-$d.tar.gz" $cores $binaries
@@ -324,13 +324,12 @@ function createReport
   rm -rf $INNERWORKDIR/testfailures.txt
   touch $INNERWORKDIR/testfailures.txt
   for f in "$INNERWORKDIR"/tmp/*.out/testfailures.txt
-    cat $f >> $INNERWORKDIR/testfailures.txt
+    cat -s $f >> $INNERWORKDIR/testfailures.txt
   end
   if grep "unclean shutdown" "$INNERWORKDIR/testfailures.txt"
     set -g result BAD
   end
   log "$d $TESTSUITE $result M:$MAINTAINER $BUILDMODE E:$ENTERPRISEEDITION $STORAGEENGINE" $repoState $repoStateEnterprise $badtests ""
-
 end
 
 cd $INNERWORKDIR

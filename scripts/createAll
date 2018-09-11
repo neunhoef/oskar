@@ -1,48 +1,49 @@
 #!/bin/bash
 script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
-. "$script_dir/lib/oskar.bash"
+. "$script_dir/createRepo"
+
+oskar_dir="$script_dir/.."
 
 echo "run test"
 
-ensureOskar 3.3.3 /mnt/data/fileserver /mnt/data/localstage obitest obitest amd64 deb
-exit 0
-
-version="${1:-3.3.13}"
-incoming="${2:-"/mnt/data/fileserver"}"
-repo="${3:-"/mnt/data/localstage"}"
+version="${1:-3.3.4-1}"
+incoming="${2:-"$oskar_dir/repo_incoming"}"
+repo="${3:-"$oskar_dir/repo_complete"}"
 
 #centos
-ensureOskar "$version" "$incoming" "$repo" \
-            "centos6" "CentOS_6" \
+ensure_oskar "$version" "$incoming" "$repo" \
+            "centosix" "CentOS_6" \
             "x86_64" "rpm"
-ensureOskar "$version" "$incoming" "$repo" \
-            "centos7" "CentOS_7" \
+ensure_oskar "$version" "$incoming" "$repo" \
+            "centoseven" "CentOS_7" \
             "x86_64" "rpm"
 #fedora
-ensureOskar "$version" "$incoming" "$repo" \
+ensure_oskar "$version" "$incoming" "$repo" \
             "fedoratwentyfive" "Fedora_25" \
             "x86_64" "rpm"
 
 #open Suse
-ensureOskar "$version" "$incoming" "$repo" \
-            "opensusefortytwo" "openSuse_13.2" \
+ensure_oskar "$version" "$incoming" "$repo" \
+            "opensusefortytwo" "openSUSE_13.2" \
             "x86_64" "rpm"
 
 #debian
-ensureOskar "$version" "$incoming" "$repo" \
+ensure_oskar "$version" "$incoming" "$repo" \
             "debianstretch" "Debian_8.0" \
-            "amd64:armhf" "deb"
-ensureOskar "$version" "$incoming" "$repo" \
+            "amd64" "deb"
+#           "amd64:armhf" "deb"
+
+ensure_oskar "$version" "$incoming" "$repo" \
             "debianjessie" "Debian_9.0"
-            "amd64:armhf" "deb" \
+            "amd64" "deb"
 
 #ubuntu
-ensureOskar "$version" "$incoming" "$repo" \
-            "ubuntufourteenfour" "xUbuntu_14.04" \
-            "amd64:armhf" "deb"
-ensureOskar "$version" "$incoming" "$repo" \
-            "ubuntusixteenfour" "xUbuntu_16.04" \
-            "amd64:armhf" "deb"
-ensureOskar "$version" "$incoming" "$repo" \
-            "ubuntuseventeenfour" "xUbuntu_17.04" \
-            "amd64:armhf" "deb"
+ensure_oskar "$version" "$incoming" "$repo" \
+            "ubuntufourteenofour" "xUbuntu_14.04" \
+            "amd64" "deb"
+ensure_oskar "$version" "$incoming" "$repo" \
+            "ubuntusixteenofour" "xUbuntu_16.04" \
+            "amd64" "deb"
+ensure_oskar "$version" "$incoming" "$repo" \
+            "ubuntuseventeenofour" "xUbuntu_17.04" \
+            "amd64" "deb"
