@@ -16,7 +16,7 @@ and docker push registry.arangodb.biz:5000/arangodb/linux-community-maintainer:3
 
 if test $status -ne 0
   echo Production of community image failed, giving up...
-  cd "$HOME/$NODE_NAME/oskar" ; moveResultsToWorkspace ; unlockDirectory
+  cd "$HOME/$NODE_NAME/$OSKAR" ; moveResultsToWorkspace ; unlockDirectory
   exit 1
 end
 
@@ -41,6 +41,6 @@ and begin
 end
 
 set -l s $status
-cd "$HOME/$NODE_NAME/oskar" ; moveResultsToWorkspace ; unlockDirectory
+cd "$HOME/$NODE_NAME/$OSKAR" ; moveResultsToWorkspace ; unlockDirectory
 exit $s
 
