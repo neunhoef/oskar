@@ -46,7 +46,6 @@ function DownloadFile($src,$dest)
     (New-Object System.Net.WebClient).DownloadFile($src,$dest)
 }
 
-
 If (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
 {   
     $arguments = "& '" + $myinvocation.mycommand.definition + "'"
@@ -90,7 +89,7 @@ If(-Not($env:CLCACHE_CL))
     Rename-Item -Path "$clpath\cl.exe" -NewName "cl_original.exe"
     Rename-Item -Path "$clpath\cl.exe.config" -NewName "cl_original.exe.config"
     Rename-Item -Path "$clpath\clcache.exe" -NewName "cl.exe"
-    [Environment]::SetEnvironmentVariable("CLCACHE_CL", "$($(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter clo.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx64\\x64"}).FullName)", "Machine")
+    [Environment]::SetEnvironmentVariable("CLCACHE_CL", "$($(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter cl_original.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx64\\x64"}).FullName)", "Machine")
     Remove-Item "C:\Windows\Temp\clcache-4.2.0.zip"
 }
 
