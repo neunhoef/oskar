@@ -82,14 +82,17 @@ While((Get-WmiObject win32_process | Where {$_.Name -eq "vs_installer.exe"}) -or
 }
 Remove-Item "C:\Windows\Temp\vs_community.exe"
 
-$clpath = $(Split-Path -Parent $(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter cl.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx64\\x64"}).FullName) 
-DownloadFile -src 'https://github.com/frerich/clcache/releases/download/v4.2.0/clcache-4.2.0.zip' -dest "C:\Windows\Temp\clcache-4.2.0.zip"
-Expand-Archive -Force "C:\Windows\Temp\clcache-4.2.0.zip" "$clpath"
-Rename-Item -Path "$clpath\cl.exe" -NewName "cl_original.exe"
-Rename-Item -Path "$clpath\cl.exe.config" -NewName "cl_original.exe.config"
-Rename-Item -Path "$clpath\clcache.exe" -NewName "cl.exe"
-[Environment]::SetEnvironmentVariable("CLCACHE_CL", "$($(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter clo.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx64\\x64"}).FullName)", "Machine")
-Remove-Item "C:\Windows\Temp\clcache-4.2.0.zip"
+If(-Not($env:CLCACHE_CL))
+{
+    $clpath = $(Split-Path -Parent $(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter cl.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx64\\x64"}).FullName) 
+    DownloadFile -src 'https://github.com/frerich/clcache/releases/download/v4.2.0/clcache-4.2.0.zip' -dest "C:\Windows\Temp\clcache-4.2.0.zip"
+    Expand-Archive -Force "C:\Windows\Temp\clcache-4.2.0.zip" "$clpath"
+    Rename-Item -Path "$clpath\cl.exe" -NewName "cl_original.exe"
+    Rename-Item -Path "$clpath\cl.exe.config" -NewName "cl_original.exe.config"
+    Rename-Item -Path "$clpath\clcache.exe" -NewName "cl.exe"
+    [Environment]::SetEnvironmentVariable("CLCACHE_CL", "$($(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter clo.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx64\\x64"}).FullName)", "Machine")
+    Remove-Item "C:\Windows\Temp\clcache-4.2.0.zip"
+}
 
 ExternalProcess -process cmd -arguments "/c $PSScriptRoot\..\CMD\buildssl.bat" -wait $true
 
