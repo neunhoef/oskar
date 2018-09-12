@@ -12,3 +12,6 @@ License:
 ArangoDB is distributed under the terms of the Apache2 licenses.
 On Debian GNU/Linux system you can find a copy of this
 license in `/usr/share/common-licenses/Apache-2.0'.
+
+The licenses of the 3rd party libraries can be found in
+`/usr/share/arangodb3/LICENSES-OTHER-COMPONENTS.md`.

@@ -210,14 +210,22 @@ function buildDebianPackage
 
   # FIXME do not rely on relative paths
   cd $WORKDIR
-  rm -rf $WORKDIR/work/debian
+  and rm -rf $WORKDIR/work/debian
   and if test "$ENTERPRISEEDITION" = "On"
     echo Building enterprise edition debian package...
-    cp -a debian.enterprise $WORKDIR/work/debian
+    and cp -a debian.enterprise $WORKDIR/work/debian
+    and for f in arangodb3 arangodb3.service compat config copyright templates preinst prerm postinst postrm rules
+          cp debian.common/$f $WORKDIR/work/debian/$f
+          sed -e 's/@EDITION@/arangodb3e/g' -i $WORKDIR/work/debian/$f
+	end
     and echo -n "arangodb3e " > $ch
   else
     echo Building community edition debian package...
-    cp -a debian.community $WORKDIR/work/debian
+    and cp -a debian.community $WORKDIR/work/debian
+    and for f in arangodb3 arangodb3.service compat config copyright templates preinst prerm postinst postrm rules
+          cp debian.common/$f $WORKDIR/work/debian/$f
+          sed -e 's/@EDITION@/arangodb3/g' -i $WORKDIR/work/debian/$f
+	end
     and echo -n "arangodb3 " > $ch
   end
   and echo "($v) UNRELEASED; urgency=medium" >> $ch
