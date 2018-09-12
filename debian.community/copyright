@@ -14,4 +14,4 @@ On Debian GNU/Linux system you can find a copy of this
 license in `/usr/share/common-licenses/Apache-2.0'.
 
 The licenses of the 3rd party libraries can be found in
-`/usr/share/arangodb3/LICENSES-OTHER-COMPONENTS.md`.
+`/usr/share/doc/arangodb3/LICENSES-OTHER-COMPONENTS.md`.

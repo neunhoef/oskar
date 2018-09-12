@@ -214,7 +214,7 @@ function buildDebianPackage
   and if test "$ENTERPRISEEDITION" = "On"
     echo Building enterprise edition debian package...
     and cp -a debian.enterprise $WORKDIR/work/debian
-    and for f in arangodb3 arangodb3.service compat config copyright templates preinst prerm postinst postrm rules
+    and for f in arangodb3 arangodb3.service compat config templates preinst prerm postinst postrm rules
           cp debian.common/$f $WORKDIR/work/debian/$f
           sed -e 's/@EDITION@/arangodb3e/g' -i $WORKDIR/work/debian/$f
 	end
@@ -222,12 +222,13 @@ function buildDebianPackage
   else
     echo Building community edition debian package...
     and cp -a debian.community $WORKDIR/work/debian
-    and for f in arangodb3 arangodb3.service compat config copyright templates preinst prerm postinst postrm rules
+    and for f in arangodb3 arangodb3.service compat config templates preinst prerm postinst postrm rules
           cp debian.common/$f $WORKDIR/work/debian/$f
           sed -e 's/@EDITION@/arangodb3/g' -i $WORKDIR/work/debian/$f
 	end
     and echo -n "arangodb3 " > $ch
   end
+  and cp -a debian.common/source $WORKDIR/work/debian
   and echo "($v) UNRELEASED; urgency=medium" >> $ch
   and echo >> $ch
   and echo "  * New version." >> $ch
