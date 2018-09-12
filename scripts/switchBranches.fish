@@ -12,7 +12,7 @@ if test (count $argv) -eq 3
     set -l force_clean $argv[3]
 end
 
-if $force_clean
+if test "$force_clean" = "true"
   cd $INNERWORKDIR/ArangoDB
   and git checkout -- .
   and git fetch
