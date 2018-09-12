@@ -81,6 +81,8 @@ While((Get-WmiObject win32_process | Where {$_.Name -eq "vs_installer.exe"}) -or
 }
 Remove-Item "C:\Windows\Temp\vs_community.exe"
 
+ExternalProcess -process cmd -arguments "/c $PSScriptRoot\..\CMD\buildssl.bat" -wait $true
+
 If(-Not($env:CLCACHE_CL))
 {
     $clpath = $(Split-Path -Parent $(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter cl.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx64\\x64"}).FullName) 
@@ -92,8 +94,6 @@ If(-Not($env:CLCACHE_CL))
     [Environment]::SetEnvironmentVariable("CLCACHE_CL", "$($(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter cl_original.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx64\\x64"}).FullName)", "Machine")
     Remove-Item "C:\Windows\Temp\clcache-4.2.0.zip"
 }
-
-ExternalProcess -process cmd -arguments "/c $PSScriptRoot\..\CMD\buildssl.bat" -wait $true
 
 Expand-Archive -Force "$PSScriptRoot\..\FILES\zabbix*" "C:\Zabbix"
 ExternalProcess -process cmd -arguments "/c C:\zabbix\install.bat" -wait $true
@@ -126,8 +126,4 @@ If (-NOT((Get-ItemPropertyValue -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Mic
         New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows' -Name "PathSet" -Value "1"
     }
 }
-
-Write-Host "Import Codesign Certificate !!!"
-$Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-
 . "$PSScriptRoot\iResearch.ps1"
