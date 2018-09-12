@@ -46,7 +46,6 @@ function DownloadFile($src,$dest)
     (New-Object System.Net.WebClient).DownloadFile($src,$dest)
 }
 
-
 If (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
 {   
     $arguments = "& '" + $myinvocation.mycommand.definition + "'"
@@ -56,12 +55,12 @@ If (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 
 Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False
 
-DownloadFile -src 'https://github.com/Microsoft/vssetup.powershell/releases/download/2.0.1/VSSetup.zip' -dest "C:\Windows\Temp\VSSetup.zip"
+DownloadFile -src 'https://github.com/Microsoft/vssetup.powershell/releases/download/2.2.5/VSSetup.zip' -dest "C:\Windows\Temp\VSSetup.zip"
 Expand-Archive -Force "C:\Windows\Temp\VSSetup.zip" "$env:ProgramFiles\WindowsPowerShell\Modules\VSSetup"
 Expand-Archive -Force "C:\Windows\Temp\VSSetup.zip" "${env:ProgramFiles(x86)}\WindowsPowerShell\Modules\VSSetup"
 Remove-Item "C:\Windows\Temp\VSSetup.zip"
 UpdatePath
-Import-Module VSSetup
+Import-Module VSSetup -ErrorAction Stop
 
 $arguments = @'
 -NoProfile -ExecutionPolicy Bypass -Command "Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))"
@@ -82,12 +81,19 @@ While((Get-WmiObject win32_process | Where {$_.Name -eq "vs_installer.exe"}) -or
 }
 Remove-Item "C:\Windows\Temp\vs_community.exe"
 
-$arguments = @'
--NoProfile -ExecutionPolicy Bypass -Command "Invoke-Expression -Command '.\iResearch.ps1'"
-'@
-ExternalProcess -process Powershell -arguments $arguments -wait $true
-
 ExternalProcess -process cmd -arguments "/c $PSScriptRoot\..\CMD\buildssl.bat" -wait $true
+
+If(-Not($env:CLCACHE_CL))
+{
+    $clpath = $(Split-Path -Parent $(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter cl.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx64\\x64"}).FullName) 
+    DownloadFile -src 'https://github.com/frerich/clcache/releases/download/v4.2.0/clcache-4.2.0.zip' -dest "C:\Windows\Temp\clcache-4.2.0.zip"
+    Expand-Archive -Force "C:\Windows\Temp\clcache-4.2.0.zip" "$clpath"
+    Rename-Item -Path "$clpath\cl.exe" -NewName "cl_original.exe"
+    Rename-Item -Path "$clpath\cl.exe.config" -NewName "cl_original.exe.config"
+    Rename-Item -Path "$clpath\clcache.exe" -NewName "cl.exe"
+    [Environment]::SetEnvironmentVariable("CLCACHE_CL", "$($(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter cl_original.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx64\\x64"}).FullName)", "Machine")
+    Remove-Item "C:\Windows\Temp\clcache-4.2.0.zip"
+}
 
 Expand-Archive -Force "$PSScriptRoot\..\FILES\zabbix*" "C:\Zabbix"
 ExternalProcess -process cmd -arguments "/c C:\zabbix\install.bat" -wait $true
@@ -120,16 +126,4 @@ If (-NOT((Get-ItemPropertyValue -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Mic
         New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows' -Name "PathSet" -Value "1"
     }
 }
-
-#$clpath = $(Split-Path -Parent $(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter cl.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx64\\x64"}).FullName) 
-#DownloadFile -src 'https://github.com/frerich/clcache/releases/download/v4.1.0/clcache-4.1.0.zip' -dest "C:\Windows\Temp\clcache-4.1.0.zip"
-#DownloadFile -src 'https://github.com/arangodb-helper/clcheat/raw/master/clcheat.exe' -dest "$clpath\clcheat.exe"
-#Expand-Archive -Force "C:\Windows\Temp\clcache-4.1.0.zip" "$clpath"
-#Rename-Item -Path "$clpath\cl.exe" -NewName "clo.exe"
-#Rename-Item -Path "$clpath\cl.exe.config" -NewName "clo.exe.config"
-#Rename-Item -Path "$clpath\clcheat.exe" -NewName "cl.exe"
-#[Environment]::SetEnvironmentVariable("CLCACHE_CL", "$($(Get-ChildItem $(Get-VSSetupInstance).InstallationPath -Filter clo.exe -Recurse | Select-Object Fullname |Where {$_.FullName -match "Hostx64\\x64"}).FullName)", "Machine")
-#Remove-Item "C:\Windows\Temp\clcache-4.1.0.zip"
-
-Write-Host "Import Codesign Certificate !!!"
-$Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+. "$PSScriptRoot\iResearch.ps1"

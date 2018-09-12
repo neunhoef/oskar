@@ -19,7 +19,7 @@ echo on branch $ENTERPRISE_BRANCH of enterprise repository.
 
 switchBranches $ARANGODB_BRANCH $ENTERPRISE_BRANCH
 and buildStaticArangoDB
-and if $RELEASE
+and if $ALLFORMATS
     buildDocumentationForRelease
 else 
     buildDocumentation
