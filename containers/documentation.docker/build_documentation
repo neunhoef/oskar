@@ -59,7 +59,7 @@ ferr(){ echo "Error: $@"; exit 1; }
 [[ -v ARANGO_WORK ]] || ferr "ARANGO_WORK is not set"
 [[ -d "$ARANGO_WORK" ]] || ferr "ARANGO_WORK is not a directory"
 # control if there is debug output or not
-ARANGO_DEBUG=false
+ARANGO_DEBUG=true
 
 # variables that SHOULD be set before invoking the script
 # this list must match the versions provided in setup_gitbook
@@ -213,16 +213,16 @@ function build_book() {
     # generateMdFiles
     say " - generate .md-files"
     cd "$ARANGO_SOURCE_DOC_BOOKS" #must be run in that location
-    #echo " - generating MD-Filedds"
-    ensure_cmd python $(expand_cygpath \
-        "${ARANGO_SOURCE}/Documentation/Scripts/generateMdFiles.py" \
+
+    ensure_cmd python3 $(expand_cygpath \
+        "$ARANGO_WORK/../containers/documentation.docker/generateMdFiles.py" \
         "${book_name}" \
-        "${ARANGO_BUILD_DOC_PRE}" \
-        "${ARANGO_SOURCE}/js/apps/system/_admin/aardvark/APP/api-docs.json" \
-        "${FILTER:-""}" ) || ferr "failed to generate md files"
+        "${ARANGO_SOURCE}" \
+        "$ARANGO_BUILD_DOC_PRE" \
+        "${FILTER:-""}" \
+    ) || ferr "failed to generate .md-files $?"
 
     test -d "$ARANGO_BUILD_DOC_OUT" || mkdir -p "$ARANGO_BUILD_DOC_OUT"
-
 
     ##########################################################################
     book_pre_checks "${book_name}" "$book_src" "$book_pre" "$book_out"
@@ -418,9 +418,11 @@ main(){
     build_books "$books" || ferr "fail"
 
     local out="${ARANGO_BUILD_DOC}/ArangoDB-${newVersionNumber}"
-    cp -r "$ARANGO_BUILD_DOC_OUT" "$out" || ferr "failed to copy html docu" #rather move
-    run_cmd tar -czf "$out.tar.gz" "$out" || ferr "failed to tar html docu"
-    rm -fr "$out" || err "failed to delete docu copy"
+    cp -r "$ARANGO_BUILD_DOC_OUT" "$out" || ferr "failed to copy html documentation" #rather move
+
+    run_cmd tar -C "$ARANGO_BUILD_DOC" -czf "$out.tar.gz" "ArangoDB-${newVersionNumber}" \
+        || ferr "failed to tar html documentation"
+    rm -fr "$out" || err "failed to delete documentation copy"
 
     # build other formats
     if $all_formats; then

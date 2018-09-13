@@ -3,7 +3,7 @@ source jenkins/helper.jenkins.fish ; prepareOskar
 
 lockDirectory ; updateOskar ; clearResults
 
-switchBranches 3.3 3.3
+switchBranches 3.3 3.3 true
 and makeRelease
 
 set -l s $status
