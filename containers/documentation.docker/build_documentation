@@ -418,9 +418,11 @@ main(){
     build_books "$books" || ferr "fail"
 
     local out="${ARANGO_BUILD_DOC}/ArangoDB-${newVersionNumber}"
-    cp -r "$ARANGO_BUILD_DOC_OUT" "$out" || ferr "failed to copy html docu" #rather move
-    run_cmd tar -czf "$out.tar.gz" "$out" || ferr "failed to tar html docu"
-    rm -fr "$out" || err "failed to delete docu copy"
+    cp -r "$ARANGO_BUILD_DOC_OUT" "$out" || ferr "failed to copy html documentation" #rather move
+
+    run_cmd tar -C "$ARANGO_BUILD_DOC" -czf "$out.tar.gz" "ArangoDB-${newVersionNumber}" \
+        || ferr "failed to tar html documentation"
+    rm -fr "$out" || err "failed to delete documentation copy"
 
     # build other formats
     if $all_formats; then

@@ -121,6 +121,7 @@ function buildDocumentation
     set -l DOCIMAGE "arangodb/arangodb-documentation" # TODO global var
     runInContainer -e "ARANGO_SPIN=$ARANGO_SPIN" \
                    -e "ARANGO_NO_COLOR=$ARANGO_IN_JENKINS" \
+                   -e "ARANGO_BUILD_DOC=/oskar/work" \
                    --user "$UID" \
                    -v "$WORKDIR:/oskar" \
                    -it "$DOCIMAGE" \
