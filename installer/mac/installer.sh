@@ -14,6 +14,7 @@ brew install python@2
 brew install ruby
 brew install jq
 brew install git
+brew install zabbix --without-server-proxy
 brew install moreutils --without-parallel
 
 brew cask install java8
