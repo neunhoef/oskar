@@ -6,6 +6,11 @@ old_version="$2"
 
 ARANGODB="/usr/sbin/arangod"
 
+AR_UID=$(getent passwd arangodb | cut -f 3 -d :)
+if test -z "$AR_UID" ; then AR_UID=arangodb ; fi
+AR_GID=$(getent group arangodb | cut -f 3 -d :)
+if test -z "$AR_GID" ; then AR_GID=arangodb ; fi
+
 # source debconf library
 . /usr/share/debconf/confmodule
 . /usr/share/arangodb3/arangodb-helper
@@ -46,7 +51,7 @@ if test "$action" = "configure" -a \
             /usr/sbin/arango-init-database \
 	            --server.rest-server false \
 				--server.statistics false --foxx.queues false \
-                --uid arangodb --gid arangodb || true
+                --uid $AR_UID --gid $AR_GID || true
     fi
 
     db_set arangodb3e/password_again ""
@@ -57,7 +62,7 @@ fi
 # check if we should upgrade the database directory
 UPGRADE=false #requires upgrade
 set +e
-$ARANGODB --uid arangodb --gid arangodb \
+$ARANGODB --uid $AR_UID --gid $AR_GID \
           --server.rest-server false --log.foreground-tty false \
           --database.check-version
 exit_status=$?
@@ -83,7 +88,7 @@ if [ "$RET" = "true" ];  then
 
         echo "Upgrading database files."
         set +e
-        $ARANGODB --uid arangodb --gid arangodb --server.rest-server false --log.level error --database.auto-upgrade || ar_ferr $?
+        $ARANGODB --uid $AR_UID --gid $AR_GID --server.rest-server false --log.level error --database.auto-upgrade || ar_ferr $?
         set -e
     else
         echo "Database files are up-to-date."
@@ -99,6 +104,16 @@ else
 fi
 
 db_stop
+
+# Set up some permissions and ownerships:
+/usr/bin/install -g arangodb -o arangodb -d /var/tmp/arangodb3
+/usr/bin/install -g arangodb -o arangodb -d /var/run/arangodb3
+chown -R arangodb:arangodb /var/log/arangodb3
+chmod 700 /var/log/arangodb3
+chown -R arangodb:arangodb /var/lib/arangodb3
+chmod 700 /var/lib/arangodb3
+chown -R arangodb:arangodb /var/lib/arangodb3-apps
+chmod 700 /var/lib/arangodb3-apps
 
 if [ -d /run/systemd/system ] ; then
     # This will only remove masks created by d-s-h on package removal.

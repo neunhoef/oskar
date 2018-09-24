@@ -163,10 +163,10 @@ fi
 
 %post
 if rpm -q --quiet systemd ; then
-  cp /usr/share/arangodb3/arangodb3.service %{_sysconfdir}/systemd/system/arangodb3.service
+  #cp /usr/share/arangodb3/arangodb3.service %{_sysconfdir}/systemd/system/arangodb3.service
   systemctl daemon-reload
 else
-  cp /usr/share/arangodb3/arangodb3.initd %{_sysconfdir}/init.d/arangodb3
+  #cp /usr/share/arangodb3/arangodb3.initd %{_sysconfdir}/init.d/arangodb3
   chkconfig --level 2345 arangodb3 on
 fi
 cp /usr/share/arangodb3/arangodb3.logrotate %{_sysconfdir}/logrotate.d/arangodb3
