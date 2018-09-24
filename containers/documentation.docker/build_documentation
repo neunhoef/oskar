@@ -59,7 +59,7 @@ ferr(){ echo "Error: $@"; exit 1; }
 [[ -v ARANGO_WORK ]] || ferr "ARANGO_WORK is not set"
 [[ -d "$ARANGO_WORK" ]] || ferr "ARANGO_WORK is not a directory"
 # control if there is debug output or not
-ARANGO_DEBUG=true
+ARANGO_DEBUG=false
 
 # variables that SHOULD be set before invoking the script
 # this list must match the versions provided in setup_gitbook
@@ -420,6 +420,7 @@ main(){
     local out="${ARANGO_BUILD_DOC}/ArangoDB-${newVersionNumber}"
     cp -r "$ARANGO_BUILD_DOC_OUT" "$out" || ferr "failed to copy html documentation" #rather move
 
+    cd "$ARANGO_BUILD_DOC"
     run_cmd tar -C "$ARANGO_BUILD_DOC" -czf "$out.tar.gz" "ArangoDB-${newVersionNumber}" \
         || ferr "failed to tar html documentation"
     rm -fr "$out" || err "failed to delete documentation copy"

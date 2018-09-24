@@ -582,12 +582,8 @@ cross_source_check_docublocks() { #TODO review
 
 
     # searching the Inline docublocks needs some more blacklisting:
-    grep -R '@startDocuBlockInline' --include "*.h" --include "*.cpp" --include "*.js" \
-        --include "*.md" "${ARANGO_SOURCE_DOC_BOOKS}" "$ARANGO_BUILD_DOC" |\
-        grep -v ppbook |\
+    grep -R '@startDocuBlockInline' --include "*.md" "${ARANGO_SOURCE_DOC_BOOKS}" |\
         grep -v stash |\
-        grep -v allComments.txt |\
-        grep -v build.sh |\
         grep -v '.*~:.*' |\
         grep -v '.*#.*:.*' \
              >> /tmp/rawinprog.txt || ferr "failed to search for startDocuBlockInline in source - with $?"
