@@ -1,7 +1,7 @@
 #!/usr/bin/env fish
 
 function prepareOskar
-  set -xg OSKAR oskar2
+  set -xg OSKAR oskar
 
   mkdir -p "$HOME/$NODE_NAME" ; cd "$HOME/$NODE_NAME"
   if not cd $OSKAR ^ /dev/null 
