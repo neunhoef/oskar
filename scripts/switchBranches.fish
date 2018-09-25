@@ -5,14 +5,14 @@ function checkoutRepo
       echo "Checkout needs two parameters branch force"
       return 1
   end
-  set -l branch $argv[1]
+  set -l branch (string trim $argv[1])
   set -l clean $argv[2]
 
   git checkout -- .
   and git fetch
-  and git checkout $branch
+  and git checkout "$branch"
   and if test "$clean" = "true"
-    git reset --hard origin/$branch
+    git reset --hard "origin/$branch"
     and git clean -fdx
   else
     git pull
