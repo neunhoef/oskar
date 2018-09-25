@@ -4,8 +4,8 @@ if test (count $argv) -lt 2
     echo "you did not provide enough arguments"
 end
 
-set -l arango $argvp[1]
-set -l enterprise $argvp[2]
+set -l arango $argv[1]
+set -l enterprise $argv[2]
 set -l force_clean false
 
 if test (count $argv) -eq 3
