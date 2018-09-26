@@ -3,10 +3,12 @@ set -gx THIRDPARTY_BIN $INNERWORKDIR/ArangoDB/build/install/usr/bin
 set -gx SCRIPTSDIR /scripts
 set -gx PLATFORM linux
 set -gx ARCH (uname -m)
+
 set -gx UBUNTUBUILDIMAGE arangodb/ubuntubuildarangodb-$ARCH
 set -gx UBUNTUPACKAGINGIMAGE arangodb/ubuntupackagearangodb-$ARCH
 set -gx ALPINEBUILDIMAGE arangodb/alpinebuildarangodb-$ARCH
 set -gx CENTOSPACKAGINGIMAGE arangodb/centospackagearangodb-$ARCH
+set -gx DOCIMAGE arangodb/arangodb-documentation
 
 function buildUbuntuBuildImage
   cd $WORKDIR
@@ -52,6 +54,12 @@ end
 function pushCentosPackagingImage ; docker push $CENTOSPACKAGINGIMAGE ; end
 function pullCentosPackagingImage ; docker pull $CENTOSPACKAGINGIMAGE ; end
 
+function buildContainerDocumentation
+    eval "$WORKDIR/scripts/buildContainerDocumentation" "$DOCIMAGE"
+end
+function pushDocumentationImage ; docker push $DOCIMAGE ; end
+function pullDocumentationImage ; docker pull $DOCIMAGE ; end
+
 function remakeImages
   buildUbuntuBuildImage
   pushUbuntuBuildImage
@@ -61,6 +69,7 @@ function remakeImages
   pushUbuntuPackagingImage
   buildCentosPackagingImage
   pushCentosPackagingImage
+  buildContainerDocumentation
 end
 
 function runInContainer
@@ -122,7 +131,6 @@ function runInContainer
 end
 
 function buildDocumentation
-    set -l DOCIMAGE "arangodb/arangodb-documentation" # TODO global var
     runInContainer -e "ARANGO_SPIN=$ARANGO_SPIN" \
                    -e "ARANGO_NO_COLOR=$ARANGO_IN_JENKINS" \
                    -e "ARANGO_BUILD_DOC=/oskar/work" \
@@ -136,9 +144,6 @@ function buildDocumentationForRelease
     buildDocumentation --all-formats
 end
 
-function buildContainerDocumentation
-    eval "$WORKDIR/scripts/buildContainerDocumentation"
-end
 
 function checkoutArangoDB
   runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/checkoutArangoDB.fish
