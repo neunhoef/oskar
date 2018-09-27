@@ -1,6 +1,6 @@
 This is the Debian GNU/Linux prepackaged version of arangodb.
 It was packaged by Frank Celler <f.celler@arangodb.org>
-from sources obtained from http://github.com/triAGENS/ArangoDB.
+from sources obtained from http://github.com/arangodb/ArangoDB.
 
 Copyright:
 

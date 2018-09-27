@@ -208,28 +208,27 @@ function buildDebianPackage
   # for example by running findArangoDBVersion.
   set -l v "$ARANGODB_DEBIAN_UPSTREAM-$ARANGODB_DEBIAN_REVISION"
   set -l ch $WORKDIR/work/debian/changelog
+  set -l SOURCE $WORKDIR/debian
+  set -l TARGET $WORKDIR/work/debian
+  set -l EDITION arangodb3
+  set -l EDITIONFOLDER $SOURCE/community
 
-  # FIXME do not rely on relative paths
-  cd $WORKDIR
-  and rm -rf $WORKDIR/work/debian
-  and if test "$ENTERPRISEEDITION" = "On"
+  if test "$ENTERPRISEEDITION" = "On"
     echo Building enterprise edition debian package...
-    and cp -a debian/enterprise $WORKDIR/work/debian
-    and for f in arangodb3 arangodb3.service compat config templates preinst prerm postinst postrm rules
-          cp debian/common/$f $WORKDIR/work/debian/$f
-          sed -e 's/@EDITION@/arangodb3e/g' -i $WORKDIR/work/debian/$f
-	end
-    and echo -n "arangodb3e " > $ch
+    set EDITION arangodb3e
+    set EDITIONFOLDER $SOURCE/enterprise
   else
     echo Building community edition debian package...
-    and cp -a debian/community $WORKDIR/work/debian
-    and for f in arangodb3 arangodb3.service compat config templates preinst prerm postinst postrm rules
-          cp debian/common/$f $WORKDIR/work/debian/$f
-          sed -e 's/@EDITION@/arangodb3/g' -i $WORKDIR/work/debian/$f
-	end
-    and echo -n "arangodb3 " > $ch
   end
-  and cp -a debian/common/source $WORKDIR/work/debian
+
+  rm -rf $TARGET
+  and cp -a $EDITIONFOLDER $TARGET
+  and for f in arangodb3.init arangodb3.service compat config templates preinst prerm postinst postrm rules
+    cp $SOURCE/common/$f $TARGET/$f
+    sed -e "s/@EDITION@/$EDITION/g" -i $TARGET/$f
+  end
+  and echo -n "$EDITION " > $ch
+  and cp -a $SOURCE/common/source $TARGET
   and echo "($v) UNRELEASED; urgency=medium" >> $ch
   and echo >> $ch
   and echo "  * New version." >> $ch
