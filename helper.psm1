@@ -1166,6 +1166,7 @@ Function oskar8
 
 Function makeRelease
 {
+    maintainerOff
     skipPackagingOff
     signPackageOn
     community

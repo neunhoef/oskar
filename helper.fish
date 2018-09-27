@@ -34,6 +34,14 @@ function showConfig
   echo "- Enterprise     : $ENTERPRISEEDITION"
   echo "- Buildmode      : $BUILDMODE"
   echo "- Maintainer     : $MAINTAINER"
+  echo "- ASAN:          : $ASAN"
+
+  if test -z "$NO_RM_BUILD"
+    echo "- Clear build    : On"
+  else
+    echo "- Clear build    : Off"
+  end
+  
   echo
   echo "Test Configuration:"
   echo "- Storage engine : $STORAGEENGINE"
@@ -43,7 +51,8 @@ function showConfig
   echo "- Workdir        : $WORKDIR"
   echo "- Inner workdir  : $INNERWORKDIR"
   echo "- Parallelism    : $PARALLELISM"
-  echo "- Verbose        : $VERBOSEOSKAR"
+  echo "- Verbose Build  : $VERBOSEBUILD"
+  echo "- Verbose Oskar  : $VERBOSEOSKAR"
   echo "#################################"
   echo
 end
@@ -58,6 +67,11 @@ function maintainerOn ; set -gx MAINTAINER On ; end
 function maintainerOff ; set -gx MAINTAINER Off ; end
 if test -z "$MAINTAINER" ; maintainerOn
 else ; set -gx MAINTAINER $MAINTAINER ; end
+
+function asanOn ; set -gx ASAN On ; end
+function asanOff ; set -gx ASAN Off ; end
+if test -z "$ASAN" ; asanOff
+else ; set -gx ASAN $ASAN ; end
 
 function debugMode ; set -gx BUILDMODE Debug ; end
 function releaseMode ; set -gx BUILDMODE RelWithDebInfo ; end
@@ -80,6 +94,14 @@ function verbose ; set -gx VERBOSEOSKAR On ; end
 function silent ; set -gx VERBOSEOSKAR Off ; end
 if test -z "$VERBOSEOSKAR" ; verbose
 else ; set -gx VERBOSEOSKAR $VERBOSEOSKAR ; end
+
+function verboseBuild ; set -gx VERBOSEBUILD On ; end
+function silentBuild ; set -gx VERBOSEBUILD Off ; end
+if test -z "$VERBOSEBUILD"; silentBuild
+else ; set -gx VERBOSEBUILD $VERBOSEBUILD ; end
+
+function keepBuild ; set -gx NO_RM_BUILD 1 ; end
+function clearBuild ; set -gx NO_RM_BUILD ; end
 
 # TODO FIXME
 # main code between function definitions

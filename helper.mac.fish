@@ -152,12 +152,12 @@ function buildEnterprisePackage
  
   # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
   # ARANGODB_FULL_VERSION, for example by running findArangoDBVersion.
-  maintainerOff
-  releaseMode
-  enterprise
-  set -xg NOSTRIP dont
-
-  cleanupThirdParty
+  asanOff
+  and maintainerOff
+  and releaseMode
+  and enterprise
+  and set -xg NOSTRIP dont
+  and cleanupThirdParty
   and downloadStarter
   and downloadSyncer
   and buildStaticArangoDB \
@@ -178,12 +178,12 @@ end
 function buildCommunityPackage
   # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
   # ARANGODB_FULL_VERSION, for example by running findArangoDBVersion.
-  maintainerOff
-  releaseMode
-  community
-  set -xg NOSTRIP dont
-
-  cleanupThirdParty
+  asanOff
+  and maintainerOff
+  and releaseMode
+  and community
+  and set -xg NOSTRIP dont
+  and cleanupThirdParty
   and downloadStarter
   and buildStaticArangoDB \
       -DTARGET_ARCHITECTURE=nehalem \
