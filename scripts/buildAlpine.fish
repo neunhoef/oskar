@@ -66,5 +66,5 @@ and if test -z "$NOSTRIP"
   strip usr/sbin/arangod usr/bin/arangoimp usr/bin/arangosh usr/bin/arangovpack usr/bin/arangoexport usr/bin/arangobench usr/bin/arangodump usr/bin/arangorestore
 end
 
-echo "Finished at "(date)
-ccache --show-stats
+and echo "Finished at "(date)
+and ccache --show-stats
