@@ -54,7 +54,7 @@ end
 function pushCentosPackagingImage ; docker push $CENTOSPACKAGINGIMAGE ; end
 function pullCentosPackagingImage ; docker pull $CENTOSPACKAGINGIMAGE ; end
 
-function buildContainerDocumentation
+function buildDocumentationImage
     eval "$WORKDIR/scripts/buildContainerDocumentation" "$DOCIMAGE"
 end
 function pushDocumentationImage ; docker push $DOCIMAGE ; end
@@ -69,7 +69,7 @@ function remakeImages
   pushUbuntuPackagingImage
   buildCentosPackagingImage
   pushCentosPackagingImage
-  buildContainerDocumentation
+  buildDocumentationImage
 end
 
 function runInContainer
@@ -340,6 +340,8 @@ function pushOskar
   pushUbuntuPackagingImage
   buildCentosPackagingImage
   pushCentosPackagingImage
+  buildDocumentationImage
+  pushDocumentationImage
 end
 
 function updateOskar
@@ -351,6 +353,7 @@ function updateOskar
   and pullAlpineBuildImage
   and pullUbuntuPackagingImage
   and pullCentosPackagingImage
+  and pullDocumentationImage
 end
 
 function downloadStarter
