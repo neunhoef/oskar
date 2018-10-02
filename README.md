@@ -178,7 +178,7 @@ build enterprise edition (enterprise) or community version (community)
 
     parallelism <PARALLELSIM>
 
-if supported, set numer of concurrent builds to `PARALLELISM`
+if supported, set number of concurrent builds to `PARALLELISM`
 
 ## Testing
 
