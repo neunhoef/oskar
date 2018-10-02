@@ -7,7 +7,7 @@ eval $EDITION ; eval $STORAGE_ENGINE ; eval $TEST_SUITE
 parallelism 20
 
 switchBranches $ARANGODB_BRANCH $ENTERPRISE_BRANCH true
-and oskar1
+and oskar1Limited
 
 set -l s $status
 cd "$HOME/$NODE_NAME/$OSKAR" ; moveResultsToWorkspace ; unlockDirectory 

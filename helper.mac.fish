@@ -98,6 +98,10 @@ function oskarFull
   runLocal $SCRIPTSDIR/runFullTests.fish
 end
 
+function oskarLimited
+  checkoutIfNeeded
+  runLocal $SCRIPTSDIR/runLimitedTests.fish
+end
 
 function pushOskar
   cd $WORKDIR
@@ -152,12 +156,12 @@ function buildEnterprisePackage
  
   # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
   # ARANGODB_FULL_VERSION, for example by running findArangoDBVersion.
-  maintainerOff
-  releaseMode
-  enterprise
-  set -xg NOSTRIP dont
-
-  cleanupThirdParty
+  asanOff
+  and maintainerOff
+  and releaseMode
+  and enterprise
+  and set -xg NOSTRIP dont
+  and cleanupThirdParty
   and downloadStarter
   and downloadSyncer
   and buildStaticArangoDB \
@@ -178,12 +182,12 @@ end
 function buildCommunityPackage
   # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
   # ARANGODB_FULL_VERSION, for example by running findArangoDBVersion.
-  maintainerOff
-  releaseMode
-  community
-  set -xg NOSTRIP dont
-
-  cleanupThirdParty
+  asanOff
+  and maintainerOff
+  and releaseMode
+  and community
+  and set -xg NOSTRIP dont
+  and cleanupThirdParty
   and downloadStarter
   and buildStaticArangoDB \
       -DTARGET_ARCHITECTURE=nehalem \
@@ -212,7 +216,7 @@ function buildTarGzPackage
   and buildTarGzPackageHelper "macosx"
 end
 
-function transformBundleSniplet
+function transformBundleSnippet
   cd $WORKDIR
   set -l BUNDLE_NAME_SERVER "$argv[1]-$argv[2].x86_64.dmg"
   set -l DOWNLOAD_LINK "$argv[4]"
@@ -241,14 +245,14 @@ function transformBundleSniplet
       -e "s|@TARGZ_SIZE_SERVER@|$TARGZ_SIZE_SERVER|" \
       -e "s|@DOWNLOAD_LINK@|$DOWNLOAD_LINK|" \
       -e "s|@DOWNLOAD_EDITION@|$DOWNLOAD_EDITION|" \
-      < sniplets/$ARANGODB_SNIPLETS/macosx.html.in > $n
+      < snippets/$ARANGODB_SNIPPETS/macosx.html.in > $n
 
-  echo "MacOSX Bundle Sniplet: $n"
+  echo "MacOSX Bundle Snippet: $n"
 end
 
-function buildBundleSniplet
+function buildBundleSnippet
   # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
-  # ARANGODB_SNIPLETS, for example by running findArangoDBVersion.
+  # ARANGODB_SNIPPETS, for example by running findArangoDBVersion.
   if test -z "$ARANGODB_DARWIN_REVISION"
     set n "$ARANGODB_DARWIN_UPSTREAM"
   else
@@ -261,7 +265,7 @@ function buildBundleSniplet
       return 1
     end
 
-    transformBundleSniplet "arangodb3e" "$n" "$ARANGODB_TGZ_UPSTREAM" "$ENTERPRISE_DOWNLOAD_LINK"
+    transformBundleSnippet "arangodb3e" "$n" "$ARANGODB_TGZ_UPSTREAM" "$ENTERPRISE_DOWNLOAD_LINK"
     or return 1
   else
     if test -z "$COMMUNITY_DOWNLOAD_LINK"
@@ -269,12 +273,12 @@ function buildBundleSniplet
       return 1
     end
 
-    transformBundleSniplet "arangodb3" "$n" "$ARANGODB_TGZ_UPSTREAM" "$COMMUNITY_DOWNLOAD_LINK"
+    transformBundleSnippet "arangodb3" "$n" "$ARANGODB_TGZ_UPSTREAM" "$COMMUNITY_DOWNLOAD_LINK"
     or return 1
   end
 end
 
-function makeSniplets
+function makeSnippets
   if test -z "$ENTERPRISE_DOWNLOAD_LINK"
     echo "you need to set the variable ENTERPRISE_DOWNLOAD_LINK"
     return 1
@@ -286,9 +290,9 @@ function makeSniplets
   end
 
   community
-  and buildBundleSniplet
+  and buildBundleSnippet
   and enterprise
-  and buildBundleSniplet
+  and buildBundleSnippet
 end
 
 parallelism 8

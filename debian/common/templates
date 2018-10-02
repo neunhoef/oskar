@@ -1,4 +1,4 @@
-Template: arangodb3e/upgrade
+Template: @EDITION@/upgrade
 Type: boolean
 Default: true
 Description: Automatically upgrade database files?
@@ -9,7 +9,7 @@ Description: Automatically upgrade database files?
  If you select "no" here, the package will be rendered 'unstable' and you
  will need to manually invoke the upgrade procedure on each package upgrade.
 
-Template: arangodb3e/backup
+Template: @EDITION@/backup
 Type: boolean
 Default: false
 Description: Backup database files before upgrading?
@@ -17,22 +17,22 @@ Description: Backup database files before upgrading?
  If you specify "yes" here, a backup of your database files is created before
  upgrading the files. The backup will be stored in /var/lib/arangodb-DATE.
 
-Template: arangodb3e/password
+Template: @EDITION@/password
 Type: password
 Description: password for the ArangoDB "root" user:
  Please enter the password for the database root user account that should be granted
  administrative privileges
 
-Template: arangodb3e/password_again
+Template: @EDITION@/password_again
 Type: password
 Description: Repeat password for the ArangoDB "root" user:
 
-Template: arangodb3e/password_mismatch
+Template: @EDITION@/password_mismatch
 Type: error
 Description: Password input error
  The two passwords you entered were not the same. Please try again.
 
-Template: arangodb3e/storage_engine
+Template: @EDITION@/storage_engine
 Type: select
 Choices: auto, rocksdb, mmfiles
 Default: auto

@@ -30,7 +30,7 @@ if test $status_build -ne 0
   echo Build failure with maintainer mode off in $EDITION.
 end
 
-cd "$HOME/$NODE_NAME/oskar"; and moveResultsToWorkspace; and unlockDirectory
+cd "$HOME/$NODE_NAME/$OSKAR"; and moveResultsToWorkspace; and unlockDirectory
 
 set -l status_cleanup $status
 if test $status_cleanup -ne 0

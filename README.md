@@ -71,7 +71,7 @@ You can then do
 
 for a static build or
 
-	buildArangoDB
+    buildArangoDB
 	
 for a non-static build.
 
@@ -198,7 +198,7 @@ You need to set the following environment variables:
     set -xg ENTERPRISE_DOWNLOAD_LINK "https://download.arangodb.com"
 
 The prefix for the link of the community and enterprise edition that
-is used to construct the download link in the sniplets.
+is used to construct the download link in the snippets.
 
     set -xg DOWNLOAD_SYNC_USER username:password
 
@@ -211,13 +211,13 @@ Under linux:
 - RPM, Debian and tar.gz
 - server and client
 - community and enterprise
-- html sniplets for debian, rpm, generic linux
+- html snippets for debian, rpm, generic linux
 
 Under MacOSX:
 
 - DMG and tar.gz
 - community and enterprise
-- html sniplets for macosx
+- html snippets for macosx
 
 ## Internals
 

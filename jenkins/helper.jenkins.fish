@@ -1,9 +1,11 @@
 #!/usr/bin/env fish
 
 function prepareOskar
+  set -xg OSKAR oskar
+
   mkdir -p "$HOME/$NODE_NAME" ; cd "$HOME/$NODE_NAME"
-  if not cd oskar ^ /dev/null 
-    git clone https://github.com/neunhoef/oskar ; and cd oskar
+  if not cd $OSKAR ^ /dev/null 
+    git clone https://github.com/arangodb/oskar $OSKAR ; and cd $OSKAR
   else
     git fetch ; and git reset --hard origin/master
   end
