@@ -3,10 +3,10 @@ set -gx THIRDPARTY_BIN $INNERWORKDIR/ArangoDB/build/install/usr/bin
 set -gx SCRIPTSDIR /scripts
 set -gx PLATFORM linux
 set -gx ARCH (uname -m)
-set -gx UBUNTUBUILDIMAGE neunhoef/ubuntubuildarangodb-$ARCH
-set -gx UBUNTUPACKAGINGIMAGE neunhoef/ubuntupackagearangodb-$ARCH
-set -gx ALPINEBUILDIMAGE neunhoef/alpinebuildarangodb-$ARCH
-set -gx CENTOSPACKAGINGIMAGE neunhoef/centospackagearangodb-$ARCH
+set -gx UBUNTUBUILDIMAGE arangodb/ubuntubuildarangodb-$ARCH
+set -gx UBUNTUPACKAGINGIMAGE arangodb/ubuntupackagearangodb-$ARCH
+set -gx ALPINEBUILDIMAGE arangodb/alpinebuildarangodb-$ARCH
+set -gx CENTOSPACKAGINGIMAGE arangodb/centospackagearangodb-$ARCH
 
 function buildUbuntuBuildImage
   cd $WORKDIR
@@ -80,21 +80,25 @@ function runInContainer
   # cover SIGINT, since this will directly abort the whole function.
   set c (docker run -d -v $WORKDIR/work:$INNERWORKDIR \
              -v $SSH_AUTH_SOCK:/ssh-agent \
-             -e SSH_AUTH_SOCK=/ssh-agent \
-             -e UID=(id -u) \
+             -e ASAN="$ASAN" \
+             -e BUILDMODE="$BUILDMODE" \
+             -e CCACHEBINPATH="$CCACHEBINPATH" \
+             -e ENTERPRISEEDITION="$ENTERPRISEEDITION" \
              -e GID=(id -g) \
-             -e NOSTRIP="$NOSTRIP" \
              -e GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no" \
-             -e INNERWORKDIR=$INNERWORKDIR \
-             -e MAINTAINER=$MAINTAINER \
-             -e BUILDMODE=$BUILDMODE \
-             -e PARALLELISM=$PARALLELISM \
-             -e STORAGEENGINE=$STORAGEENGINE \
-             -e TESTSUITE=$TESTSUITE \
-             -e VERBOSEOSKAR=$VERBOSEOSKAR \
-             -e ENTERPRISEEDITION=$ENTERPRISEEDITION \
-             -e SCRIPTSDIR=$SCRIPTSDIR \
-             -e PLATFORM=$PLATFORM \
+             -e INNERWORKDIR="$INNERWORKDIR" \
+             -e MAINTAINER="$MAINTAINER" \
+             -e NOSTRIP="$NOSTRIP" \
+             -e NO_RM_BUILD="$NO_RM_BUILD" \
+             -e PARALLELISM="$PARALLELISM" \
+             -e PLATFORM="$PLATFORM" \
+             -e SCRIPTSDIR="$SCRIPTSDIR" \
+             -e SSH_AUTH_SOCK=/ssh-agent \
+             -e STORAGEENGINE="$STORAGEENGINE" \
+             -e TESTSUITE="$TESTSUITE" \
+             -e UID=(id -u) \
+             -e VERBOSEBUILD="$VERBOSEBUILD" \
+             -e VERBOSEOSKAR="$VERBOSEOSKAR" \
              $argv)
   function termhandler --on-signal TERM --inherit-variable c
     if test -n "$c" ; docker stop $c >/dev/null ; end
@@ -204,19 +208,27 @@ function buildDebianPackage
   # for example by running findArangoDBVersion.
   set -l v "$ARANGODB_DEBIAN_UPSTREAM-$ARANGODB_DEBIAN_REVISION"
   set -l ch $WORKDIR/work/debian/changelog
+  set -l SOURCE $WORKDIR/debian
+  set -l TARGET $WORKDIR/work/debian
+  set -l EDITION arangodb3
+  set -l EDITIONFOLDER $SOURCE/community
 
-  # FIXME do not rely on relative paths
-  cd $WORKDIR
-  rm -rf $WORKDIR/work/debian
-  and if test "$ENTERPRISEEDITION" = "On"
+  if test "$ENTERPRISEEDITION" = "On"
     echo Building enterprise edition debian package...
-    cp -a debian.enterprise $WORKDIR/work/debian
-    and echo -n "arangodb3e " > $ch
+    set EDITION arangodb3e
+    set EDITIONFOLDER $SOURCE/enterprise
   else
     echo Building community edition debian package...
-    cp -a debian.community $WORKDIR/work/debian
-    and echo -n "arangodb3 " > $ch
   end
+
+  rm -rf $TARGET
+  and cp -a $EDITIONFOLDER $TARGET
+  and for f in arangodb3.init arangodb3.service compat config templates preinst prerm postinst postrm rules
+    cp $SOURCE/common/$f $TARGET/$f
+    sed -e "s/@EDITION@/$EDITION/g" -i $TARGET/$f
+  end
+  and echo -n "$EDITION " > $ch
+  and cp -a $SOURCE/common/source $TARGET
   and echo "($v) UNRELEASED; urgency=medium" >> $ch
   and echo >> $ch
   and echo "  * New version." >> $ch
@@ -385,11 +397,12 @@ function buildEnterprisePackage
  
   # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
   # ARANGODB_FULL_VERSION, for example by running findArangoDBVersion.
-  maintainerOff
-  releaseMode
-  enterprise
-  set -xg NOSTRIP dont
-  buildStaticArangoDB -DTARGET_ARCHITECTURE=nehalem
+  asanOff
+  and maintainerOff
+  and releaseMode
+  and enterprise
+  and set -xg NOSTRIP dont
+  and buildStaticArangoDB -DTARGET_ARCHITECTURE=nehalem
   and downloadStarter
   and downloadSyncer
   and buildPackage
@@ -403,12 +416,12 @@ end
 function buildCommunityPackage
   # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
   # ARANGODB_FULL_VERSION, for example by running findArangoDBVersion.
-  maintainerOff
-  releaseMode
-  community
-  set -xg NOSTRIP dont
-
-  buildStaticArangoDB -DTARGET_ARCHITECTURE=nehalem
+  asanOff
+  and maintainerOff
+  and releaseMode
+  and community
+  and set -xg NOSTRIP dont
+  and buildStaticArangoDB -DTARGET_ARCHITECTURE=nehalem
   and downloadStarter
   and buildPackage
 
@@ -457,14 +470,14 @@ function transformDebianSniplet
       -e "s|@TARGZ_SIZE_SERVER@|$TARGZ_SIZE_SERVER|" \
       -e "s|@DOWNLOAD_LINK@|$DOWNLOAD_LINK|" \
       -e "s|@DOWNLOAD_EDITION@|$DOWNLOAD_EDITION|" \
-      < sniplets/$ARANGODB_SNIPLETS/debian.html.in > $n
+      < snippets/$ARANGODB_SNIPPETS/debian.html.in > $n
 
   echo "Debian Sniplet: $n"
 end
 
 function buildDebianSniplet
   # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
-  # ARANGODB_SNIPLETS, for example by running findArangoDBVersion.
+  # ARANGODB_SNIPPETS, for example by running findArangoDBVersion.
   if test "$ENTERPRISEEDITION" = "On"
     if test -z "$ENTERPRISE_DOWNLOAD_LINK"
       echo "you need to set the variable ENTERPRISE_DOWNLOAD_LINK"
@@ -523,14 +536,14 @@ function transformRPMSniplet
       -e "s|@TARGZ_SIZE_SERVER@|$TARGZ_SIZE_SERVER|" \
       -e "s|@DOWNLOAD_LINK@|$DOWNLOAD_LINK|" \
       -e "s|@DOWNLOAD_EDITION@|$DOWNLOAD_EDITION|" \
-      < sniplets/$ARANGODB_SNIPLETS/rpm.html.in > $n
+      < snippets/$ARANGODB_SNIPPETS/rpm.html.in > $n
 
   echo "RPM Sniplet: $n"
 end
 
 function buildRPMSniplet
   # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
-  # ARANGODB_SNIPLETS, for example by running findArangoDBVersion.
+  # ARANGODB_SNIPPETS, for example by running findArangoDBVersion.
   if test "$ENTERPRISEEDITION" = "On"
     if test -z "$ENTERPRISE_DOWNLOAD_LINK"
       echo "you need to set the variable ENTERPRISE_DOWNLOAD_LINK"
@@ -571,14 +584,14 @@ function transformTarGzSniplet
       -e "s|@TARGZ_SIZE_SERVER@|$TARGZ_SIZE_SERVER|" \
       -e "s|@DOWNLOAD_LINK@|$DOWNLOAD_LINK|" \
       -e "s|@DOWNLOAD_EDITION@|$DOWNLOAD_EDITION|" \
-      < sniplets/$ARANGODB_SNIPLETS/linux.html.in > $n
+      < snippets/$ARANGODB_SNIPPETS/linux.html.in > $n
 
   echo "TarGZ Sniplet: $n"
 end
 
 function buildTarGzSniplet
   # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
-  # ARANGODB_SNIPLETS, for example by running findArangoDBVersion.
+  # ARANGODB_SNIPPETS, for example by running findArangoDBVersion.
   if test "$ENTERPRISEEDITION" = "On"
     if test -z "$ENTERPRISE_DOWNLOAD_LINK"
       echo "you need to set the variable ENTERPRISE_DOWNLOAD_LINK"
@@ -598,7 +611,7 @@ function buildTarGzSniplet
   end
 end
 
-function makeSniplets
+function makeSnippets
   if test -z "$ENTERPRISE_DOWNLOAD_LINK"
     echo "you need to set the variable ENTERPRISE_DOWNLOAD_LINK"
     return 1

@@ -202,7 +202,7 @@ function launchClusterTests
     case  6 ; test3 resilience failover      resilience-synchronous-repl-cluster.js
     case  7 ; test3 resilience failover-view resilience-synchronous-repl-cluster-with-arangosearch-view-cluster.js
     case  8 ; test3 resilience move          moving-shards-cluster.js
-    case  9 ; test3 resilience move-view     moving-shards-with-arangosearch-view-cluster-nondeterministic.js
+    case  9 ; test3 resilience move-view     moving-shards-with-arangosearch-view-cluster.js
     case 10 ; test3 resilience repair        repair-distribute-shards-like-spec.js
     case 11 ; test3 resilience sharddist     shard-distribution-spec.js
     case 12 ; test1 server_http ""
