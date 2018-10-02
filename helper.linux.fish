@@ -470,14 +470,14 @@ function transformDebianSniplet
       -e "s|@TARGZ_SIZE_SERVER@|$TARGZ_SIZE_SERVER|" \
       -e "s|@DOWNLOAD_LINK@|$DOWNLOAD_LINK|" \
       -e "s|@DOWNLOAD_EDITION@|$DOWNLOAD_EDITION|" \
-      < sniplets/$ARANGODB_SNIPLETS/debian.html.in > $n
+      < snippets/$ARANGODB_SNIPPETS/debian.html.in > $n
 
   echo "Debian Sniplet: $n"
 end
 
 function buildDebianSniplet
   # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
-  # ARANGODB_SNIPLETS, for example by running findArangoDBVersion.
+  # ARANGODB_SNIPPETS, for example by running findArangoDBVersion.
   if test "$ENTERPRISEEDITION" = "On"
     if test -z "$ENTERPRISE_DOWNLOAD_LINK"
       echo "you need to set the variable ENTERPRISE_DOWNLOAD_LINK"
@@ -536,14 +536,14 @@ function transformRPMSniplet
       -e "s|@TARGZ_SIZE_SERVER@|$TARGZ_SIZE_SERVER|" \
       -e "s|@DOWNLOAD_LINK@|$DOWNLOAD_LINK|" \
       -e "s|@DOWNLOAD_EDITION@|$DOWNLOAD_EDITION|" \
-      < sniplets/$ARANGODB_SNIPLETS/rpm.html.in > $n
+      < snippets/$ARANGODB_SNIPPETS/rpm.html.in > $n
 
   echo "RPM Sniplet: $n"
 end
 
 function buildRPMSniplet
   # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
-  # ARANGODB_SNIPLETS, for example by running findArangoDBVersion.
+  # ARANGODB_SNIPPETS, for example by running findArangoDBVersion.
   if test "$ENTERPRISEEDITION" = "On"
     if test -z "$ENTERPRISE_DOWNLOAD_LINK"
       echo "you need to set the variable ENTERPRISE_DOWNLOAD_LINK"
@@ -584,14 +584,14 @@ function transformTarGzSniplet
       -e "s|@TARGZ_SIZE_SERVER@|$TARGZ_SIZE_SERVER|" \
       -e "s|@DOWNLOAD_LINK@|$DOWNLOAD_LINK|" \
       -e "s|@DOWNLOAD_EDITION@|$DOWNLOAD_EDITION|" \
-      < sniplets/$ARANGODB_SNIPLETS/linux.html.in > $n
+      < snippets/$ARANGODB_SNIPPETS/linux.html.in > $n
 
   echo "TarGZ Sniplet: $n"
 end
 
 function buildTarGzSniplet
   # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
-  # ARANGODB_SNIPLETS, for example by running findArangoDBVersion.
+  # ARANGODB_SNIPPETS, for example by running findArangoDBVersion.
   if test "$ENTERPRISEEDITION" = "On"
     if test -z "$ENTERPRISE_DOWNLOAD_LINK"
       echo "you need to set the variable ENTERPRISE_DOWNLOAD_LINK"
@@ -611,7 +611,7 @@ function buildTarGzSniplet
   end
 end
 
-function makeSniplets
+function makeSnippets
   if test -z "$ENTERPRISE_DOWNLOAD_LINK"
     echo "you need to set the variable ENTERPRISE_DOWNLOAD_LINK"
     return 1
