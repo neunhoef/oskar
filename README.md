@@ -71,7 +71,7 @@ You can then do
 
 for a static build or
 
-	buildArangoDB
+    buildArangoDB
 	
 for a non-static build.
 
