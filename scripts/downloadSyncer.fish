@@ -1,7 +1,7 @@
 #!/usr/bin/env fish
 
-# On Linux: downloadSyncer $INNERWORKDIR/ArangoDB/build/install/usr/bin
-# On Mac: downloadSyncer $INNERWORKDIR/third_party/bin
+# On Linux: downloadSyncer $INNERWORKDIR/ArangoDB/build/install/usr/sbin
+# On Mac: downloadSyncer $INNERWORKDIR/third_party/sbin
 
 echo Hello, syncer here, arguments are: $argv
 

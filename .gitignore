@@ -3,3 +3,4 @@ oskar_name
 repo_complete
 repo_incoming
 *~
+containers/arangodb.docker/install.tar.gz
