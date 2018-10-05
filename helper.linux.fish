@@ -1,5 +1,6 @@
 set -gx INNERWORKDIR /work
 set -gx THIRDPARTY_BIN $INNERWORKDIR/ArangoDB/build/install/usr/bin
+set -gx THIRDPARTY_SBIN $INNERWORKDIR/ArangoDB/build/install/usr/sbin
 set -gx SCRIPTSDIR /scripts
 set -gx PLATFORM linux
 set -gx ARCH (uname -m)
@@ -357,7 +358,9 @@ function downloadStarter
 end
 
 function downloadSyncer
-  runInContainer -e DOWNLOAD_SYNC_USER=$DOWNLOAD_SYNC_USER $UBUNTUBUILDIMAGE $SCRIPTSDIR/downloadSyncer.fish $THIRDPARTY_BIN $argv
+  rm -f $WORKDIR/work/ArangoDB/build/install/usr/sbin/arangosync $WORKDIR/work/ArangoDB/build/install/usr/bin/arangosync
+  runInContainer -e DOWNLOAD_SYNC_USER=$DOWNLOAD_SYNC_USER $UBUNTUBUILDIMAGE $SCRIPTSDIR/downloadSyncer.fish $THIRDPARTY_SBIN $argv
+  ln -s ../sbin/arangosync $WORKDIR/work/ArangoDB/build/install/usr/bin/arangosync
 end
 
 function makeDockerImage

@@ -4,6 +4,7 @@ set -gx UID (id -u)
 set -gx GID (id -g)
 set -gx INNERWORKDIR $WORKDIR/work
 set -gx THIRDPARTY_BIN $INNERWORKDIR/third_party/bin
+set -gx THIRDPARTY_SBIN $INNERWORKDIR/third_party/sbin
 set -gx CCACHEBINPATH /usr/local/opt/ccache/libexec
 set -gx CMAKE_INSTALL_PREFIX /opt/arangodb
 
@@ -121,7 +122,7 @@ function downloadStarter
 end
 
 function downloadSyncer
-  runLocal $SCRIPTSDIR/downloadSyncer.fish $THIRDPARTY_BIN $argv
+  runLocal $SCRIPTSDIR/downloadSyncer.fish $THIRDPARTY_SBIN $argv
 end
 
 function buildPackage
@@ -146,6 +147,7 @@ end
 
 function cleanupThirdParty
   rm -rf $THIRDPARTY_BIN
+  rm -rf $THIRDPARTY_SBIN
 end
 
 function buildEnterprisePackage
@@ -168,7 +170,7 @@ function buildEnterprisePackage
       -DTARGET_ARCHITECTURE=nehalem \
       -DPACKAGING=Bundle \
       -DPACKAGE_TARGET_DIR=$INNERWORKDIR \
-      -DTHIRDPARTY_SBIN=$THIRDPARTY_BIN/arangosync \
+      -DTHIRDPARTY_SBIN=$THIRDPARTY_SBIN/arangosync \
       -DTHIRDPARTY_BIN=$THIRDPARTY_BIN/arangodb \
       -DCMAKE_INSTALL_PREFIX=$CMAKE_INSTALL_PREFIX
   and buildPackage
