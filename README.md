@@ -7,8 +7,19 @@ the build and test commands without `Docker`.
 
 ## Initial setup (Linux and MacOSX)
 
+Place a pair of SSH keys in `~/.ssh/`
+- private key: `id_rsa`
+- public key: `id_rsa.pub`
+
+Set appropriate permissions for the key files:
+- `sudo chmod 600 ~/.ssh/id_rsa`
+- `sudo chmod 600 ~/.ssh/id_rsa.pub`
+
+Add the identity using the private key file:
+- `ssh-add ~/.ssh/id_rsa`
+
 Once you have cloned this repo and have set up `ssh-agent` with a
-private key that is registered with `github`, the initial setup is as
+private key that is registered on *GitHub*, the initial setup is as
 follows (in `fish`, so start a `fish` shell first if it is not your
 login shell):
 
