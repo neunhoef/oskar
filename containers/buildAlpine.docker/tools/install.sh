@@ -28,7 +28,7 @@ for v in 7.3.0 8.2.0; do
             ln -s /gcc/$v/bin/$file $file-$v
 
 	    cd /usr/lib/ccache/bin
-	    ln -s /usr/bin/$file-$v $file-$v
+	    ln -s /usr/bin/ccache $file-$v
 	)
     done
 
