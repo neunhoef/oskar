@@ -24,7 +24,7 @@ set -x CCACHE_DIR $INNERWORKDIR/.ccache.alpine
 if test "$CCACHEBINPATH" = ""
   set -xg CCACHEBINPATH /usr/lib/ccache/bin
 end
-ccache -M 30G
+ccache -M 50G
 cd $INNERWORKDIR/ArangoDB
 
 if test -z "$NO_RM_BUILD"
