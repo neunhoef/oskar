@@ -83,6 +83,7 @@ function runInContainer
              -v $SSH_AUTH_SOCK:/ssh-agent \
              -e ASAN="$ASAN" \
              -e BUILDMODE="$BUILDMODE" \
+	     -e COMPILER_VERSION="$COMPILER_VERSION" \
              -e CCACHEBINPATH="$CCACHEBINPATH" \
              -e ENTERPRISEEDITION="$ENTERPRISEEDITION" \
              -e GID=(id -g) \

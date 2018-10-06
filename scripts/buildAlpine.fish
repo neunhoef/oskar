@@ -4,6 +4,20 @@ if test "$PARALLELISM" = ""
 end
 echo "Using parallelism $PARALLELISM"
 
+if test "$COMPILER_VERSION" = ""
+    set -xg COMPILER_VERSION 6.4.0
+end
+echo "Using compiler version $COMPILER_VERSION"
+
+if test "$COMPILER_VERSION" = "6.4.0"
+    set -xg CC_NAME gcc
+    set -xg CXX_NAME g++
+else
+    set -xg CC_NAME gcc-$COMPILER_VERSION
+    set -xg CXX_NAME g++-$COMPILER_VERSION
+end
+
+
 cd $INNERWORKDIR
 mkdir -p .ccache.alpine
 set -x CCACHE_DIR $INNERWORKDIR/.ccache.alpine
@@ -28,9 +42,9 @@ ccache --zero-stats
 
 set -g FULLARGS $argv \
  -DCMAKE_BUILD_TYPE=$BUILDMODE \
- -DCMAKE_CXX_COMPILER=$CCACHEBINPATH/g++ \
+ -DCMAKE_CXX_COMPILER=$CCACHEBINPATH/$CXX_NAME \
  -DCMAKE_CXX_FLAGS=-fno-stack-protector \
- -DCMAKE_C_COMPILER=$CCACHEBINPATH/gcc \
+ -DCMAKE_C_COMPILER=$CCACHEBINPATH/$CC_NAME \
  -DCMAKE_C_FLAGS=-fno-stack-protector \
  -DCMAKE_EXE_LINKER_FLAGS="-Wl,--build-id -no-pie"\
  -DCMAKE_INSTALL_PREFIX=/ \
