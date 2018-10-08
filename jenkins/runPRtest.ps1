@@ -35,6 +35,7 @@ clearResults
 . $env:STORAGE_ENGINE
 . $env:TEST_SUITE
 
+skipPackagingOn
 switchBranches $env:ARANGODB_BRANCH $env:ENTERPRISE_BRANCH
 If ($global:ok) 
 {
