@@ -28,32 +28,40 @@ function unlockDirectory
   end
 end
 
-function showConfig
-  echo "#################################"
-  echo "Build Configuration"
-  echo "- Enterprise     : $ENTERPRISEEDITION"
-  echo "- Buildmode      : $BUILDMODE"
-  echo "- Maintainer     : $MAINTAINER"
-  echo "- ASAN:          : $ASAN"
+if test -f config/environment.fish
+  source config/environment.fish
+end
 
-  if test -z "$NO_RM_BUILD"
-    echo "- Clear build    : On"
+function showConfig
+  set -l fmt2 '%-20s: %-20s\n'
+  set -l fmt3 '%-20s: %-20s %s\n'
+
+  echo '------------------------------------------------------------------------------'
+  echo 'Build Configuration'
+  printf $fmt3 'ASAN'       $ASAN                '(asanOn/Off)'
+  printf $fmt3 'Buildmode'  $BUILDMODE           '(debugMode/releaseMode)'
+  printf $fmt3 'Compiler'   "$COMPILER_VERSION"  '(compiler x.y.z)'
+  printf $fmt3 'Enterprise' $ENTERPRISEEDITION   '(community/enterprise)'
+  printf $fmt3 'Maintainer' $MAINTAINER          '(maintainerOn/Off)'
+
+  if test -z '$NO_RM_BUILD'
+    printf $fmt3 'Clear build' On '(keepBuild/clearBuild)'
   else
-    echo "- Clear build    : Off"
+    printf $fmt3 'Clear build' Off '(keepBuild/clearBuild)'
   end
   
   echo
-  echo "Test Configuration:"
-  echo "- Storage engine : $STORAGEENGINE"
-  echo "- Test suite     : $TESTSUITE"
+  echo 'Test Configuration:'
+  printf $fmt3 'Storage engine' $STORAGEENGINE '(mmfiles/rocksdb)'
+  printf $fmt3 'Test suite'     $TESTSUITE     '(single/cluster/resilience)'
   echo
-  echo "Internal Configuration:"
-  echo "- Workdir        : $WORKDIR"
-  echo "- Inner workdir  : $INNERWORKDIR"
-  echo "- Parallelism    : $PARALLELISM"
-  echo "- Verbose Build  : $VERBOSEBUILD"
-  echo "- Verbose Oskar  : $VERBOSEOSKAR"
-  echo "#################################"
+  echo 'Internal Configuration:'
+  printf $fmt3 'Inner workdir' $INNERWORKDIR
+  printf $fmt3 'Parallelism'   $PARALLELISM  '(parallelism nnn)'
+  printf $fmt3 'Verbose Build' $VERBOSEBUILD '(verboseBuild/silentBuild)'
+  printf $fmt3 'Verbose Oskar' $VERBOSEOSKAR '(verbose/slient)'
+  printf $fmt2 'Workdir'       $WORKDIR
+  echo '------------------------------------------------------------------------------'
   echo
 end
 
@@ -105,7 +113,7 @@ function clearBuild ; set -gx NO_RM_BUILD ; end
 
 # TODO FIXME
 # main code between function definitions
-# WORDIR IS pdw -  at least check if ./scripts and something
+# WORDIR IS pwd -  at least check if ./scripts and something
 # else is available before proceeding
 set -gx WORKDIR (pwd)
 if test ! -d work ; mkdir work ; end

@@ -9,6 +9,24 @@ set -gx UBUNTUPACKAGINGIMAGE arangodb/ubuntupackagearangodb-$ARCH
 set -gx ALPINEBUILDIMAGE arangodb/alpinebuildarangodb-$ARCH
 set -gx CENTOSPACKAGINGIMAGE arangodb/centospackagearangodb-$ARCH
 
+function compiler
+  set -l version $argv[1]
+
+  switch $version
+    case 6.4.0
+      set -gx COMPILER_VERSION $version
+
+    case 7.3.0
+      set -gx COMPILER_VERSION $version
+
+    case 8.2.0
+      set -gx COMPILER_VERSION $version
+
+    case '*'
+      echo "unknown compiler version $version"
+  end
+end
+
 function buildUbuntuBuildImage
   cd $WORKDIR
   cp -a scripts/{makeArangoDB,buildArangoDB,checkoutArangoDB,checkoutEnterprise,clearWorkDir,downloadStarter,downloadSyncer,runTests,runFullTests,switchBranches,recursiveChown}.fish containers/buildUbuntu.docker/scripts
@@ -83,6 +101,7 @@ function runInContainer
              -v $SSH_AUTH_SOCK:/ssh-agent \
              -e ASAN="$ASAN" \
              -e BUILDMODE="$BUILDMODE" \
+	     -e COMPILER_VERSION="$COMPILER_VERSION" \
              -e CCACHEBINPATH="$CCACHEBINPATH" \
              -e ENTERPRISEEDITION="$ENTERPRISEEDITION" \
              -e GID=(id -g) \

@@ -32,6 +32,16 @@ and clone the ArangoDB source (optionally including the enterprise
 code) into a subdirectory `work` in the current directory. It will
 also show its current configuration.
 
+### Configurations and Secrets
+
+Oskar uses some environments variable, see the chapter *Environment*.
+You can create a file `config/environment.fish` to preset these variables.
+
+For example
+
+    set -xg COMMUNITY_DOWNLOAD_LINK "https://community.arangodb.com"
+    set -xg ENTERPRISE_DOWNLOAD_LINK "https://enterprise.arangodb.com"
+
 ## Initial setup (Windows)
 
 Once you have cloned this repo and have set up
@@ -155,6 +165,8 @@ After that, essentially all resources used by oskar are freed again.
 
 # Reference Manual
 
+## Environment Variables
+
 ## Select Branches
 
 ### switchBranches
@@ -205,8 +217,8 @@ creates all release packages.
 
 You need to set the following environment variables:
 
-    set -xg COMMUNITY_DOWNLOAD_LINK "https://download.arangodb.com"
-    set -xg ENTERPRISE_DOWNLOAD_LINK "https://download.arangodb.com"
+    set -xg COMMUNITY_DOWNLOAD_LINK "https://community.arangodb.com"
+    set -xg ENTERPRISE_DOWNLOAD_LINK "https://enterprise.arangodb.com"
 
 The prefix for the link of the community and enterprise edition that
 is used to construct the download link in the snippets.
