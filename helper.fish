@@ -111,10 +111,6 @@ else ; set -gx VERBOSEBUILD $VERBOSEBUILD ; end
 function keepBuild ; set -gx NO_RM_BUILD 1 ; end
 function clearBuild ; set -gx NO_RM_BUILD ; end
 
-function compiler
-  set -gx COMPILER_VERSION $argv[1]
-end
-
 # TODO FIXME
 # main code between function definitions
 # WORDIR IS pwd -  at least check if ./scripts and something
