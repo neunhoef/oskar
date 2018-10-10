@@ -356,7 +356,7 @@ function oskarLimited
 end
 
 function pushOskar
-  push $WORKDIR
+  pushd $WORKDIR
   and source helper.fish
   and git push
   and buildUbuntuBuildImage
@@ -371,7 +371,7 @@ function pushOskar
 end
 
 function updateOskar
-  push $WORKDIR
+  pushd $WORKDIR
   and git checkout -- .
   and git pull
   and source helper.fish
@@ -403,7 +403,7 @@ function makeDockerImage
   end
   set -l imagename $argv[1]
 
-  push $WORKDIR/work/ArangoDB/build/install
+  pushd $WORKDIR/work/ArangoDB/build/install
   and tar czvf $WORKDIR/containers/arangodb.docker/install.tar.gz *
   if test $status -ne 0
     echo Could not create install tarball!
