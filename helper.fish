@@ -3,20 +3,20 @@ function lockDirectory
   set -l pid (echo %self)
   if test ! -f LOCK.$pid
     echo $pid > LOCK.$pid
-    while true
+    and while true
       # Remove a stale lock if it is found:
       if set -l pidfound (cat LOCK ^/dev/null)
         if not ps ax -o pid | grep '^ *'"$pidfound"'$' > /dev/null
           rm LOCK LOCK.$pidfound
-          echo Have removed stale lock.
+          and echo Have removed stale lock.
         end
       end
-      if ln LOCK.$pid LOCK ^/dev/null
+      and if ln LOCK.$pid LOCK ^/dev/null
         break
       end
-      echo -n Directory is locked, waiting...
-      date
-      sleep 15
+      and echo -n Directory is locked, waiting...
+      and date
+      and sleep 15
     end
   end
 end
@@ -111,11 +111,11 @@ else ; set -gx VERBOSEBUILD $VERBOSEBUILD ; end
 function keepBuild ; set -gx NO_RM_BUILD 1 ; end
 function clearBuild ; set -gx NO_RM_BUILD ; end
 
-# TODO FIXME
 # main code between function definitions
 # WORDIR IS pwd -  at least check if ./scripts and something
 # else is available before proceeding
 set -gx WORKDIR (pwd)
+if test ! -d scripts ; echo "cannot find scripts directory" ; exit 1 ; end
 if test ! -d work ; mkdir work ; end
 
 function checkoutIfNeeded
@@ -129,9 +129,10 @@ function checkoutIfNeeded
 end
 
 function clearResults
-  cd $WORKDIR/work
-  for f in testreport* ; rm -f $f ; end
-  rm -f test.log buildArangoDB.log cmakeArangoDB.log
+  pushd $WORKDIR/work
+  and for f in testreport* ; rm -f $f ; end
+  and rm -f test.log buildArangoDB.log cmakeArangoDB.log
+  and popd
 end
 
 function oskar1
@@ -156,47 +157,66 @@ function oskar1Limited
 end
 
 function oskar2
+  set -l testsuite $TESTSUITE
+
   showConfig
   set -x NOSTRIP 1
   buildStaticArangoDB -DUSE_FAILURE_TESTS=On -DDEBUG_SYNC_REPLICATION=On ; or return $status
+
   cluster ; oskar ; or return $status
   single ; oskar ; or return $status
-  cluster
+
+  set -xg TESTSUITE $testsuite
 end
 
 function oskar4
+  set -l testsuite $TESTSUITE ; set -l storageengine $STORAGEENGINE
+
   showConfig
   set -x NOSTRIP 1
   buildStaticArangoDB -DUSE_FAILURE_TESTS=On -DDEBUG_SYNC_REPLICATION=On ; or return $status
+
   rocksdb
   cluster ; oskar ; or return $status
   single ; oskar ; or return $status
+
   mmfiles
   cluster ; oskar ; or return $status
   single ; oskar ; or return $status
   cluster ; rocksdb
+
+  set -xg TESTSUITE $testsuite ; set -xg STORAGEENGINE $storageengine
 end
 
 function oskar8
+  set -l testsuite $TESTSUITE ; set -l storageengine $STORAGEENGINE ; set -l enterpriseedition $ENTERPRISEEDITION
+
   showConfig
-  enterprise
   set -x NOSTRIP 1
+
+  enterprise
   buildStaticArangoDB -DUSE_FAILURE_TESTS=On -DDEBUG_SYNC_REPLICATION=On ; or return $status
+
   rocksdb
   cluster ; oskar ; or return $status
   single ; oskar ; or return $status
+
   mmfiles
   cluster ; oskar ; or return $status
   single ; oskar ; or return $status
+
   community
   buildStaticArangoDB -DUSE_FAILURE_TESTS=On -DDEBUG_SYNC_REPLICATION=On ; or return $status
+
   rocksdb
   cluster ; oskar ; or return $status
   single ; oskar ; or return $status
+
   mmfiles
   cluster ; oskar ; or return $status
   single ; oskar ; or return $status
-  cluster ; rocksdb
+
+  set -xg TESTSUITE $testsuite ; set -xg STORAGEENGINE $storageengine ; set -l ENTERPRISEEDITION $enterpriseedition
 end
 
 function showLog
@@ -373,8 +393,7 @@ function buildTarGzPackageHelper
     set name arangodb3
   end
 
-  cd $WORKDIR
-  and cd $WORKDIR/work/ArangoDB/build/install
+  pushd $WORKDIR/work/ArangoDB/build/install
   and rm -rf bin
   and cp -a $WORKDIR/binForTarGz bin
   and rm -f "bin/*~" "bin/*.bak"
@@ -382,13 +401,13 @@ function buildTarGzPackageHelper
   and strip usr/sbin/arangod usr/bin/{arangobench,arangodump,arangoexport,arangoimp,arangorestore,arangosh,arangovpack}
   and cd $WORKDIR/work/ArangoDB/build
   and mv install "$name-$v"
-  or begin ; cd $WORKDIR ; return 1 ; end
+  or begin ; popd ; return 1 ; end
 
   tar -c -z -v -f "$WORKDIR/work/$name-$os-$v.tar.gz" --exclude "etc" --exclude "var" "$name-$v"
-  set s $status
-  mv "$name-$v" install
-  cd $WORKDIR
-  return $s 
+  and set s $status
+  and mv "$name-$v" install
+  and pushd
+  and return $s 
 end
 
 function moveResultsToWorkspace

@@ -28,58 +28,70 @@ function compiler
 end
 
 function buildUbuntuBuildImage
-  cd $WORKDIR
-  cp -a scripts/{makeArangoDB,buildArangoDB,checkoutArangoDB,checkoutEnterprise,clearWorkDir,downloadStarter,downloadSyncer,runTests,runFullTests,switchBranches,recursiveChown}.fish containers/buildUbuntu.docker/scripts
-  cd $WORKDIR/containers/buildUbuntu.docker
-  docker build -t $UBUNTUBUILDIMAGE .
-  rm -f $WORKDIR/containers/buildUbuntu.docker/scripts/*.fish
-  cd $WORKDIR
+  pushd $WORKDIR
+  and cp -a scripts/{makeArangoDB,buildArangoDB,checkoutArangoDB,checkoutEnterprise,clearWorkDir,downloadStarter,downloadSyncer,runTests,runFullTests,switchBranches,recursiveChown}.fish containers/buildUbuntu.docker/scripts
+  and cd $WORKDIR/containers/buildUbuntu.docker
+  and docker build -t $UBUNTUBUILDIMAGE .
+  and rm -f $WORKDIR/containers/buildUbuntu.docker/scripts/*.fish
+  and popd
 end
+
 function pushUbuntuBuildImage ; docker push $UBUNTUBUILDIMAGE ; end
+
 function pullUbuntuBuildImage ; docker pull $UBUNTUBUILDIMAGE ; end
 
 function buildUbuntuPackagingImage
-  cd $WORKDIR
-  cp -a scripts/buildDebianPackage.fish containers/buildUbuntuPackaging.docker/scripts
-  cd $WORKDIR/containers/buildUbuntuPackaging.docker
-  docker build -t $UBUNTUPACKAGINGIMAGE .
-  rm -f $WORKDIR/containers/buildUbuntuPackaging.docker/scripts/*.fish
-  cd $WORKDIR
+  pushd $WORKDIR
+  and cp -a scripts/buildDebianPackage.fish containers/buildUbuntuPackaging.docker/scripts
+  and cd $WORKDIR/containers/buildUbuntuPackaging.docker
+  and docker build -t $UBUNTUPACKAGINGIMAGE .
+  and rm -f $WORKDIR/containers/buildUbuntuPackaging.docker/scripts/*.fish
+  and popd
 end
+
 function pushUbuntuPackagingImage ; docker push $UBUNTUPACKAGINGIMAGE ; end
+
 function pullUbuntuPackagingImage ; docker pull $UBUNTUPACKAGINGIMAGE ; end
 
 function buildAlpineBuildImage
-  cd $WORKDIR
-  cp -a scripts/makeAlpine.fish scripts/buildAlpine.fish containers/buildAlpine.docker/scripts
-  cd $WORKDIR/containers/buildAlpine.docker
-  docker build -t $ALPINEBUILDIMAGE .
-  rm -f $WORKDIR/containers/buildAlpine.docker/scripts/*.fish
-  cd $WORKDIR
+  pushd $WORKDIR
+  and cp -a scripts/makeAlpine.fish scripts/buildAlpine.fish containers/buildAlpine.docker/scripts
+  and cd $WORKDIR/containers/buildAlpine.docker
+  and docker build -t $ALPINEBUILDIMAGE .
+  and rm -f $WORKDIR/containers/buildAlpine.docker/scripts/*.fish
+  and popd
 end
+
 function pushAlpineBuildImage ; docker push $ALPINEBUILDIMAGE ; end
+
 function pullAlpineBuildImage ; docker pull $ALPINEBUILDIMAGE ; end
 
 function buildCentosPackagingImage
-  cd $WORKDIR
-  cp -a scripts/buildRPMPackage.fish containers/buildCentos7Packaging.docker/scripts
-  cd $WORKDIR/containers/buildCentos7Packaging.docker
-  docker build -t $CENTOSPACKAGINGIMAGE .
-  rm -f $WORKDIR/containers/buildCentos7Packaging.docker/scripts/*.fish
-  cd $WORKDIR
+  pushd $WORKDIR
+  and cp -a scripts/buildRPMPackage.fish containers/buildCentos7Packaging.docker/scripts
+  and cd $WORKDIR/containers/buildCentos7Packaging.docker
+  and docker build -t $CENTOSPACKAGINGIMAGE .
+  and rm -f $WORKDIR/containers/buildCentos7Packaging.docker/scripts/*.fish
+  and popd
 end
+
 function pushCentosPackagingImage ; docker push $CENTOSPACKAGINGIMAGE ; end
+
 function pullCentosPackagingImage ; docker pull $CENTOSPACKAGINGIMAGE ; end
 
 function remakeImages
-  buildUbuntuBuildImage
-  pushUbuntuBuildImage
-  buildAlpineBuildImage
-  pushAlpineBuildImage
-  buildUbuntuPackagingImage
-  pushUbuntuPackagingImage
-  buildCentosPackagingImage
-  pushCentosPackagingImage
+  set -l s 0
+
+  buildUbuntuBuildImage ; or set -l s 1
+  pushUbuntuBuildImage ; or set -l s 1
+  buildAlpineBuildImage ; or set -l s 1
+  pushAlpineBuildImage ; or set -l s 1
+  buildUbuntuPackagingImage ; or set -l s 1
+  pushUbuntuPackagingImage ; or set -l s 1
+  buildCentosPackagingImage ; or set -l s 1
+  pushCentosPackagingImage ; or set -l s 1
+
+  return $s
 end
 
 function runInContainer
@@ -268,13 +280,11 @@ function transformSpec
     echo transformSpec: wrong number of arguments
     return 1
   end
-  # FIXME do not rely on relative paths
-  cp "$argv[1]" "$argv[2]"
-  sed -i -e "s/@PACKAGE_VERSION@/$ARANGODB_RPM_UPSTREAM/" "$argv[2]"
-  sed -i -e "s/@PACKAGE_REVISION@/$ARANGODB_RPM_REVISION/" "$argv[2]"
-
-  if test "(" "$ARANGODB_VERSION_MAJOR" -eq "3" ")" \
-       -a "(" "$ARANGODB_VERSION_MINOR" -le "3" ")"
+  and cp "$argv[1]" "$argv[2]"
+  and sed -i -e "s/@PACKAGE_VERSION@/$ARANGODB_RPM_UPSTREAM/" "$argv[2]"
+  and sed -i -e "s/@PACKAGE_REVISION@/$ARANGODB_RPM_REVISION/" "$argv[2]"
+  and if test "(" "$ARANGODB_VERSION_MAJOR" -eq "3" ")" \
+           -a "(" "$ARANGODB_VERSION_MINOR" -le "3" ")"
     sed -i -e "s~@JS_DIR@~~" "$argv[2]"
   else
     sed -i -e "s~@JS_DIR@~/$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_PATCH~" "$argv[2]"
@@ -282,19 +292,17 @@ function transformSpec
 end
 
 function buildRPMPackage
-  # FIXME do not rely on relative paths
-
   # This assumes that a static build has already happened
   # Must have set ARANGODB_RPM_UPSTREAM and ARANGODB_RPM_REVISION,
   # for example by running findArangoDBVersion.
   if test "$ENTERPRISEEDITION" = "On"
-    transformSpec rpm/arangodb3e.spec.in $WORKDIR/work/arangodb3.spec
+    transformSpec $WORK/rpm/arangodb3e.spec.in $WORKDIR/work/arangodb3.spec
   else
-    transformSpec rpm/arangodb3.spec.in $WORKDIR/work/arangodb3.spec
+    transformSpec $WORK/rpm/arangodb3.spec.in $WORKDIR/work/arangodb3.spec
   end
-  cp rpm/arangodb3.initd $WORKDIR/work
-  cp rpm/arangodb3.service $WORKDIR/work
-  cp rpm/arangodb3.logrotate $WORKDIR/work
+  and cp $WORK/rpm/arangodb3.initd $WORKDIR/work
+  and cp $WORK/rpm/arangodb3.service $WORKDIR/work
+  and cp $WORK/rpm/arangodb3.logrotate $WORKDIR/work
   and runInContainer $CENTOSPACKAGINGIMAGE $SCRIPTSDIR/buildRPMPackage.fish
 end
 
@@ -348,21 +356,22 @@ function oskarLimited
 end
 
 function pushOskar
-  cd $WORKDIR
-  source helper.fish
-  git push
-  buildUbuntuBuildImage
-  pushUbuntuBuildImage
-  buildAlpineBuildImage
-  pushAlpineBuildImage
-  buildUbuntuPackagingImage
-  pushUbuntuPackagingImage
-  buildCentosPackagingImage
-  pushCentosPackagingImage
+  push $WORKDIR
+  and source helper.fish
+  and git push
+  and buildUbuntuBuildImage
+  and pushUbuntuBuildImage
+  and buildAlpineBuildImage
+  and pushAlpineBuildImage
+  and buildUbuntuPackagingImage
+  and pushUbuntuPackagingImage
+  and buildCentosPackagingImage
+  and pushCentosPackagingImage
+  and popd
 end
 
 function updateOskar
-  cd $WORKDIR
+  push $WORKDIR
   and git checkout -- .
   and git pull
   and source helper.fish
@@ -370,6 +379,7 @@ function updateOskar
   and pullAlpineBuildImage
   and pullUbuntuPackagingImage
   and pullCentosPackagingImage
+  and popd
 end
 
 function downloadStarter
@@ -393,15 +403,17 @@ function makeDockerImage
   end
   set -l imagename $argv[1]
 
-  cd $WORKDIR/work/ArangoDB/build/install
+  push $WORKDIR/work/ArangoDB/build/install
   and tar czvf $WORKDIR/containers/arangodb.docker/install.tar.gz *
   if test $status -ne 0
     echo Could not create install tarball!
+    popd
     return 1
   end
 
-  cd $WORKDIR/containers/arangodb.docker
-  docker build -t $imagename .
+  pushd $WORKDIR/containers/arangodb.docker
+  and docker build -t $imagename .
+  and popd
 end
 
 function buildPackage
@@ -458,7 +470,8 @@ function buildCommunityPackage
 end
 
 function transformDebianSniplet
-  cd $WORKDIR
+  pushd $WORKDIR
+  
   set -l DEBIAN_NAME_CLIENT "$argv[1]-client_$argv[2]_amd64.deb"
   set -l DEBIAN_NAME_SERVER "$argv[1]_$argv[2]_amd64.deb"
   set -l DEBIAN_NAME_DEBUG_SYMBOLS "$argv[1]-dbg_$argv[2]_amd64.deb"
@@ -499,6 +512,7 @@ function transformDebianSniplet
       < snippets/$ARANGODB_SNIPPETS/debian.html.in > $n
 
   echo "Debian Sniplet: $n"
+  popd
 end
 
 function buildDebianSniplet
@@ -524,7 +538,8 @@ function buildDebianSniplet
 end
 
 function transformRPMSniplet
-  cd $WORKDIR
+  pushd $WORKDIR
+
   set -l RPM_NAME_CLIENT "$argv[1]-client-$argv[2].x86_64.rpm"
   set -l RPM_NAME_SERVER "$argv[1]-$argv[2].x86_64.rpm"
   set -l RPM_NAME_DEBUG_SYMBOLS "$argv[1]-debuginfo-$argv[2].x86_64.rpm"
@@ -565,6 +580,7 @@ function transformRPMSniplet
       < snippets/$ARANGODB_SNIPPETS/rpm.html.in > $n
 
   echo "RPM Sniplet: $n"
+  popd
 end
 
 function buildRPMSniplet
@@ -590,7 +606,8 @@ function buildRPMSniplet
 end
 
 function transformTarGzSniplet
-  cd $WORKDIR
+  pushd $WORKDIR
+
   set -l TARGZ_NAME_SERVER "$argv[1]-linux-$argv[2].tar.gz"
   set -l DOWNLOAD_LINK "$argv[3]"
 
@@ -613,6 +630,7 @@ function transformTarGzSniplet
       < snippets/$ARANGODB_SNIPPETS/linux.html.in > $n
 
   echo "TarGZ Sniplet: $n"
+  popd
 end
 
 function buildTarGzSniplet
