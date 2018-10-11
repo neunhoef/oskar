@@ -403,7 +403,7 @@ function buildTarGzPackageHelper
   and mv install "$name-$v"
   or begin ; popd ; return 1 ; end
 
-  tar -c -z -v -f "$WORKDIR/work/$name-$os-$v.tar.gz" --exclude "etc" --exclude "var" "$name-$v"
+  tar -c -z -f "$WORKDIR/work/$name-$os-$v.tar.gz" --exclude "etc" --exclude "var" "$name-$v"
   and set s $status
   and mv "$name-$v" install
   and pushd
