@@ -122,7 +122,9 @@ function downloadStarter
 end
 
 function downloadSyncer
+  rm -f $WORKDIR/work/ArangoDB/build/install/usr/sbin/arangosync $WORKDIR/work/ArangoDB/build/install/usr/bin/arangosync
   runLocal $SCRIPTSDIR/downloadSyncer.fish $THIRDPARTY_SBIN $argv
+  ln -s ../sbin/arangosync $WORKDIR/work/ArangoDB/build/install/usr/bin/arangosync
 end
 
 function buildPackage
