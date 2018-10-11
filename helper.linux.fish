@@ -109,7 +109,8 @@ function runInContainer
   # from a regular user. Therefore we have to do some Eiertanz to stop it
   # if we receive a TERM outside the container. Note that this does not
   # cover SIGINT, since this will directly abort the whole function.
-  set c (docker run -d -v $WORKDIR/work:$INNERWORKDIR \
+  set c (docker run -d \
+             -v $WORKDIR/work:$INNERWORKDIR \
              -v $SSH_AUTH_SOCK:/ssh-agent \
 	     -v "$WORKDIR/scripts":"/scripts" \
              -e ASAN="$ASAN" \
@@ -142,7 +143,10 @@ function runInContainer
   docker rm $c >/dev/null
   functions -e termhandler
   # Cleanup ownership:
-  docker run -v $WORKDIR/work:$INNERWORKDIR -e UID=(id -u) -e GID=(id -g) \
+  docker run \
+      -v $WORKDIR/work:$INNERWORKDIR \
+      -e UID=(id -u) \
+      -e GID=(id -g) \
       -e INNERWORKDIR=$INNERWORKDIR \
       $UBUNTUBUILDIMAGE $SCRIPTSDIR/recursiveChown.fish
 
@@ -236,6 +240,11 @@ function makeStaticArangoDB
 end
 
 function buildDebianPackage
+  if test ! -d $WORKDIR/work/ArangoDB/build
+    echo buildRPMPackage: build directory does not exist
+    return 1
+  end
+
   # This assumes that a static build has already happened
   # Must have set ARANGODB_DEBIAN_UPSTREAM and ARANGODB_DEBIAN_REVISION,
   # for example by running findArangoDBVersion.
@@ -293,6 +302,11 @@ function transformSpec
 end
 
 function buildRPMPackage
+  if test ! -d $WORKDIR/work/ArangoDB/build
+    echo buildRPMPackage: build directory does not exist
+    return 1
+  end
+
   # This assumes that a static build has already happened
   # Must have set ARANGODB_RPM_UPSTREAM and ARANGODB_RPM_REVISION,
   # for example by running findArangoDBVersion.
@@ -308,6 +322,11 @@ function buildRPMPackage
 end
 
 function buildTarGzPackage
+  if test ! -d $WORKDIR/work/ArangoDB/build
+    echo buildRPMPackage: build directory does not exist
+    return 1
+  end
+
   buildTarGzPackageHelper "linux"
 end
 
