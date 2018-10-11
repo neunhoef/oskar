@@ -420,7 +420,7 @@ function buildTarGzPackageHelper
   tar -c -z -f "$WORKDIR/work/$name-$os-$v.tar.gz" --exclude "etc" --exclude "var" "$name-$v"
   and set s $status
   and mv "$name-$v" install
-  and pushd
+  and popd
   and return $s 
 end
 
