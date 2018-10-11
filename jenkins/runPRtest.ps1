@@ -1,5 +1,6 @@
 Stop-Process -Name arango*
-. "$env:WORKSPACE\jenkins\prepareOskar.ps1"
+Copy-Item -Force "$env:WORKSPACE\jenkins\prepareOskar.ps1" $pwd
+. "$pwd\prepareOskar.ps1"
 
 . $env:EDITION
 . $env:STORAGE_ENGINE
