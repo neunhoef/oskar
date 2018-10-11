@@ -430,12 +430,15 @@ function makeDockerImage
   set -l imagename $argv[1]
 
   pushd $WORKDIR/work/ArangoDB/build/install
-  and tar czvf $WORKDIR/containers/arangodb.docker/install.tar.gz *
+  and rm -f usr/bin/arangosync
+  and begin test ! -f usr/sbin/arangosync ; or ln -s ../sbin/arangosync usr/bin/arangosync ; end
+  and tar czf $WORKDIR/containers/arangodb.docker/install.tar.gz *
   if test $status -ne 0
     echo Could not create install tarball!
     popd
     return 1
   end
+  popd
 
   pushd $WORKDIR/containers/arangodb.docker
   and docker build -t $imagename .
