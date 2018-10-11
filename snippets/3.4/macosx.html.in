@@ -12,7 +12,7 @@
   <ul>
     <li>
       <a href="@DOWNLOAD_LINK@/arangodb34/@DOWNLOAD_EDITION@/MacOSX/@BUNDLE_NAME_SERVER@">Server @ARANGODB_VERSION@</a><br>
-      (@BUNDLE_SIZE_SERVER@ MByte, SHA256 @BUNDLE_SIZE_SERVER@)
+      (@BUNDLE_SIZE_SERVER@ MByte, SHA256 @BUNDLE_SHA256_SERVER@)
     </li>
   </ul>
   <p class="ara_package_line"><strong>Tar</strong> based packages:</p>

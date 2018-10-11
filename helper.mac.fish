@@ -71,22 +71,11 @@ function makeArangoDB
 end
 
 function buildStaticArangoDB
-  checkoutIfNeeded
-  runLocal $SCRIPTSDIR/buildMacOs.fish $argv
-  set -l s $status
-  if test $s -ne 0
-    echo Build error!
-    return $s
-  end
+  buildArangoDB $argv
 end
 
 function makeStaticArangoDB
-  runLocal $SCRIPTSDIR/makeArangoDB.fish $argv
-  set -l s $status
-  if test $s -ne 0
-    echo Build error!
-    return $s
-  end
+  makeArangoDB $argv
 end
 
 function oskar
@@ -105,26 +94,32 @@ function oskarLimited
 end
 
 function pushOskar
-  cd $WORKDIR
-  source helper.fish
-  git push
+  pushd $WORKDIR
+  and source helper.fish
+  and git push
+  or begin ; popd ; return 1 ; end
+  popd
 end
 
 function updateOskar
-  cd $WORKDIR
+  pushd $WORKDIR
   and git checkout -- .
   and git pull
   and source helper.fish
+  or begin ; popd ; return 1 ; end
+  popd
 end
 
 function downloadStarter
+  mkdir -p $THIRDPARTY_BIN
   runLocal $SCRIPTSDIR/downloadStarter.fish $THIRDPARTY_BIN $argv
 end
 
 function downloadSyncer
+  mkdir -p $THIRDPARTY_SBIN $THIRDPARTY_BIN
   rm -f $WORKDIR/work/ArangoDB/build/install/usr/sbin/arangosync $WORKDIR/work/ArangoDB/build/install/usr/bin/arangosync
   runLocal $SCRIPTSDIR/downloadSyncer.fish $THIRDPARTY_SBIN $argv
-  ln -s ../sbin/arangosync $WORKDIR/work/ArangoDB/build/install/usr/bin/arangosync
+  ln -s ../sbin/arangosync $THIRDPARTY_BIN/arangosync
 end
 
 function buildPackage
@@ -168,7 +163,7 @@ function buildEnterprisePackage
   and cleanupThirdParty
   and downloadStarter
   and downloadSyncer
-  and buildStaticArangoDB \
+  and buildArangoDB \
       -DTARGET_ARCHITECTURE=nehalem \
       -DPACKAGING=Bundle \
       -DPACKAGE_TARGET_DIR=$INNERWORKDIR \
@@ -193,7 +188,7 @@ function buildCommunityPackage
   and set -xg NOSTRIP dont
   and cleanupThirdParty
   and downloadStarter
-  and buildStaticArangoDB \
+  and buildArangoDB \
       -DTARGET_ARCHITECTURE=nehalem \
       -DPACKAGING=Bundle \
       -DPACKAGE_TARGET_DIR=$INNERWORKDIR \
@@ -208,7 +203,7 @@ function buildCommunityPackage
 end
 
 function buildTarGzPackage
-  cd $INNERWORKDIR/ArangoDB/build
+  pushd $INNERWORKDIR/ArangoDB/build
   and rm -rf install
   and make install DESTDIR=install
   and mkdir install/usr
@@ -218,10 +213,12 @@ function buildTarGzPackage
   and mv install/opt/arangodb/etc install
   and rm -rf install/opt
   and buildTarGzPackageHelper "macosx"
+  or begin ; popd ; return 1 ; end
+  popd
 end
 
 function transformBundleSnippet
-  cd $WORKDIR
+  pushd $WORKDIR
   set -l BUNDLE_NAME_SERVER "$argv[1]-$argv[2].x86_64.dmg"
   set -l DOWNLOAD_LINK "$argv[4]"
 
@@ -245,18 +242,19 @@ function transformBundleSnippet
 
   set -l n "work/download-$argv[1]-macosx.html"
 
-  sed -e "s|@BUNDLE_NAME_SERVER@|$BUNDLE_NAME_SERVER|" \
-      -e "s|@BUNDLE_SIZE_SERVER@|$BUNDLE_SIZE_SERVER|" \
-      -e "s|@BUNDLE_SHA256_SERVER@|$BUNDLE_SHA256_SERVER|" \
-      -e "s|@TARGZ_NAME_SERVER@|$TARGZ_NAME_SERVER|" \
-      -e "s|@TARGZ_SIZE_SERVER@|$TARGZ_SIZE_SERVER|" \
-      -e "s|@TARGZ_SHA256_SERVER@|$TARGZ_SHA256_SERVER|" \
-      -e "s|@DOWNLOAD_LINK@|$DOWNLOAD_LINK|" \
-      -e "s|@DOWNLOAD_EDITION@|$DOWNLOAD_EDITION|" \
-      -e "s|@ARANGODB_VERSION@|$ARANGODB_VERSION|" \
+  sed -e "s|@BUNDLE_NAME_SERVER@|$BUNDLE_NAME_SERVER|g" \
+      -e "s|@BUNDLE_SIZE_SERVER@|$BUNDLE_SIZE_SERVER|g" \
+      -e "s|@BUNDLE_SHA256_SERVER@|$BUNDLE_SHA256_SERVER|g" \
+      -e "s|@TARGZ_NAME_SERVER@|$TARGZ_NAME_SERVER|g" \
+      -e "s|@TARGZ_SIZE_SERVER@|$TARGZ_SIZE_SERVER|g" \
+      -e "s|@TARGZ_SHA256_SERVER@|$TARGZ_SHA256_SERVER|g" \
+      -e "s|@DOWNLOAD_LINK@|$DOWNLOAD_LINK|g" \
+      -e "s|@DOWNLOAD_EDITION@|$DOWNLOAD_EDITION|g" \
+      -e "s|@ARANGODB_VERSION@|$ARANGODB_VERSION|g" \
       < snippets/$ARANGODB_SNIPPETS/macosx.html.in > $n
 
   echo "MacOSX Bundle Snippet: $n"
+  popd
 end
 
 function buildBundleSnippet

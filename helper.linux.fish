@@ -409,10 +409,12 @@ function updateOskar
 end
 
 function downloadStarter
+  mkdir -p $THIRDPARTY_BIN
   runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/downloadStarter.fish $THIRDPARTY_BIN $argv
 end
 
 function downloadSyncer
+  mkdir -p $THIRDPARTY_SBIN
   rm -f $WORKDIR/work/ArangoDB/build/install/usr/sbin/arangosync $WORKDIR/work/ArangoDB/build/install/usr/bin/arangosync
   runInContainer -e DOWNLOAD_SYNC_USER=$DOWNLOAD_SYNC_USER $UBUNTUBUILDIMAGE $SCRIPTSDIR/downloadSyncer.fish $THIRDPARTY_SBIN $argv
   ln -s ../sbin/arangosync $WORKDIR/work/ArangoDB/build/install/usr/bin/arangosync
@@ -430,8 +432,6 @@ function makeDockerImage
   set -l imagename $argv[1]
 
   pushd $WORKDIR/work/ArangoDB/build/install
-  and rm -f usr/bin/arangosync
-  and begin test ! -f usr/sbin/arangosync ; or ln -s ../sbin/arangosync usr/bin/arangosync ; end
   and tar czf $WORKDIR/containers/arangodb.docker/install.tar.gz *
   if test $status -ne 0
     echo Could not create install tarball!
@@ -470,7 +470,7 @@ function buildEnterprisePackage
   and releaseMode
   and enterprise
   and set -xg NOSTRIP dont
-  and buildStaticArangoDB -DTARGET_ARCHITECTURE=nehalem
+  and buildArangoDB -DTARGET_ARCHITECTURE=nehalem
   and downloadStarter
   and downloadSyncer
   and buildPackage
@@ -489,7 +489,7 @@ function buildCommunityPackage
   and releaseMode
   and community
   and set -xg NOSTRIP dont
-  and buildStaticArangoDB -DTARGET_ARCHITECTURE=nehalem
+  and buildArangoDB -DTARGET_ARCHITECTURE=nehalem
   and downloadStarter
   and buildPackage
 
@@ -534,21 +534,21 @@ function transformDebianSnippet
 
   set -l n "work/download-$argv[1]-debian.html"
 
-  sed -e "s|@DEBIAN_NAME_SERVER@|$DEBIAN_NAME_SERVER|" \
-      -e "s|@DEBIAN_NAME_CLIENT@|$DEBIAN_NAME_CLIENT|" \
-      -e "s|@DEBIAN_NAME_DEBUG_SYMBOLS@|$DEBIAN_NAME_DEBUG_SYMBOLS|" \
-      -e "s|@DEBIAN_SIZE_SERVER@|$DEBIAN_SIZE_SERVER|" \
-      -e "s|@DEBIAN_SIZE_CLIENT@|$DEBIAN_SIZE_CLIENT|" \
-      -e "s|@DEBIAN_SIZE_DEBUG_SYMBOLS@|$DEBIAN_SIZE_DEBUG_SYMBOLS|" \
-      -e "s|@DEBIAN_SHA256_SERVER@|$DEBIAN_SHA256_SERVER|" \
-      -e "s|@DEBIAN_SHA256_CLIENT@|$DEBIAN_SHA256_CLIENT|" \
-      -e "s|@DEBIAN_SHA256_DEBUG_SYMBOLS@|$DEBIAN_SHA256_DEBUG_SYMBOLS|" \
-      -e "s|@TARGZ_NAME_SERVER@|$TARGZ_NAME_SERVER|" \
-      -e "s|@TARGZ_SIZE_SERVER@|$TARGZ_SIZE_SERVER|" \
-      -e "s|@TARGZ_SHA256_SERVER@|$TARGZ_SHA256_SERVER|" \
-      -e "s|@DOWNLOAD_LINK@|$DOWNLOAD_LINK|" \
-      -e "s|@DOWNLOAD_EDITION@|$DOWNLOAD_EDITION|" \
-      -e "s|@ARANGODB_VERSION@|$ARANGODB_VERSION|" \
+  sed -e "s|@DEBIAN_NAME_SERVER@|$DEBIAN_NAME_SERVER|g" \
+      -e "s|@DEBIAN_NAME_CLIENT@|$DEBIAN_NAME_CLIENT|g" \
+      -e "s|@DEBIAN_NAME_DEBUG_SYMBOLS@|$DEBIAN_NAME_DEBUG_SYMBOLS|g" \
+      -e "s|@DEBIAN_SIZE_SERVER@|$DEBIAN_SIZE_SERVER|g" \
+      -e "s|@DEBIAN_SIZE_CLIENT@|$DEBIAN_SIZE_CLIENT|g" \
+      -e "s|@DEBIAN_SIZE_DEBUG_SYMBOLS@|$DEBIAN_SIZE_DEBUG_SYMBOLS|g" \
+      -e "s|@DEBIAN_SHA256_SERVER@|$DEBIAN_SHA256_SERVER|g" \
+      -e "s|@DEBIAN_SHA256_CLIENT@|$DEBIAN_SHA256_CLIENT|g" \
+      -e "s|@DEBIAN_SHA256_DEBUG_SYMBOLS@|$DEBIAN_SHA256_DEBUG_SYMBOLS|g" \
+      -e "s|@TARGZ_NAME_SERVER@|$TARGZ_NAME_SERVER|g" \
+      -e "s|@TARGZ_SIZE_SERVER@|$TARGZ_SIZE_SERVER|g" \
+      -e "s|@TARGZ_SHA256_SERVER@|$TARGZ_SHA256_SERVER|g" \
+      -e "s|@DOWNLOAD_LINK@|$DOWNLOAD_LINK|g" \
+      -e "s|@DOWNLOAD_EDITION@|$DOWNLOAD_EDITION|g" \
+      -e "s|@ARANGODB_VERSION@|$ARANGODB_VERSION|g" \
       < snippets/$ARANGODB_SNIPPETS/debian.html.in > $n
 
   echo "Debian Snippet: $n"
@@ -612,21 +612,21 @@ function transformRPMSnippet
 
   set -l n "work/download-$argv[1]-rpm.html"
 
-  sed -e "s|@RPM_NAME_SERVER@|$RPM_NAME_SERVER|" \
-      -e "s|@RPM_NAME_CLIENT@|$RPM_NAME_CLIENT|" \
-      -e "s|@RPM_NAME_DEBUG_SYMBOLS@|$RPM_NAME_DEBUG_SYMBOLS|" \
-      -e "s|@RPM_SIZE_SERVER@|$RPM_SIZE_SERVER|" \
-      -e "s|@RPM_SIZE_CLIENT@|$RPM_SIZE_CLIENT|" \
-      -e "s|@RPM_SIZE_DEBUG_SYMBOLS@|$RPM_SIZE_DEBUG_SYMBOLS|" \
-      -e "s|@RPM_SHA256_SERVER@|$RPM_SHA256_SERVER|" \
-      -e "s|@RPM_SHA256_CLIENT@|$RPM_SHA256_CLIENT|" \
-      -e "s|@RPM_SHA256_DEBUG_SYMBOLS@|$RPM_SHA256_DEBUG_SYMBOLS|" \
-      -e "s|@TARGZ_NAME_SERVER@|$TARGZ_NAME_SERVER|" \
-      -e "s|@TARGZ_SIZE_SERVER@|$TARGZ_SIZE_SERVER|" \
-      -e "s|@TARGZ_SHA256_SERVER@|$TARGZ_SHA256_SERVER|" \
-      -e "s|@DOWNLOAD_LINK@|$DOWNLOAD_LINK|" \
-      -e "s|@DOWNLOAD_EDITION@|$DOWNLOAD_EDITION|" \
-      -e "s|@ARANGODB_VERSION@|$ARANGODB_VERSION|" \
+  sed -e "s|@RPM_NAME_SERVER@|$RPM_NAME_SERVER|g" \
+      -e "s|@RPM_NAME_CLIENT@|$RPM_NAME_CLIENT|g" \
+      -e "s|@RPM_NAME_DEBUG_SYMBOLS@|$RPM_NAME_DEBUG_SYMBOLS|g" \
+      -e "s|@RPM_SIZE_SERVER@|$RPM_SIZE_SERVER|g" \
+      -e "s|@RPM_SIZE_CLIENT@|$RPM_SIZE_CLIENT|g" \
+      -e "s|@RPM_SIZE_DEBUG_SYMBOLS@|$RPM_SIZE_DEBUG_SYMBOLS|g" \
+      -e "s|@RPM_SHA256_SERVER@|$RPM_SHA256_SERVER|g" \
+      -e "s|@RPM_SHA256_CLIENT@|$RPM_SHA256_CLIENT|g" \
+      -e "s|@RPM_SHA256_DEBUG_SYMBOLS@|$RPM_SHA256_DEBUG_SYMBOLS|g" \
+      -e "s|@TARGZ_NAME_SERVER@|$TARGZ_NAME_SERVER|g" \
+      -e "s|@TARGZ_SIZE_SERVER@|$TARGZ_SIZE_SERVER|g" \
+      -e "s|@TARGZ_SHA256_SERVER@|$TARGZ_SHA256_SERVER|g" \
+      -e "s|@DOWNLOAD_LINK@|$DOWNLOAD_LINK|g" \
+      -e "s|@DOWNLOAD_EDITION@|$DOWNLOAD_EDITION|g" \
+      -e "s|@ARANGODB_VERSION@|$ARANGODB_VERSION|g" \
       < snippets/$ARANGODB_SNIPPETS/rpm.html.in > $n
 
   echo "RPM Snippet: $n"
@@ -674,12 +674,12 @@ function transformTarGzSnippet
 
   set -l n "work/download-$argv[1]-linux.html"
 
-  sed -e "s|@TARGZ_NAME_SERVER@|$TARGZ_NAME_SERVER|" \
-      -e "s|@TARGZ_SIZE_SERVER@|$TARGZ_SIZE_SERVER|" \
-      -e "s|@TARGZ_SHA256_SERVER@|$TARGZ_SHA256_SERVER|" \
-      -e "s|@DOWNLOAD_LINK@|$DOWNLOAD_LINK|" \
-      -e "s|@DOWNLOAD_EDITION@|$DOWNLOAD_EDITION|" \
-      -e "s|@ARANGODB_VERSION@|$ARANGODB_VERSION|" \
+  sed -e "s|@TARGZ_NAME_SERVER@|$TARGZ_NAME_SERVER|g" \
+      -e "s|@TARGZ_SIZE_SERVER@|$TARGZ_SIZE_SERVER|g" \
+      -e "s|@TARGZ_SHA256_SERVER@|$TARGZ_SHA256_SERVER|g" \
+      -e "s|@DOWNLOAD_LINK@|$DOWNLOAD_LINK|g" \
+      -e "s|@DOWNLOAD_EDITION@|$DOWNLOAD_EDITION|g" \
+      -e "s|@ARANGODB_VERSION@|$ARANGODB_VERSION|g" \
       < snippets/$ARANGODB_SNIPPETS/linux.html.in > $n
 
   echo "TarGZ Snippet: $n"
