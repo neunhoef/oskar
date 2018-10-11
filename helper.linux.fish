@@ -296,9 +296,9 @@ function buildRPMPackage
   # Must have set ARANGODB_RPM_UPSTREAM and ARANGODB_RPM_REVISION,
   # for example by running findArangoDBVersion.
   if test "$ENTERPRISEEDITION" = "On"
-    transformSpec $WORK/rpm/arangodb3e.spec.in $WORKDIR/work/arangodb3.spec
+    transformSpec "$WORK/rpm/arangodb3e.spec.in" "$WORKDIR/work/arangodb3.spec"
   else
-    transformSpec $WORK/rpm/arangodb3.spec.in $WORKDIR/work/arangodb3.spec
+    transformSpec "$WORK/rpm/arangodb3.spec.in" "$WORKDIR/work/arangodb3.spec"
   end
   and cp $WORK/rpm/arangodb3.initd $WORKDIR/work
   and cp $WORK/rpm/arangodb3.service $WORKDIR/work
