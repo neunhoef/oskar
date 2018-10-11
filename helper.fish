@@ -411,28 +411,30 @@ function buildTarGzPackageHelper
 end
 
 function moveResultsToWorkspace
-  # Used in jenkins test
-  echo Moving reports and logs to $WORKSPACE ...
-  if test -f $WORKDIR/work/test.log
-    if head -1 $WORKDIR/work/test.log | grep BAD > /dev/null
-      for f in $WORKDIR/work/testreport* ; echo "mv $f" ; mv $f $WORKSPACE ; end
-    else
-      for f in $WORKDIR/work/testreport* ; echo "rm $f" ; rm $f ; end
+  if test ! -z "$WORKSPACE"
+    # Used in jenkins test
+    echo Moving reports and logs to $WORKSPACE ...
+    if test -f $WORKDIR/work/test.log
+      if head -1 $WORKDIR/work/test.log | grep BAD > /dev/null
+        for f in $WORKDIR/work/testreport* ; echo "mv $f" ; mv $f $WORKSPACE ; end
+      else
+        for f in $WORKDIR/work/testreport* ; echo "rm $f" ; rm $f ; end
+      end
+      mv $WORKDIR/work/test.log $WORKSPACE
     end
-    mv $WORKDIR/work/test.log $WORKSPACE
-  end
-  for x in buildArangoDB.log cmakeArangoDB.log
-    if test -f "$WORKDIR/work/$x" ; mv $WORKDIR/work/$x $WORKSPACE ; end
-  end
+    for x in buildArangoDB.log cmakeArangoDB.log
+      if test -f "$WORKDIR/work/$x" ; mv $WORKDIR/work/$x $WORKSPACE ; end
+    end
 
-  for f in $WORKDIR/work/*.deb ; echo "mv $f" ; mv $f $WORKSPACE ; end
-  for f in $WORKDIR/work/*.dmg ; echo "mv $f" ; mv $f $WORKSPACE ; end
-  for f in $WORKDIR/work/*.rpm ; echo "mv $f" ; mv $f $WORKSPACE ; end
-  for f in $WORKDIR/work/*.tar.gz ; echo "mv $f" ; mv $f $WORKSPACE ; end
+    for f in $WORKDIR/work/*.deb ; echo "mv $f" ; mv $f $WORKSPACE ; end
+    for f in $WORKDIR/work/*.dmg ; echo "mv $f" ; mv $f $WORKSPACE ; end
+    for f in $WORKDIR/work/*.rpm ; echo "mv $f" ; mv $f $WORKSPACE ; end
+    for f in $WORKDIR/work/*.tar.gz ; echo "mv $f" ; mv $f $WORKSPACE ; end
 
-  if test -f $WORKDIR/work/testfailures.txt
-    if grep -q -v '^[ \t]*$' $WORKDIR/work/testfailures.txt
-      echo "mv $WORKDIR/work/testfailures.txt" ; mv $WORKDIR/work/testfailures.txt $WORKSPACE
+    if test -f $WORKDIR/work/testfailures.txt
+      if grep -q -v '^[ \t]*$' $WORKDIR/work/testfailures.txt
+        echo "mv $WORKDIR/work/testfailures.txt" ; mv $WORKDIR/work/testfailures.txt $WORKSPACE
+      end
     end
   end
 end
