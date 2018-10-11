@@ -232,14 +232,14 @@ function transformBundleSnippet
   if test ! -f "work/$BUNDLE_NAME_SERVER"; echo "DMG package '$BUNDLE_NAME_SERVER' is missing"; return 1; end
 
   set -l BUNDLE_SIZE_SERVER (expr (wc -c < work/$BUNDLE_NAME_SERVER | tr -d " ") / 1024 / 1024)
-  set -l BUNDLE_SHA256_SERVER (shasum -a 256 -b < work/$BUNDLE_NAME_SERVER)
+  set -l BUNDLE_SHA256_SERVER (shasum -a 256 -b < work/$BUNDLE_NAME_SERVER | awk '{print $1}')
 
   set -l TARGZ_NAME_SERVER "$argv[1]-macosx-$argv[3].tar.gz"
 
   if test ! -f "work/$TARGZ_NAME_SERVER"; echo "TAR.GZ '$TARGZ_NAME_SERVER' is missing"; return 1; end
 
   set -l TARGZ_SIZE_SERVER (expr (wc -c < work/$TARGZ_NAME_SERVER | tr -d " ") / 1024 / 1024)
-  set -l TARGZ_SHA256_SERVER (shasum -a 256 -b < work/$TARGZ_NAME_SERVER)
+  set -l TARGZ_SHA256_SERVER (shasum -a 256 -b < work/$TARGZ_NAME_SERVER | awk '{print $1}')
 
   set -l n "work/download-$argv[1]-macosx.html"
 

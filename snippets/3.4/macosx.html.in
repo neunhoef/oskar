@@ -19,7 +19,7 @@
   <ul>
     <li>
       <a href="@DOWNLOAD_LINK@/arangodb34/@DOWNLOAD_EDITION@/MacOSX/@TARGZ_NAME_SERVER@">Server @ARANGODB_VERSION@</a><br>
-      (@TARGZ_SIZE_SERVER@ MByte, @TARGZ_SHA256_SERVER@)
+      (@TARGZ_SIZE_SERVER@ MByte, SHA256 @TARGZ_SHA256_SERVER@)
     </li>
   </ul>
 </div>
