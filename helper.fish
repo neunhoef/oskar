@@ -44,7 +44,7 @@ function showConfig
   printf $fmt3 'Enterprise' $ENTERPRISEEDITION   '(community/enterprise)'
   printf $fmt3 'Maintainer' $MAINTAINER          '(maintainerOn/Off)'
 
-  if test -z '$NO_RM_BUILD'
+  if test -z "$NO_RM_BUILD"
     printf $fmt3 'Clear build' On '(keepBuild/clearBuild)'
   else
     printf $fmt3 'Clear build' Off '(keepBuild/clearBuild)'
