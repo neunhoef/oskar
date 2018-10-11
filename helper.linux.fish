@@ -33,7 +33,8 @@ function buildUbuntuBuildImage
   and cd $WORKDIR/containers/buildUbuntu.docker
   and docker build -t $UBUNTUBUILDIMAGE .
   and rm -f $WORKDIR/containers/buildUbuntu.docker/scripts/*.fish
-  and popd
+  or begin ; popd ; return 1 ; end
+  popd
 end
 
 function pushUbuntuBuildImage ; docker push $UBUNTUBUILDIMAGE ; end
@@ -46,7 +47,8 @@ function buildUbuntuPackagingImage
   and cd $WORKDIR/containers/buildUbuntuPackaging.docker
   and docker build -t $UBUNTUPACKAGINGIMAGE .
   and rm -f $WORKDIR/containers/buildUbuntuPackaging.docker/scripts/*.fish
-  and popd
+  or begin ; popd ; return 1 ; end
+  popd
 end
 
 function pushUbuntuPackagingImage ; docker push $UBUNTUPACKAGINGIMAGE ; end
@@ -59,7 +61,8 @@ function buildAlpineBuildImage
   and cd $WORKDIR/containers/buildAlpine.docker
   and docker build -t $ALPINEBUILDIMAGE .
   and rm -f $WORKDIR/containers/buildAlpine.docker/scripts/*.fish
-  and popd
+  or begin ; popd ; return 1 ; end
+  popd
 end
 
 function pushAlpineBuildImage ; docker push $ALPINEBUILDIMAGE ; end
@@ -72,7 +75,8 @@ function buildCentosPackagingImage
   and cd $WORKDIR/containers/buildCentos7Packaging.docker
   and docker build -t $CENTOSPACKAGINGIMAGE .
   and rm -f $WORKDIR/containers/buildCentos7Packaging.docker/scripts/*.fish
-  and popd
+  or begin ; popd ; return 1 ; end
+  popd
 end
 
 function pushCentosPackagingImage ; docker push $CENTOSPACKAGINGIMAGE ; end
@@ -387,7 +391,8 @@ function pushOskar
   and pushUbuntuPackagingImage
   and buildCentosPackagingImage
   and pushCentosPackagingImage
-  and popd
+  or begin ; popd ; return 1 ; end
+  popd
 end
 
 function updateOskar
@@ -399,7 +404,8 @@ function updateOskar
   and pullAlpineBuildImage
   and pullUbuntuPackagingImage
   and pullCentosPackagingImage
-  and popd
+  or begin ; popd ; return 1 ; end
+  popd
 end
 
 function downloadStarter
@@ -433,7 +439,8 @@ function makeDockerImage
 
   pushd $WORKDIR/containers/arangodb.docker
   and docker build -t $imagename .
-  and popd
+  or begin ; popd ; return 1 ; end
+  popd
 end
 
 function buildPackage
