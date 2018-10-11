@@ -361,6 +361,14 @@ function makeRelease
     echo "Need to set environment variable DOWNLOAD_SYNC_USER."
     return 1
   end
+  if test "$ENTERPRISE_DOWNLOAD_LINK" = ""
+    echo "Need to set environment variable ENTERPRISE_DOWNLOAD_LINK."
+    return 1
+  end
+  if test "$COMMUNITY_DOWNLOAD_LINK" = ""
+    echo "Need to set environment variable COMMUNITY_DOWNLOAD_LINK."
+    return 1
+  end
   if test (count $argv) -lt 2
     findArangoDBVersion ; or return 1
   else
