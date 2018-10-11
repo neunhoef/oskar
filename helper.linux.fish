@@ -409,10 +409,12 @@ function updateOskar
 end
 
 function downloadStarter
+  mkdir -p $THIRDPARTY_BIN
   runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/downloadStarter.fish $THIRDPARTY_BIN $argv
 end
 
 function downloadSyncer
+  mkdir -p $THIRDPARTY_SBIN
   rm -f $WORKDIR/work/ArangoDB/build/install/usr/sbin/arangosync $WORKDIR/work/ArangoDB/build/install/usr/bin/arangosync
   runInContainer -e DOWNLOAD_SYNC_USER=$DOWNLOAD_SYNC_USER $UBUNTUBUILDIMAGE $SCRIPTSDIR/downloadSyncer.fish $THIRDPARTY_SBIN $argv
   ln -s ../sbin/arangosync $WORKDIR/work/ArangoDB/build/install/usr/bin/arangosync
@@ -430,8 +432,6 @@ function makeDockerImage
   set -l imagename $argv[1]
 
   pushd $WORKDIR/work/ArangoDB/build/install
-  and rm -f usr/bin/arangosync
-  and begin test ! -f usr/sbin/arangosync ; or ln -s ../sbin/arangosync usr/bin/arangosync ; end
   and tar czf $WORKDIR/containers/arangodb.docker/install.tar.gz *
   if test $status -ne 0
     echo Could not create install tarball!
@@ -452,9 +452,9 @@ function buildPackage
   buildDebianPackage
   and buildRPMPackage
   and buildTarGzPackage
-  and buildDebianSniplet
-  and buildRPMSniplet
-  and buildTarGzSniplet
+  and buildDebianSnippet
+  and buildRPMSnippet
+  and buildTarGzSnippet
 end
 
 function buildEnterprisePackage
@@ -499,7 +499,7 @@ function buildCommunityPackage
   end
 end
 
-function transformDebianSniplet
+function transformDebianSnippet
   pushd $WORKDIR
   
   set -l DEBIAN_NAME_CLIENT "$argv[1]-client_$argv[2]_amd64.deb"
@@ -521,31 +521,41 @@ function transformDebianSniplet
   set -l DEBIAN_SIZE_CLIENT (expr (wc -c < work/$DEBIAN_NAME_CLIENT) / 1024 / 1024)
   set -l DEBIAN_SIZE_DEBUG_SYMBOLS (expr (wc -c < work/$DEBIAN_NAME_DEBUG_SYMBOLS) / 1024 / 1024)
 
+  set -l DEBIAN_SHA256_SERVER (shasum -a 256 -b < work/$DEBIAN_NAME_SERVER | awk '{print $1}')
+  set -l DEBIAN_SHA256_CLIENT (shasum -a 256 -b < work/$DEBIAN_NAME_CLIENT | awk '{print $1}')
+  set -l DEBIAN_SHA256_DEBUG_SYMBOLS (shasum -a 256 -b < work/$DEBIAN_NAME_DEBUG_SYMBOLS | awk '{print $1}')
+
   set -l TARGZ_NAME_SERVER "$argv[1]-linux-$argv[3].tar.gz"
 
   if test ! -f "work/$TARGZ_NAME_SERVER"; echo "TAR.GZ '$TARGZ_NAME_SERVER' is missing"; return 1; end
 
   set -l TARGZ_SIZE_SERVER (expr (wc -c < work/$TARGZ_NAME_SERVER) / 1024 / 1024)
+  set -l TARGZ_SHA256_SERVER (shasum -a 256 -b < work/$TARGZ_NAME_SERVER | awk '{print $1}')
 
   set -l n "work/download-$argv[1]-debian.html"
 
-  sed -e "s|@DEBIAN_NAME_SERVER@|$DEBIAN_NAME_SERVER|" \
-      -e "s|@DEBIAN_NAME_CLIENT@|$DEBIAN_NAME_CLIENT|" \
-      -e "s|@DEBIAN_NAME_DEBUG_SYMBOLS@|$DEBIAN_NAME_DEBUG_SYMBOLS|" \
-      -e "s|@DEBIAN_SIZE_SERVER@|$DEBIAN_SIZE_SERVER|" \
-      -e "s|@DEBIAN_SIZE_CLIENT@|$DEBIAN_SIZE_CLIENT|" \
-      -e "s|@DEBIAN_SIZE_DEBUG_SYMBOLS@|$DEBIAN_SIZE_DEBUG_SYMBOLS|" \
-      -e "s|@TARGZ_NAME_SERVER@|$TARGZ_NAME_SERVER|" \
-      -e "s|@TARGZ_SIZE_SERVER@|$TARGZ_SIZE_SERVER|" \
-      -e "s|@DOWNLOAD_LINK@|$DOWNLOAD_LINK|" \
-      -e "s|@DOWNLOAD_EDITION@|$DOWNLOAD_EDITION|" \
+  sed -e "s|@DEBIAN_NAME_SERVER@|$DEBIAN_NAME_SERVER|g" \
+      -e "s|@DEBIAN_NAME_CLIENT@|$DEBIAN_NAME_CLIENT|g" \
+      -e "s|@DEBIAN_NAME_DEBUG_SYMBOLS@|$DEBIAN_NAME_DEBUG_SYMBOLS|g" \
+      -e "s|@DEBIAN_SIZE_SERVER@|$DEBIAN_SIZE_SERVER|g" \
+      -e "s|@DEBIAN_SIZE_CLIENT@|$DEBIAN_SIZE_CLIENT|g" \
+      -e "s|@DEBIAN_SIZE_DEBUG_SYMBOLS@|$DEBIAN_SIZE_DEBUG_SYMBOLS|g" \
+      -e "s|@DEBIAN_SHA256_SERVER@|$DEBIAN_SHA256_SERVER|g" \
+      -e "s|@DEBIAN_SHA256_CLIENT@|$DEBIAN_SHA256_CLIENT|g" \
+      -e "s|@DEBIAN_SHA256_DEBUG_SYMBOLS@|$DEBIAN_SHA256_DEBUG_SYMBOLS|g" \
+      -e "s|@TARGZ_NAME_SERVER@|$TARGZ_NAME_SERVER|g" \
+      -e "s|@TARGZ_SIZE_SERVER@|$TARGZ_SIZE_SERVER|g" \
+      -e "s|@TARGZ_SHA256_SERVER@|$TARGZ_SHA256_SERVER|g" \
+      -e "s|@DOWNLOAD_LINK@|$DOWNLOAD_LINK|g" \
+      -e "s|@DOWNLOAD_EDITION@|$DOWNLOAD_EDITION|g" \
+      -e "s|@ARANGODB_VERSION@|$ARANGODB_VERSION|g" \
       < snippets/$ARANGODB_SNIPPETS/debian.html.in > $n
 
-  echo "Debian Sniplet: $n"
+  echo "Debian Snippet: $n"
   popd
 end
 
-function buildDebianSniplet
+function buildDebianSnippet
   # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
   # ARANGODB_SNIPPETS, for example by running findArangoDBVersion.
   if test "$ENTERPRISEEDITION" = "On"
@@ -554,7 +564,7 @@ function buildDebianSniplet
       return 1
     end
 
-    transformDebianSniplet "arangodb3e" "$ARANGODB_DEBIAN_UPSTREAM-$ARANGODB_DEBIAN_REVISION" "$ARANGODB_TGZ_UPSTREAM" "$ENTERPRISE_DOWNLOAD_LINK"
+    transformDebianSnippet "arangodb3e" "$ARANGODB_DEBIAN_UPSTREAM-$ARANGODB_DEBIAN_REVISION" "$ARANGODB_TGZ_UPSTREAM" "$ENTERPRISE_DOWNLOAD_LINK"
     or return 1
   else
     if test -z "$COMMUNITY_DOWNLOAD_LINK"
@@ -562,12 +572,12 @@ function buildDebianSniplet
       return 1
     end
 
-    transformDebianSniplet "arangodb3" "$ARANGODB_DEBIAN_UPSTREAM-$ARANGODB_DEBIAN_REVISION" "$ARANGODB_TGZ_UPSTREAM" "$COMMUNITY_DOWNLOAD_LINK"
+    transformDebianSnippet "arangodb3" "$ARANGODB_DEBIAN_UPSTREAM-$ARANGODB_DEBIAN_REVISION" "$ARANGODB_TGZ_UPSTREAM" "$COMMUNITY_DOWNLOAD_LINK"
     or return 1
   end
 end
 
-function transformRPMSniplet
+function transformRPMSnippet
   pushd $WORKDIR
 
   set -l RPM_NAME_CLIENT "$argv[1]-client-$argv[2].x86_64.rpm"
@@ -589,31 +599,41 @@ function transformRPMSniplet
   set -l RPM_SIZE_CLIENT (expr (wc -c < work/$RPM_NAME_CLIENT) / 1024 / 1024)
   set -l RPM_SIZE_DEBUG_SYMBOLS (expr (wc -c < work/$RPM_NAME_DEBUG_SYMBOLS) / 1024 / 1024)
 
+  set -l RPM_SHA256_SERVER (shasum -a 256 -b < work/$RPM_NAME_SERVER | awk '{print $1}')
+  set -l RPM_SHA256_CLIENT (shasum -a 256 -b < work/$RPM_NAME_CLIENT | awk '{print $1}')
+  set -l RPM_SHA256_DEBUG_SYMBOLS (shasum -a 256 -b < work/$RPM_NAME_DEBUG_SYMBOLS | awk '{print $1}')
+
   set -l TARGZ_NAME_SERVER "$argv[1]-linux-$argv[3].tar.gz"
 
   if test ! -f "work/$TARGZ_NAME_SERVER"; echo "TAR.GZ '$TARGZ_NAME_SERVER' is missing"; return 1; end
 
   set -l TARGZ_SIZE_SERVER (expr (wc -c < work/$TARGZ_NAME_SERVER) / 1024 / 1024)
+  set -l TARGZ_SHA256_SERVER (shasum -a 256 -b < work/$TARGZ_NAME_SERVER | awk '{print $1}')
 
   set -l n "work/download-$argv[1]-rpm.html"
 
-  sed -e "s|@RPM_NAME_SERVER@|$RPM_NAME_SERVER|" \
-      -e "s|@RPM_NAME_CLIENT@|$RPM_NAME_CLIENT|" \
-      -e "s|@RPM_NAME_DEBUG_SYMBOLS@|$RPM_NAME_DEBUG_SYMBOLS|" \
-      -e "s|@RPM_SIZE_SERVER@|$RPM_SIZE_SERVER|" \
-      -e "s|@RPM_SIZE_CLIENT@|$RPM_SIZE_CLIENT|" \
-      -e "s|@RPM_SIZE_DEBUG_SYMBOLS@|$RPM_SIZE_DEBUG_SYMBOLS|" \
-      -e "s|@TARGZ_NAME_SERVER@|$TARGZ_NAME_SERVER|" \
-      -e "s|@TARGZ_SIZE_SERVER@|$TARGZ_SIZE_SERVER|" \
-      -e "s|@DOWNLOAD_LINK@|$DOWNLOAD_LINK|" \
-      -e "s|@DOWNLOAD_EDITION@|$DOWNLOAD_EDITION|" \
+  sed -e "s|@RPM_NAME_SERVER@|$RPM_NAME_SERVER|g" \
+      -e "s|@RPM_NAME_CLIENT@|$RPM_NAME_CLIENT|g" \
+      -e "s|@RPM_NAME_DEBUG_SYMBOLS@|$RPM_NAME_DEBUG_SYMBOLS|g" \
+      -e "s|@RPM_SIZE_SERVER@|$RPM_SIZE_SERVER|g" \
+      -e "s|@RPM_SIZE_CLIENT@|$RPM_SIZE_CLIENT|g" \
+      -e "s|@RPM_SIZE_DEBUG_SYMBOLS@|$RPM_SIZE_DEBUG_SYMBOLS|g" \
+      -e "s|@RPM_SHA256_SERVER@|$RPM_SHA256_SERVER|g" \
+      -e "s|@RPM_SHA256_CLIENT@|$RPM_SHA256_CLIENT|g" \
+      -e "s|@RPM_SHA256_DEBUG_SYMBOLS@|$RPM_SHA256_DEBUG_SYMBOLS|g" \
+      -e "s|@TARGZ_NAME_SERVER@|$TARGZ_NAME_SERVER|g" \
+      -e "s|@TARGZ_SIZE_SERVER@|$TARGZ_SIZE_SERVER|g" \
+      -e "s|@TARGZ_SHA256_SERVER@|$TARGZ_SHA256_SERVER|g" \
+      -e "s|@DOWNLOAD_LINK@|$DOWNLOAD_LINK|g" \
+      -e "s|@DOWNLOAD_EDITION@|$DOWNLOAD_EDITION|g" \
+      -e "s|@ARANGODB_VERSION@|$ARANGODB_VERSION|g" \
       < snippets/$ARANGODB_SNIPPETS/rpm.html.in > $n
 
-  echo "RPM Sniplet: $n"
+  echo "RPM Snippet: $n"
   popd
 end
 
-function buildRPMSniplet
+function buildRPMSnippet
   # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
   # ARANGODB_SNIPPETS, for example by running findArangoDBVersion.
   if test "$ENTERPRISEEDITION" = "On"
@@ -622,7 +642,7 @@ function buildRPMSniplet
       return 1
     end
 
-    transformRPMSniplet "arangodb3e" "$ARANGODB_RPM_UPSTREAM-$ARANGODB_RPM_REVISION" "$ARANGODB_TGZ_UPSTREAM" "$ENTERPRISE_DOWNLOAD_LINK"
+    transformRPMSnippet "arangodb3e" "$ARANGODB_RPM_UPSTREAM-$ARANGODB_RPM_REVISION" "$ARANGODB_TGZ_UPSTREAM" "$ENTERPRISE_DOWNLOAD_LINK"
     or return 1
   else
     if test -z "$COMMUNITY_DOWNLOAD_LINK"
@@ -630,12 +650,12 @@ function buildRPMSniplet
       return 1
     end
 
-    transformRPMSniplet "arangodb3" "$ARANGODB_RPM_UPSTREAM-$ARANGODB_RPM_REVISION" "$ARANGODB_TGZ_UPSTREAM" "$COMMUNITY_DOWNLOAD_LINK"
+    transformRPMSnippet "arangodb3" "$ARANGODB_RPM_UPSTREAM-$ARANGODB_RPM_REVISION" "$ARANGODB_TGZ_UPSTREAM" "$COMMUNITY_DOWNLOAD_LINK"
     or return 1
   end
 end
 
-function transformTarGzSniplet
+function transformTarGzSnippet
   pushd $WORKDIR
 
   set -l TARGZ_NAME_SERVER "$argv[1]-linux-$argv[2].tar.gz"
@@ -650,20 +670,23 @@ function transformTarGzSniplet
   if test ! -f "work/$TARGZ_NAME_SERVER"; echo "TAR.GZ '$TARGZ_NAME_SERVER' is missing"; return 1; end
 
   set -l TARGZ_SIZE_SERVER (expr (wc -c < work/$TARGZ_NAME_SERVER) / 1024 / 1024)
+  set -l TARGZ_SHA256_SERVER (shasum -a 256 -b < work/$TARGZ_NAME_SERVER | awk '{print $1}')
 
   set -l n "work/download-$argv[1]-linux.html"
 
-  sed -e "s|@TARGZ_NAME_SERVER@|$TARGZ_NAME_SERVER|" \
-      -e "s|@TARGZ_SIZE_SERVER@|$TARGZ_SIZE_SERVER|" \
-      -e "s|@DOWNLOAD_LINK@|$DOWNLOAD_LINK|" \
-      -e "s|@DOWNLOAD_EDITION@|$DOWNLOAD_EDITION|" \
+  sed -e "s|@TARGZ_NAME_SERVER@|$TARGZ_NAME_SERVER|g" \
+      -e "s|@TARGZ_SIZE_SERVER@|$TARGZ_SIZE_SERVER|g" \
+      -e "s|@TARGZ_SHA256_SERVER@|$TARGZ_SHA256_SERVER|g" \
+      -e "s|@DOWNLOAD_LINK@|$DOWNLOAD_LINK|g" \
+      -e "s|@DOWNLOAD_EDITION@|$DOWNLOAD_EDITION|g" \
+      -e "s|@ARANGODB_VERSION@|$ARANGODB_VERSION|g" \
       < snippets/$ARANGODB_SNIPPETS/linux.html.in > $n
 
-  echo "TarGZ Sniplet: $n"
+  echo "TarGZ Snippet: $n"
   popd
 end
 
-function buildTarGzSniplet
+function buildTarGzSnippet
   # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
   # ARANGODB_SNIPPETS, for example by running findArangoDBVersion.
   if test "$ENTERPRISEEDITION" = "On"
@@ -672,7 +695,7 @@ function buildTarGzSniplet
       return 1
     end
 
-    transformTarGzSniplet "arangodb3e" "$ARANGODB_TGZ_UPSTREAM" "$ENTERPRISE_DOWNLOAD_LINK"
+    transformTarGzSnippet "arangodb3e" "$ARANGODB_TGZ_UPSTREAM" "$ENTERPRISE_DOWNLOAD_LINK"
     or return 1
   else
     if test -z "$COMMUNITY_DOWNLOAD_LINK"
@@ -680,7 +703,7 @@ function buildTarGzSniplet
       return 1
     end
 
-    transformTarGzSniplet "arangodb3" "$ARANGODB_TGZ_UPSTREAM" "$COMMUNITY_DOWNLOAD_LINK"
+    transformTarGzSnippet "arangodb3" "$ARANGODB_TGZ_UPSTREAM" "$COMMUNITY_DOWNLOAD_LINK"
     or return 1
   end
 end
@@ -697,13 +720,13 @@ function makeSnippets
   end
 
   community
-  and buildDebianSniplet
-  and buildRPMSniplet
-  and buildTarGzSniplet
+  and buildDebianSnippet
+  and buildRPMSnippet
+  and buildTarGzSnippet
   and enterprise
-  and buildDebianSniplet
-  and buildRPMSniplet
-  and buildTarGzSniplet
+  and buildDebianSnippet
+  and buildRPMSnippet
+  and buildTarGzSnippet
 end
 
 # Set PARALLELISM in a sensible way:
