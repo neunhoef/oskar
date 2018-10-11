@@ -470,7 +470,7 @@ function buildEnterprisePackage
   and releaseMode
   and enterprise
   and set -xg NOSTRIP dont
-  and buildArangoDB -DTARGET_ARCHITECTURE=nehalem
+  and buildStaticArangoDB -DTARGET_ARCHITECTURE=nehalem
   and downloadStarter
   and downloadSyncer
   and buildPackage
@@ -489,7 +489,7 @@ function buildCommunityPackage
   and releaseMode
   and community
   and set -xg NOSTRIP dont
-  and buildArangoDB -DTARGET_ARCHITECTURE=nehalem
+  and buildStaticArangoDB -DTARGET_ARCHITECTURE=nehalem
   and downloadStarter
   and buildPackage
 
