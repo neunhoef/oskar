@@ -1,5 +1,5 @@
 Stop-Process -Name arango*
-. prepareOskar.ps1
+. "$env:WORKSPACE\jenkins\prepareOskar.ps1"
 
 . $env:EDITION
 . $env:STORAGE_ENGINE
