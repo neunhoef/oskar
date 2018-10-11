@@ -51,14 +51,16 @@ function showConfig
   end
   
   echo
-  echo 'Test Configuration:'
+  echo 'Test Configuration'
   printf $fmt3 'Storage engine' $STORAGEENGINE '(mmfiles/rocksdb)'
   printf $fmt3 'Test suite'     $TESTSUITE     '(single/cluster/resilience)'
   echo
-  echo 'Internal Configuration:'
+  echo 'Internal Configuration'
   printf $fmt3 'Parallelism'   $PARALLELISM  '(parallelism nnn)'
   printf $fmt3 'Verbose Build' $VERBOSEBUILD '(verboseBuild/silentBuild)'
   printf $fmt3 'Verbose Oskar' $VERBOSEOSKAR '(verbose/slient)'
+  echo
+  echo 'Directories'
   printf $fmt2 'Inner workdir' $INNERWORKDIR
   printf $fmt2 'Workdir'       $WORKDIR
   echo '------------------------------------------------------------------------------'

@@ -518,11 +518,16 @@ function transformDebianSniplet
   set -l DEBIAN_SIZE_CLIENT (expr (wc -c < work/$DEBIAN_NAME_CLIENT) / 1024 / 1024)
   set -l DEBIAN_SIZE_DEBUG_SYMBOLS (expr (wc -c < work/$DEBIAN_NAME_DEBUG_SYMBOLS) / 1024 / 1024)
 
+  set -l DEBIAN_SHA256_SERVER (shasum -a 256 -b < work/$DEBIAN_NAME_SERVER)
+  set -l DEBIAN_SHA256_CLIENT (shasum -a 256 -b < work/$DEBIAN_NAME_CLIENT)
+  set -l DEBIAN_SHA256_DEBUG_SYMBOLS (shasum -a 256 -b < work/$DEBIAN_NAME_DEBUG_SYMBOLS)
+
   set -l TARGZ_NAME_SERVER "$argv[1]-linux-$argv[3].tar.gz"
 
   if test ! -f "work/$TARGZ_NAME_SERVER"; echo "TAR.GZ '$TARGZ_NAME_SERVER' is missing"; return 1; end
 
   set -l TARGZ_SIZE_SERVER (expr (wc -c < work/$TARGZ_NAME_SERVER) / 1024 / 1024)
+  set -l TARGZ_SHA256_SERVER (shasum -a 256 -b < work/$TARGZ_NAME_SERVER)
 
   set -l n "work/download-$argv[1]-debian.html"
 
@@ -532,10 +537,15 @@ function transformDebianSniplet
       -e "s|@DEBIAN_SIZE_SERVER@|$DEBIAN_SIZE_SERVER|" \
       -e "s|@DEBIAN_SIZE_CLIENT@|$DEBIAN_SIZE_CLIENT|" \
       -e "s|@DEBIAN_SIZE_DEBUG_SYMBOLS@|$DEBIAN_SIZE_DEBUG_SYMBOLS|" \
+      -e "s|@DEBIAN_SHA256_SERVER@|$DEBIAN_SHA256_SERVER|" \
+      -e "s|@DEBIAN_SHA256_CLIENT@|$DEBIAN_SHA256_CLIENT|" \
+      -e "s|@DEBIAN_SHA256_DEBUG_SYMBOLS@|$DEBIAN_SHA256_DEBUG_SYMBOLS|" \
       -e "s|@TARGZ_NAME_SERVER@|$TARGZ_NAME_SERVER|" \
       -e "s|@TARGZ_SIZE_SERVER@|$TARGZ_SIZE_SERVER|" \
+      -e "s|@TARGZ_SHA256_SERVER@|$TARGZ_SHA256_SERVER|" \
       -e "s|@DOWNLOAD_LINK@|$DOWNLOAD_LINK|" \
       -e "s|@DOWNLOAD_EDITION@|$DOWNLOAD_EDITION|" \
+      -e "s|@ARANGODB_VERSION@|$ARANGODB_VERSION|" \
       < snippets/$ARANGODB_SNIPPETS/debian.html.in > $n
 
   echo "Debian Sniplet: $n"
@@ -586,11 +596,16 @@ function transformRPMSniplet
   set -l RPM_SIZE_CLIENT (expr (wc -c < work/$RPM_NAME_CLIENT) / 1024 / 1024)
   set -l RPM_SIZE_DEBUG_SYMBOLS (expr (wc -c < work/$RPM_NAME_DEBUG_SYMBOLS) / 1024 / 1024)
 
+  set -l RPM_SHA256_SERVER (shasum -a 256 -b < work/$RPM_NAME_SERVER)
+  set -l RPM_SHA256_CLIENT (shasum -a 256 -b < work/$RPM_NAME_CLIENT)
+  set -l RPM_SHA256_DEBUG_SYMBOLS (shasum -a 256 -b < work/$RPM_NAME_DEBUG_SYMBOLS)
+
   set -l TARGZ_NAME_SERVER "$argv[1]-linux-$argv[3].tar.gz"
 
   if test ! -f "work/$TARGZ_NAME_SERVER"; echo "TAR.GZ '$TARGZ_NAME_SERVER' is missing"; return 1; end
 
   set -l TARGZ_SIZE_SERVER (expr (wc -c < work/$TARGZ_NAME_SERVER) / 1024 / 1024)
+  set -l TARGZ_SHA256_SERVER (shasum -a 256 -b < work/$TARGZ_NAME_SERVER)
 
   set -l n "work/download-$argv[1]-rpm.html"
 
@@ -600,10 +615,15 @@ function transformRPMSniplet
       -e "s|@RPM_SIZE_SERVER@|$RPM_SIZE_SERVER|" \
       -e "s|@RPM_SIZE_CLIENT@|$RPM_SIZE_CLIENT|" \
       -e "s|@RPM_SIZE_DEBUG_SYMBOLS@|$RPM_SIZE_DEBUG_SYMBOLS|" \
+      -e "s|@RPM_SHA256_SERVER@|$RPM_SHA256_SERVER|" \
+      -e "s|@RPM_SHA256_CLIENT@|$RPM_SHA256_CLIENT|" \
+      -e "s|@RPM_SHA256_DEBUG_SYMBOLS@|$RPM_SHA256_DEBUG_SYMBOLS|" \
       -e "s|@TARGZ_NAME_SERVER@|$TARGZ_NAME_SERVER|" \
       -e "s|@TARGZ_SIZE_SERVER@|$TARGZ_SIZE_SERVER|" \
+      -e "s|@TARGZ_SHA256_SERVER@|$TARGZ_SHA256_SERVER|" \
       -e "s|@DOWNLOAD_LINK@|$DOWNLOAD_LINK|" \
       -e "s|@DOWNLOAD_EDITION@|$DOWNLOAD_EDITION|" \
+      -e "s|@ARANGODB_VERSION@|$ARANGODB_VERSION|" \
       < snippets/$ARANGODB_SNIPPETS/rpm.html.in > $n
 
   echo "RPM Sniplet: $n"
@@ -647,13 +667,16 @@ function transformTarGzSniplet
   if test ! -f "work/$TARGZ_NAME_SERVER"; echo "TAR.GZ '$TARGZ_NAME_SERVER' is missing"; return 1; end
 
   set -l TARGZ_SIZE_SERVER (expr (wc -c < work/$TARGZ_NAME_SERVER) / 1024 / 1024)
+  set -l TARGZ_SHA256_SERVER (shasum -a 256 -b < work/$TARGZ_NAME_SERVER)
 
   set -l n "work/download-$argv[1]-linux.html"
 
   sed -e "s|@TARGZ_NAME_SERVER@|$TARGZ_NAME_SERVER|" \
       -e "s|@TARGZ_SIZE_SERVER@|$TARGZ_SIZE_SERVER|" \
+      -e "s|@TARGZ_SHA256_SERVER@|$TARGZ_SHA256_SERVER|" \
       -e "s|@DOWNLOAD_LINK@|$DOWNLOAD_LINK|" \
       -e "s|@DOWNLOAD_EDITION@|$DOWNLOAD_EDITION|" \
+      -e "s|@ARANGODB_VERSION@|$ARANGODB_VERSION|" \
       < snippets/$ARANGODB_SNIPPETS/linux.html.in > $n
 
   echo "TarGZ Sniplet: $n"

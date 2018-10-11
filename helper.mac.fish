@@ -232,21 +232,26 @@ function transformBundleSnippet
   if test ! -f "work/$BUNDLE_NAME_SERVER"; echo "DMG package '$BUNDLE_NAME_SERVER' is missing"; return 1; end
 
   set -l BUNDLE_SIZE_SERVER (expr (wc -c < work/$BUNDLE_NAME_SERVER | tr -d " ") / 1024 / 1024)
+  set -l BUNDLE_SHA256_SERVER (shasum -a 256 -b < work/$BUNDLE_NAME_SERVER)
 
   set -l TARGZ_NAME_SERVER "$argv[1]-macosx-$argv[3].tar.gz"
 
   if test ! -f "work/$TARGZ_NAME_SERVER"; echo "TAR.GZ '$TARGZ_NAME_SERVER' is missing"; return 1; end
 
   set -l TARGZ_SIZE_SERVER (expr (wc -c < work/$TARGZ_NAME_SERVER | tr -d " ") / 1024 / 1024)
+  set -l TARGZ_SHA256_SERVER (shasum -a 256 -b < work/$TARGZ_NAME_SERVER)
 
   set -l n "work/download-$argv[1]-macosx.html"
 
   sed -e "s|@BUNDLE_NAME_SERVER@|$BUNDLE_NAME_SERVER|" \
       -e "s|@BUNDLE_SIZE_SERVER@|$BUNDLE_SIZE_SERVER|" \
+      -e "s|@BUNDLE_SHA256_SERVER@|$BUNDLE_SHA256_SERVER|" \
       -e "s|@TARGZ_NAME_SERVER@|$TARGZ_NAME_SERVER|" \
       -e "s|@TARGZ_SIZE_SERVER@|$TARGZ_SIZE_SERVER|" \
+      -e "s|@TARGZ_SHA256_SERVER@|$TARGZ_SHA256_SERVER|" \
       -e "s|@DOWNLOAD_LINK@|$DOWNLOAD_LINK|" \
       -e "s|@DOWNLOAD_EDITION@|$DOWNLOAD_EDITION|" \
+      -e "s|@ARANGODB_VERSION@|$ARANGODB_VERSION|" \
       < snippets/$ARANGODB_SNIPPETS/macosx.html.in > $n
 
   echo "MacOSX Bundle Snippet: $n"
