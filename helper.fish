@@ -349,12 +349,15 @@ function findArangoDBVersion
     end
   end
 
+  echo '------------------------------------------------------------------------------'
   echo "ArangoDB: $ARANGODB_VERSION"
   echo "Debian:   $ARANGODB_DEBIAN_UPSTREAM / $ARANGODB_DEBIAN_REVISION"
   echo "RPM:      $ARANGODB_RPM_UPSTREAM / $ARANGODB_RPM_REVISION"
   echo "DARWIN:   $ARANGODB_DARWIN_UPSTREAM / $ARANGODB_DARWIN_REVISION"
   echo "TGZ:      $ARANGODB_TGZ_UPSTREAM"
   echo "SNIPPETS: $ARANGODB_SNIPPETS"
+  echo '------------------------------------------------------------------------------'
+  echo
 end
 
 function makeRelease
