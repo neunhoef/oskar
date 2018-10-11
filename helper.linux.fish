@@ -111,6 +111,7 @@ function runInContainer
   # cover SIGINT, since this will directly abort the whole function.
   set c (docker run -d -v $WORKDIR/work:$INNERWORKDIR \
              -v $SSH_AUTH_SOCK:/ssh-agent \
+	     -v "$WORKDIR/scripts":"/scripts" \
              -e ASAN="$ASAN" \
              -e BUILDMODE="$BUILDMODE" \
 	     -e COMPILER_VERSION="$COMPILER_VERSION" \
