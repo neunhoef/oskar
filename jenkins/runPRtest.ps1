@@ -1,3 +1,4 @@
+Stop-Process -Name arango*
 $HDD = $(Split-Path -Qualifier $ENV:WORKSPACE)
 If(-Not(Test-Path -PathType Container -Path "$HDD\$env:NODE_NAME"))
 {
