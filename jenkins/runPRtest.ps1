@@ -1,5 +1,5 @@
 Stop-Process -Name arango*
-. "$pwd\prepareOskar.ps1"
+. prepareOskar.ps1
 
 . $env:EDITION
 . $env:STORAGE_ENGINE
