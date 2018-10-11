@@ -20,8 +20,13 @@ function runLocal
     set -l agentstarted ""
   end
   set -xg GIT_SSH_COMMAND "ssh -o StrictHostKeyChecking=no"
-  eval $argv 
-  set -l s $status
+  set s 1
+  begin
+    pushd $WORKDIR
+    eval $argv
+    set s $status
+    popd
+  end
   if test -n "$agentstarted"
     ssh-agent -k > /dev/null
     set -e SSH_AUTH_SOCK
@@ -116,10 +121,8 @@ function downloadStarter
 end
 
 function downloadSyncer
-  mkdir -p $THIRDPARTY_SBIN $THIRDPARTY_BIN
-  rm -f $WORKDIR/work/ArangoDB/build/install/usr/sbin/arangosync $WORKDIR/work/ArangoDB/build/install/usr/bin/arangosync
+  mkdir -p $THIRDPARTY_SBIN
   runLocal $SCRIPTSDIR/downloadSyncer.fish $THIRDPARTY_SBIN $argv
-  ln -s ../sbin/arangosync $THIRDPARTY_BIN/arangosync
 end
 
 function buildPackage
@@ -138,7 +141,7 @@ function buildPackage
     echo Building community edition MacOs bundle...
   end
 
-  and runLocal $SCRIPTSDIR/buildMacOsPackage.fish
+  runLocal $SCRIPTSDIR/buildMacOsPackage.fish
   and buildTarGzPackage
 end
 
