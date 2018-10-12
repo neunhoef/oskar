@@ -409,12 +409,12 @@ function updateOskar
 end
 
 function downloadStarter
-  mkdir -p $THIRDPARTY_BIN
+  mkdir -p $WORKDIR$THIRDPARTY_BIN
   runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/downloadStarter.fish $THIRDPARTY_BIN $argv
 end
 
 function downloadSyncer
-  mkdir -p $THIRDPARTY_SBIN
+  mkdir -p $WORKDIR$THIRDPARTY_SBIN
   rm -f $WORKDIR/work/ArangoDB/build/install/usr/sbin/arangosync $WORKDIR/work/ArangoDB/build/install/usr/bin/arangosync
   runInContainer -e DOWNLOAD_SYNC_USER=$DOWNLOAD_SYNC_USER $UBUNTUBUILDIMAGE $SCRIPTSDIR/downloadSyncer.fish $THIRDPARTY_SBIN $argv
   ln -s ../sbin/arangosync $WORKDIR/work/ArangoDB/build/install/usr/bin/arangosync

@@ -116,12 +116,12 @@ function updateOskar
 end
 
 function downloadStarter
-  mkdir -p $THIRDPARTY_BIN
+  mkdir -p $WORKDIR$THIRDPARTY_BIN
   runLocal $SCRIPTSDIR/downloadStarter.fish $THIRDPARTY_BIN $argv
 end
 
 function downloadSyncer
-  mkdir -p $THIRDPARTY_SBIN
+  mkdir -p $WORKDIR$THIRDPARTY_SBIN
   runLocal $SCRIPTSDIR/downloadSyncer.fish $THIRDPARTY_SBIN $argv
 end
 
