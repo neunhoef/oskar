@@ -63,6 +63,33 @@ function showConfig
   echo 'Directories'
   printf $fmt2 'Inner workdir' $INNERWORKDIR
   printf $fmt2 'Workdir'       $WORKDIR
+
+  echo '------------------------------------------------------------------------------'
+  echo
+end
+
+function showRepository
+  set -l fmt3 '%-20s: %-20s %s\n'
+
+  echo '------------------------------------------------------------------------------'
+
+  if test -d $WORKDIR/work/ArangoDB
+    echo 'Repositories'
+    pushd $WORKDIR
+    printf $fmt3 'Oskar' (git status -s -b | head -1)
+    popd
+    pushd $WORKDIR/work/ArangoDB
+    printf $fmt3 'Community' (git status -s -b | head -1)
+    if test -d $WORKDIR/work/ArangoDB/enterprise
+      printf $fmt3 'Enterprise' (git status -s -b | head -1)
+    else
+      printf $fmt3 'Enterprise' 'missing'
+    end
+    popd
+  else
+    printf $fmt3 'Community' 'missing'
+  end
+
   echo '------------------------------------------------------------------------------'
   echo
 end
@@ -462,3 +489,4 @@ switch (uname)
 end
 
 showConfig
+showRepository
