@@ -68,6 +68,17 @@ function showConfig
   echo
 end
 
+function findBranch
+  set -l v (git config --get remote.origin.url)
+  set -l w (git status -s -b | head -1)
+
+  if echo $w | grep -q "no branch"
+    set w (git status | head -1)
+  end
+
+  echo "$v $w"
+end
+
 function showRepository
   set -l fmt3 '%-20s: %-20s %s\n'
 
@@ -76,12 +87,12 @@ function showRepository
   if test -d $WORKDIR/work/ArangoDB
     echo 'Repositories'
     pushd $WORKDIR
-    printf $fmt3 'Oskar' (git status -s -b | head -1)
+    printf $fmt3 'Oskar' (findBranch)
     popd
     pushd $WORKDIR/work/ArangoDB
-    printf $fmt3 'Community' (git status -s -b | head -1)
+    printf $fmt3 'Community' (findBranch)
     if test -d $WORKDIR/work/ArangoDB/enterprise
-      printf $fmt3 'Enterprise' (git status -s -b | head -1)
+      printf $fmt3 'Enterprise' (findBranch)
     else
       printf $fmt3 'Enterprise' 'missing'
     end
