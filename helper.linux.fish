@@ -4,10 +4,12 @@ set -gx THIRDPARTY_SBIN $INNERWORKDIR/ArangoDB/build/install/usr/sbin
 set -gx SCRIPTSDIR /scripts
 set -gx PLATFORM linux
 set -gx ARCH (uname -m)
+
 set -gx UBUNTUBUILDIMAGE arangodb/ubuntubuildarangodb-$ARCH
 set -gx UBUNTUPACKAGINGIMAGE arangodb/ubuntupackagearangodb-$ARCH
 set -gx ALPINEBUILDIMAGE arangodb/alpinebuildarangodb-$ARCH
 set -gx CENTOSPACKAGINGIMAGE arangodb/centospackagearangodb-$ARCH
+set -gx DOCIMAGE arangodb/arangodb-documentation
 
 function compiler
   set -l version $argv[1]
@@ -83,6 +85,12 @@ function pushCentosPackagingImage ; docker push $CENTOSPACKAGINGIMAGE ; end
 
 function pullCentosPackagingImage ; docker pull $CENTOSPACKAGINGIMAGE ; end
 
+function buildDocumentationImage
+    eval "$WORKDIR/scripts/buildContainerDocumentation" "$DOCIMAGE"
+end
+function pushDocumentationImage ; docker push $DOCIMAGE ; end
+function pullDocumentationImage ; docker pull $DOCIMAGE ; end
+
 function remakeImages
   set -l s 0
 
@@ -94,6 +102,7 @@ function remakeImages
   pushUbuntuPackagingImage ; or set -l s 1
   buildCentosPackagingImage ; or set -l s 1
   pushCentosPackagingImage ; or set -l s 1
+  buildDocumentationImage ; or set -l s 1
 
   return $s
 end
@@ -163,7 +172,6 @@ function runInContainer
 end
 
 function buildDocumentation
-    set -l DOCIMAGE "arangodb/arangodb-documentation" # TODO global var
     runInContainer -e "ARANGO_SPIN=$ARANGO_SPIN" \
                    -e "ARANGO_NO_COLOR=$ARANGO_IN_JENKINS" \
                    -e "ARANGO_BUILD_DOC=/oskar/work" \
@@ -177,9 +185,6 @@ function buildDocumentationForRelease
     buildDocumentation --all-formats
 end
 
-function buildContainerDocumentation
-    eval "$WORKDIR/scripts/buildContainerDocumentation"
-end
 
 function checkoutArangoDB
   runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/checkoutArangoDB.fish
@@ -391,6 +396,8 @@ function pushOskar
   and pushUbuntuPackagingImage
   and buildCentosPackagingImage
   and pushCentosPackagingImage
+  and buildDocumentationImage
+  and pushDocumentationImage
   or begin ; popd ; return 1 ; end
   popd
 end
@@ -404,6 +411,7 @@ function updateOskar
   and pullAlpineBuildImage
   and pullUbuntuPackagingImage
   and pullCentosPackagingImage
+  and pullDocumentationImage
   or begin ; popd ; return 1 ; end
   popd
 end
