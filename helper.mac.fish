@@ -4,6 +4,7 @@ set -gx UID (id -u)
 set -gx GID (id -g)
 set -gx INNERWORKDIR $WORKDIR/work
 set -gx THIRDPARTY_BIN $INNERWORKDIR/third_party/bin
+set -gx THIRDPARTY_SBIN $INNERWORKDIR/third_party/sbin
 set -gx CCACHEBINPATH /usr/local/opt/ccache/libexec
 set -gx CMAKE_INSTALL_PREFIX /opt/arangodb
 
@@ -19,8 +20,13 @@ function runLocal
     set -l agentstarted ""
   end
   set -xg GIT_SSH_COMMAND "ssh -o StrictHostKeyChecking=no"
-  eval $argv 
-  set -l s $status
+  set s 1
+  begin
+    pushd $WORKDIR
+    eval $argv
+    set s $status
+    popd
+  end
   if test -n "$agentstarted"
     ssh-agent -k > /dev/null
     set -e SSH_AUTH_SOCK
@@ -70,22 +76,11 @@ function makeArangoDB
 end
 
 function buildStaticArangoDB
-  checkoutIfNeeded
-  runLocal $SCRIPTSDIR/buildMacOs.fish $argv
-  set -l s $status
-  if test $s -ne 0
-    echo Build error!
-    return $s
-  end
+  buildArangoDB $argv
 end
 
 function makeStaticArangoDB
-  runLocal $SCRIPTSDIR/makeArangoDB.fish $argv
-  set -l s $status
-  if test $s -ne 0
-    echo Build error!
-    return $s
-  end
+  makeArangoDB $argv
 end
 
 function oskar
@@ -98,26 +93,36 @@ function oskarFull
   runLocal $SCRIPTSDIR/runFullTests.fish
 end
 
+function oskarLimited
+  checkoutIfNeeded
+  runLocal $SCRIPTSDIR/runLimitedTests.fish
+end
 
 function pushOskar
-  cd $WORKDIR
-  source helper.fish
-  git push
+  pushd $WORKDIR
+  and source helper.fish
+  and git push
+  or begin ; popd ; return 1 ; end
+  popd
 end
 
 function updateOskar
-  cd $WORKDIR
+  pushd $WORKDIR
   and git checkout -- .
   and git pull
   and source helper.fish
+  or begin ; popd ; return 1 ; end
+  popd
 end
 
 function downloadStarter
+  mkdir -p $THIRDPARTY_BIN
   runLocal $SCRIPTSDIR/downloadStarter.fish $THIRDPARTY_BIN $argv
 end
 
 function downloadSyncer
-  runLocal $SCRIPTSDIR/downloadSyncer.fish $THIRDPARTY_BIN $argv
+  mkdir -p $THIRDPARTY_SBIN
+  runLocal $SCRIPTSDIR/downloadSyncer.fish $THIRDPARTY_SBIN $argv
 end
 
 function buildPackage
@@ -136,12 +141,13 @@ function buildPackage
     echo Building community edition MacOs bundle...
   end
 
-  and runLocal $SCRIPTSDIR/buildMacOsPackage.fish
+  runLocal $SCRIPTSDIR/buildMacOsPackage.fish
   and buildTarGzPackage
 end
 
 function cleanupThirdParty
   rm -rf $THIRDPARTY_BIN
+  rm -rf $THIRDPARTY_SBIN
 end
 
 function buildEnterprisePackage
@@ -160,11 +166,11 @@ function buildEnterprisePackage
   and cleanupThirdParty
   and downloadStarter
   and downloadSyncer
-  and buildStaticArangoDB \
+  and buildArangoDB \
       -DTARGET_ARCHITECTURE=nehalem \
       -DPACKAGING=Bundle \
       -DPACKAGE_TARGET_DIR=$INNERWORKDIR \
-      -DTHIRDPARTY_SBIN=$THIRDPARTY_BIN/arangosync \
+      -DTHIRDPARTY_SBIN=$THIRDPARTY_SBIN/arangosync \
       -DTHIRDPARTY_BIN=$THIRDPARTY_BIN/arangodb \
       -DCMAKE_INSTALL_PREFIX=$CMAKE_INSTALL_PREFIX
   and buildPackage
@@ -185,7 +191,7 @@ function buildCommunityPackage
   and set -xg NOSTRIP dont
   and cleanupThirdParty
   and downloadStarter
-  and buildStaticArangoDB \
+  and buildArangoDB \
       -DTARGET_ARCHITECTURE=nehalem \
       -DPACKAGING=Bundle \
       -DPACKAGE_TARGET_DIR=$INNERWORKDIR \
@@ -200,7 +206,7 @@ function buildCommunityPackage
 end
 
 function buildTarGzPackage
-  cd $INNERWORKDIR/ArangoDB/build
+  pushd $INNERWORKDIR/ArangoDB/build
   and rm -rf install
   and make install DESTDIR=install
   and mkdir install/usr
@@ -210,10 +216,12 @@ function buildTarGzPackage
   and mv install/opt/arangodb/etc install
   and rm -rf install/opt
   and buildTarGzPackageHelper "macosx"
+  or begin ; popd ; return 1 ; end
+  popd
 end
 
-function transformBundleSniplet
-  cd $WORKDIR
+function transformBundleSnippet
+  pushd $WORKDIR
   set -l BUNDLE_NAME_SERVER "$argv[1]-$argv[2].x86_64.dmg"
   set -l DOWNLOAD_LINK "$argv[4]"
 
@@ -226,29 +234,35 @@ function transformBundleSniplet
   if test ! -f "work/$BUNDLE_NAME_SERVER"; echo "DMG package '$BUNDLE_NAME_SERVER' is missing"; return 1; end
 
   set -l BUNDLE_SIZE_SERVER (expr (wc -c < work/$BUNDLE_NAME_SERVER | tr -d " ") / 1024 / 1024)
+  set -l BUNDLE_SHA256_SERVER (shasum -a 256 -b < work/$BUNDLE_NAME_SERVER | awk '{print $1}')
 
   set -l TARGZ_NAME_SERVER "$argv[1]-macosx-$argv[3].tar.gz"
 
   if test ! -f "work/$TARGZ_NAME_SERVER"; echo "TAR.GZ '$TARGZ_NAME_SERVER' is missing"; return 1; end
 
   set -l TARGZ_SIZE_SERVER (expr (wc -c < work/$TARGZ_NAME_SERVER | tr -d " ") / 1024 / 1024)
+  set -l TARGZ_SHA256_SERVER (shasum -a 256 -b < work/$TARGZ_NAME_SERVER | awk '{print $1}')
 
   set -l n "work/download-$argv[1]-macosx.html"
 
-  sed -e "s|@BUNDLE_NAME_SERVER@|$BUNDLE_NAME_SERVER|" \
-      -e "s|@BUNDLE_SIZE_SERVER@|$BUNDLE_SIZE_SERVER|" \
-      -e "s|@TARGZ_NAME_SERVER@|$TARGZ_NAME_SERVER|" \
-      -e "s|@TARGZ_SIZE_SERVER@|$TARGZ_SIZE_SERVER|" \
-      -e "s|@DOWNLOAD_LINK@|$DOWNLOAD_LINK|" \
-      -e "s|@DOWNLOAD_EDITION@|$DOWNLOAD_EDITION|" \
-      < sniplets/$ARANGODB_SNIPLETS/macosx.html.in > $n
+  sed -e "s|@BUNDLE_NAME_SERVER@|$BUNDLE_NAME_SERVER|g" \
+      -e "s|@BUNDLE_SIZE_SERVER@|$BUNDLE_SIZE_SERVER|g" \
+      -e "s|@BUNDLE_SHA256_SERVER@|$BUNDLE_SHA256_SERVER|g" \
+      -e "s|@TARGZ_NAME_SERVER@|$TARGZ_NAME_SERVER|g" \
+      -e "s|@TARGZ_SIZE_SERVER@|$TARGZ_SIZE_SERVER|g" \
+      -e "s|@TARGZ_SHA256_SERVER@|$TARGZ_SHA256_SERVER|g" \
+      -e "s|@DOWNLOAD_LINK@|$DOWNLOAD_LINK|g" \
+      -e "s|@DOWNLOAD_EDITION@|$DOWNLOAD_EDITION|g" \
+      -e "s|@ARANGODB_VERSION@|$ARANGODB_VERSION|g" \
+      < snippets/$ARANGODB_SNIPPETS/macosx.html.in > $n
 
-  echo "MacOSX Bundle Sniplet: $n"
+  echo "MacOSX Bundle Snippet: $n"
+  popd
 end
 
-function buildBundleSniplet
+function buildBundleSnippet
   # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
-  # ARANGODB_SNIPLETS, for example by running findArangoDBVersion.
+  # ARANGODB_SNIPPETS, for example by running findArangoDBVersion.
   if test -z "$ARANGODB_DARWIN_REVISION"
     set n "$ARANGODB_DARWIN_UPSTREAM"
   else
@@ -261,7 +275,7 @@ function buildBundleSniplet
       return 1
     end
 
-    transformBundleSniplet "arangodb3e" "$n" "$ARANGODB_TGZ_UPSTREAM" "$ENTERPRISE_DOWNLOAD_LINK"
+    transformBundleSnippet "arangodb3e" "$n" "$ARANGODB_TGZ_UPSTREAM" "$ENTERPRISE_DOWNLOAD_LINK"
     or return 1
   else
     if test -z "$COMMUNITY_DOWNLOAD_LINK"
@@ -269,12 +283,12 @@ function buildBundleSniplet
       return 1
     end
 
-    transformBundleSniplet "arangodb3" "$n" "$ARANGODB_TGZ_UPSTREAM" "$COMMUNITY_DOWNLOAD_LINK"
+    transformBundleSnippet "arangodb3" "$n" "$ARANGODB_TGZ_UPSTREAM" "$COMMUNITY_DOWNLOAD_LINK"
     or return 1
   end
 end
 
-function makeSniplets
+function makeSnippets
   if test -z "$ENTERPRISE_DOWNLOAD_LINK"
     echo "you need to set the variable ENTERPRISE_DOWNLOAD_LINK"
     return 1
@@ -286,9 +300,9 @@ function makeSniplets
   end
 
   community
-  and buildBundleSniplet
+  and buildBundleSnippet
   and enterprise
-  and buildBundleSniplet
+  and buildBundleSnippet
 end
 
 parallelism 8

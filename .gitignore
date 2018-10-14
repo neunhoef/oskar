@@ -3,3 +3,5 @@ oskar_name
 repo_complete
 repo_incoming
 *~
+config/environment.fish
+containers/arangodb.docker/install.tar.gz
