@@ -12,6 +12,11 @@ set -gx CENTOSPACKAGINGIMAGE arangodb/centospackagearangodb-$ARCH
 set -gx DOCIMAGE arangodb/arangodb-documentation
 
 function compiler
+  if test (count $argv) != 1
+    echo "compiler: expecting a compiler version"
+    return 1
+  end
+
   set -l version $argv[1]
 
   switch $version
@@ -296,10 +301,11 @@ end
 
 function transformSpec
   if test (count $argv) != 2
-    echo transformSpec: wrong number of arguments
+    echo "transformSpec: expecting <src-file> <dest-file>"
     return 1
   end
-  and cp "$argv[1]" "$argv[2]"
+
+  cp "$argv[1]" "$argv[2]"
   and sed -i -e "s/@PACKAGE_VERSION@/$ARANGODB_RPM_UPSTREAM/" "$argv[2]"
   and sed -i -e "s/@PACKAGE_REVISION@/$ARANGODB_RPM_REVISION/" "$argv[2]"
   and if test "(" "$ARANGODB_VERSION_MAJOR" -eq "3" ")" \
@@ -433,10 +439,12 @@ function makeDockerImage
     echo "Need to set environment variable DOWNLOAD_SYNC_USER."
     return 1
   end
+
   if test (count $argv) -eq 0
     echo Must give image name as argument
     return 1
   end
+
   set -l imagename $argv[1]
 
   pushd $WORKDIR/work/ArangoDB/build/install
@@ -735,6 +743,65 @@ function makeSnippets
   and buildDebianSnippet
   and buildRPMSnippet
   and buildTarGzSnippet
+end
+
+function copyReleaseEdition
+  set -l dest $argv[1]
+  set -l repo $argv[2]
+  set -l edition $argv[3]
+  set -l l $argv[4]
+
+  # debian
+  set -l v "$ARANGODB_DEBIAN_UPSTREAM-$ARANGODB_DEBIAN_REVISION"
+  set -l DEBIAN_NAME_CLIENT "arangodb3$l""-client_$v""_amd64.deb"
+  set -l DEBIAN_NAME_SERVER "arangodb3$l""_$v""_amd64.deb"
+  set -l DEBIAN_NAME_DEBUG_SYMBOLS "arangodb3$l""-dbg_$v""_amd64.deb"
+
+  mkdir -p "$dest/$edition/$repo/Debian/amd64" ; or return 1
+
+  for file in $DEBIAN_NAME_CLIENT $DEBIAN_NAME_SERVER $DEBIAN_NAME_DEBUG_SYMBOLS
+    set -l sf "$WORKDIR/work/$file"
+    set -l df "$dest/$edition/$repo/Debian/amd64/$file"
+
+    echo "copying $df"
+    cp -a "$sf" "$df" ; or return 1
+  end
+
+  # redhat
+  set -l v "$ARANGODB_RPM_UPSTREAM-$ARANGODB_RPM_REVISION"
+  set -l RPM_NAME_CLIENT "arangodb3$l""-client-$v"".x86_64.rpm"
+  set -l RPM_NAME_SERVER "arangodb3$l""-$v"".x86_64.rpm"
+  set -l RPM_NAME_DEBUG_SYMBOLS "arangodb3$l""-debuginfo-$v"".x86_64.rpm"
+
+  mkdir -p "$dest/$edition/$repo/RedHat/x86_64" ; or return 1
+
+  for file in $RPM_NAME_CLIENT $RPM_NAME_SERVER $RPM_NAME_DEBUG_SYMBOLS
+    set -l sf "$WORKDIR/work/$file"
+    set -l df "$dest/$edition/$repo/RedHat/x86_64/$file"
+
+    echo "copying $df"
+    cp -a "$sf" "$df" ; or return 1
+  end
+
+  # tar
+  mkdir -p "$dest/$edition/$repo/Linux" ; or return 1
+end
+
+function copyRelease
+  if test (count $argv) != 2
+    echo "copyRelease: expecting a <dest-path> <repo>"
+    return 1
+  end
+
+  set -l dest $argv[1]
+  set -l repo $argv[2]
+
+  if test -z "$ARANGODB_VERSION"
+    findArangoDBVersion
+  end
+
+  copyReleaseEdition "$dest" "$repo" "community" ""
+  and copyReleaseEdition "$dest" "$repo" "enterprise" "e"
 end
 
 # Set PARALLELISM in a sensible way:

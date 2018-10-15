@@ -163,6 +163,22 @@ To erase the build directories and checked out sources, use
 
 After that, essentially all resources used by oskar are freed again.
 
+# Processes
+
+## Creating a Release
+
+Checkout the tag of the release
+
+    switchBranches <TAG_IN_MAIN_REPO> <TAG_IN_ENTERPRISE_REPO>
+
+Build release
+
+    makeRelease
+
+Copy files to destination
+
+    copyRelease <PATH_TO_DEST>
+
 # Reference Manual
 
 ## Environment Variables
