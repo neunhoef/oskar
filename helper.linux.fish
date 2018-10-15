@@ -128,7 +128,7 @@ function runInContainer
 	     -v "$WORKDIR/scripts":"/scripts" \
              -e ASAN="$ASAN" \
              -e BUILDMODE="$BUILDMODE" \
-	     -e COMPILER_VERSION="$COMPILER_VERSION" \
+             -e COMPILER_VERSION="$COMPILER_VERSION" \
              -e CCACHEBINPATH="$CCACHEBINPATH" \
              -e ENTERPRISEEDITION="$ENTERPRISEEDITION" \
              -e GID=(id -g) \
@@ -376,7 +376,11 @@ end
 
 function oskarFull
   checkoutIfNeeded
-  runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/runFullTests.fish
+  launchLdapServer
+  and runInContainer --net="$LDAPNETWORK" $UBUNTUBUILDIMAGE $SCRIPTSDIR/runFullTests.fish
+  set -l res $status
+  stopLdapServer
+  return $res
 end
 
 function oskarLimited
