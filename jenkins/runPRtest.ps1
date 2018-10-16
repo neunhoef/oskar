@@ -1,3 +1,4 @@
+Stop-Process -Name arango*
 Copy-Item -Force "$env:WORKSPACE\jenkins\prepareOskar.ps1" $pwd
 . "$pwd\prepareOskar.ps1"
 
