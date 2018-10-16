@@ -1,7 +1,7 @@
 $global:WORKDIR = $pwd
 If(-Not($ENV:WORKSPACE))
 {
-    $ENV:WORKSPACE = $(Split-Path -Parent $global:WORKDIR)
+    $ENV:WORKSPACE = $global:WORKDIR
 }
 If(-Not(Test-Path -PathType Container -Path "work"))
 {
