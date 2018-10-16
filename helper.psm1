@@ -636,6 +636,7 @@ Function buildStaticArangoDB
 Function moveResultsToWorkspace
 {
     Write-Host "Moving reports and logs to $env:WORKSPACE ..."
+    Write-Host "test.log ..."
     If(Test-Path -PathType Leaf "$INNERWORKDIR\test.log")
     {
         If(Get-Content -Path "$INNERWORKDIR\test.log" -Head 1 | Select-String -Pattern "BAD" -CaseSensitive)
@@ -660,21 +661,25 @@ Function moveResultsToWorkspace
         Write-Host "Move $INNERWORKDIR\test.log"
         Move-Item -Force -Path "$INNERWORKDIR\test.log" -Destination $env:WORKSPACE; comm
     }
+    Write-Host "*.zip ..."
     ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter "*.zip"))
     {
         Write-Host "Move $INNERWORKDIR\$file"
         Move-Item -Force -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE; comm
     }
+    Write-Host "build* ..."
     ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter "build*"))
     {
         Write-Host "Move $INNERWORKDIR\$file"
         Move-Item -Force -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE; comm
     }
+    Write-Host "cmake* ..."
     ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter "cmake*"))
     {
         Write-Host "Move $INNERWORKDIR\$file"
         Move-Item -Force -Path "$INNERWORKDIR\$file" -Destination $env:WORKSPACE; comm
     }
+    Write-Host "package* ..."
     ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter "package*"))
     {
         Write-Host "Move $INNERWORKDIR\$file"
@@ -682,17 +687,20 @@ Function moveResultsToWorkspace
     }
     if($SKIPPACKAGING -eq "Off")
     {
+        Write-Host "ArangoDB3*.exe ..."
         ForEach ($file in $(Get-ChildItem "$INNERWORKDIR\ArangoDB\build" -Filter "ArangoDB3*.exe"))
         {
             Write-Host "Move $INNERWORKDIR\ArangoDB\build\$file"
             Move-Item -Force -Path "$INNERWORKDIR\ArangoDB\build\$file" -Destination $env:WORKSPACE; comm 
         }
+        Write-Host "ArangoDB3*.zip ..."
         ForEach ($file in $(Get-ChildItem "$INNERWORKDIR\ArangoDB\build" -Filter "ArangoDB3*.zip"))
         {
             Write-Host "Move $INNERWORKDIR\ArangoDB\build\$file"
             Move-Item -Force -Path "$INNERWORKDIR\ArangoDB\build\$file" -Destination $env:WORKSPACE; comm 
         }
     }
+    Write-Host "testfailures.log"
     If(Test-Path -PathType Leaf "$INNERWORKDIR\testfailures.log")
     {
         Write-Host "Move $INNERWORKDIR\testfailures.log"
@@ -1167,6 +1175,7 @@ Function oskar8
 Function makeRelease
 {
     maintainerOff
+    staticExecutablesOn
     skipPackagingOff
     signPackageOn
     community
