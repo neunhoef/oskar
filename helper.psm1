@@ -1,8 +1,8 @@
+$global:WORKDIR = $pwd
 If(-Not($ENV:WORKSPACE))
 {
     $ENV:WORKSPACE = $(Split-Path -Parent $global:WORKDIR)
 }
-$global:WORKDIR = $pwd
 If(-Not(Test-Path -PathType Container -Path "work"))
 {
     New-Item -ItemType Directory -Path "work"
