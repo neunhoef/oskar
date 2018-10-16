@@ -78,7 +78,7 @@ function showConfig
   echo 'Directories'
   printf $fmt2 'Inner workdir' $INNERWORKDIR
   printf $fmt2 'Workdir'       $WORKDIR
-
+  printf $fmt2 'Workspace'     $WORKSPACE
   echo '------------------------------------------------------------------------------'
   echo
 end

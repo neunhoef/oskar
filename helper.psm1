@@ -63,31 +63,31 @@ Function 7zip($Path,$DestinationPath)
 
 Function showConfig
 {
-	Write-Host "#################################"
+	Write-Host "------------------------------------------------------------------------------"
 	Write-Host "Global Configuration"
-	Write-Host "- User           : "$env:USERDOMAIN\$env:USERNAME
-	Write-Host "- Cache          : "$env:CLCACHE_CL
-	Write-Host "- Cachedir       : "$env:CLCACHE_DIR
+	Write-Host "User           : "$env:USERDOMAIN\$env:USERNAME
+	Write-Host "Cache          : "$env:CLCACHE_CL
+	Write-Host "Cachedir       : "$env:CLCACHE_DIR
 	Write-Host " "
 	Write-Host "Build Configuration"
-	Write-Host "- Enterprise     : "$ENTERPRISEEDITION
-	Write-Host "- Buildmode      : "$BUILDMODE
-	Write-Host "- Maintainer     : "$MAINTAINER
+	Write-Host "Buildmode      : "$BUILDMODE
+	Write-Host "Enterprise     : "$ENTERPRISEEDITION
+	Write-Host "Maintainer     : "$MAINTAINER
 	Write-Host " "
-	Write-Host "- Generator      : "$GENERATOR
-	Write-Host "- Packaging      : "$PACKAGING
-	Write-Host "- Static         : "$STATICEXECUTABLES
+	Write-Host "Generator      : "$GENERATOR
+	Write-Host "Packaging      : "$PACKAGING
+	Write-Host "Static         : "$STATICEXECUTABLES
 	Write-Host " "	
-	Write-Host "Test Configuration:"
-	Write-Host "- Storage engine : "$STORAGEENGINE
-	Write-Host "- Test suite     : "$TESTSUITE
+	Write-Host "Test Configuration"
+	Write-Host "Storage engine : "$STORAGEENGINE
+	Write-Host "Test suite     : "$TESTSUITE
 	Write-Host " "
-	Write-Host "Internal Configuration:"
-	Write-Host "- Workdir        : "$WORKDIR
-	Write-Host "- Inner workdir  : "$INNERWORKDIR
-	Write-Host "- Parallelism    : "$PARALLELISM
-	Write-Host "- Verbose        : "$VERBOSEOSKAR
-	Write-Host "#################################"
+	Write-Host "Internal Configuration"
+	Write-Host "Workdir        : "$WORKDIR
+	Write-Host "Inner workdir  : "$INNERWORKDIR
+	Write-Host "Parallelism    : "$PARALLELISM
+	Write-Host "Verbose        : "$VERBOSEOSKAR
+	Write-Host "------------------------------------------------------------------------------"
 	Write-Host " "
     comm
 }
