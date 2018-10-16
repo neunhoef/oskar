@@ -83,10 +83,13 @@ Function showConfig
 	Write-Host "Test suite     : "$TESTSUITE
 	Write-Host " "
 	Write-Host "Internal Configuration"
-	Write-Host "Workdir        : "$WORKDIR
-	Write-Host "Inner workdir  : "$INNERWORKDIR
 	Write-Host "Parallelism    : "$PARALLELISM
 	Write-Host "Verbose        : "$VERBOSEOSKAR
+	Write-Host " "
+	Write-Host "Directories"
+	Write-Host "Inner workdir  : "$INNERWORKDIR
+	Write-Host "Workdir        : "$WORKDIR
+	Write-Host "Workspace      : "$WORKSPACE
 	Write-Host "------------------------------------------------------------------------------"
 	Write-Host " "
     comm
