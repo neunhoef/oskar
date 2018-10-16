@@ -1,7 +1,7 @@
 $global:WORKDIR = $pwd
 If(-Not($ENV:WORKSPACE))
 {
-    $ENV:WORKSPACE = $global:WORKDIR
+    $ENV:WORKSPACE = Join-Path -Path $global:WORKDIR -ChildPath work
 }
 If(-Not(Test-Path -PathType Container -Path "work"))
 {
