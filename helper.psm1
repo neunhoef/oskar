@@ -1,12 +1,15 @@
 $global:WORKDIR = $pwd
+
 If(-Not($ENV:WORKSPACE))
 {
     $ENV:WORKSPACE = Join-Path -Path $global:WORKDIR -ChildPath work
 }
+
 If(-Not(Test-Path -PathType Container -Path "work"))
 {
     New-Item -ItemType Directory -Path "work"
 }
+
 $global:INNERWORKDIR = "$WORKDIR\work"
 $env:TMP = "$INNERWORKDIR\tmp"
 $env:CLCACHE_DIR="$INNERWORKDIR\.clcache.windows"
@@ -63,35 +66,38 @@ Function 7zip($Path,$DestinationPath)
 
 Function showConfig
 {
-	Write-Host "------------------------------------------------------------------------------"
-	Write-Host "Global Configuration"
-	Write-Host "User           : "$env:USERDOMAIN\$env:USERNAME
-	Write-Host "Cache          : "$env:CLCACHE_CL
-	Write-Host "Cachedir       : "$env:CLCACHE_DIR
-	Write-Host " "
-	Write-Host "Build Configuration"
-	Write-Host "Buildmode      : "$BUILDMODE
-	Write-Host "Enterprise     : "$ENTERPRISEEDITION
-	Write-Host "Maintainer     : "$MAINTAINER
-	Write-Host " "
-	Write-Host "Generator      : "$GENERATOR
-	Write-Host "Packaging      : "$PACKAGING
-	Write-Host "Static         : "$STATICEXECUTABLES
-	Write-Host " "	
-	Write-Host "Test Configuration"
-	Write-Host "Storage engine : "$STORAGEENGINE
-	Write-Host "Test suite     : "$TESTSUITE
-	Write-Host " "
-	Write-Host "Internal Configuration"
-	Write-Host "Parallelism    : "$PARALLELISM
-	Write-Host "Verbose        : "$VERBOSEOSKAR
-	Write-Host " "
-	Write-Host "Directories"
-	Write-Host "Inner workdir  : "$INNERWORKDIR
-	Write-Host "Workdir        : "$WORKDIR
-	Write-Host "Workspace      : "$ENV:WORKSPACE
-	Write-Host "------------------------------------------------------------------------------"
-	Write-Host " "
+    Write-Host "------------------------------------------------------------------------------"
+    Write-Host "Global Configuration"
+    Write-Host "User           : "$env:USERDOMAIN\$env:USERNAME
+    Write-Host "Cache          : "$env:CLCACHE_CL
+    Write-Host "Cachedir       : "$env:CLCACHE_DIR
+    Write-Host " "
+    Write-Host "Build Configuration"
+    Write-Host "Buildmode      : "$BUILDMODE
+    Write-Host "Enterprise     : "$ENTERPRISEEDITION
+    Write-Host "Maintainer     : "$MAINTAINER
+    Write-Host " "
+    Write-Host "Generator      : "$GENERATOR
+    Write-Host "Packaging      : "$PACKAGING
+    Write-Host "Static exec    : "$STATICEXECUTABLES
+    Write-Host "Static libs    : "$STATICLIBS
+    Write-Host "Failure tests  : "$USEFAILURETESTS
+    Write-Host "Keep build     : "$KEEPBUILD
+    Write-Host " "	
+    Write-Host "Test Configuration"
+    Write-Host "Storage engine : "$STORAGEENGINE
+    Write-Host "Test suite     : "$TESTSUITE
+    Write-Host " "
+    Write-Host "Internal Configuration"
+    Write-Host "Parallelism    : "$PARALLELISM
+    Write-Host "Verbose        : "$VERBOSEOSKAR
+    Write-Host " "
+    Write-Host "Directories"
+    Write-Host "Inner workdir  : "$INNERWORKDIR
+    Write-Host "Workdir        : "$WORKDIR
+    Write-Host "Workspace      : "$env:WORKSPACE
+    Write-Host "------------------------------------------------------------------------------"
+    Write-Host " "
     comm
 }
 
@@ -144,14 +150,17 @@ Function single
 {
     $global:TESTSUITE = "single"
 }
+
 Function cluster
 {
     $global:TESTSUITE = "cluster"
 }
+
 Function resilience
 {
     $global:TESTSUITE = "resilience"
 }
+
 If(-Not($TESTSUITE))
 {
     cluster
@@ -160,15 +169,31 @@ If(-Not($TESTSUITE))
 Function skipPackagingOn
 {
     $global:SKIPPACKAGING = "On"
-	$global:PACKAGING = "Off"
+    $global:PACKAGING = "Off"
     $global:USEFAILURETESTS = "On"
 }
+
 Function skipPackagingOff
 {
     $global:SKIPPACKAGING = "Off"
-	$global:PACKAGING = "On"
+    $global:PACKAGING = "On"
     $global:USEFAILURETESTS = "Off"
 }
+
+Function packagingOn
+{
+    $global:SKIPPACKAGING = "Off"
+    $global:PACKAGING = "On"
+    $global:USEFAILURETESTS = "Off"
+}
+
+Function packagingOff
+{
+    $global:SKIPPACKAGING = "On"
+    $global:PACKAGING = "Off"
+    $global:USEFAILURETESTS = "On"
+}
+
 If(-Not($SKIPPACKAGING))
 {
     skipPackagingOff
@@ -179,11 +204,13 @@ Function staticExecutablesOn
     $global:STATICEXECUTABLES = "On"
     $global:STATICLIBS = "true"
 }
+
 Function staticExecutablesOff
 {
     $global:STATICEXECUTABLES = "Off"
     $global:STATICLIBS = "false"
 }
+
 If(-Not($STATICEXECUTABLES))
 {
     staticExecutablesOff
@@ -193,10 +220,12 @@ Function signPackageOn
 {
     $global:SIGN = $true
 }
+
 Function signPackageOff
 {
     $global:SIGN = $false
 }
+
 If(-Not($SIGN))
 {
     signPackageOn
@@ -206,10 +235,12 @@ Function maintainerOn
 {
     $global:MAINTAINER = "On"
 }
+
 Function maintainerOff
 {
     $global:MAINTAINER = "Off"
 }
+
 If(-Not($MAINTAINER))
 {
     maintainerOn
@@ -219,6 +250,7 @@ Function debugMode
 {
     $global:BUILDMODE = "Debug"
 }
+
 Function releaseMode
 {
     $global:BUILDMODE = "RelWithDebInfo"
@@ -232,6 +264,7 @@ Function community
 {
     $global:ENTERPRISEEDITION = "Off"
 }
+
 Function enterprise
 {
     $global:ENTERPRISEEDITION = "On"
@@ -245,10 +278,12 @@ Function mmfiles
 {
     $global:STORAGEENGINE = "mmfiles"
 }
+
 Function rocksdb
 {
     $global:STORAGEENGINE = "rocksdb"
 }
+
 If(-Not($STORAGEENGINE))
 {
     rocksdb
@@ -258,10 +293,12 @@ Function verbose
 {
     $global:VERBOSEOSKAR = "On"
 }
+
 Function silent
 {
     $global:VERBOSEOSKAR = "Off"
 }
+
 If(-Not($VERBOSEOSKAR))
 {
     verbose
@@ -271,9 +308,25 @@ Function parallelism($threads)
 {
     $global:PARALLELISM = $threads
 }
+
 If(-Not($PARALLELISM))
 {
     $global:PARALLELISM = 16
+}
+
+Function keepBuild
+{
+    $global:KEEPBUILD = "On"
+}
+
+Function clearBuild
+{
+    $global:KEEPBUILD = "Off"
+}
+
+If(-Not($KEEPBUILD))
+{
+    $global:KEEPBUILD = "Off"
 }
 
 Function checkoutArangoDB
@@ -324,7 +377,6 @@ Function checkoutIfNeeded
         }
     }
 }
-
 
 Function switchBranches($branch_c,$branch_e)
 {
@@ -582,9 +634,12 @@ Function signWindows
 Function buildArangoDB
 {
     checkoutIfNeeded
-    If(Test-Path -PathType Container -Path "$INNERWORKDIR\ArangoDB\build")
+    If($KEEPBUILD -eq "Off")
     {
-       Remove-Item -Recurse -Force -Path "$INNERWORKDIR\ArangoDB\build"
+       If(Test-Path -PathType Container -Path "$INNERWORKDIR\ArangoDB\build")
+       {
+          Remove-Item -Recurse -Force -Path "$INNERWORKDIR\ArangoDB\build"
+       }
     }
     configureWindows
     If($global:ok)
