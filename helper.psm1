@@ -11,6 +11,8 @@ If(-Not(Test-Path -PathType Container -Path "work"))
 }
 
 $global:INNERWORKDIR = "$WORKDIR\work"
+$global:ARANGODIR = "$INNERWORKDIR\ArangoDB"
+$global:ENTERPRISEDIR = "$global:ARANGODIR\enterprise"
 $env:TMP = "$INNERWORKDIR\tmp"
 $env:CLCACHE_DIR="$INNERWORKDIR\.clcache.windows"
 
@@ -346,7 +348,7 @@ Function checkoutEnterprise
     if($global:ok)
     {
         Push-Location $pwd
-        Set-Location "$INNERWORKDIR\ArangoDB"
+        Set-Location $global:ARANGODIR
         If(-Not(Test-Path -PathType Container -Path "enterprise"))
         {
             If(Test-Path -PathType Leaf -Path "$HOME\.ssh\known_hosts")
@@ -364,14 +366,14 @@ Function checkoutIfNeeded
 {
     If($ENTERPRISEEDITION -eq "On")
     {
-        If(-Not(Test-Path -PathType Container -Path "$INNERWORKDIR\ArangoDB\enterprise"))
+        If(-Not(Test-Path -PathType Container -Path $global:ENTERPRISEDIR))
         {
             checkoutEnterprise
         }
     }
     Else
     {
-        If(-Not(Test-Path -PathType Container -Path "$INNERWORKDIR\ArangoDB"))
+        If(-Not(Test-Path -PathType Container -Path $global:ARANGODIR))
         {
             checkoutArangoDB
         }
@@ -382,7 +384,7 @@ Function switchBranches($branch_c,$branch_e)
 {
     checkoutIfNeeded
     Push-Location $pwd
-    Set-Location "$INNERWORKDIR\ArangoDB";comm
+    Set-Location $global:ARANGODIR;comm
     If ($global:ok) 
     {
         proc -process "git" -argument "clean -dfx" -logfile $false
@@ -406,7 +408,7 @@ Function switchBranches($branch_c,$branch_e)
     If($ENTERPRISEEDITION -eq "On")
     {
         Push-Location $pwd
-        Set-Location "$INNERWORKDIR\ArangoDB\enterprise";comm
+        Set-Location $global:ENTERPRISEDIR;comm
         If ($global:ok) 
         {
             proc -process "git" -argument "clean -dfx" -logfile $false
@@ -769,12 +771,12 @@ Function moveResultsToWorkspace
 Function getRepoState
 {
     Push-Location $pwd
-    Set-Location "$INNERWORKDIR\Arangodb"; comm
+    Set-Location $global:ARANGODIR; comm
     $global:repoState = "$(git rev-parse HEAD)`r`n"+$(git status -b -s | Select-String -Pattern "^[?]" -NotMatch)
     If($ENTERPRISEEDITION -eq "On")
     {
         Push-Location $pwd
-        Set-Location "$INNERWORKDIR\ArangoDB\enterprise"; comm
+        Set-Location $global:ENTERPRISEDIR; comm
         $global:repoStateEnterprise = "$(git rev-parse HEAD)`r`n$(git status -b -s | Select-String -Pattern "^[?]" -NotMatch)"
         Pop-Location
     }
@@ -816,7 +818,7 @@ Function unittest($test,$output)
 {
     $PORT=Get-Random -Minimum 20000 -Maximum 65535
     Push-Location $pwd
-    Set-Location "$INNERWORKDIR\ArangoDB"; comm
+    Set-Location $global:ARANGODIR; comm
     Write-Host "Test: $INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\arangosh.exe -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\UnitTests\unittest.js -- $test"
     [array]$global:UPIDS = [array]$global:UPIDS+$(Start-Process -FilePath "$INNERWORKDIR\ArangoDB\build\bin\$BUILDMODE\arangosh.exe" -ArgumentList " -c $INNERWORKDIR\ArangoDB\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $INNERWORKDIR\ArangoDB\UnitTests\unittest.js -- $test" -RedirectStandardOutput "$output.stdout.log" -RedirectStandardError "$output.stderr.log" -PassThru).Id; comm
     Pop-Location
@@ -1010,11 +1012,12 @@ Function log([array]$log)
 
 Function createReport
 {
+    Set-Location $global:ARANGODIR
     $date = $(Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH.mm.ssZ")
     $date | Add-Content testProtocol.txt
     $global:result = "GOOD"
     $global:badtests = $null
-    Push-Location "$INNERWORKDIR\tmp"
+    Push-Location $env:TMP
         ForEach($dir in (Get-ChildItem -Directory -Filter "*.out"))
         {
             Write-Host "Looking at directory $($dir.BaseName)"
@@ -1082,7 +1085,7 @@ Function createReport
     {
         Remove-Item -Force "$INNERWORKDIR\testfailures.log"
     }
-    ForEach($file in (Get-ChildItem -Path "$INNERWORKDIR\tmp" -Filter "testfailures.txt" -Recurse).FullName)
+    ForEach($file in (Get-ChildItem -Path $env:TMP -Filter "testfailures.txt" -Recurse).FullName)
     {
         Get-Content $file | Add-Content "$INNERWORKDIR\testfailures.log"; comm
     }
@@ -1100,7 +1103,7 @@ Function runTests
         New-Item -ItemType Directory -Path $env:TMP
     }
     Push-Location $pwd
-    Set-Location "$INNERWORKDIR\ArangoDB"
+    Set-Location $global:ARANGODIR
     ForEach($log in $(Get-ChildItem -Filter "*.log"))
     {
         Remove-Item -Recurse -Force $log 
