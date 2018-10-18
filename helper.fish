@@ -107,7 +107,9 @@ function showRepository
     pushd $WORKDIR/work/ArangoDB
     printf $fmt3 'Community' (findBranch)
     if test -d $WORKDIR/work/ArangoDB/enterprise
+      pushd enterprise
       printf $fmt3 'Enterprise' (findBranch)
+      popd
     else
       printf $fmt3 'Enterprise' 'missing'
     end
