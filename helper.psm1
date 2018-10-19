@@ -1069,13 +1069,13 @@ Function createReport
     7zip -Path "$env:TMP\" -DestinationPath "$global:ARANGODIR\innerlogs.zip"
     ForEach($log in $(Get-ChildItem -Path $global:ARANGODIR -Filter "*.log"))
     {
-        Write-Host "7zip -Path $log  -DestinationPath `"$INNERWORKDIR\testreport-$date.zip`""
-        7zip -Path $log  -DestinationPath "$INNERWORKDIR\testreport-$date.zip"
+        Write-Host "7zip -Path $($log.FullName)  -DestinationPath `"$INNERWORKDIR\testreport-$date.zip`""
+        7zip -Path $($log.FullName)  -DestinationPath "$INNERWORKDIR\testreport-$date.zip"
     }
     ForEach($archive in $(Get-ChildItem -Path $global:ARANGODIR -Filter "*.zip"))
     {
-        Write-Host "7zip -Path $archive -DestinationPath `"$INNERWORKDIR\testreport-$date.zip`""
-        7zip -Path $archive -DestinationPath "$INNERWORKDIR\testreport-$date.zip"
+        Write-Host "7zip -Path $($archive.FullName) -DestinationPath `"$INNERWORKDIR\testreport-$date.zip`""
+        7zip -Path $($archive.FullName) -DestinationPath "$INNERWORKDIR\testreport-$date.zip"
     }
     Write-Host "7zip -Path $env:TMP\testProtocol.txt -DestinationPath `"$INNERWORKDIR\testreport-$date.zip`""
     7zip -Path "$env:TMP\testProtocol.txt" -DestinationPath "$INNERWORKDIR\testreport-$date.zip"
