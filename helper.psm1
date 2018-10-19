@@ -451,13 +451,13 @@ Function updateOskar
 
 Function clearResults
 {
-    ForEach($report in $(Get-ChildItem -Filter $INNERWORKDIR\testreport*))
+    ForEach($report in $(Get-ChildItem -Path $INNERWORKDIR -Filter "testreport*"))
     {
-        Remove-Item -Force $report
+        Remove-Item -Force $report.FullName
     }
     ForEach($log in $(Get-ChildItem -Path $INNERWORKDIR -Filter "*.log"))
     {
-        Remove-Item -Force $log 
+        Remove-Item -Force $log.FullName
     }
     If(Test-Path -PathType Leaf -Path $INNERWORKDIR\test.log)
     {
