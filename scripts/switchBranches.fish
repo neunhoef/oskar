@@ -44,7 +44,7 @@ cd $INNERWORKDIR/ArangoDB
 and checkoutRepo $arango $force_clean
 if test $status -ne 0
   echo "Failed to checkout community branch"
-  exit $status
+  exit 1
 end
 
 if test $ENTERPRISEEDITION = On
@@ -52,6 +52,6 @@ if test $ENTERPRISEEDITION = On
   and checkoutRepo $enterprise $force_clean
   if test $status -ne 0
     echo "Failed to checkout enterprise branch"
-    exit $status
+    exit 1
   end
 end
