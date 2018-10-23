@@ -106,12 +106,16 @@ function showRepository
     popd
     pushd $WORKDIR/work/ArangoDB
     printf $fmt3 'Community' (findBranch)
-    if test -d $WORKDIR/work/ArangoDB/enterprise
-      pushd enterprise
-      printf $fmt3 'Enterprise' (findBranch)
-      popd
+    if test "$ENTERPRISEEDITION" = "On"
+      if test -d $WORKDIR/work/ArangoDB/enterprise
+        pushd enterprise
+        printf $fmt3 'Enterprise' (findBranch)
+        popd
+      else
+        printf $fmt3 'Enterprise' 'missing'
+      end
     else
-      printf $fmt3 'Enterprise' 'missing'
+      printf $fmt3 'Enterprise' 'not configured'
     end
     popd
   else
