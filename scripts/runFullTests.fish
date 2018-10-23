@@ -345,7 +345,7 @@ set -x MALLOC_CONF background_thread:false
 switch $TESTSUITE
   case "cluster"
     resetLaunch 4
-    waitOrKill 1800 launchClusterTests
+    waitOrKill 3600 launchClusterTests
     createReport
   case "single"
     resetLaunch 1

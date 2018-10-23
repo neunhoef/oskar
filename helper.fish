@@ -195,6 +195,7 @@ end
 
 function oskar1
   showConfig
+  showRepository
   set -x NOSTRIP 1
   buildStaticArangoDB -DUSE_FAILURE_TESTS=On -DDEBUG_SYNC_REPLICATION=On ; or return $status
   oskar
@@ -202,6 +203,7 @@ end
 
 function oskar1Full
   showConfig
+  showRepository
   set -x NOSTRIP 1
   buildStaticArangoDB -DUSE_FAILURE_TESTS=On -DDEBUG_SYNC_REPLICATION=On ; or return $status
   oskarFull
@@ -209,6 +211,7 @@ end
 
 function oskar1Limited
   showConfig
+  showRepository
   set -x NOSTRIP 1
   buildStaticArangoDB -DUSE_FAILURE_TESTS=On -DDEBUG_SYNC_REPLICATION=On ; or return $status
   oskarLimited
@@ -216,9 +219,10 @@ end
 
 function oskar2
   set -l testsuite $TESTSUITE
+  set -x NOSTRIP 1
 
   showConfig
-  set -x NOSTRIP 1
+  showRepository
   buildStaticArangoDB -DUSE_FAILURE_TESTS=On -DDEBUG_SYNC_REPLICATION=On ; or return $status
 
   cluster ; oskar ; or return $status
@@ -229,9 +233,10 @@ end
 
 function oskar4
   set -l testsuite $TESTSUITE ; set -l storageengine $STORAGEENGINE
+  set -x NOSTRIP 1
 
   showConfig
-  set -x NOSTRIP 1
+  showRepository
   buildStaticArangoDB -DUSE_FAILURE_TESTS=On -DDEBUG_SYNC_REPLICATION=On ; or return $status
 
   rocksdb
@@ -248,9 +253,10 @@ end
 
 function oskar8
   set -l testsuite $TESTSUITE ; set -l storageengine $STORAGEENGINE ; set -l enterpriseedition $ENTERPRISEEDITION
+  set -x NOSTRIP 1
 
   showConfig
-  set -x NOSTRIP 1
+  showRepository
 
   enterprise
   buildStaticArangoDB -DUSE_FAILURE_TESTS=On -DDEBUG_SYNC_REPLICATION=On ; or return $status
