@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Sample call in build documentatin script
+# Sample call in build documentation script
 # #echo " - generating .md-files"
 # python3 ${ARANGO_SOURCE}/Documentation/Scripts/generateMdFiles.py \
 #        "${book_name}" \
@@ -42,7 +42,7 @@ from pprint import pformat as PF
 # re.sub(repl,lines)
 #
 # repl - In this code repl is often a function that takes a match.
-#        the function calcualtes from that match a fitting replacement
+#        the function calculates from that match a fitting replacement
 #
 ### set up of logging #########################################################
 
@@ -120,7 +120,7 @@ def exectue_if_function(fun, *args, **kwargs):
 
 def apply_dict_re_replacement(dictionary, text):
     """
-        applies a dictionary containing regexes and fuctions or replacement text
+        applies a dictionary containing regexes and functions or replacement text
 
         Within the text the regular expressions are used to match
         substrings to be replaced. The are replaced by the provided
@@ -133,7 +133,7 @@ def apply_dict_re_replacement(dictionary, text):
 
 def apply_dict_re_replacement_bind_params(dictionary, text, text_or_function, *args, **kwargs):
     """
-        applies a dictionary containing regexes and fuctions or replacement text
+        applies a dictionary containing regexes and functions or replacement text
 
         Within the text the regular expressions are used to match
         substrings to be replaced. The are replaced by the provided
@@ -180,7 +180,7 @@ class BlockType(Enum):
 
 
 class DocuBlocks():
-    #TODO rename allComments.txt - to intermeadiate Docublocks
+    #TODO rename allComments.txt - to intermediate Docublocks
     ###### regular expressions #####################################################
     """ Structure that holds plain and inline docublocks that are found in the allComments.txt files
     """
@@ -197,6 +197,7 @@ class DocuBlocks():
     r'''
     \\|                                 # the backslash...
     @RESTDESCRIPTION|                   # -> <empty>
+    @HINTS|                             # -> <inject hints>
     @RESTURLPARAMETERS|                 # -> \n**Path Parameters**\n
     @RESTQUERYPARAMETERS|               # -> \n**Query Parameters**\n
     @RESTHEADERPARAMETERS|              # -> \n**Header Parameters**\n
@@ -213,7 +214,7 @@ class DocuBlocks():
     @EXAMPLES|                          # -> \n**Examples**\n
     @RESTPARAMETERS|                    # -> <empty>
     @RESTREPLYBODY\{(?P<param>.*)\}     # -> call body function
-    ''', re.X) ## re.X - be verobse
+    ''', re.X) ## re.X - be verbose
     ###### regular expressions - end ###############################################
 
     ###### match replace ###########################################################
@@ -307,8 +308,8 @@ class DocuBlocks():
 
             foundRest = True
 
-        for (re, replacment) in DocuBlocks.dict_re_replacement_blocks:
-            block.content = re.sub(replacment, block.content)
+        for (re, replacement) in DocuBlocks.dict_re_replacement_blocks:
+            block.content = re.sub(replacement, block.content)
 
 
         if foundRest:
@@ -361,8 +362,8 @@ class DocuBlocks():
                     maybe_rest_code_first_RestReplyBodyParam = rest_code
                     current_line_num += 1
 
-                    #skip lines with more thatn 1 char
-                    # delete rest of bolck
+                    #skip lines with more than 1 char
+                    # delete rest of block
                     # if blocks are not separated by empty lines it will be very very broken
                     while len(rest_lines_split[current_line_num]) > 1:
                         rest_lines_split[current_line_num] = ''
@@ -420,7 +421,7 @@ class DocuBlockReader(): #GOOD
 
     def parse(self, filename, swagger): #GOOD
                # file to read the blocks from
-        self.blocks = DocuBlocks(swagger);    # stucture that the found blocks are added to and
+        self.blocks = DocuBlocks(swagger);    # structure that the found blocks are added to and
                                        # that is returned when the parse has finished
         """ Parses the text document that contains the DocuBlocks.
 
@@ -509,14 +510,14 @@ def walk_over_book_source(conf, blocks): #GOOD
                 if conf.filter:
                     if conf.filter.match(in_full_path) == None:
                         skipped += 1
-                        continue;
+                        continue
                 ## what are those 2 functions doing
                 mkdir_recursive(os.path.dirname(out_full_path)) #create dir for output file
                 walk_replace_blocks_in_file(in_full_path, out_full_path, conf, blocks)
     logger.info( "Processed %d files, skipped %d" % (count, skipped))
 
 def walk_replace_blocks_in_file(in_full, out_full, conf, blocks):
-    """ replace dcoublocks and images in file and wirte it into preprocessing directory
+    """ replace docublocks and images in file and write it into preprocessing directory
     """
     baseInPath = conf.book_src
 
@@ -660,7 +661,7 @@ def get_verify_reference(swagger, name, source, verb):
         logger.error(json.dumps(swagger['definitions'], indent=4, separators=(', ',': '), sort_keys=True))
         logger.error("invalid reference: " + ref + " in " + function_name)
         sys.exit(1)
-        raise Exception("invalid reference: " + ref + " in " + function_name) #TODO - better execption handling
+        raise Exception("invalid reference: " + ref + " in " + function_name) #TODO - better exception handling
 
     return ref
 
@@ -669,7 +670,7 @@ def get_verify_reference(swagger, name, source, verb):
 ###### block_simple_repl #######################################################
 #===============================================================================
 
-###### validataion dict ########################################################
+###### validation dict ########################################################
 def validate_none(thisVerb):
     pass
 
@@ -706,7 +707,8 @@ def validate_return_codes(thisVerb):
         raise Exception("@RESTRETURNCODES found in Swagger data without any documented returncodes %s " % json.dumps(thisVerb, indent=4, separators=(', ',': '), sort_keys=True))
 
 #block_simple_repl
-g_dict_text_function_for_validaiton = {
+g_dict_text_function_for_validation = {
+    "@HINTS"                : validate_none,
     "@RESTDESCRIPTION"      : validate_none,
     "@RESTURLPARAMETERS"    : validate_path_parameters,
     "@RESTQUERYPARAMETERS"  : validate_query_parameters,
@@ -715,10 +717,11 @@ g_dict_text_function_for_validaiton = {
     "@RESTURLPARAMS"        : validate_path_parameters,
     "@EXAMPLES"             : validate_none
 }
-###### validataion dict - END ##################################################
+###### validation dict - END ##################################################
 
 ###### simple dict  ########################################################
 g_re_example_code_pre = re.compile(r'\*\*Example:\*\*((?:.|\n)*?)</code></pre>')
+g_re_hints_for_swagger = re.compile(r'<!-- Hints Start -->.*<!-- Hints End -->', re.DOTALL)
 def get_rest_description(swagger, thisVerb, verb, route, param):
     """gets rest description and removes
        **Example** ... </code></pre> before returning
@@ -727,17 +730,19 @@ def get_rest_description(swagger, thisVerb, verb, route, param):
     description = thisVerb.get('description', None)
     if description:
         #logger.error(description)
+        # remove simplified hints, original markup is used for rendering in docs
+        description = g_re_hints_for_swagger.sub(r'', description)
         return g_re_example_code_pre.sub(r'', description)
     else:
         #logger.debug("rest description empty")
         return ""
 
-###### unwarpPostJson
+###### unwrapPostJson
 g_re_lf = re.compile("\n")
-g_re_dobule_lf = re.compile("\n\n")
+g_re_double_lf = re.compile("\n\n")
 def trim_and_indent(text, layer):
     text = text.rstrip('\n').lstrip('\n')
-    text = g_re_dobule_lf.sub("\n", text)
+    text = g_re_double_lf.sub("\n", text)
     indent =  ' ' * (layer + 2) if layer > 0 else ""
     return g_re_lf.sub("\n" + indent, text)
 
@@ -747,7 +752,7 @@ def trim_br(text):
     return g_re_leading_br.sub("", g_re_trailing_br.sub("", text.strip(' ')))
 
 def unwrapPostJson(swagger, reference, layer):
-    #TODO - create an description / takl about the format with willi
+    #TODO - create an description / talk about the format with Willi
     swaggerDataTypes = ["number", "integer", "string", "boolean", "array", "object"]
     # logger.error("xx" * layer + reference)
     unwrapped = ''
@@ -825,7 +830,7 @@ def unwrapPostJson(swagger, reference, layer):
 
     return unwrapped
 
-###### unwarpPostJson - END
+###### unwrapPostJson - END
 
 def get_rest_reply_body_parameter(swagger, thisVerb, verb, route, param):
     response_body = "\n**Response Body**\n"
@@ -844,6 +849,7 @@ def get_rest_reply_body_parameter(swagger, thisVerb, verb, route, param):
 # block_simple_repl
 g_dict_text_replacement = {
     "\\"                    : "\\\\",
+    "@HINTS"                : "",
     "@RESTDESCRIPTION"      : get_rest_description,
     "@RESTURLPARAMETERS"    : "\n**Path Parameters**\n",
     "@RESTQUERYPARAMETERS"  : "\n**Query Parameters**\n",
@@ -869,7 +875,7 @@ def block_simple_repl(match, swagger, thisVerb, verb, route):
     #logger.info('xxxxx [%s]' % m)
     #logger_multi(logging.ERROR, 'xxxxx [%s]' % thisVerb)
 
-    validation_function = g_dict_text_function_for_validaiton.get(match_0, None)
+    validation_function = g_dict_text_function_for_validation.get(match_0, None)
     if validation_function:
         validation_function(thisVerb)
 
