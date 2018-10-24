@@ -18,6 +18,7 @@ brew install zabbix --without-server-proxy
 brew install moreutils --without-parallel
 
 brew cask install java8
+brew cask install docker
 
 sudo gem install rspec
 sudo gem install httparty
