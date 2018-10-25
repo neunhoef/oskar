@@ -316,15 +316,15 @@ set -x MALLOC_CONF background_thread:false
 switch $TESTSUITE
   case "cluster"
     resetLaunch 4
-    waitOrKill 1800 launchClusterTests
+    waitOrKill 3600 launchClusterTests
     createReport
   case "single"
     resetLaunch 1
-    waitOrKill 1800 launchSingleTests
+    waitOrKill 3600 launchSingleTests
     createReport
   case "resilience"
     resetLaunch 4
-    waitOrKill 1800 launchResilienceTests
+    waitOrKill 3600 launchResilienceTests
     createReport
   case "*"
     echo Unknown test suite $TESTSUITE
