@@ -73,6 +73,9 @@ function showConfig
   echo
   echo 'Internal Configuration'
   printf $fmt3 'Parallelism'   $PARALLELISM  '(parallelism nnn)'
+  if test "$CCACHESIZE" != ""
+  printf $fmt3 'CCACHE size'   $CCACHESIZE   '(CCACHESIZE)'
+  end
   printf $fmt3 'Verbose Build' $VERBOSEBUILD '(verboseBuild/silentBuild)'
   printf $fmt3 'Verbose Oskar' $VERBOSEOSKAR '(verbose/slient)'
   echo
