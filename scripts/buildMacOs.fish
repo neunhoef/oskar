@@ -60,6 +60,6 @@ if test "$VERBOSEBUILD" = "On"
 end
 
 echo Running make, output in $INNERWORKDIR/buildArangoDB.log
-and nice make $MAKEFALGS > $INNERWORKDIR/buildArangoDB.log ^&1 
+and nice make $MAKEFLAGS > $INNERWORKDIR/buildArangoDB.log ^&1 
 and echo "Finished at "(date)
 and ccache --show-stats
