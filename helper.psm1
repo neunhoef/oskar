@@ -392,7 +392,7 @@ Function switchBranches($branch_c,$branch_e)
     Set-Location $global:ARANGODIR;comm
     If ($global:ok) 
     {
-        proc -process "git" -argument "clean -dfx" -logfile $false
+        proc -process "git" -argument "clean -fdx" -logfile $false
     }
     If ($global:ok) 
     {
@@ -406,9 +406,19 @@ Function switchBranches($branch_c,$branch_e)
     {
         proc -process "git" -argument "checkout $branch_c" -logfile $false
     }
-    If ($global:ok) 
+    If ($branch_c.StartsWith("v"))
     {
-        proc -process "git" -argument "reset --hard origin/$branch_c" -logfile $false
+        If ($global:ok) 
+        {
+            proc -process "git" -argument "checkout -- ." -logfile $false
+        }
+    }
+    Else
+    {
+        If ($global:ok) 
+        {
+            proc -process "git" -argument "reset --hard origin/$branch_c" -logfile $false
+        }
     }
     If($ENTERPRISEEDITION -eq "On")
     {
@@ -416,7 +426,7 @@ Function switchBranches($branch_c,$branch_e)
         Set-Location $global:ENTERPRISEDIR;comm
         If ($global:ok) 
         {
-            proc -process "git" -argument "clean -dfx" -logfile $false
+            proc -process "git" -argument "clean -fdx" -logfile $false
         }
         If ($global:ok) 
         {
@@ -430,9 +440,19 @@ Function switchBranches($branch_c,$branch_e)
         {
             proc -process "git" -argument "checkout $branch_e" -logfile $false
         }
-        If ($global:ok) 
+        If ($branch_e.StartsWith("v"))
         {
-            proc -process "git" -argument "reset --hard origin/$branch_e" -logfile $false
+            If ($global:ok) 
+            {
+                proc -process "git" -argument "checkout -- ." -logfile $false
+            }
+        }
+        Else
+        {
+            If ($global:ok) 
+            {
+                proc -process "git" -argument "reset --hard origin/$branch_e" -logfile $false
+            }
         }
         Pop-Location
     }
