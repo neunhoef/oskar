@@ -340,6 +340,15 @@ function createReport
         set badtests $badtests "Bad result in $f"
       end
     end
+    if test -f "$d/UNITTEST_RESULT_CRASHED.json"
+      if not grep false "$d/UNITTEST_RESULT_CRASHED.json"
+        set -g result BAD
+        set f (basename -s out $d)log
+        echo a Crash occured in $f
+        echo a Crash occured in $f >> testProtocol.txt
+        set badtests $badtests "a Crash occured in $f"
+      end
+    end
   end
 
   if test -e "jslint.log"
