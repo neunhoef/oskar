@@ -256,7 +256,7 @@ function createReport
       end
     end
     if test -f "$d/UNITTEST_RESULT_CRASHED.json"
-      if not grep true "$d/UNITTEST_RESULT_CRASHED.json"
+      if not grep false "$d/UNITTEST_RESULT_CRASHED.json"
         set -g result BAD
         set f (basename -s out $d)log
         echo a Crash occured in $f
