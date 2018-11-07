@@ -10,24 +10,30 @@ and for e in Community Enterprise
   end
 end
 
-and mv $SRC/arangodb3[_-]*.deb $DST/release/packages/Community/Linux
-and mv $SRC/arangodb3[_-]*.rpm $DST/release/packages/Community/Linux
-and mv $SRC/arangodb3-linux-*.tar.gz $DST/release/packages/Community/Linux
+set s 0
 
-and mv $SRC/arangodb3-*.dmg $DST/release/packages/Community/MacOSX
-and mv $SRC/arangodb3-macosx-*.tar.gz $DST/release/packages/Community/MacOSX
+mv $SRC/arangodb3_*.deb $DST/release/packages/Community/Linux ; or set s 1
+mv $SRC/arangodb3-*.deb $DST/release/packages/Community/Linux ; or set s 1
+mv $SRC/arangodb3-*.rpm $DST/release/packages/Community/Linux ; or set s 1
+mv $SRC/arangodb3-linux-*.tar.gz $DST/release/packages/Community/Linux ; or set s 1
 
-and mv $SRC/ArangoDB3-*.exe $DST/release/packages/Community/Windows
-and mv $SRC/ArangoDB3-*.zip $DST/release/packages/Community/Windows
+mv $SRC/arangodb3-*.dmg $DST/release/packages/Community/MacOSX ; or set s 1
+mv $SRC/arangodb3-macosx-*.tar.gz $DST/release/packages/Community/MacOSX ; or set s 1
 
-and mv $SRC/arangodb3e[_-]*.deb $DST/release/packages/Enterprise/Linux
-and mv $SRC/arangodb3e[_-]*.rpm $DST/release/packages/Enterprise/Linux
-and mv $SRC/arangodb3e-linux-*.tar.gz $DST/release/packages/Enterprise/Linux
+mv $SRC/ArangoDB3-*.exe $DST/release/packages/Community/Windows ; or set s 1
+mv $SRC/ArangoDB3-*.zip $DST/release/packages/Community/Windows ; or set s 1
 
-and mv $SRC/arangodb3e-*.dmg $DST/release/packages/Enterprise/MacOSX
-and mv $SRC/arangodb3e-macosx-*.tar.gz $DST/release/packages/Enterprise/MacOSX
+mv $SRC/arangodb3e_*.deb $DST/release/packages/Enterprise/Linux ; or set s 1
+mv $SRC/arangodb3e-*.deb $DST/release/packages/Enterprise/Linux ; or set s 1
+mv $SRC/arangodb3e-*.rpm $DST/release/packages/Enterprise/Linux ; or set s 1
+mv $SRC/arangodb3e-linux-*.tar.gz $DST/release/packages/Enterprise/Linux ; or set s 1
 
-and mv $SRC/ArangoDB3e-*.exe $DST/release/packages/Enterprise/Windows
-and mv $SRC/ArangoDB3e-*.zip $DST/release/packages/Enterprise/Windows
+mv $SRC/arangodb3e-*.dmg $DST/release/packages/Enterprise/MacOSX ; or set s 1
+mv $SRC/arangodb3e-macosx-*.tar.gz $DST/release/packages/Enterprise/MacOSX ; or set s 1
 
-and mv $SRC/*.html $DST/release/snippets
+mv $SRC/ArangoDB3e-*.exe $DST/release/packages/Enterprise/Windows ; or set s 1
+mv $SRC/ArangoDB3e-*.zip $DST/release/packages/Enterprise/Windows ; or set s 1
+
+mv $SRC/*.html $DST/release/snippets ; or set s 1
+
+exit $s
