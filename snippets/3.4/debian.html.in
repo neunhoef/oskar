@@ -17,22 +17,22 @@
   <p class="ara_package_line">Packages for the <strong>Debian</strong> package manager:</p>
   <ul>
     <li>
-      <a href="@DOWNLOAD_LINK@/arangodb34/@DOWNLOAD_EDITION@/Linux/@DEBIAN_NAME_SERVER@">Server @ARANGODB_VERSION@</a><br>
+      <a href="@DOWNLOAD_LINK@/Linux/@DEBIAN_NAME_SERVER@">Server @ARANGODB_VERSION@</a><br>
       (@DEBIAN_SIZE_SERVER@ MByte, SHA256 @DEBIAN_SHA256_SERVER@)
     </li>
     <li>
-      <a href="@DOWNLOAD_LINK@/arangodb34/@DOWNLOAD_EDITION@/Linux/@DEBIAN_NAME_CLIENT@">Client Tools @ARANGODB_VERSION@</a><br>
+      <a href="@DOWNLOAD_LINK@/Linux/@DEBIAN_NAME_CLIENT@">Client Tools @ARANGODB_VERSION@</a><br>
       (@DEBIAN_SIZE_CLIENT@ MByte, SHA256 @DEBIAN_SHA256_CLIENT@)
     </li>
     <li>
-      <a href="@DOWNLOAD_LINK@/arangodb34/@DOWNLOAD_EDITION@/Linux/@DEBIAN_NAME_DEBUG_SYMBOLS@">Debug Symbols @ARANGODB_VERSION@</a><br>
+      <a href="@DOWNLOAD_LINK@/Linux/@DEBIAN_NAME_DEBUG_SYMBOLS@">Debug Symbols @ARANGODB_VERSION@</a><br>
       (@DEBIAN_SIZE_DEBUG_SYMBOLS@ MByte, SHA256 @DEBIAN_SHA256_DEBUG_SYMBOLS@)
     </li>
   </ul>
   <p class="ara_package_line"><strong>Tar</strong> based packages:</p>
   <ul>
     <li>
-      <a href="@DOWNLOAD_LINK@/arangodb34/@DOWNLOAD_EDITION@/Linux/@TARGZ_NAME_SERVER@">Server @ARANGODB_VERSION@</a><br>
+      <a href="@DOWNLOAD_LINK@/Linux/@TARGZ_NAME_SERVER@">Server @ARANGODB_VERSION@</a><br>
       (@TARGZ_SIZE_SERVER@ MByte, SHA256 @TARGZ_SHA256_SERVER@)
     </li>
   </ul>
