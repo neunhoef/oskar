@@ -59,6 +59,7 @@ function showConfig
   printf $fmt3 'Enterprise' $ENTERPRISEEDITION   '(community/enterprise)'
   printf $fmt3 'Jemalloc'   $JEMALLOC_OSKAR      '(jemallocOn/jemallocOff)'
   printf $fmt3 'Maintainer' $MAINTAINER          '(maintainerOn/Off)'
+  printf $fmt3 'SkipGrey'   $SKIPGREY            '(skipGrey/includeGrey)'
 
   if test -z "$NO_RM_BUILD"
     printf $fmt3 'Clear build' On '(keepBuild/clearBuild)'
@@ -178,6 +179,11 @@ function verboseBuild ; set -gx VERBOSEBUILD On ; end
 function silentBuild ; set -gx VERBOSEBUILD Off ; end
 if test -z "$VERBOSEBUILD"; silentBuild
 else ; set -gx VERBOSEBUILD $VERBOSEBUILD ; end
+
+function skipGrey ; set -gx SKIPGREY true ; end
+function includeGrey ; set -gx SKIPGREY false ; end
+if test -z "$SKIPGREY"; includeGrey
+else ; set -gx SKIPGREY $SKIPGREY ; end
 
 function keepBuild ; set -gx NO_RM_BUILD 1 ; end
 function clearBuild ; set -gx NO_RM_BUILD ; end
