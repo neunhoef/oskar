@@ -37,7 +37,7 @@ and begin
   rm -rf $WORKSPACE/*.docker
   echo arangodb/arangodb-preview:$RELEASE_TAG > $WORKSPACE/arangodb3.docker
   echo registry.arangodb.biz:5000/arangodb/arangodb-preview:$RELEASE_TAG-$ENTERPRISE_DOCKER_KEY > $WORKSPACE/arangodb3e.docker
-  echo registry-upload.arangodb.info/arangodb/arangodb-preview:$RELEASE_TAG-$ENTERPRISE_DOCKER_KEY >> $WORKSPACE/arangodb3e.docker
+  echo registry.arangodb.com/arangodb/arangodb-preview:$RELEASE_TAG-$ENTERPRISE_DOCKER_KEY >> $WORKSPACE/arangodb3e.docker
 end
 
 set -l s $status
