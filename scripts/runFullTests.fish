@@ -282,6 +282,7 @@ end
 function waitForProcesses
   set i $argv[1]
   set launcher $argv[2]
+  set start (date -u +%s)
   while true
     # Launch if necessary:
     while test (math (count (jobs -p))"*$launchFactor") -lt "$PARALLELISM"
@@ -290,7 +291,8 @@ function waitForProcesses
     end
     # Check subprocesses:
     if test (count (jobs -p)) -eq 0
-      echo (date) executed $launchCount tests in (math $argv[2] - $i) seconds
+      set stop (date -u +%s)
+      echo (date) executed $launchCount tests in (math $stop - $start) seconds
       return 1
     end
 
@@ -298,7 +300,8 @@ function waitForProcesses
 
     set i (math $i - 5)
     if test $i -lt 0
-      echo (date) executed $launchCount tests in (math $argv[2] - $i) seconds
+      set stop (date -u +%s)
+      echo (date) executed $launchCount tests in (math $stop - $start) seconds
       return 0
     end
 
