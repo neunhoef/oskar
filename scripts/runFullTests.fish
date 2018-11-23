@@ -93,59 +93,59 @@ function launchSingleTests
 
   switch $launchCount
     case  0 ; jslint
-    case  1 ; test1         BackupAuthNoSysTests ""
-    case  2 ; test1         BackupAuthSysTests ""
-    case  3 ; test1         BackupNoAuthNoSysTests ""
-    case  4 ; test1         BackupNoAuthSysTests ""
-    case  5 ; test1         active_failover ""
-    case  6 ; test1         agency ""
-    case  7 ; test1         arangobench  ""
-    case  8 ; test1         arangosh ""
-    case  9 ; test1         audit ""
-    case 10 ; test1         authentication ""
-    case 11 ; test1         authentication_parameters ""
-    case 12 ; test1         authentication_server ""
-    case 13 ; test1         catch ""
-    case 14 ; test1         config ""
-    case 15 ; test1         dfdb ""
-    case 16 ; test1         dump ""
-    case 17 ; test1         dump_authentication ""
-    case 18 ; test1         dump_encrypted "" 
-    case 19 ; test1         endpoints "" --skipEndpointsIpv6 true
-    case 20 ; test1         export ""
-    case 21 ; test1         foxx_manager ""
-    case 22 ; test1         http_replication ""
-    case 23 ; test1         http_server ""
-    case 24 ; test1         importing ""
-    case 25 ; test1         ldaprole "" --ldapHost arangodbtestldapserver
-    case 26 ; test1         ldaprolesimple "" --ldapHost arangodbtestldapserver
-    case 27 ; test1         ldapsearch "" --ldapHost arangodbtestldapserver
-    case 28 ; test1         ldapsearchsimple "" --ldapHost arangodbtestldapserver
-    case 29 ; test1         load_balancing ""
-    case 30 ; test1         load_balancing_auth ""
-    case 31 ; test1         queryCacheAuthorization ""
-    case 32 ; test1         readOnly ""
-    case 33 ; test1         recovery 0 --testBuckets 4/0
-    case 34 ; test1         recovery 1 --testBuckets 4/1
-    case 35 ; test1         recovery 2 --testBuckets 4/2
-    case 36 ; test1         recovery 3 --testBuckets 4/3
-    case 37 ; test1         replication_aql ""
-    case 38 ; test1         replication_fuzz ""
-    case 39 ; test1MoreLogs replication_ongoing ""
-    case 40 ; test1         replication_random ""
-    case 41 ; test1MoreLogs replication_static ""
-    case 42 ; test1MoreLogs replication_sync ""
-    case 43 ; test1         server_http ""
-    case 44 ; test1         shell_client ""
-    case 45 ; test1         shell_client_aql ""
-    case 46 ; test1         shell_replication ""
-    case 47 ; test1         shell_server ""
-    case 48 ; test1         shell_server_aql 0 --testBuckets 5/0
-    case 49 ; test1         shell_server_aql 1 --testBuckets 5/1
-    case 50 ; test1         shell_server_aql 2 --testBuckets 5/2
-    case 51 ; test1         shell_server_aql 3 --testBuckets 5/3
-    case 52 ; test1         shell_server_aql 4 --testBuckets 5/4
-    case 53 ; test1         ssl_server ""
+    case  1 ; test1         ldaprole "" --ldapHost arangodbtestldapserver
+    case  2 ; test1         ldaprolesimple "" --ldapHost arangodbtestldapserver
+    case  3 ; test1         ldapsearch "" --ldapHost arangodbtestldapserver
+    case  4 ; test1         ldapsearchsimple "" --ldapHost arangodbtestldapserver
+    case  5 ; test1         recovery 0 --testBuckets 4/0
+    case  6 ; test1         recovery 1 --testBuckets 4/1
+    case  7 ; test1         recovery 2 --testBuckets 4/2
+    case  8 ; test1         recovery 3 --testBuckets 4/3
+    case  9 ; test1         replication_aql ""
+    case 10 ; test1         replication_fuzz ""
+    case 11 ; test1MoreLogs replication_ongoing ""
+    case 12 ; test1         replication_random ""
+    case 13 ; test1MoreLogs replication_static ""
+    case 14 ; test1MoreLogs replication_sync ""
+    case 15 ; test1         shell_server_aql 0 --testBuckets 5/0
+    case 16 ; test1         shell_server_aql 1 --testBuckets 5/1
+    case 17 ; test1         shell_server_aql 2 --testBuckets 5/2
+    case 18 ; test1         shell_server_aql 3 --testBuckets 5/3
+    case 19 ; test1         shell_server_aql 4 --testBuckets 5/4
+    case 20 ; test1         server_http ""
+    case 21 ; test1         ssl_server ""
+    case 22 ; test1         shell_client ""
+    case 23 ; test1         shell_client_aql ""
+    case 24 ; test1         shell_replication ""
+    case 25 ; test1         shell_server ""
+    case 26 ; test1         BackupAuthNoSysTests ""
+    case 27 ; test1         BackupAuthSysTests ""
+    case 28 ; test1         BackupNoAuthNoSysTests ""
+    case 29 ; test1         BackupNoAuthSysTests ""
+    case 30 ; test1         active_failover ""
+    case 31 ; test1         agency ""
+    case 32 ; test1         arangobench  ""
+    case 33 ; test1         arangosh ""
+    case 34 ; test1         audit ""
+    case 35 ; test1         authentication ""
+    case 36 ; test1         authentication_parameters ""
+    case 37 ; test1         authentication_server ""
+    case 38 ; test1         catch ""
+    case 39 ; test1         config ""
+    case 40 ; test1         dfdb ""
+    case 41 ; test1         dump ""
+    case 42 ; test1         dump_authentication ""
+    case 43 ; test1         dump_encrypted "" 
+    case 44 ; test1         endpoints "" --skipEndpointsIpv6 true
+    case 45 ; test1         export ""
+    case 46 ; test1         foxx_manager ""
+    case 47 ; test1         http_replication ""
+    case 48 ; test1         http_server ""
+    case 49 ; test1         importing ""
+    case 50 ; test1         load_balancing ""
+    case 51 ; test1         load_balancing_auth ""
+    case 52 ; test1         queryCacheAuthorization ""
+    case 53 ; test1         readOnly ""
     case 54 ; test1         upgrade ""
     case 55 ; test1         version ""
     case '*' ; return 0
