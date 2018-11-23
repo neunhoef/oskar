@@ -45,13 +45,13 @@ end
 
 function launchSingleTests
   function jslint
-    if test $VERBOSEOSKAR = On ; echo Launching jslint $argv ; end
+    if test $VERBOSEOSKAR = On ; echo Launching jslint $argv "($launchCount)" ; end
     echo utils/jslint.sh
     utils/jslint.sh > $TMPDIR/jslint.log &
   end
 
   function test1
-    if test $VERBOSEOSKAR = On ; echo Launching $argv ; end
+    if test $VERBOSEOSKAR = On ; echo Launching $argv "($launchCount)" ; end
 
     set -l t $argv[1]
     set -l tt $argv[2]
@@ -71,7 +71,7 @@ function launchSingleTests
   end
 
   function test1MoreLogs
-    if test $VERBOSEOSKAR = On ; echo Launching $argv ; end
+    if test $VERBOSEOSKAR = On ; echo Launching $argv "$launchCount" ; end
 
     set -l t $argv[1]
     set -l tt $argv[2]
@@ -162,7 +162,7 @@ function launchCatchTest
   end
 
   function test1
-    if test $VERBOSEOSKAR = On ; echo Launching $argv ; end
+    if test $VERBOSEOSKAR = On ; echo Launching $argv "($launchCount)" ; end
 
     set -l t $argv[1]
     set -l tt $argv[2]
@@ -182,7 +182,7 @@ function launchCatchTest
   end
 
   function test1MoreLogs
-    if test $VERBOSEOSKAR = On ; echo Launching $argv ; end
+    if test $VERBOSEOSKAR = On ; echo Launching $argv "($launchCount)" ; end
 
     set -l t $argv[1]
     set -l tt $argv[2]
@@ -212,7 +212,7 @@ end
 
 function launchClusterTests
   function test1
-    if test $VERBOSEOSKAR = On ; echo Launching $argv ; end
+    if test $VERBOSEOSKAR = On ; echo Launching $argv "($launchCount)" ; end
     set -l t $argv[1]
     set -l tt $argv[2]
     set -e argv[1..2]
@@ -231,7 +231,7 @@ function launchClusterTests
   end
 
   function test3
-    if test $VERBOSEOSKAR = On ; echo Launching $argv ; end
+    if test $VERBOSEOSKAR = On ; echo Launching $argv "($launchCount)" ; end
     if grep $argv[1] UnitTests/OskarTestSuitesBlackList
       echo Test suite $t skipped by UnitTests/OskarTestSuitesBlackList
     else
@@ -248,28 +248,28 @@ function launchClusterTests
   end
 
   switch $launchCount
-    case  0 ; test1 agency ""
-    case  1 ; test1 authentication ""
-    case  2 ; test1 client_resilience ""
-    case  3 ; test1 dump ""
-    case  4 ; test1 dump_authentication ""
-    case  5 ; test1 http_server ""
+    case  0 ; test1 authentication ""
+    case  1 ; test1 shell_server_aql 0 --testBuckets 5/0
+    case  2 ; test1 shell_server_aql 1 --testBuckets 5/1
+    case  3 ; test1 shell_server_aql 2 --testBuckets 5/2
+    case  4 ; test1 shell_server_aql 3 --testBuckets 5/3
+    case  5 ; test1 shell_server_aql 4 --testBuckets 5/4
     case  6 ; test3 resilience failover      resilience-synchronous-repl-cluster.js
     case  7 ; test3 resilience failover-view resilience-synchronous-repl-cluster-with-arangosearch-view-cluster.js
     case  8 ; test3 resilience move          moving-shards-cluster.js
     case  9 ; test3 resilience move-view     moving-shards-with-arangosearch-view-cluster.js
     case 10 ; test3 resilience repair        repair-distribute-shards-like-spec.js
     case 11 ; test3 resilience sharddist     shard-distribution-spec.js
-    case 12 ; test1 server_http ""
-    case 13 ; test1 shell_client ""
-    case 14 ; test1 shell_client_aql ""
-    case 15 ; test1 shell_server ""
-    case 16 ; test1 shell_server_aql 0 --testBuckets 5/0
-    case 17 ; test1 shell_server_aql 1 --testBuckets 5/1
-    case 16 ; test1 shell_server_aql 2 --testBuckets 5/2
-    case 19 ; test1 shell_server_aql 3 --testBuckets 5/3
-    case 20 ; test1 shell_server_aql 4 --testBuckets 5/4
-    case 21 ; test1 ssl_server ""
+    case 12 ; test1 agency ""
+    case 13 ; test1 client_resilience ""
+    case 14 ; test1 dump ""
+    case 15 ; test1 dump_authentication ""
+    case 16 ; test1 http_server ""
+    case 17 ; test1 ssl_server ""
+    case 18 ; test1 server_http ""
+    case 19 ; test1 shell_client ""
+    case 20 ; test1 shell_client_aql ""
+    case 21 ; test1 shell_server ""
     case '*' ; return 0
   end
   set -g launchCount (math $launchCount + 1)
@@ -287,6 +287,7 @@ function waitForProcesses
     end
     # Check subprocesses:
     if test (count (jobs -p)) -eq 0
+      echo (date) executed $launchCount tests in (math $argv[2] - $i) seconds
       return 1
     end
 
@@ -294,6 +295,7 @@ function waitForProcesses
 
     set i (math $i - 5)
     if test $i -lt 0
+      echo (date) executed $launchCount tests in (math $argv[2] - $i) seconds
       return 0
     end
 
