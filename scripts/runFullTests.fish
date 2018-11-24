@@ -376,7 +376,7 @@ function createReport
     end
     if test -f "$d/started" -a -f "$d/UNITTEST_RESULT_EXECUTIVE_SUMMARY.json"
       set started (cat "$d/started")
-      set stopped (date -u -r "$d/UNITTEST_RESULT_EXECUTIVE_SUMMARY.json" +%s
+      set stopped (date -u -r "$d/UNITTEST_RESULT_EXECUTIVE_SUMMARY.json" +%s)
       echo Test $d took (math $stopped - $started) seconds
     end
   end
