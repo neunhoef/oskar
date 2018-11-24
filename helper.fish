@@ -515,7 +515,8 @@ function moveResultsToWorkspace
       if head -1 $WORKDIR/work/test.log | grep BAD > /dev/null
         for f in $WORKDIR/work/testreport* ; echo "mv $f" ; mv $f $WORKSPACE ; end
       else
-        for f in $WORKDIR/work/testreport* ; echo "rm $f" ; rm $f ; end
+        for f in $WORKDIR/work/testreport* ; echo "mv $f" ; mv $f $WORKSPACE ; end
+      # for f in $WORKDIR/work/testreport* ; echo "rm $f" ; rm $f ; end
       end
       mv $WORKDIR/work/test.log $WORKSPACE
     end
