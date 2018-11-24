@@ -369,9 +369,9 @@ function createReport
       if not grep false "$d/UNITTEST_RESULT_CRASHED.json"
         set -g result BAD
         set f (basename -s out $d)log
-        echo A Crash occured in $f
-        echo A Crash occured in $f >> testProtocol.txt
-        set badtests $badtests "a Crash occured in $f"
+        echo A crash occured in $f
+        echo A crash occured in $f >> testProtocol.txt
+        set badtests $badtests "A crash occured in $f"
       end
     end
     if test -f "$d/started" -a -f "$d/UNITTEST_RESULT_EXECUTIVE_SUMMARY.json"
