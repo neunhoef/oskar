@@ -23,8 +23,8 @@ function noteStartAndRepoState
   rm -f testProtocol.txt
   set -l d (date -u +%F_%H.%M.%SZ)
   echo $d >> testProtocol.txt
-  echo "========== Status of main repository:" >> testProtocol.txt
-  echo "========== Status of main repository:"
+  echo "==========\nStatus of main repository:" >> testProtocol.txt
+  echo "==========\nStatus of main repository:"
   for l in $repoState ; echo "  $l" >> testProtocol.txt ; echo "  $l" ; end
   if test $ENTERPRISEEDITION = On
     echo "Status of enterprise repository:" >> testProtocol.txt
@@ -355,10 +355,12 @@ function createReport
   set -l badtests
   pushd $INNERWORKDIR/tmp
   for d in *.out
+    set -l localresult GOOD
     echo Looking at directory $d
     if test -f "$d/UNITTEST_RESULT_EXECUTIVE_SUMMARY.json"
-      if not grep true "$d/UNITTEST_RESULT_EXECUTIVE_SUMMARY.json"
+      if not grep -q true "$d/UNITTEST_RESULT_EXECUTIVE_SUMMARY.json"
         set -g result BAD
+        set localresult BAD
         set f (basename -s out $d)log
         echo Bad result in $f
         echo Bad result in $f >> testProtocol.txt
@@ -366,8 +368,9 @@ function createReport
       end
     end
     if test -f "$d/UNITTEST_RESULT_CRASHED.json"
-      if not grep false "$d/UNITTEST_RESULT_CRASHED.json"
+      if not grep -q false "$d/UNITTEST_RESULT_CRASHED.json"
         set -g result BAD
+        set localresult BAD
         set f (basename -s out $d)log
         echo A crash occured in $f
         echo A crash occured in $f >> testProtocol.txt
@@ -377,8 +380,8 @@ function createReport
     if test -f "$d/started" -a -f "$d/UNITTEST_RESULT_EXECUTIVE_SUMMARY.json"
       set started (cat "$d/started")
       set stopped (date -u -r "$d/UNITTEST_RESULT_EXECUTIVE_SUMMARY.json" +%s)
-      echo Test $d took (math $stopped - $started) seconds
-      echo Test $d took (math $stopped - $started) seconds >> testProtocol.txt
+      echo Test $d took (math $stopped - $started) seconds, status $localresult
+      echo Test $d took (math $stopped - $started) seconds, status $localresult >> testProtocol.txt
     end
   end
 
