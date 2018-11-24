@@ -369,8 +369,8 @@ function createReport
       if not grep false "$d/UNITTEST_RESULT_CRASHED.json"
         set -g result BAD
         set f (basename -s out $d)log
-        echo a Crash occured in $f
-        echo a Crash occured in $f >> testProtocol.txt
+        echo A Crash occured in $f
+        echo A Crash occured in $f >> testProtocol.txt
         set badtests $badtests "a Crash occured in $f"
       end
     end
@@ -378,6 +378,7 @@ function createReport
       set started (cat "$d/started")
       set stopped (date -u -r "$d/UNITTEST_RESULT_EXECUTIVE_SUMMARY.json" +%s)
       echo Test $d took (math $stopped - $started) seconds
+      echo Test $d took (math $stopped - $started) seconds >> testProtocol.txt
     end
   end
 
