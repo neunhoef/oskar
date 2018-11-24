@@ -417,8 +417,8 @@ function createReport
   echo tar czvf "$INNERWORKDIR/testreport-$d.tar.gz" $logs testProtocol.txt $archives
   tar czvf "$INNERWORKDIR/testreport-$d.tar.gz" $logs testProtocol.txt $archives
 
-  echo rm -rf $cores $archives testProtocol.txt
-  rm -rf $cores $archives testProtocol.txt
+  echo rm -rf $cores $archives
+  rm -rf $cores $archives
 
   # And finally collect the testfailures.txt:
   rm -rf $INNERWORKDIR/testfailures.txt

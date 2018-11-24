@@ -519,6 +519,9 @@ function moveResultsToWorkspace
         for f in $WORKDIR/work/testreport* ; echo "rm $f" ; rm $f ; end
       end
       mv $WORKDIR/work/test.log $WORKSPACE
+      if test -f $WORKDIR/work/testProtocol.txt
+        mv $WORKDIR/work/testProtocol.txt $WORKSPACE/protocol.log
+      end
     end
     for x in buildArangoDB.log cmakeArangoDB.log
       if test -f "$WORKDIR/work/$x" ; mv $WORKDIR/work/$x $WORKSPACE ; end
