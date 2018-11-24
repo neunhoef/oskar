@@ -97,36 +97,36 @@ function launchSingleTests
 
   switch $launchCount
     case  0 ; jslint
-    case  1 ; test1MoreLogs replication_ongoing "-32"             --test replication-ongoing-32.js
-    case  2 ; test1MoreLogs replication_ongoing "-frompresent-32" --test replication-ongoing-frompresent-32.js
-    case  3 ; test1MoreLogs replication_ongoing "-frompresent"    --test replication-ongoing-frompresent.js
-    case  4 ; test1MoreLogs replication_ongoing "-global-spec"    --test replication-ongoing-global-spec.js
-    case  5 ; test1MoreLogs replication_ongoing "-global"         --test replication-ongoing-global.js
-    case  6 ; test1MoreLogs replication_ongoing ""                --test replication-ongoing.js
-    case  7 ; test1         replication_aql ""
-    case  8 ; test1         replication_fuzz ""
-    case  9 ; test1         replication_random ""
-    case 10 ; test1MoreLogs replication_static ""
-    case 11 ; test1MoreLogs replication_sync ""
-    case 12 ; test1         ldaprole "" --ldapHost arangodbtestldapserver
-    case 13 ; test1         ldaprolesimple "" --ldapHost arangodbtestldapserver
-    case 14 ; test1         ldapsearch "" --ldapHost arangodbtestldapserver
-    case 15 ; test1         ldapsearchsimple "" --ldapHost arangodbtestldapserver
-    case 16 ; test1         recovery 0 --testBuckets 4/0
-    case 17 ; test1         recovery 1 --testBuckets 4/1
-    case 18 ; test1         recovery 2 --testBuckets 4/2
-    case 19 ; test1         recovery 3 --testBuckets 4/3
-    case 20 ; test1         shell_server_aql 0 --testBuckets 5/0
-    case 21 ; test1         shell_server_aql 1 --testBuckets 5/1
-    case 22 ; test1         shell_server_aql 2 --testBuckets 5/2
-    case 23 ; test1         shell_server_aql 3 --testBuckets 5/3
-    case 24 ; test1         shell_server_aql 4 --testBuckets 5/4
-    case 25 ; test1         server_http ""
-    case 26 ; test1         ssl_server ""
-    case 27 ; test1         shell_client ""
-    case 28 ; test1         shell_client_aql ""
-    case 29 ; test1         shell_replication ""
-    case 30 ; test1         shell_server ""
+    case  1 ; test1MoreLogs replication_static ""
+    case  2 ; test1         shell_server ""
+    case  3 ; test1MoreLogs replication_ongoing "-32"             --test replication-ongoing-32.js
+    case  4 ; test1MoreLogs replication_ongoing "-frompresent-32" --test replication-ongoing-frompresent-32.js
+    case  5 ; test1MoreLogs replication_ongoing "-frompresent"    --test replication-ongoing-frompresent.js
+    case  6 ; test1MoreLogs replication_ongoing "-global-spec"    --test replication-ongoing-global-spec.js
+    case  7 ; test1MoreLogs replication_ongoing "-global"         --test replication-ongoing-global.js
+    case  8 ; test1MoreLogs replication_ongoing ""                --test replication-ongoing.js
+    case  9 ; test1         replication_aql ""
+    case 10 ; test1         replication_fuzz ""
+    case 11 ; test1         replication_random ""
+    case 12 ; test1MoreLogs replication_sync ""
+    case 13 ; test1         ldaprole "" --ldapHost arangodbtestldapserver
+    case 14 ; test1         ldaprolesimple "" --ldapHost arangodbtestldapserver
+    case 15 ; test1         ldapsearch "" --ldapHost arangodbtestldapserver
+    case 16 ; test1         ldapsearchsimple "" --ldapHost arangodbtestldapserver
+    case 17 ; test1         recovery 0 --testBuckets 4/0
+    case 18 ; test1         recovery 1 --testBuckets 4/1
+    case 19 ; test1         recovery 2 --testBuckets 4/2
+    case 20 ; test1         recovery 3 --testBuckets 4/3
+    case 21 ; test1         shell_server_aql 0 --testBuckets 5/0
+    case 22 ; test1         shell_server_aql 1 --testBuckets 5/1
+    case 23 ; test1         shell_server_aql 2 --testBuckets 5/2
+    case 24 ; test1         shell_server_aql 3 --testBuckets 5/3
+    case 25 ; test1         shell_server_aql 4 --testBuckets 5/4
+    case 26 ; test1         server_http ""
+    case 27 ; test1         ssl_server ""
+    case 28 ; test1         shell_client ""
+    case 29 ; test1         shell_client_aql ""
+    case 30 ; test1         shell_replication ""
     case 31 ; test1         BackupAuthNoSysTests ""
     case 32 ; test1         BackupAuthSysTests ""
     case 33 ; test1         BackupNoAuthNoSysTests ""
