@@ -23,8 +23,8 @@ function noteStartAndRepoState
   rm -f testProtocol.txt
   set -l d (date -u +%F_%H.%M.%SZ)
   echo $d >> testProtocol.txt
-  echo "========== Status of main repository:" >> testProtocol.txt
-  echo "========== Status of main repository:"
+  echo "==========\nStatus of main repository:" >> testProtocol.txt
+  echo "==========\nStatus of main repository:"
   for l in $repoState ; echo "  $l" >> testProtocol.txt ; echo "  $l" ; end
   if test $ENTERPRISEEDITION = On
     echo "Status of enterprise repository:" >> testProtocol.txt
@@ -45,13 +45,13 @@ end
 
 function launchSingleTests
   function jslint
-    if test $VERBOSEOSKAR = On ; echo Launching jslint $argv ; end
+    if test $VERBOSEOSKAR = On ; echo Launching jslint $argv "($launchCount)" ; end
     echo utils/jslint.sh
     utils/jslint.sh > $TMPDIR/jslint.log &
   end
 
   function test1
-    if test $VERBOSEOSKAR = On ; echo Launching $argv ; end
+    if test $VERBOSEOSKAR = On ; echo Launching $argv "($launchCount)" ; end
 
     set -l t $argv[1]
     set -l tt $argv[2]
@@ -60,6 +60,8 @@ function launchSingleTests
       echo Test suite $t skipped by UnitTests/OskarTestSuitesBlackList
     else
       echo scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort (math $portBase + 99) $argv --skipNondeterministic true --skipTimeCritical true --testOutput $TMPDIR/"$t""$tt".out --writeXmlReport false --skipGrey "$SKIPGREY"
+      mkdir -p $TMPDIR/"$t""$tt".out
+      date -u +%s > $TMPDIR/"$t""$tt".out/started
       scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE \
         --minPort $portBase --maxPort (math $portBase + 99) $argv \
         --skipNondeterministic true --skipTimeCritical true \
@@ -71,7 +73,7 @@ function launchSingleTests
   end
 
   function test1MoreLogs
-    if test $VERBOSEOSKAR = On ; echo Launching $argv ; end
+    if test $VERBOSEOSKAR = On ; echo Launching $argv "($launchCount)" ; end
 
     set -l t $argv[1]
     set -l tt $argv[2]
@@ -80,6 +82,8 @@ function launchSingleTests
       echo Test suite $t skipped by UnitTests/OskarTestSuitesBlackList
     else
       echo scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort (math $portBase + 99) $argv --skipNondeterministic true --skipTimeCritical true --testOutput $TMPDIR/"$t""$tt".out --writeXmlReport false --extraArgs:log.level replication=trace --skipGrey "$SKIPGREY"
+      mkdir -p $TMPDIR/"$t""$tt".out
+      date -u +%s > $TMPDIR/"$t""$tt".out/started
       scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE \
         --minPort $portBase --maxPort (math $portBase + 99) $argv \
         --skipNondeterministic true --skipTimeCritical true \
@@ -93,61 +97,66 @@ function launchSingleTests
 
   switch $launchCount
     case  0 ; jslint
-    case  1 ; test1         BackupAuthNoSysTests ""
-    case  2 ; test1         BackupAuthSysTests ""
-    case  3 ; test1         BackupNoAuthNoSysTests ""
-    case  4 ; test1         BackupNoAuthSysTests ""
-    case  5 ; test1         active_failover ""
-    case  6 ; test1         agency ""
-    case  7 ; test1         arangobench  ""
-    case  8 ; test1         arangosh ""
-    case  9 ; test1         audit ""
-    case 10 ; test1         authentication ""
-    case 11 ; test1         authentication_parameters ""
-    case 12 ; test1         authentication_server ""
-    case 13 ; test1         catch ""
-    case 14 ; test1         config ""
-    case 15 ; test1         dfdb ""
-    case 16 ; test1         dump ""
-    case 17 ; test1         dump_authentication ""
-    case 18 ; test1         dump_encrypted "" 
-    case 19 ; test1         endpoints "" --skipEndpointsIpv6 true
-    case 20 ; test1         export ""
-    case 21 ; test1         foxx_manager ""
-    case 22 ; test1         http_replication ""
-    case 23 ; test1         http_server ""
-    case 24 ; test1         importing ""
-    case 25 ; test1         ldaprole "" --ldapHost arangodbtestldapserver
-    case 26 ; test1         ldaprolesimple "" --ldapHost arangodbtestldapserver
-    case 27 ; test1         ldapsearch "" --ldapHost arangodbtestldapserver
-    case 28 ; test1         ldapsearchsimple "" --ldapHost arangodbtestldapserver
-    case 29 ; test1         load_balancing ""
-    case 30 ; test1         load_balancing_auth ""
-    case 31 ; test1         queryCacheAuthorization ""
-    case 32 ; test1         readOnly ""
-    case 33 ; test1         recovery 0 --testBuckets 4/0
-    case 34 ; test1         recovery 1 --testBuckets 4/1
-    case 35 ; test1         recovery 2 --testBuckets 4/2
-    case 36 ; test1         recovery 3 --testBuckets 4/3
-    case 37 ; test1         replication_aql ""
-    case 38 ; test1         replication_fuzz ""
-    case 39 ; test1MoreLogs replication_ongoing ""
-    case 40 ; test1         replication_random ""
-    case 41 ; test1MoreLogs replication_static ""
-    case 42 ; test1MoreLogs replication_sync ""
-    case 43 ; test1         server_http ""
-    case 44 ; test1         shell_client ""
-    case 45 ; test1         shell_client_aql ""
-    case 46 ; test1         shell_replication ""
-    case 47 ; test1         shell_server ""
-    case 48 ; test1         shell_server_aql 0 --testBuckets 5/0
-    case 49 ; test1         shell_server_aql 1 --testBuckets 5/1
-    case 50 ; test1         shell_server_aql 2 --testBuckets 5/2
-    case 51 ; test1         shell_server_aql 3 --testBuckets 5/3
-    case 52 ; test1         shell_server_aql 4 --testBuckets 5/4
-    case 53 ; test1         ssl_server ""
-    case 54 ; test1         upgrade ""
-    case 55 ; test1         version ""
+    case  1 ; test1MoreLogs replication_static ""
+    case  2 ; test1         shell_server ""
+    case  3 ; test1MoreLogs replication_ongoing "-32"             --test replication-ongoing-32.js
+    case  4 ; test1MoreLogs replication_ongoing "-frompresent-32" --test replication-ongoing-frompresent-32.js
+    case  5 ; test1MoreLogs replication_ongoing "-frompresent"    --test replication-ongoing-frompresent.js
+    case  6 ; test1MoreLogs replication_ongoing "-global-spec"    --test replication-ongoing-global-spec.js
+    case  7 ; test1MoreLogs replication_ongoing "-global"         --test replication-ongoing-global.js
+    case  8 ; test1MoreLogs replication_ongoing ""                --test replication-ongoing.js
+    case  9 ; test1         replication_aql ""
+    case 10 ; test1         replication_fuzz ""
+    case 11 ; test1         replication_random ""
+    case 12 ; test1MoreLogs replication_sync ""
+    case 13 ; test1         ldaprole "" --ldapHost arangodbtestldapserver
+    case 14 ; test1         ldaprolesimple "" --ldapHost arangodbtestldapserver
+    case 15 ; test1         ldapsearch "" --ldapHost arangodbtestldapserver
+    case 16 ; test1         ldapsearchsimple "" --ldapHost arangodbtestldapserver
+    case 17 ; test1         recovery 0 --testBuckets 4/0
+    case 18 ; test1         recovery 1 --testBuckets 4/1
+    case 19 ; test1         recovery 2 --testBuckets 4/2
+    case 20 ; test1         recovery 3 --testBuckets 4/3
+    case 21 ; test1         shell_server_aql 0 --testBuckets 5/0
+    case 22 ; test1         shell_server_aql 1 --testBuckets 5/1
+    case 23 ; test1         shell_server_aql 2 --testBuckets 5/2
+    case 24 ; test1         shell_server_aql 3 --testBuckets 5/3
+    case 25 ; test1         shell_server_aql 4 --testBuckets 5/4
+    case 26 ; test1         server_http ""
+    case 27 ; test1         ssl_server ""
+    case 28 ; test1         shell_client ""
+    case 29 ; test1         shell_client_aql ""
+    case 30 ; test1         shell_replication ""
+    case 31 ; test1         BackupAuthNoSysTests ""
+    case 32 ; test1         BackupAuthSysTests ""
+    case 33 ; test1         BackupNoAuthNoSysTests ""
+    case 34 ; test1         BackupNoAuthSysTests ""
+    case 35 ; test1         active_failover ""
+    case 36 ; test1         agency ""
+    case 37 ; test1         arangobench  ""
+    case 38 ; test1         arangosh ""
+    case 39 ; test1         audit ""
+    case 40 ; test1         authentication ""
+    case 41 ; test1         authentication_parameters ""
+    case 42 ; test1         authentication_server ""
+    case 43 ; test1         catch ""
+    case 44 ; test1         config ""
+    case 45 ; test1         dfdb ""
+    case 46 ; test1         dump ""
+    case 47 ; test1         dump_authentication ""
+    case 48 ; test1         dump_encrypted ""
+    case 49 ; test1         endpoints "" --skipEndpointsIpv6 true
+    case 50 ; test1         export ""
+    case 51 ; test1         foxx_manager ""
+    case 52 ; test1         http_replication ""
+    case 53 ; test1         http_server ""
+    case 54 ; test1         importing ""
+    case 55 ; test1         load_balancing ""
+    case 56 ; test1         load_balancing_auth ""
+    case 57 ; test1         queryCacheAuthorization ""
+    case 58 ; test1         readOnly ""
+    case 59 ; test1         upgrade ""
+    case 60 ; test1         version ""
     case '*' ; return 0
   end
   set -g launchCount (math $launchCount + 1)
@@ -162,7 +171,7 @@ function launchCatchTest
   end
 
   function test1
-    if test $VERBOSEOSKAR = On ; echo Launching $argv ; end
+    if test $VERBOSEOSKAR = On ; echo Launching $argv "($launchCount)" ; end
 
     set -l t $argv[1]
     set -l tt $argv[2]
@@ -171,6 +180,8 @@ function launchCatchTest
       echo Test suite $t skipped by UnitTests/OskarTestSuitesBlackList
     else
       echo scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort (math $portBase + 99) $argv --skipNondeterministic true --skipTimeCritical true --testOutput $TMPDIR/"$t""$tt".out --writeXmlReport false --skipGrey "$SKIPGREY"
+      mkdir -p $TMPDIR/"$t""$tt".out
+      date -u +%s > $TMPDIR/"$t""$tt".out/started
       scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE \
         --minPort $portBase --maxPort (math $portBase + 99) $argv \
         --skipNondeterministic true --skipTimeCritical true \
@@ -182,7 +193,7 @@ function launchCatchTest
   end
 
   function test1MoreLogs
-    if test $VERBOSEOSKAR = On ; echo Launching $argv ; end
+    if test $VERBOSEOSKAR = On ; echo Launching $argv "($launchCount)" ; end
 
     set -l t $argv[1]
     set -l tt $argv[2]
@@ -191,6 +202,8 @@ function launchCatchTest
       echo Test suite $t skipped by UnitTests/OskarTestSuitesBlackList
     else
       echo scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort (math $portBase + 99) $argv --skipNondeterministic true --skipTimeCritical true --testOutput $TMPDIR/"$t""$tt".out --writeXmlReport false --extraArgs:log.level replication=trace --skipGrey "$SKIPGREY"
+      mkdir -p $TMPDIR/"$t""$tt".out
+      date -u +%s > $TMPDIR/"$t""$tt".out/started
       scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE \
         --minPort $portBase --maxPort (math $portBase + 99) $argv \
         --skipNondeterministic true --skipTimeCritical true \
@@ -212,7 +225,7 @@ end
 
 function launchClusterTests
   function test1
-    if test $VERBOSEOSKAR = On ; echo Launching $argv ; end
+    if test $VERBOSEOSKAR = On ; echo Launching $argv "($launchCount)" ; end
     set -l t $argv[1]
     set -l tt $argv[2]
     set -e argv[1..2]
@@ -220,6 +233,8 @@ function launchClusterTests
       echo Test suite $t skipped by UnitTests/OskarTestSuitesBlackList
     else
       echo scripts/unittest $t --cluster true --storageEngine $STORAGEENGINE --minPort $portBase --maxPort (math $portBase + 99) $argv --skipNondeterministic true --skipTimeCritical true --testOutput $TMPDIR/"$t""$tt".out --writeXmlReport false --skipGrey "$SKIPGREY"
+      mkdir -p $TMPDIR/"$t""$tt".out
+      date -u +%s > $TMPDIR/"$t""$tt".out/started
       scripts/unittest $t --cluster true --storageEngine $STORAGEENGINE \
         --minPort $portBase --maxPort (math $portBase + 99) $argv \
         --skipNondeterministic true --skipTimeCritical true \
@@ -231,11 +246,13 @@ function launchClusterTests
   end
 
   function test3
-    if test $VERBOSEOSKAR = On ; echo Launching $argv ; end
+    if test $VERBOSEOSKAR = On ; echo Launching $argv "($launchCount)" ; end
     if grep $argv[1] UnitTests/OskarTestSuitesBlackList
       echo Test suite $t skipped by UnitTests/OskarTestSuitesBlackList
     else
       echo scripts/unittest $argv[1] --test $argv[3] --storageEngine $STORAGEENGINE --cluster true --minPort $portBase --maxPort (math $portBase + 99) --skipNondeterministic true --testOutput "$TMPDIR/$argv[1]_$argv[2].out" --writeXmlReport false --skipGrey "$SKIPGREY"
+      mkdir -p $TMPDIR/"$t""$tt".out
+      date -u +%s > $TMPDIR/"$t""$tt".out/started
       scripts/unittest $argv[1] --test $argv[3] \
         --storageEngine $STORAGEENGINE --cluster true \
         --minPort $portBase --maxPort (math $portBase + 99) \
@@ -248,28 +265,31 @@ function launchClusterTests
   end
 
   switch $launchCount
-    case  0 ; test1 agency ""
-    case  1 ; test1 authentication ""
-    case  2 ; test1 client_resilience ""
-    case  3 ; test1 dump ""
-    case  4 ; test1 dump_authentication ""
-    case  5 ; test1 http_server ""
-    case  6 ; test3 resilience failover      resilience-synchronous-repl-cluster.js
-    case  7 ; test3 resilience failover-view resilience-synchronous-repl-cluster-with-arangosearch-view-cluster.js
-    case  8 ; test3 resilience move          moving-shards-cluster.js
-    case  9 ; test3 resilience move-view     moving-shards-with-arangosearch-view-cluster.js
-    case 10 ; test3 resilience repair        repair-distribute-shards-like-spec.js
-    case 11 ; test3 resilience sharddist     shard-distribution-spec.js
-    case 12 ; test1 server_http ""
-    case 13 ; test1 shell_client ""
-    case 14 ; test1 shell_client_aql ""
-    case 15 ; test1 shell_server ""
-    case 16 ; test1 shell_server_aql 0 --testBuckets 5/0
-    case 17 ; test1 shell_server_aql 1 --testBuckets 5/1
-    case 16 ; test1 shell_server_aql 2 --testBuckets 5/2
-    case 19 ; test1 shell_server_aql 3 --testBuckets 5/3
-    case 20 ; test1 shell_server_aql 4 --testBuckets 5/4
-    case 21 ; test1 ssl_server ""
+    case  0 ; test3 resilience sharddist     shard-distribution-spec.js
+    case  1 ; test3 resilience repair        repair-distribute-shards-like-spec.js
+    case  2 ; test3 resilience move-view     moving-shards-with-arangosearch-view-cluster.js
+    case  3 ; test3 resilience move          moving-shards-cluster.js
+    case  4 ; test3 resilience failover-view resilience-synchronous-repl-cluster-with-arangosearch-view-cluster.js
+    case  5 ; test3 resilience failover      resilience-synchronous-repl-cluster.js
+    case  6 ; test1 shell_server_aql 3 --testBuckets 6/3
+    case  7 ; test1 shell_client ""
+    case  8 ; test1 shell_server ""
+    case  9 ; test1 shell_server_aql 2 --testBuckets 6/2
+    case 10 ; test1 authentication 0 --testBuckets 3/0
+    case 11 ; test1 shell_server_aql 0 --testBuckets 6/0
+    case 12 ; test1 authentication 2 --testBuckets 3/2
+    case 13 ; test1 shell_server_aql 4 --testBuckets 6/4
+    case 14 ; test1 shell_server_aql 5 --testBuckets 6/5
+    case 15 ; test1 http_server ""
+    case 16 ; test1 ssl_server ""
+    case 17 ; test1 shell_server_aql 1 --testBuckets 6/1
+    case 18 ; test1 authentication 1 --testBuckets 3/1
+    case 19 ; test1 shell_client_aql ""
+    case 20 ; test1 server_http ""
+    case 21 ; test1 dump ""
+    case 22 ; test1 client_resilience ""
+    case 23 ; test1 agency ""
+    case 24 ; test1 dump_authentication ""
     case '*' ; return 0
   end
   set -g launchCount (math $launchCount + 1)
@@ -279,6 +299,7 @@ end
 function waitForProcesses
   set i $argv[1]
   set launcher $argv[2]
+  set start (date -u +%s)
   while true
     # Launch if necessary:
     while test (math (count (jobs -p))"*$launchFactor") -lt "$PARALLELISM"
@@ -287,6 +308,8 @@ function waitForProcesses
     end
     # Check subprocesses:
     if test (count (jobs -p)) -eq 0
+      set stop (date -u +%s)
+      echo (date) executed $launchCount tests in (math $stop - $start) seconds
       return 1
     end
 
@@ -294,6 +317,8 @@ function waitForProcesses
 
     set i (math $i - 5)
     if test $i -lt 0
+      set stop (date -u +%s)
+      echo (date) executed $launchCount tests in (math $stop - $start) seconds
       return 0
     end
 
@@ -330,10 +355,12 @@ function createReport
   set -l badtests
   pushd $INNERWORKDIR/tmp
   for d in *.out
+    set -l localresult GOOD
     echo Looking at directory $d
     if test -f "$d/UNITTEST_RESULT_EXECUTIVE_SUMMARY.json"
-      if not grep true "$d/UNITTEST_RESULT_EXECUTIVE_SUMMARY.json"
+      if not grep -q true "$d/UNITTEST_RESULT_EXECUTIVE_SUMMARY.json"
         set -g result BAD
+        set localresult BAD
         set f (basename -s out $d)log
         echo Bad result in $f
         echo Bad result in $f >> testProtocol.txt
@@ -341,13 +368,20 @@ function createReport
       end
     end
     if test -f "$d/UNITTEST_RESULT_CRASHED.json"
-      if not grep false "$d/UNITTEST_RESULT_CRASHED.json"
+      if not grep -q false "$d/UNITTEST_RESULT_CRASHED.json"
         set -g result BAD
+        set localresult BAD
         set f (basename -s out $d)log
-        echo a Crash occured in $f
-        echo a Crash occured in $f >> testProtocol.txt
-        set badtests $badtests "a Crash occured in $f"
+        echo A crash occured in $f
+        echo A crash occured in $f >> testProtocol.txt
+        set badtests $badtests "A crash occured in $f"
       end
+    end
+    if test -f "$d/started" -a -f "$d/UNITTEST_RESULT_EXECUTIVE_SUMMARY.json"
+      set started (cat "$d/started")
+      set stopped (date -u -r "$d/UNITTEST_RESULT_EXECUTIVE_SUMMARY.json" +%s)
+      echo Test $d took (math $stopped - $started) seconds, status $localresult
+      echo Test $d took (math $stopped - $started) seconds, status $localresult >> testProtocol.txt
     end
   end
 
@@ -383,8 +417,8 @@ function createReport
   echo tar czvf "$INNERWORKDIR/testreport-$d.tar.gz" $logs testProtocol.txt $archives
   tar czvf "$INNERWORKDIR/testreport-$d.tar.gz" $logs testProtocol.txt $archives
 
-  echo rm -rf $cores $archives testProtocol.txt
-  rm -rf $cores $archives testProtocol.txt
+  echo rm -rf $cores $archives
+  rm -rf $cores $archives
 
   # And finally collect the testfailures.txt:
   rm -rf $INNERWORKDIR/testfailures.txt
