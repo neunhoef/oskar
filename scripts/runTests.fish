@@ -97,37 +97,42 @@ function launchSingleTests
 
   switch $launchCount
     case  0 ; jslint
-    case  1 ; test1         BackupAuthNoSysTests ""
-    case  2 ; test1         BackupAuthSysTests ""
-    case  3 ; test1         BackupNoAuthNoSysTests ""
-    case  4 ; test1         BackupNoAuthSysTests ""
-    case  5 ; test1         agency ""
-    case  6 ; test1         authentication ""
-    case  7 ; test1         catch ""
-    case  8 ; test1         dump ""
-    case  9 ; test1         dump_authentication ""
-    case 10 ; test1         endpoints "" --skipEndpointsIpv6 true
-    case 11 ; test1         http_replication ""
-    case 12 ; test1         http_server ""
-    case 13 ; test1         recovery 0 --testBuckets 4/0
-    case 14 ; test1         recovery 1 --testBuckets 4/1
-    case 15 ; test1         recovery 2 --testBuckets 4/2
-    case 16 ; test1         recovery 3 --testBuckets 4/3
-    case 17 ; test1MoreLogs replication_ongoing ""
-    case 18 ; test1MoreLogs replication_static ""
-    case 19 ; test1MoreLogs replication_sync ""
-    case 20 ; test1         server_http ""
-    case 21 ; test1         shell_client ""
-    case 22 ; test1         shell_client_aql ""
-    case 23 ; test1         shell_replication ""
-    case 24 ; test1         shell_server ""
-    case 25 ; test1         shell_server_aql 0 --testBuckets 5/0
-    case 26 ; test1         shell_server_aql 1 --testBuckets 5/1
-    case 27 ; test1         shell_server_aql 2 --testBuckets 5/2
-    case 28 ; test1         shell_server_aql 3 --testBuckets 5/3
-    case 29 ; test1         shell_server_aql 4 --testBuckets 5/4
-    case 30 ; test1         ssl_server ""
-    case 31 ; test1         version ""
+    case  1 ; test1MoreLogs replication_static ""
+    case  2 ; test1         shell_server ""
+    case  3 ; test1MoreLogs replication_ongoing "-32"             --test replication-ongoing-32.js
+    case  4 ; test1MoreLogs replication_ongoing "-frompresent-32" --test replication-ongoing-frompresent-32.js
+    case  5 ; test1MoreLogs replication_ongoing "-frompresent"    --test replication-ongoing-frompresent.js
+    case  6 ; test1MoreLogs replication_ongoing "-global-spec"    --test replication-ongoing-global-spec.js
+    case  7 ; test1MoreLogs replication_ongoing "-global"         --test replication-ongoing-global.js
+    case  8 ; test1MoreLogs replication_ongoing ""                --test replication-ongoing.js
+    case  9 ; test1MoreLogs replication_sync ""
+    case 10 ; test1         recovery 0 --testBuckets 4/0
+    case 11 ; test1         recovery 1 --testBuckets 4/1
+    case 12 ; test1         recovery 2 --testBuckets 4/2
+    case 13 ; test1         recovery 3 --testBuckets 4/3
+    case 14 ; test1         shell_server_aql 0 --testBuckets 5/0
+    case 15 ; test1         shell_server_aql 1 --testBuckets 5/1
+    case 16 ; test1         shell_server_aql 2 --testBuckets 5/2
+    case 17 ; test1         shell_server_aql 3 --testBuckets 5/3
+    case 18 ; test1         shell_server_aql 4 --testBuckets 5/4
+    case 19 ; test1         server_http ""
+    case 20 ; test1         shell_client ""
+    case 21 ; test1         shell_client_aql ""
+    case 22 ; test1         shell_replication ""
+    case 23 ; test1         BackupAuthNoSysTests ""
+    case 24 ; test1         BackupAuthSysTests ""
+    case 25 ; test1         BackupNoAuthNoSysTests ""
+    case 26 ; test1         BackupNoAuthSysTests ""
+    case 27 ; test1         agency ""
+    case 28 ; test1         authentication ""
+    case 29 ; test1         catch ""
+    case 30 ; test1         dump ""
+    case 31 ; test1         dump_authentication ""
+    case 32 ; test1         endpoints "" --skipEndpointsIpv6 true
+    case 33 ; test1         http_replication ""
+    case 34 ; test1         http_server ""
+    case 35 ; test1         ssl_server ""
+    case 36 ; test1         version ""
     case '*' ; return 0
   end
   set -g launchCount (math $launchCount + 1)
@@ -237,21 +242,21 @@ function launchClusterTests
 
   switch $launchCount
     case  0 ; test1 agency ""
-    case  1 ; test1 dump ""
-    case  2 ; test1 dump_authentication ""
-    case  3 ; test1 http_server ""
-    case  4 ; test3 resilience move moving-shards-cluster.js
-    case  5 ; test3 resilience failover resilience-synchronous-repl-cluster.js
-    case  6 ; test3 resilience sharddist shard-distribution-spec.js
-    case  7 ; test1 server_http ""
+    case  1 ; test1 shell_server ""
+    case  2 ; test1 dump ""
+    case  3 ; test1 dump_authentication ""
+    case  4 ; test1 http_server ""
+    case  5 ; test3 resilience move moving-shards-cluster.js
+    case  6 ; test3 resilience failover resilience-synchronous-repl-cluster.js
+    case  7 ; test3 resilience sharddist shard-distribution-spec.js
     case  8 ; test1 shell_client ""
     case  9 ; test1 shell_client_aql ""
-    case 10 ; test1 shell_server ""
-    case 11 ; test1 shell_server_aql 0 --testBuckets 5/0
-    case 12 ; test1 shell_server_aql 1 --testBuckets 5/1
-    case 13 ; test1 shell_server_aql 2 --testBuckets 5/2
-    case 14 ; test1 shell_server_aql 3 --testBuckets 5/3
-    case 15 ; test1 shell_server_aql 4 --testBuckets 5/4
+    case 10 ; test1 shell_server_aql 0 --testBuckets 5/0
+    case 11 ; test1 shell_server_aql 1 --testBuckets 5/1
+    case 12 ; test1 shell_server_aql 2 --testBuckets 5/2
+    case 13 ; test1 shell_server_aql 3 --testBuckets 5/3
+    case 14 ; test1 shell_server_aql 4 --testBuckets 5/4
+    case 15 ; test1 server_http ""
     case 16 ; test1 ssl_server ""
     case '*' ; return 0
   end
