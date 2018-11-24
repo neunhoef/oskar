@@ -23,8 +23,8 @@ function noteStartAndRepoState
   rm -f testProtocol.txt
   set -l d (date -u +%F_%H.%M.%SZ)
   echo $d >> testProtocol.txt
-  echo "========== Status of main repository:" >> testProtocol.txt
-  echo "========== Status of main repository:"
+  echo "==========\nStatus of main repository:" >> testProtocol.txt
+  echo "==========\nStatus of main repository:"
   for l in $repoState ; echo "  $l" >> testProtocol.txt ; echo "  $l" ; end
   if test $ENTERPRISEEDITION = On
     echo "Status of enterprise repository:" >> testProtocol.txt
@@ -45,13 +45,13 @@ end
 
 function launchSingleTests
   function jslint
-    if test $VERBOSEOSKAR = On ; echo Launching jslint $argv ; end
+    if test $VERBOSEOSKAR = On ; echo Launching jslint $argv "($launchCount)" ; end
     echo utils/jslint.sh
     utils/jslint.sh > $TMPDIR/jslint.log &
   end
 
   function test1
-    if test $VERBOSEOSKAR = On ; echo Launching $argv ; end
+    if test $VERBOSEOSKAR = On ; echo Launching $argv "($launchCount)" ; end
 
     set -l t $argv[1]
     set -l tt $argv[2]
@@ -60,6 +60,8 @@ function launchSingleTests
       echo Test suite $t skipped by UnitTests/OskarTestSuitesBlackList
     else
       echo scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort (math $portBase + 99) $argv --skipNondeterministic true --skipTimeCritical true --testOutput $TMPDIR/"$t""$tt".out --writeXmlReport false --skipGrey "$SKIPGREY"
+      mkdir -p $TMPDIR/"$t""$tt".out
+      date -u +%s > $TMPDIR/"$t""$tt".out/started
       scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE \
         --minPort $portBase --maxPort (math $portBase + 99) $argv \
         --skipNondeterministic true --skipTimeCritical true \
@@ -71,7 +73,7 @@ function launchSingleTests
   end
 
   function test1MoreLogs
-    if test $VERBOSEOSKAR = On ; echo Launching $argv ; end
+    if test $VERBOSEOSKAR = On ; echo Launching $argv "$launchCount" ; end
 
     set -l t $argv[1]
     set -l tt $argv[2]
@@ -80,6 +82,8 @@ function launchSingleTests
       echo Test suite $t skipped by UnitTests/OskarTestSuitesBlackList
     else
       echo scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort (math $portBase + 99) $argv --skipNondeterministic true --skipTimeCritical true --testOutput $TMPDIR/"$t""$tt".out --writeXmlReport false --extraArgs:log.level replication=trace --skipGrey "$SKIPGREY"
+      mkdir -p $TMPDIR/"$t""$tt".out
+      date -u +%s > $TMPDIR/"$t""$tt".out/started
       scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE \
         --minPort $portBase --maxPort (math $portBase + 99) $argv \
         --skipNondeterministic true --skipTimeCritical true \
@@ -138,7 +142,7 @@ function launchCatchTest
   end
 
   function test1
-    if test $VERBOSEOSKAR = On ; echo Launching $argv ; end
+    if test $VERBOSEOSKAR = On ; echo Launching $argv "($launchCount)" ; end
 
     set -l t $argv[1]
     set -l tt $argv[2]
@@ -147,6 +151,8 @@ function launchCatchTest
       echo Test suite $t skipped by UnitTests/OskarTestSuitesBlackList
     else
       echo scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort (math $portBase + 99) $argv --skipNondeterministic true --skipTimeCritical true --testOutput $TMPDIR/"$t""$tt".out --writeXmlReport false --skipGrey "$SKIPGREY"
+      mkdir -p $TMPDIR/"$t""$tt".out
+      date -u +%s > $TMPDIR/"$t""$tt".out/started
       scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE \
         --minPort $portBase --maxPort (math $portBase + 99) $argv \
         --skipNondeterministic true --skipTimeCritical true \
@@ -158,7 +164,7 @@ function launchCatchTest
   end
 
   function test1MoreLogs
-    if test $VERBOSEOSKAR = On ; echo Launching $argv ; end
+    if test $VERBOSEOSKAR = On ; echo Launching $argv "($launchCount)" ; end
 
     set -l t $argv[1]
     set -l tt $argv[2]
@@ -167,6 +173,8 @@ function launchCatchTest
       echo Test suite $t skipped by UnitTests/OskarTestSuitesBlackList
     else
       echo scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE --minPort $portBase --maxPort (math $portBase + 99) $argv --skipNondeterministic true --skipTimeCritical true --testOutput $TMPDIR/"$t""$tt".out --writeXmlReport false --extraArgs:log.level replication=trace --skipGrey "$SKIPGREY"
+      mkdir -p $TMPDIR/"$t""$tt".out
+      date -u +%s > $TMPDIR/"$t""$tt".out/started
       scripts/unittest $t --cluster false --storageEngine $STORAGEENGINE \
         --minPort $portBase --maxPort (math $portBase + 99) $argv \
         --skipNondeterministic true --skipTimeCritical true \
@@ -188,7 +196,7 @@ end
 
 function launchClusterTests
   function test1
-    if test $VERBOSEOSKAR = On ; echo Launching $argv ; end
+    if test $VERBOSEOSKAR = On ; echo Launching $argv "($launchCount)" ; end
     set -l t $argv[1]
     set -l tt $argv[2]
     set -e argv[1..2]
@@ -196,6 +204,8 @@ function launchClusterTests
       echo Test suite $t skipped by UnitTests/OskarTestSuitesBlackList
     else
       echo scripts/unittest $t --cluster true --storageEngine $STORAGEENGINE --minPort $portBase --maxPort (math $portBase + 99) $argv --skipNondeterministic true --skipTimeCritical true --testOutput $TMPDIR/"$t""$tt".out --writeXmlReport false --skipGrey "$SKIPGREY"
+      mkdir -p $TMPDIR/"$t""$tt".out
+      date -u +%s > $TMPDIR/"$t""$tt".out/started
       scripts/unittest $t --cluster true --storageEngine $STORAGEENGINE \
         --minPort $portBase --maxPort (math $portBase + 99) $argv \
         --skipNondeterministic true --skipTimeCritical true \
@@ -207,11 +217,13 @@ function launchClusterTests
   end
 
   function test3
-    if test $VERBOSEOSKAR = On ; echo Launching $argv ; end
+    if test $VERBOSEOSKAR = On ; echo Launching $argv "($launchCount)" ; end
     if grep $argv[1] UnitTests/OskarTestSuitesBlackList
       echo Test suite $t skipped by UnitTests/OskarTestSuitesBlackList
     else
       echo scripts/unittest $argv[1] --test $argv[3] --storageEngine $STORAGEENGINE --cluster true --minPort $portBase --maxPort (math $portBase + 99) --skipNondeterministic true --testOutput "$TMPDIR/$argv[1]_$argv[2].out" --writeXmlReport false --skipGrey "$SKIPGREY"
+      mkdir -p $TMPDIR/"$t""$tt".out
+      date -u +%s > $TMPDIR/"$t""$tt".out/started
       scripts/unittest $argv[1] --test $argv[3] \
         --storageEngine $STORAGEENGINE --cluster true \
         --minPort $portBase --maxPort (math $portBase + 99) \
@@ -250,6 +262,7 @@ end
 function waitForProcesses
   set i $argv[1]
   set launcher $argv[2]
+  set start (date -u +%s)
   while true
     # Launch if necessary:
     while test (math (count (jobs -p))"*$launchFactor") -lt "$PARALLELISM"
@@ -258,6 +271,8 @@ function waitForProcesses
     end
     # Check subprocesses:
     if test (count (jobs -p)) -eq 0
+      set stop (date -u +%s)
+      echo (date) executed $launchCount tests in (math $stop - $start) seconds
       return 1
     end
 
@@ -265,6 +280,8 @@ function waitForProcesses
 
     set i (math $i - 5)
     if test $i -lt 0
+      set stop (date -u +%s)
+      echo (date) executed $launchCount tests in (math $stop - $start) seconds
       return 0
     end
 
@@ -301,10 +318,12 @@ function createReport
   set -l badtests
   pushd $INNERWORKDIR/tmp
   for d in *.out
+    set -l localresult GOOD
     echo Looking at directory $d
     if test -f "$d/UNITTEST_RESULT_EXECUTIVE_SUMMARY.json"
-      if not grep true "$d/UNITTEST_RESULT_EXECUTIVE_SUMMARY.json"
+      if not grep -q true "$d/UNITTEST_RESULT_EXECUTIVE_SUMMARY.json"
         set -g result BAD
+        set localresult BAD
         set f (basename -s out $d)log
         echo Bad result in $f
         echo Bad result in $f >> testProtocol.txt
@@ -312,13 +331,20 @@ function createReport
       end
     end
     if test -f "$d/UNITTEST_RESULT_CRASHED.json"
-      if not grep false "$d/UNITTEST_RESULT_CRASHED.json"
+      if not grep -q false "$d/UNITTEST_RESULT_CRASHED.json"
         set -g result BAD
+        set localresult BAD
         set f (basename -s out $d)log
-        echo a Crash occured in $f
-        echo a Crash occured in $f >> testProtocol.txt
-        set badtests $badtests "a Crash occured in $f"
+        echo A crash occured in $f
+        echo A crash occured in $f >> testProtocol.txt
+        set badtests $badtests "A crash occured in $f"
       end
+    end
+    if test -f "$d/started" -a -f "$d/UNITTEST_RESULT_EXECUTIVE_SUMMARY.json"
+      set started (cat "$d/started")
+      set stopped (date -u -r "$d/UNITTEST_RESULT_EXECUTIVE_SUMMARY.json" +%s)
+      echo Test $d took (math $stopped - $started) seconds, status $localresult
+      echo Test $d took (math $stopped - $started) seconds, status $localresult >> testProtocol.txt
     end
   end
 
@@ -354,8 +380,8 @@ function createReport
   echo tar czvf "$INNERWORKDIR/testreport-$d.tar.gz" $logs testProtocol.txt $archives
   tar czvf "$INNERWORKDIR/testreport-$d.tar.gz" $logs testProtocol.txt $archives
 
-  echo rm -rf $cores $archives testProtocol.txt
-  rm -rf $cores $archives testProtocol.txt
+  echo rm -rf $cores $archives
+  rm -rf $cores $archives
 
   # And finally collect the testfailures.txt:
   rm -rf $INNERWORKDIR/testfailures.txt
