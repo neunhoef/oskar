@@ -502,6 +502,7 @@ function transformSourceSnippet
       -e "s|@SOURCE_SIZE_ZIP@|$SOURCE_SIZE_ZIP|g" \
       -e "s|@SOURCE_SHA256_ZIP@|$SOURCE_SHA256_ZIP|g" \
       -e "s|@DOWNLOAD_LINK@|$DOWNLOAD_LINK|g" \
+      -e "s|@ARANGODB_VERSION@|$ARANGODB_VERSION|g" \
       < snippets/$ARANGODB_SNIPPETS/source.html.in > $n
 
   echo "Source Snippet: $n"
