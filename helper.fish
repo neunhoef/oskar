@@ -542,7 +542,7 @@ function buildSourcePackage
   and tar -c -j -f ArangoDB-$SOURCE_TAG.tar.bz2 ArangoDB-$SOURCE_TAG
   and echo "creating zip"
   and rm -f ArangoDB-$SOURCE_TAG.zip
-  and zip -r ArangoDB-$SOURCE_TAG.zip ArangoDB-$SOURCE_TAG
+  and zip -q -r ArangoDB-$SOURCE_TAG.zip ArangoDB-$SOURCE_TAG
   and popd
   or begin ; popd ; return 1 ; end
 end
