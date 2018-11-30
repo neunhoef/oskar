@@ -478,9 +478,9 @@ function transformSourceSnippet
   set -l SOURCE_ZIP "ArangoDB-$argv[1].zip"
   set -l DOWNLOAD_LINK "$argv[2]"
 
-  if test ! -f "work/$SOURCE_TAR_GZ"; echo "Debian package '$SOURCE_TAR_GZ' is missing"; return 1; end
-  if test ! -f "work/$SOURCE_TAR_BZ2"; echo "Debian package '$SOURCE_TAR_BZ2"' is missing"; return 1; end
-  if test ! -f "work/$SOURCE_ZIP"; echo "Debian package '$SOURCE_ZIP"' is missing"; return 1; end
+  if test ! -f "work/$SOURCE_TAR_GZ"; echo "Source package '$SOURCE_TAR_GZ' is missing"; return 1; end
+  if test ! -f "work/$SOURCE_TAR_BZ2"; echo "Source package '$SOURCE_TAR_BZ2"' is missing"; return 1; end
+  if test ! -f "work/$SOURCE_ZIP"; echo "Source package '$SOURCE_ZIP"' is missing"; return 1; end
 
   set -l SOURCE_SIZE_TAR_GZ (expr (wc -c < work/$SOURCE_TAR_GZ) / 1024 / 1024)
   set -l SOURCE_SIZE_TAR_BZ2 (expr (wc -c < work/$SOURCE_TAR_BZ2) / 1024 / 1024)
@@ -509,12 +509,17 @@ function transformSourceSnippet
 end
 
 function buildSourceSnippet
+  if test (count $argv) -lt 1
+    echo "Need source tag as parameter"
+    exit 1
+  end
+
   if test -z "$SOURCE_DOWNLOAD_LINK"
     echo "you need to set the variable SOURCE_DOWNLOAD_LINK"
       return 1
   end
 
-  transformSourceSnippet $ARANGODB_VERSION "$SOURCE_DOWNLOAD_LINK"
+  transformSourceSnippet $argv[1] "$SOURCE_DOWNLOAD_LINK"
   or return 1
 end
 
