@@ -40,9 +40,9 @@ and docker push registry.arangodb.biz:5000/arangodb/linux-enterprise-maintainer:
 and docker tag registry.arangodb.biz:5000/arangodb/arangodb-preview:$DOCKER_TAG-$ENTERPRISE_DOCKER_KEY registry-upload.arangodb.info/arangodb/arangodb-preview:$DOCKER_TAG-$ENTERPRISE_DOCKER_KEY
 and docker push registry-upload.arangodb.info/arangodb/arangodb-preview:$DOCKER_TAG-$ENTERPRISE_DOCKER_KEY
 and begin
-  rm -rf $WORKSPACE/*.docker
-  echo arangodb/arangodb-preview:$DOCKER_TAG > $WORKSPACE/work/arangodb3.docker
-  echo registry.arangodb.com/arangodb/arangodb-preview:$DOCKER_TAG-$ENTERPRISE_DOCKER_KEY > $WORKSPACE/work/arangodb3e.docker
+  rm -rf $WORKDIR/*.docker
+  echo arangodb/arangodb-preview:$DOCKER_TAG > $WORKDIR/work/arangodb3.docker
+  echo registry.arangodb.com/arangodb/arangodb-preview:$DOCKER_TAG-$ENTERPRISE_DOCKER_KEY > $WORKDIR/work/arangodb3e.docker
 end
 and community
 and buildDockerSnippet
