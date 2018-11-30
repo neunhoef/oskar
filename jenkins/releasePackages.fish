@@ -1,7 +1,7 @@
 #!/usr/bin/env fish
 source jenkins/helper.jenkins.fish ; prepareOskar
 
-lockDirectory ; updateOskar ; clearResults
+lockDirectory ; updateOskar ; clearResults ; cleanWorkspace
 
 switchBranches "$RELEASE_TAG" "$RELEASE_TAG" true
 and makeRelease
