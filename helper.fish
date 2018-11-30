@@ -470,6 +470,83 @@ function makeRelease
   and buildCommunityPackage
 end
 
+function transformSourceSnippet
+  pushd $WORKDIR
+  
+  set -l SOURCE_TAR_GZ "ArangoDB-$argv[1].tar.gz"
+  set -l SOURCE_TAR_BZ2 "ArangoDB-$argv[1].tar.bz2"
+  set -l SOURCE_ZIP "ArangoDB-$argv[1].zip"
+  set -l DOWNLOAD_LINK "$argv[2]"
+
+  if test ! -f "work/$SOURCE_TAR_GZ"; echo "Debian package '$SOURCE_TAR_GZ' is missing"; return 1; end
+  if test ! -f "work/$SOURCE_TAR_BZ2"; echo "Debian package '$SOURCE_TAR_BZ2"' is missing"; return 1; end
+  if test ! -f "work/$SOURCE_ZIP"; echo "Debian package '$SOURCE_ZIP"' is missing"; return 1; end
+
+  set -l SOURCE_SIZE_TAR_GZ (expr (wc -c < work/$SOURCE_TAR_GZ) / 1024 / 1024)
+  set -l SOURCE_SIZE_TAR_BZ2 (expr (wc -c < work/$SOURCE_TAR_BZ2) / 1024 / 1024)
+  set -l SOURCE_SIZE_ZIP (expr (wc -c < work/$SOURCE_ZIP) / 1024 / 1024)
+
+  set -l SOURCE_SHA256_TAR_GZ (shasum -a 256 -b < work/$SOURCE_TAR_GZ | awk '{print $1}')
+  set -l SOURCE_SHA256_TAR_BZ2 (shasum -a 256 -b < work/$SOURCE_TAR_BZ2 | awk '{print $1}')
+  set -l SOURCE_SHA256_ZIP (shasum -a 256 -b < work/$SOURCE_ZIP | awk '{print $1}')
+
+  set -l n "work/download-source.html"
+
+  sed -e "s|@SOURCE_TAR_GZ@|$SOURCE_TAR_GZ|g" \
+      -e "s|@SOURCE_SIZE_TAR_GZ@|$SOURCE_SIZE_TAR_GZ|g" \
+      -e "s|@SOURCE_SHA256_TAR_GZ@|$SOURCE_SHA256_TAR_GZ|g" \
+      -e "s|@SOURCE_TAR_BZ2@|$SOURCE_TAR_BZ2|g" \
+      -e "s|@SOURCE_SIZE_TAR_BZ2@|$SOURCE_SIZE_TAR_BZ2|g" \
+      -e "s|@SOURCE_SHA256_TAR_BZ2@|$SOURCE_SHA256_TAR_BZ2|g" \
+      -e "s|@SOURCE_ZIP@|$SOURCE_ZIP|g" \
+      -e "s|@SOURCE_SIZE_ZIP@|$SOURCE_SIZE_ZIP|g" \
+      -e "s|@SOURCE_SHA256_ZIP@|$SOURCE_SHA256_ZIP|g" \
+      -e "s|@DOWNLOAD_LINK@|$DOWNLOAD_LINK|g" \
+      < snippets/$ARANGODB_SNIPPETS/source.html.in > $n
+
+  echo "Source Snippet: $n"
+  popd
+end
+
+function buildSourceSnippet
+  if test -z "$SOURCE_DOWNLOAD_LINK"
+    echo "you need to set the variable SOURCE_DOWNLOAD_LINK"
+      return 1
+  end
+
+  transformSourceSnippet $ARANGODB_VERSION "$SOURCE_DOWNLOAD_LINK"
+  or return 1
+end
+
+function buildSourcePackage
+  if test (count $argv) -lt 1
+    echo "Need source tag as parameter"
+    exit 1
+  end
+
+  set -l SOURCE_TAG $argv[1]
+
+  pushd $WORKDIR/work
+  and rm -rf ArangoDB-$SOURCE_TAG
+  and cp -a ArangoDB ArangoDB-$SOURCE_TAG
+  and rm -rf ArangoDB-$SOURCE_TAG/enterprise
+  and pushd ArangoDB-$SOURCE_TAG
+  and git clean -f -d -x
+  and popd
+  and rm -rf ArangoDB-$SOURCE_TAG/.git
+  and echo "creating tar.gz"
+  and rm -f ArangoDB-$SOURCE_TAG.tar.gz
+  and tar -c -z -f ArangoDB-$SOURCE_TAG.tar.gz ArangoDB-$SOURCE_TAG
+  and echo "creating tar.bz2"
+  and rm -f ArangoDB-$SOURCE_TAG.tar.bz2
+  and tar -c -j -f ArangoDB-$SOURCE_TAG.tar.bz2 ArangoDB-$SOURCE_TAG
+  and echo "creating zip"
+  and rm -f ArangoDB-$SOURCE_TAG.zip
+  and zip -r ArangoDB-$SOURCE_TAG.zip ArangoDB-$SOURCE_TAG
+  and popd
+  or begin ; popd ; return 1 ; end
+end
+
 function buildTarGzPackageHelper
   set -l os "$argv[1]"
 
@@ -507,6 +584,14 @@ function buildTarGzPackageHelper
   and return $s 
 end
 
+function cleanWorkspace
+  if test -d $WORKDIR/work
+    pushd $WORKDIR/work
+    and find . -maxdepth 1 '!' "(" -name ArangoDB -o -name . -o -name .. -o -name ".cc*" ")" -exec rm -rf "{}" ";"
+    and popd
+  end
+end
+
 function moveResultsToWorkspace
   if test ! -z "$WORKSPACE"
     # Used in jenkins test
@@ -531,6 +616,8 @@ function moveResultsToWorkspace
     for f in $WORKDIR/work/*.dmg ; echo "mv $f" ; mv $f $WORKSPACE ; end
     for f in $WORKDIR/work/*.rpm ; echo "mv $f" ; mv $f $WORKSPACE ; end
     for f in $WORKDIR/work/*.tar.gz ; echo "mv $f" ; mv $f $WORKSPACE ; end
+    for f in $WORKDIR/work/*.tar.bz2 ; echo "mv $f" ; mv $f $WORKSPACE ; end
+    for f in $WORKDIR/work/*.zip ; echo "mv $f" ; mv $f $WORKSPACE ; end
     for f in $WORKDIR/work/*.html ; echo "mv $f" ; mv $f $WORKSPACE ; end
     for f in $WORKDIR/work/*.docker ; echo "mv $f" ; mv $f $WORKSPACE ; end
 
