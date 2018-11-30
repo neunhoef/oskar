@@ -41,8 +41,8 @@ and docker tag registry.arangodb.biz:5000/arangodb/arangodb-preview:$DOCKER_TAG-
 and docker push registry-upload.arangodb.info/arangodb/arangodb-preview:$DOCKER_TAG-$ENTERPRISE_DOCKER_KEY
 and begin
   rm -rf $WORKSPACE/*.docker
-  echo arangodb/arangodb-preview:$DOCKER_TAG > $WORKSPACE/arangodb3.docker
-  echo registry.arangodb.com/arangodb/arangodb-preview:$DOCKER_TAG-$ENTERPRISE_DOCKER_KEY > $WORKSPACE/arangodb3e.docker
+  echo arangodb/arangodb-preview:$DOCKER_TAG > $WORKSPACE/work/arangodb3.docker
+  echo registry.arangodb.com/arangodb/arangodb-preview:$DOCKER_TAG-$ENTERPRISE_DOCKER_KEY > $WORKSPACE/work/arangodb3e.docker
 end
 and community
 and buildDockerSnippet
