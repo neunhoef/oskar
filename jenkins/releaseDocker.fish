@@ -1,7 +1,7 @@
 #!/usr/bin/env fish
 source jenkins/helper.jenkins.fish ; prepareOskar
 
-lockDirectory ; updateOskar ; clearResults
+lockDirectory ; updateOskar ; clearResults ; cleanWorkspace
 
 set -g DOCKER_TAG $RELEASE_TAG
 
