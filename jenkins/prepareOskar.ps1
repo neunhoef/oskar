@@ -58,8 +58,8 @@ If(-Not(Test-Path -PathType Container -Path "$OSKARDIR\oskar"))
 Else
 {
     Set-Location "$OSKARDIR\oskar"
-    proc -process "git" -argument "fetch"
     proc -process "git" -argument "fetch --tags"
+    proc -process "git" -argument "fetch"
     proc -process "git" -argument "reset --hard"
     proc -process "git" -argument "checkout $env:OSKAR_BRANCH"
     proc -process "git" -argument "reset --hard origin/$env:OSKAR_BRANCH"
