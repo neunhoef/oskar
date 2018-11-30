@@ -553,6 +553,41 @@ function buildSourcePackage
   or begin ; popd ; return 1 ; end
 end
 
+function transformDockerSnippet
+  pushd $WORKDIR
+  
+  set -l edition "$argv[1]"
+  set -l DOCKER_IMAGE "$argv[2]"
+
+  set -l n "work/download-docker-$edition.html"
+
+  sed -e "s|@DOCKER_IMAGE@|$DOCKER_IMAGE|g" \
+      -e "s|@ARANGODB_LICENSE_KEY@|$ARANGODB_LICENSE_KEY|g" \
+      -e "s|@ARANGODB_VERSION@|$ARANGODB_VERSION|g" \
+      < snippets/$ARANGODB_SNIPPETS/docker.$edition.html.in > $n
+
+  echo "Docker Snippet: $n"
+  popd
+end
+
+function buildDockerSnippet
+  set -l name arangodb3.docker
+  set -l edition community
+
+  if test "$ENTERPRISEEDITION" = "On"
+    set name arangodb3e.docker
+    set edition enterprise
+  end
+
+  if test ! -f $WORKDIR/work/$name
+    echo "docker image name file '$name' not found"
+    exit 1
+  end
+
+  set -l DOCKER_IMAGE (cat $WORKDIR/work/$name)
+  transformDockerSnippet $edition $DOCKER_IMAGE
+end
+
 function buildTarGzPackageHelper
   set -l os "$argv[1]"
 
@@ -625,7 +660,6 @@ function moveResultsToWorkspace
     for f in $WORKDIR/work/*.tar.bz2 ; echo "mv $f" ; mv $f $WORKSPACE ; end
     for f in $WORKDIR/work/*.zip ; echo "mv $f" ; mv $f $WORKSPACE ; end
     for f in $WORKDIR/work/*.html ; echo "mv $f" ; mv $f $WORKSPACE ; end
-    for f in $WORKDIR/work/*.docker ; echo "mv $f" ; mv $f $WORKSPACE ; end
 
     if test -f $WORKDIR/work/testfailures.txt
       if grep -q -v '^[ \t]*$' $WORKDIR/work/testfailures.txt

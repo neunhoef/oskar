@@ -42,9 +42,12 @@ and docker push registry-upload.arangodb.info/arangodb/arangodb-preview:$DOCKER_
 and begin
   rm -rf $WORKSPACE/*.docker
   echo arangodb/arangodb-preview:$DOCKER_TAG > $WORKSPACE/arangodb3.docker
-  echo registry.arangodb.biz:5000/arangodb/arangodb-preview:$DOCKER_TAG-$ENTERPRISE_DOCKER_KEY > $WORKSPACE/arangodb3e.docker
-  echo registry.arangodb.com/arangodb/arangodb-preview:$DOCKER_TAG-$ENTERPRISE_DOCKER_KEY >> $WORKSPACE/arangodb3e.docker
+  echo registry.arangodb.com/arangodb/arangodb-preview:$DOCKER_TAG-$ENTERPRISE_DOCKER_KEY > $WORKSPACE/arangodb3e.docker
 end
+and community
+and buildDockerSnippet
+and enterprise
+and buildDockerSnippet
 
 set -l s $status
 cd "$HOME/$NODE_NAME/$OSKAR" ; moveResultsToWorkspace ; unlockDirectory
