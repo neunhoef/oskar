@@ -11,7 +11,7 @@ end
 
 switchBranches "$RELEASE_TAG" "$RELEASE_TAG" true
 and buildSourcePackage $SOURCE_TAG
-and buildSourceSnippet 
+and buildSourceSnippet $SOURCE_TAG
 
 set -l s $status
 cd "$HOME/$NODE_NAME/$OSKAR" ; moveResultsToWorkspace ; unlockDirectory
