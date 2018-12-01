@@ -445,19 +445,24 @@ function findArangoDBVersion
   echo
 end
 
+## #############################################################################
+## release
+## #############################################################################
+
 function makeRelease
   if test "$DOWNLOAD_SYNC_USER" = ""
     echo "Need to set environment variable DOWNLOAD_SYNC_USER."
     return 1
   end
+
   if test "$ENTERPRISE_DOWNLOAD_LINK" = ""
-    echo "Need to set environment variable ENTERPRISE_DOWNLOAD_LINK."
-    return 1
+    set -xg ENTERPRISE_DOWNLOAD_LINK "https://download.enterprise"
   end
+
   if test "$COMMUNITY_DOWNLOAD_LINK" = ""
-    echo "Need to set environment variable COMMUNITY_DOWNLOAD_LINK."
-    return 1
+    set -xg COMMUNITY_DOWNLOAD_LINK "https://download.enterprise"
   end
+
   if test (count $argv) -lt 2
     findArangoDBVersion ; or return 1
   else
@@ -468,6 +473,73 @@ function makeRelease
 
   buildEnterprisePackage
   and buildCommunityPackage
+end
+
+## #############################################################################
+## source release
+## #############################################################################
+
+function makeSourceRelease
+  set -l SOURCE_TAG "unknown"
+
+  if test -z "$SOURCE_DOWNLOAD_LINK"
+    set -xg SOURCE_DOWNLOAD_LINK "https://download.source"
+  end
+
+  if test (count $argv) -lt 1
+    findArangoDBVersion ; or return 1
+
+    set SOURCE_TAG $ARANGODB_VERSION
+  else
+    set SOURCE_TAG $argv[1]
+  end
+
+  buildSourcePackage $SOURCE_TAG
+  and buildSourceSnippet $SOURCE_TAG
+end
+
+function buildSourcePackage
+  if test (count $argv) -lt 1
+    echo "Need source tag as parameter"
+    exit 1
+  end
+
+  set -l SOURCE_TAG $argv[1]
+
+  pushd $WORKDIR/work
+  and rm -rf ArangoDB-$SOURCE_TAG
+  and cp -a ArangoDB ArangoDB-$SOURCE_TAG
+  and rm -rf ArangoDB-$SOURCE_TAG/enterprise
+  and pushd ArangoDB-$SOURCE_TAG
+  and git clean -f -d -x
+  and popd
+  and rm -rf ArangoDB-$SOURCE_TAG/.git
+  and echo "creating tar.gz"
+  and rm -f ArangoDB-$SOURCE_TAG.tar.gz
+  and tar -c -z -f ArangoDB-$SOURCE_TAG.tar.gz ArangoDB-$SOURCE_TAG
+  and echo "creating tar.bz2"
+  and rm -f ArangoDB-$SOURCE_TAG.tar.bz2
+  and tar -c -j -f ArangoDB-$SOURCE_TAG.tar.bz2 ArangoDB-$SOURCE_TAG
+  and echo "creating zip"
+  and rm -f ArangoDB-$SOURCE_TAG.zip
+  and zip -q -r ArangoDB-$SOURCE_TAG.zip ArangoDB-$SOURCE_TAG
+  and popd
+  or begin ; popd ; return 1 ; end
+end
+
+function buildSourceSnippet
+  if test (count $argv) -lt 1
+    echo "Need source tag as parameter"
+    exit 1
+  end
+
+  if test -z "$SOURCE_DOWNLOAD_LINK"
+    echo "you need to set the variable SOURCE_DOWNLOAD_LINK"
+      return 1
+  end
+
+  transformSourceSnippet $argv[1] "$SOURCE_DOWNLOAD_LINK"
+  or return 1
 end
 
 function transformSourceSnippet
@@ -507,85 +579,6 @@ function transformSourceSnippet
 
   echo "Source Snippet: $n"
   popd
-end
-
-function buildSourceSnippet
-  if test (count $argv) -lt 1
-    echo "Need source tag as parameter"
-    exit 1
-  end
-
-  if test -z "$SOURCE_DOWNLOAD_LINK"
-    echo "you need to set the variable SOURCE_DOWNLOAD_LINK"
-      return 1
-  end
-
-  transformSourceSnippet $argv[1] "$SOURCE_DOWNLOAD_LINK"
-  or return 1
-end
-
-function buildSourcePackage
-  if test (count $argv) -lt 1
-    echo "Need source tag as parameter"
-    exit 1
-  end
-
-  set -l SOURCE_TAG $argv[1]
-
-  pushd $WORKDIR/work
-  and rm -rf ArangoDB-$SOURCE_TAG
-  and cp -a ArangoDB ArangoDB-$SOURCE_TAG
-  and rm -rf ArangoDB-$SOURCE_TAG/enterprise
-  and pushd ArangoDB-$SOURCE_TAG
-  and git clean -f -d -x
-  and popd
-  and rm -rf ArangoDB-$SOURCE_TAG/.git
-  and echo "creating tar.gz"
-  and rm -f ArangoDB-$SOURCE_TAG.tar.gz
-  and tar -c -z -f ArangoDB-$SOURCE_TAG.tar.gz ArangoDB-$SOURCE_TAG
-  and echo "creating tar.bz2"
-  and rm -f ArangoDB-$SOURCE_TAG.tar.bz2
-  and tar -c -j -f ArangoDB-$SOURCE_TAG.tar.bz2 ArangoDB-$SOURCE_TAG
-  and echo "creating zip"
-  and rm -f ArangoDB-$SOURCE_TAG.zip
-  and zip -q -r ArangoDB-$SOURCE_TAG.zip ArangoDB-$SOURCE_TAG
-  and popd
-  or begin ; popd ; return 1 ; end
-end
-
-function transformDockerSnippet
-  pushd $WORKDIR
-  
-  set -l edition "$argv[1]"
-  set -l DOCKER_IMAGE "$argv[2]"
-
-  set -l n "work/download-docker-$edition.html"
-
-  sed -e "s|@DOCKER_IMAGE@|$DOCKER_IMAGE|g" \
-      -e "s|@ARANGODB_LICENSE_KEY@|$ARANGODB_LICENSE_KEY|g" \
-      -e "s|@ARANGODB_VERSION@|$ARANGODB_VERSION|g" \
-      < snippets/$ARANGODB_SNIPPETS/docker.$edition.html.in > $n
-
-  echo "Docker Snippet: $n"
-  popd
-end
-
-function buildDockerSnippet
-  set -l name arangodb3.docker
-  set -l edition community
-
-  if test "$ENTERPRISEEDITION" = "On"
-    set name arangodb3e.docker
-    set edition enterprise
-  end
-
-  if test ! -f $WORKDIR/work/$name
-    echo "docker image name file '$name' not found"
-    exit 1
-  end
-
-  set -l DOCKER_IMAGE (cat $WORKDIR/work/$name)
-  transformDockerSnippet $edition $DOCKER_IMAGE
 end
 
 function buildTarGzPackageHelper
@@ -669,7 +662,10 @@ function moveResultsToWorkspace
   end
 end
 
-# Include the specifics for the platform
+## #############################################################################
+## Include the specifics for the platform
+## #############################################################################
+
 switch (uname)
   case Darwin ; source helper.mac.fish
   case Windows ; source helper.windows.fish

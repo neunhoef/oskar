@@ -755,5 +755,106 @@ function makeSnippets
   and buildTarGzSnippet
 end
 
-# Set PARALLELISM in a sensible way:
+## #############################################################################
+## docker release
+## #############################################################################
+
+function makeDockerRelease
+  if test (count $argv) -lt 1
+    findArangoDBVersion ; or return 1
+
+    set DOCKER_TAG $ARANGODB_VERSION
+  else
+    set DOCKER_TAG $argv[1]
+  end
+
+  findArangoDBVersion
+  and community
+  and buildDockerRelease $DOCKER_TAG
+  and buildDockerSnippet
+  and enterprise
+  and buildDockerRelease $DOCKER_TAG
+  and buildDockerSnippet
+end
+
+function buildDockerRelease
+  set -l DOCKER_TAG $argv[1]
+  set -l IMAGE_NAME1 ""
+  set -l IMAGE_NAME2 ""
+  set -l IMAGE_NAME3 ""
+  set -l IMAGE_NAME4 ""
+
+  if test -z "$SOURCE_DOWNLOAD_LINK"
+    set -xg ENTERPRISE_DOCKER_KEY "enterprise-docker-key"
+  end
+
+  if test "$ENTERPRISEEDITION" = "On"
+    set IMAGE_NAME1 registry.arangodb.biz:5000/arangodb/arangodb-preview:$DOCKER_TAG-$ENTERPRISE_DOCKER_KEY
+    set IMAGE_NAME2 registry.arangodb.com/arangodb/arangodb-preview:$DOCKER_TAG-$ENTERPRISE_DOCKER_KEY
+    set IMAGE_NAME3 registry-upload.arangodb.info/arangodb/arangodb-preview:$DOCKER_TAG-$ENTERPRISE_DOCKER_KEY
+    set IMAGE_NAME4 registry.arangodb.biz:5000/arangodb/linux-enterprise-maintainer:$DOCKER_TAG
+  else
+    set IMAGE_NAME1 arangodb/arangodb-preview:$DOCKER_TAG
+    set IMAGE_NAME2 arangodb/arangodb-preview:$DOCKER_TAG
+    set IMAGE_NAME3 arangodb/arangodb-preview:$DOCKER_TAG
+  end
+
+  maintainerOff
+  and releaseMode
+  and buildStaticArangoDB -DTARGET_ARCHITECTURE=nehalem
+  and downloadStarter
+  and if test "$ENTERPRISEEDITION" = "On"
+    downloadSyncer
+  end
+  and makeDockerImage $IMAGE_NAME1
+  and if test "$IMAGE_NAME1" != "$IMAGE_NAME3"
+    docker tag $IMAGE_NAME1 $IMAGE_NAME3
+  end
+  and docker push $IMAGE_NAME3
+  and if test "$ENTERPRISEEDITION" = "On"
+    docker tag $IMAGE_NAME1 $IMAGE_NAME4
+    and docker push $IMAGE_NAME4
+  end
+  and echo $IMAGE_NAME2 > $WORKDIR/work/arangodb3.docker
+end
+
+function buildDockerSnippet
+  set -l name arangodb3.docker
+  set -l edition community
+
+  if test "$ENTERPRISEEDITION" = "On"
+    set name arangodb3e.docker
+    set edition enterprise
+  end
+
+  if test ! -f $WORKDIR/work/$name
+    echo "docker image name file '$name' not found"
+    exit 1
+  end
+
+  set -l DOCKER_IMAGE (cat $WORKDIR/work/$name)
+  transformDockerSnippet $edition $DOCKER_IMAGE
+end
+
+function transformDockerSnippet
+  pushd $WORKDIR
+  
+  set -l edition "$argv[1]"
+  set -l DOCKER_IMAGE "$argv[2]"
+
+  set -l n "work/download-docker-$edition.html"
+
+  sed -e "s|@DOCKER_IMAGE@|$DOCKER_IMAGE|g" \
+      -e "s|@ARANGODB_LICENSE_KEY@|$ARANGODB_LICENSE_KEY|g" \
+      -e "s|@ARANGODB_VERSION@|$ARANGODB_VERSION|g" \
+      < snippets/$ARANGODB_SNIPPETS/docker.$edition.html.in > $n
+
+  echo "Docker Snippet: $n"
+  popd
+end
+
+## #############################################################################
+## set PARALLELISM in a sensible way
+## #############################################################################
+
 parallelism (math (grep processor /proc/cpuinfo | wc -l) "*" 2)
