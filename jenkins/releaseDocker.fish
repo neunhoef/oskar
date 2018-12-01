@@ -10,6 +10,7 @@ if test (string sub --length 1 "$RELEASE_TAG") = "v"
 end
 
 switchBranches "$RELEASE_TAG" "$RELEASE_TAG" true
+and showRepository
 and makeDockerRelease
 
 set -l s $status

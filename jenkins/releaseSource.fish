@@ -4,6 +4,7 @@ source jenkins/helper.jenkins.fish ; prepareOskar
 lockDirectory ; updateOskar ; clearResults ; cleanWorkspace
 
 switchBranches "$RELEASE_TAG" "$RELEASE_TAG" true
+and showRepository
 and makeSourcePackage
 
 set -l s $status
