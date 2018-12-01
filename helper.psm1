@@ -494,6 +494,9 @@ Function checkoutIfNeeded
 
 Function switchBranches($branch_c,$branch_e)
 {
+    $branch_c = $branch_c.ToString()
+    $branch_e = $branch_e.ToString()
+
     checkoutIfNeeded
     Push-Location $pwd
     Set-Location $global:ARANGODIR;comm
