@@ -8,6 +8,8 @@ If(-Not(Test-Path -PathType Container -Path release/packages/Enterprise/Windows)
   New-Item -ItemType Directory -Path release/packages/Enterprise/Windows
 }
 
+dir
+
 ForEach($file in $(Get-ChildItem -Path . -Filter "ArangoDB3-*.exe").fullName)
 {
   Copy-Item "$file" -Destination "release/packages/Community/Windows"
