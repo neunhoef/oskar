@@ -798,7 +798,11 @@ function buildDockerRelease
     docker tag $IMAGE_NAME1 $IMAGE_NAME4
     and docker push $IMAGE_NAME4
   end
-  and echo $IMAGE_NAME2 > $WORKDIR/work/arangodb3.docker
+  and if test "$ENTERPRISEEDITION" = "On"
+    echo $IMAGE_NAME2 > $WORKDIR/work/arangodb3e.docker
+  else
+    echo $IMAGE_NAME2 > $WORKDIR/work/arangodb3.docker
+  end
 end
 
 function buildDockerImage
