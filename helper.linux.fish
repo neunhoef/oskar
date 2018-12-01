@@ -446,32 +446,6 @@ function downloadSyncer
   ln -s ../sbin/arangosync $WORKDIR/work/ArangoDB/build/install/usr/bin/arangosync
 end
 
-function makeDockerImage
-  if test "$DOWNLOAD_SYNC_USER" = ""
-    echo "Need to set environment variable DOWNLOAD_SYNC_USER."
-    return 1
-  end
-  if test (count $argv) -eq 0
-    echo Must give image name as argument
-    return 1
-  end
-  set -l imagename $argv[1]
-
-  pushd $WORKDIR/work/ArangoDB/build/install
-  and tar czf $WORKDIR/containers/arangodb.docker/install.tar.gz *
-  if test $status -ne 0
-    echo Could not create install tarball!
-    popd
-    return 1
-  end
-  popd
-
-  pushd $WORKDIR/containers/arangodb.docker
-  and docker build -t $imagename .
-  or begin ; popd ; return 1 ; end
-  popd
-end
-
 function buildPackage
   # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
   # ARANGODB_FULL_VERSION, for example by running findArangoDBVersion.
@@ -760,16 +734,18 @@ end
 ## #############################################################################
 
 function makeDockerRelease
+  set -l DOCKER_TAG ""
+
   if test (count $argv) -lt 1
     findArangoDBVersion ; or return 1
 
     set DOCKER_TAG $ARANGODB_VERSION
   else
     set DOCKER_TAG $argv[1]
+    findArangoDBVersion
   end
 
-  findArangoDBVersion
-  and community
+  community
   and buildDockerRelease $DOCKER_TAG
   and buildDockerSnippet
   and enterprise
@@ -784,7 +760,7 @@ function buildDockerRelease
   set -l IMAGE_NAME3 ""
   set -l IMAGE_NAME4 ""
 
-  if test -z "$SOURCE_DOWNLOAD_LINK"
+  if test -z "$ENTERPRISE_DOCKER_KEY"
     set -xg ENTERPRISE_DOCKER_KEY "enterprise-docker-key"
   end
 
@@ -806,7 +782,7 @@ function buildDockerRelease
   and if test "$ENTERPRISEEDITION" = "On"
     downloadSyncer
   end
-  and makeDockerImage $IMAGE_NAME1
+  and buildDockerImage $IMAGE_NAME1
   and if test "$IMAGE_NAME1" != "$IMAGE_NAME3"
     docker tag $IMAGE_NAME1 $IMAGE_NAME3
   end
@@ -816,6 +792,32 @@ function buildDockerRelease
     and docker push $IMAGE_NAME4
   end
   and echo $IMAGE_NAME2 > $WORKDIR/work/arangodb3.docker
+end
+
+function buildDockerImage
+  if test "$DOWNLOAD_SYNC_USER" = ""
+    echo "Need to set environment variable DOWNLOAD_SYNC_USER."
+    return 1
+  end
+  if test (count $argv) -eq 0
+    echo Must give image name as argument
+    return 1
+  end
+  set -l imagename $argv[1]
+
+  pushd $WORKDIR/work/ArangoDB/build/install
+  and tar czf $WORKDIR/containers/arangodb.docker/install.tar.gz *
+  if test $status -ne 0
+    echo Could not create install tarball!
+    popd
+    return 1
+  end
+  popd
+
+  pushd $WORKDIR/containers/arangodb.docker
+  and docker build -t $imagename .
+  or begin ; popd ; return 1 ; end
+  popd
 end
 
 function buildDockerSnippet
