@@ -734,6 +734,11 @@ end
 ## #############################################################################
 
 function makeDockerRelease
+  if test "$DOWNLOAD_SYNC_USER" = ""
+    echo "Need to set environment variable DOWNLOAD_SYNC_USER."
+    return 1
+  end
+
   set -l DOCKER_TAG ""
 
   if test (count $argv) -lt 1
@@ -775,7 +780,9 @@ function buildDockerRelease
     set IMAGE_NAME3 arangodb/arangodb-preview:$DOCKER_TAG
   end
 
-  maintainerOff
+  echo "building docker image"
+  and asanOff
+  and maintainerOff
   and releaseMode
   and buildStaticArangoDB -DTARGET_ARCHITECTURE=nehalem
   and downloadStarter
@@ -799,10 +806,12 @@ function buildDockerImage
     echo "Need to set environment variable DOWNLOAD_SYNC_USER."
     return 1
   end
+
   if test (count $argv) -eq 0
     echo Must give image name as argument
     return 1
   end
+
   set -l imagename $argv[1]
 
   pushd $WORKDIR/work/ArangoDB/build/install
