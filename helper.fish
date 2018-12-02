@@ -509,10 +509,10 @@ function buildSourcePackage
   pushd $WORKDIR/work
   and rm -rf ArangoDB-$SOURCE_TAG
   and cp -a ArangoDB ArangoDB-$SOURCE_TAG
-  and rm -rf ArangoDB-$SOURCE_TAG/enterprise
   and pushd ArangoDB-$SOURCE_TAG
-  and git clean -f -d -x
   and find . -maxdepth 1 -name "arangodb-tmp.sock*" -delete
+  and rm -rf enterprise
+  and git clean -f -d -x
   and rm -rf .git
   and popd
   and echo "creating tar.gz"
