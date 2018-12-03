@@ -310,12 +310,14 @@ function transformSpec
   and cp "$argv[1]" "$argv[2]"
   and sed -i -e "s/@PACKAGE_VERSION@/$ARANGODB_RPM_UPSTREAM/" "$argv[2]"
   and sed -i -e "s/@PACKAGE_REVISION@/$ARANGODB_RPM_REVISION/" "$argv[2]"
-  and if test "(" "$ARANGODB_VERSION_MAJOR" -eq "3" ")" \
-           -a "(" "$ARANGODB_VERSION_MINOR" -le "3" ")"
-    sed -i -e "s~@JS_DIR@~~" "$argv[2]"
-  else
-    sed -i -e "s~@JS_DIR@~/$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_PATCH~" "$argv[2]"
-  end
+  and sed -i -e "s~@JS_DIR@~~" "$argv[2]"
+
+  # in case of version number inside JS directory
+  # and if test "(" "$ARANGODB_VERSION_MAJOR" -eq "3" ")" -a "(" "$ARANGODB_VERSION_MINOR" -le "3" ")"
+  #  sed -i -e "s~@JS_DIR@~~" "$argv[2]"
+  # else
+  #  sed -i -e "s~@JS_DIR@~/$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_PATCH~" "$argv[2]"
+  # end
 end
 
 function buildRPMPackage
