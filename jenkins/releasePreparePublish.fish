@@ -5,9 +5,11 @@ lockDirectory ; updateOskar ; clearResults ; cleanWorkspace
 
 switchBranches "$RELEASE_TAG" "$RELEASE_TAG" true
 and findArangoDBVersion
+and echo "checking source directory '$WORKSPACE/release/packages'"
 and test -d $WORKSPACE/release/packages
+and echo "checking destination directory '$STORAGE_PATH/$ARANGODB_PACKAGES'"
 and test -d $STORAGE_PATH/$ARANGODB_PACKAGES
-and tar -C $WORKSPACE/release -c -f - packages | tar -C $STORAGE_PATH/$ARANGODB_PACKAGES -x -f -
+and tar -C $WORKSPACE/release -c -f - packages | tar -C $STORAGE_PATH/$ARANGODB_PACKAGES -x -f -v -
 
 set -l s $status
 cd "$HOME/$NODE_NAME/$OSKAR" ; unlockDirectory
