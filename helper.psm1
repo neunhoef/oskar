@@ -700,6 +700,10 @@ Function buildWindows
     If($global:ok)
     {
         Copy-Item "$global:ARANGODIR\build\bin\$BUILDMODE\*" -Destination "$global:ARANGODIR\build\bin\"; comm
+        If(Test-Path -PathType Container -Path "$global:ARANGODIR\build\tests\$BUILDMODE")
+        {
+          Copy-Item "$global:ARANGODIR\build\tests\$BUILDMODE\*" -Destination "$global:ARANGODIR\build\tests\"; comm
+        }
     }
     Pop-Location
 }
