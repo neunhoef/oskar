@@ -1,4 +1,6 @@
 #!/bin/bash
+set -u
+
 script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 . "$script_dir/lib/oskar.bash"
 
@@ -230,7 +232,7 @@ EOF
 
 ## run this only if it is run directly
 if [ "$0" = "$BASH_SOURCE" ]; then
-    (($# < 7)) && usag
+    (($# < 7)) && usage
     create_repo "$@" || exit 1
     exit 0
 fi
