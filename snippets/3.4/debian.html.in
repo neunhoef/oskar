@@ -14,7 +14,7 @@
     require root rights for installation.
   </p>
   <hr/>
-  <p class="ara_package_line">Packages for the <strong>Debian</strong> package manager:</p>
+  <p>Packages for the <strong>Debian</strong> package manager</p>
   <ul>
     <li>
       <a href="@DOWNLOAD_LINK@/Linux/@DEBIAN_NAME_SERVER@">Server @ARANGODB_VERSION@</a><br>
@@ -29,11 +29,40 @@
       (@DEBIAN_SIZE_DEBUG_SYMBOLS@ MByte, SHA256 @DEBIAN_SHA256_DEBUG_SYMBOLS@)
     </li>
   </ul>
-  <p class="ara_package_line"><strong>Tar</strong> based packages:</p>
+  <hr/>
+  <p>
+    <strong>Tar</strong> based packages
+  </p>
   <ul>
     <li>
       <a href="@DOWNLOAD_LINK@/Linux/@TARGZ_NAME_SERVER@">Server @ARANGODB_VERSION@</a><br>
       (@TARGZ_SIZE_SERVER@ MByte, SHA256 @TARGZ_SHA256_SERVER@)
     </li>
   </ul>
+  <hr/>
+  <p>
+    Installation via Package Manager
+  </p>
+  <p>
+    First add the repository key to apt like this:
+  </p>
+  <pre>
+    curl -OL https://download.arangodb.com/arangodb34/DEBIAN/Release.key
+    sudo apt-key add - < Release.key
+  </pre>
+  <p>
+    Use apt-get to install arangodb:
+  </p>
+  <pre>
+    echo 'deb https://download.arangodb.com/arangodb34/DEBIAN/ /' | sudo tee /etc/apt/sources.list.d/arangodb.list
+    sudo apt-get install apt-transport-https
+    sudo apt-get update
+    sudo apt-get install arangodb3=@ARANGODB_VERSION@
+  </pre>
+  <p>
+    To install the debug symbols package (not required by default)
+  </p>
+  <pre>
+    sudo apt-get install arangodb3-dbg=@ARANGODB_VERSION@
+  </pre>
 </div>

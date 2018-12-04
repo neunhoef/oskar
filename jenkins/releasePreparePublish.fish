@@ -38,9 +38,9 @@ and cp -v $WS_SNIPPETS/download-arangodb3-debian.html  $SP_SNIPPETS_CO/download-
 and cp -v $WS_SNIPPETS/download-arangodb3-debian.html  $SP_SNIPPETS_CO/download-ubuntu.html
 and cp -v $WS_SNIPPETS/download-arangodb3-rpm.html     $SP_SNIPPETS_CO/download-centos.html
 and cp -v $WS_SNIPPETS/download-arangodb3-rpm.html     $SP_SNIPPETS_CO/download-fedora.html
-and cp -v $WS_SNIPPETS/download-arangodb3-rpm.html     $SP_SNIPPETS_CO/download-opensuse.html
+and cp -v $WS_SNIPPETS/download-arangodb3-suse.html    $SP_SNIPPETS_CO/download-opensuse.html
 and cp -v $WS_SNIPPETS/download-arangodb3-rpm.html     $SP_SNIPPETS_CO/download-redhat.html
-and cp -v $WS_SNIPPETS/download-arangodb3-rpm.html     $SP_SNIPPETS_CO/download-sle.html
+and cp -v $WS_SNIPPETS/download-arangodb3-suse.html    $SP_SNIPPETS_CO/download-sle.html
 and cp -v $WS_SNIPPETS/download-arangodb3-linux.html   $SP_SNIPPETS_CO/download-linux-general.html
 and cp -v $WS_SNIPPETS/download-arangodb3-macosx.html  $SP_SNIPPETS_CO/download-macosx.html
 and cp -v $WS_SNIPPETS/download-docker-community.html  $SP_SNIPPETS_CO/download-docker.html
@@ -51,9 +51,9 @@ and cp -v $WS_SNIPPETS/download-arangodb3e-debian.html $SP_SNIPPETS_EN/download-
 and cp -v $WS_SNIPPETS/download-arangodb3e-debian.html $SP_SNIPPETS_EN/download-ubuntu.html
 and cp -v $WS_SNIPPETS/download-arangodb3e-rpm.html    $SP_SNIPPETS_EN/download-centos.html
 and cp -v $WS_SNIPPETS/download-arangodb3e-rpm.html    $SP_SNIPPETS_EN/download-fedora.html
-and cp -v $WS_SNIPPETS/download-arangodb3e-rpm.html    $SP_SNIPPETS_EN/download-opensuse.html
+and cp -v $WS_SNIPPETS/download-arangodb3e-suse.html   $SP_SNIPPETS_EN/download-opensuse.html
 and cp -v $WS_SNIPPETS/download-arangodb3e-rpm.html    $SP_SNIPPETS_EN/download-redhat.html
-and cp -v $WS_SNIPPETS/download-arangodb3e-rpm.html    $SP_SNIPPETS_EN/download-sle.html
+and cp -v $WS_SNIPPETS/download-arangodb3e-suse.html   $SP_SNIPPETS_EN/download-sle.html
 and cp -v $WS_SNIPPETS/download-arangodb3e-linux.html  $SP_SNIPPETS_EN/download-linux-general.html
 and cp -v $WS_SNIPPETS/download-arangodb3e-macosx.html $SP_SNIPPETS_EN/download-macosx.html
 and cp -v $WS_SNIPPETS/download-docker-enterprise.html $SP_SNIPPETS_EN/download-docker.html
