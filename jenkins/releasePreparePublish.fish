@@ -14,11 +14,11 @@ and set -g WS_PACKAGES $WORKSPACE/release/packages
 and set -g WS_SNIPPETS $WORKSPACE/release/snippets
 and set -g WS_SOURCE $WORKSPACE/release/source
 
-and echo "checking source directory '$WS_PACKAGES'"
+and echo "checking packages source directory '$WS_PACKAGES'"
 and test -d $WS_PACKAGES
-and echo "checking source directory '$WS_SNIPPETS'"
+and echo "checking snippets source directory '$WS_SNIPPETS'"
 and test -d $WS_SNIPPETS
-and echo "checking source directory '$WS_SOURCE'"
+and echo "checking source source directory '$WS_SOURCE'"
 and test -d $WS_SOURCE
 and echo "checking packages destination directory '$SP_PACKAGES'"
 and test -d $SP_PACKAGES
@@ -32,7 +32,7 @@ and test -d $SP_SOURCE
 and echo "========== COPYING PACKAGES =========="
 and tar -C $WORKSPACE/release -c -f - packages | tar -C $SP_PACKAGES -x -v -f -
 and echo "========== COPYING SOURCE =========="
-and tar -C $WORKSPACE/release -c -f - source | tar -C $SP_SOURCE -x -v -f -
+and tar -C $WS_SOURCE -c -f - . | tar -C $SP_SOURCE -x -v -f -
 and echo "========== COPYING SNIPPETS =========="
 and cp -v $WS_SNIPPETS/download-arangodb3-debian.html  $SP_SNIPPETS_CO/download-debian.html
 and cp -v $WS_SNIPPETS/download-arangodb3-debian.html  $SP_SNIPPETS_CO/download-ubuntu.html
