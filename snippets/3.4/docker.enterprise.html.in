@@ -5,7 +5,7 @@
   </pre>
   <p>
     You should check the
-    <a href="https://docs.arangodb.com/cookbook/Cloud/DockerContainer.html" target="_blank">information</a>
+    <a href="https://docs.arangodb.com/3.4/Manual/Deployment/Docker/" target="_blank">information</a>
     about running ArangoDB in container and how to persist your data under docker.
   </p>
 </div>
