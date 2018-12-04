@@ -686,8 +686,32 @@ Function configureWindows
         Write-Host "Configure: cmake -G `"$GENERATOR`" -T `"v141,host=x64`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DPACKAGING=NSIS -DCMAKE_INSTALL_PREFIX=/ -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DUSE_FAILURE_TESTS=`"$USEFAILURETESTS`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES`" -DOPENSSL_USE_STATIC_LIBS=`"$STATICLIBS`" -DTHIRDPARTY_BIN=`"$global:ARANGODIR\build\arangodb.exe`" `"$global:ARANGODIR`""
 	    proc -process "cmake" -argument "-G `"$GENERATOR`" -T `"v141,host=x64`" -DUSE_MAINTAINER_MODE=`"$MAINTAINER`" -DUSE_ENTERPRISE=`"$ENTERPRISEEDITION`" -DCMAKE_BUILD_TYPE=`"$BUILDMODE`" -DPACKAGING=NSIS -DCMAKE_INSTALL_PREFIX=/ -DSKIP_PACKAGING=`"$SKIPPACKAGING`" -DUSE_FAILURE_TESTS=`"$USEFAILURETESTS`" -DSTATIC_EXECUTABLES=`"$STATICEXECUTABLES`" -DOPENSSL_USE_STATIC_LIBS=`"$STATICLIBS`" -DTHIRDPARTY_BIN=`"$global:ARANGODIR\build\arangodb.exe`" `"$global:ARANGODIR`"" -logfile "$INNERWORKDIR\cmake"
     }
-    #"
     Pop-Location
+}
+
+Function generateSnippets
+{   
+    findArangoDBVersion | Out-Null
+    $template = Get-Content "$global:WORKDIR\snippets\$global:ARANGODB_VERSION_MAJOR.$global:ARANGODB_VERSION_MINOR\windows.html.in"
+    $template = $template -replace "@DOWNLOAD_LINK@","$env:DOWNLOAD_LINK"
+    $template = $template -replace "@WINDOWS_NAME_SERVER_EXE@","$env:WINDOWS_NAME_SERVER_EXE"
+    $template = $template -replace "@WINDOWS_SIZE_SERVER_EXE@","$env:WINDOWS_SIZE_SERVER_EXE"
+    $template = $template -replace "@WINDOWS_SHA256_SERVER_EXE@","$env:WINDOWS_SHA256_SERVER_EXE"
+    $template = $template -replace "@WINDOWS_NAME_CLIENT_EXE@","$env:WINDOWS_NAME_CLIENT_EXE"
+    $template = $template -replace "@WINDOWS_SIZE_CLIENT_EXE@","$env:WINDOWS_SIZE_CLIENT_EXE"
+    $template = $template -replace "@WINDOWS_SHA256_CLIENT_EXE@","$env:WINDOWS_SHA256_CLIENT_EXE"
+    $template = $template -replace "@WINDOWS_NAME_SERVER_ZIP@","$env:WINDOWS_NAME_SERVER_ZIP"
+    $template = $template -replace "@WINDOWS_SIZE_SERVER_ZIP@","$env:WINDOWS_SIZE_SERVER_ZIP"
+    $template = $template -replace "@WINDOWS_SHA256_SERVER_ZIP@","$env:WINDOWS_SHA256_SERVER_ZIP"
+    If($ENTERPRISEEDITION -eq "On")
+    {
+        $template | Out-File -FilePath "$INNERWORKDIR\download-windows-enterprise.html"
+    }
+    Else
+    {
+        $template | Out-File -FilePath "$INNERWORKDIR\download-windows-community.html"
+    }
+    comm
 }
 
 Function buildWindows 
@@ -705,6 +729,7 @@ Function buildWindows
           Copy-Item "$global:ARANGODIR\build\tests\$BUILDMODE\*" -Destination "$global:ARANGODIR\build\tests\"; comm
         }
     }
+    generateSnippets
     Pop-Location
 }
 
@@ -718,7 +743,6 @@ Function packageWindows
         Write-Host "Build: cmake --build . --config `"$BUILDMODE`" --target `"$TARGET`""
         proc -process "cmake" -argument "--build . --config `"$BUILDMODE`" --target `"$TARGET`"" -logfile "$INNERWORKDIR\$TARGET-package"
     }
-    #`
     Pop-Location
 }
 
@@ -726,7 +750,6 @@ Function signWindows
 {
     Push-Location $pwd
     Set-Location "$global:ARANGODIR\build\"
-    #"
     Write-Host "Time: $((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH.mm.ssZ'))"
     $SIGNTOOL = $(Get-ChildItem C:\ -Recurse "signtool.exe" -ErrorAction SilentlyContinue).FullName[0]
     ForEach($PACKAGE in $(Get-ChildItem -Filter ArangoDB3*.exe).FullName)
