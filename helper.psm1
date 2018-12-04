@@ -737,6 +737,23 @@ Function signWindows
     Pop-Location
 }
 
+Function storeSymbols
+{
+    If(-not((Get-SmbMapping -LocalPath S:).Status -eq "OK"))
+    {
+        New-SmbMapping -LocalPath 'S:' -RemotePath '\\symbol.arangodb.biz\symbol' -Persistent $true
+    }
+    Else
+    {
+        findArangoDBVersion | Out-Null
+        ForEach($symbol in $((Get-ChildItem "$global:ARANGODIR\build\bin\$BUILDMODE" -Recurse -Filter "*.pdb").FullName))
+        {
+            proc -process "symstore" -argument "add /f `"$symbol`" /s `"S:\symsrv_arangodb$global:ARANGODB_VERSION_MAJOR$global:ARANGODB_VERSION_MINOR`" /t ArangoDB /compress" -logfile "$INNERWORKDIR\symstore"
+        }
+    }
+
+}
+
 Function buildArangoDB
 {
     checkoutIfNeeded
@@ -1354,8 +1371,10 @@ Function makeRelease
     signPackageOn
     community
     buildArangoDB
+    storeSymbols
     moveResultsToWorkspace
     enterprise
+    storeSymbols
     buildArangoDB
     moveResultsToWorkspace
 }
