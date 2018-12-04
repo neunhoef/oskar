@@ -3,30 +3,32 @@ source jenkins/helper.jenkins.fish ; prepareOskar
 
 lockDirectory ; updateOskar ; clearResults ; cleanWorkspace
 
-set SP_PACKAGES $STORAGE_PATH/$ARANGODB_PACKAGES
-set SP_SNIPPETS_CO $STORAGE_PATH/Snippets/Community
-set SP_SNIPPETS_EN $STORAGE_PATH/Snippets/Enterprise
-set SP_SOURCE $STORAGE_PATH/Source
-
-set WS_PACKAGES $WORKSPACE/release/packages
-set WS_SNIPPETS $WORKSPACE/release/snippets
-set WS_SOURCE $WORKSPACE/release/source
-
 switchBranches "$RELEASE_TAG" "$RELEASE_TAG" true
 and findArangoDBVersion
+
+and set -g SP_PACKAGES $STORAGE_PATH/$ARANGODB_PACKAGES
+and set -g SP_SNIPPETS_CO $STORAGE_PATH/Snippets/Community
+and set -g SP_SNIPPETS_EN $STORAGE_PATH/Snippets/Enterprise
+and set -g SP_SOURCE $STORAGE_PATH/Source
+and set -g WS_PACKAGES $WORKSPACE/release/packages
+and set -g WS_SNIPPETS $WORKSPACE/release/snippets
+and set -g WS_SOURCE $WORKSPACE/release/source
+
 and echo "checking source directory '$WS_PACKAGES'"
 and test -d $WS_PACKAGES
 and echo "checking source directory '$WS_SNIPPETS'"
 and test -d $WS_SNIPPETS
 and echo "checking source directory '$WS_SOURCE'"
 and test -d $WS_SOURCE
-and echo "checking destination directory '$SP_PACKAGES'"
+and echo "checking packages destination directory '$SP_PACKAGES'"
 and test -d $SP_PACKAGES
-and echo "checking destination directory '$SP_SNIPPETS'"
-and test -d $SP_SNIPPETS/Community
-and test -d $SP_SNIPPETS/Enterprise
-and echo "checking destination directory '$SP_SOURCE'"
+and echo "checking snippets destination directory '$SP_SNIPPETS_CO'"
+and test -d $SP_SNIPPETS_CO
+and echo "checking snippets destination directory '$SP_SNIPPETS_EN'"
+and test -d $SP_SNIPPETS_EN
+and echo "checking source destination directory '$SP_SOURCE'"
 and test -d $SP_SOURCE
+
 and echo "========== COPYING PACKAGES =========="
 and tar -C $WORKSPACE/release -c -f - packages | tar -C $SP_PACKAGES -x -v -f -
 and echo "========== COPYING SOURCE =========="
@@ -44,6 +46,7 @@ and cp -v $WS_SNIPPETS/download-arangodb3-macosx.html  $SP_SNIPPETS_CO/download-
 and cp -v $WS_SNIPPETS/download-docker-community.html  $SP_SNIPPETS_CO/download-docker.html
 and cp -v $WS_SNIPPETS/download-k8s-community.html     $SP_SNIPPETS_CO/download-k8s.html
 and cp -v $WS_SNIPPETS/download-source.html            $SP_SNIPPETS_CO/download-source.html
+
 and cp -v $WS_SNIPPETS/download-arangodb3e-debian.html $SP_SNIPPETS_EN/download-debian.html
 and cp -v $WS_SNIPPETS/download-arangodb3e-debian.html $SP_SNIPPETS_EN/download-ubuntu.html
 and cp -v $WS_SNIPPETS/download-arangodb3e-rpm.html    $SP_SNIPPETS_EN/download-centos.html
