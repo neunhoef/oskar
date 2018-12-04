@@ -37,7 +37,8 @@ setup_gpg(){
          -o Release.gpg "$test_file" <<<"$ARANGO_SIGN_PASSWD" 2>"$error_info"
     (( $? != 0 )) && {
         echo "failed test signing";
-        cat "$error_info" exit 1;
+        cat "$error_info";
+	exit 1;
     }
     rm -fr "$error_info"
 }

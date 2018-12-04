@@ -7,8 +7,8 @@ switchBranches "$RELEASE_TAG" "$RELEASE_TAG" true
 and findArangoDBVersion
 
 and set -g SP_PACKAGES $STORAGE_PATH/$ARANGODB_PACKAGES
-and set -g SP_SNIPPETS_CO $STORAGE_PATH/Snippets/Community
-and set -g SP_SNIPPETS_EN $STORAGE_PATH/Snippets/Enterprise
+and set -g SP_SNIPPETS_CO $STORAGE_PATH/$ARANGODB_PACKAGES/Snippets/Community
+and set -g SP_SNIPPETS_EN $STORAGE_PATH/$ARANGODB_PACKAGES/Snippets/Enterprise
 and set -g SP_SOURCE $STORAGE_PATH/Source
 and set -g WS_PACKAGES $WORKSPACE/release/packages
 and set -g WS_SNIPPETS $WORKSPACE/release/snippets
@@ -20,14 +20,14 @@ and echo "checking snippets source directory '$WS_SNIPPETS'"
 and test -d $WS_SNIPPETS
 and echo "checking source source directory '$WS_SOURCE'"
 and test -d $WS_SOURCE
-and echo "checking packages destination directory '$SP_PACKAGES'"
-and test -d $SP_PACKAGES
-and echo "checking snippets destination directory '$SP_SNIPPETS_CO'"
-and test -d $SP_SNIPPETS_CO
-and echo "checking snippets destination directory '$SP_SNIPPETS_EN'"
-and test -d $SP_SNIPPETS_EN
-and echo "checking source destination directory '$SP_SOURCE'"
-and test -d $SP_SOURCE
+and echo "creating packages destination directory '$SP_PACKAGES'"
+and mkdir -p $SP_PACKAGES
+and echo "creating snippets destination directory '$SP_SNIPPETS_CO'"
+and mkdir -p $SP_SNIPPETS_CO
+and echo "creating snippets destination directory '$SP_SNIPPETS_EN'"
+and mkdir -p $SP_SNIPPETS_EN
+and echo "creating source destination directory '$SP_SOURCE'"
+and mkdir -p $SP_SOURCE
 
 and echo "========== COPYING PACKAGES =========="
 and tar -C $WORKSPACE/release -c -f - packages | tar -C $SP_PACKAGES -x -v -f -

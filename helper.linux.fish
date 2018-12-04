@@ -893,6 +893,21 @@ function transformK8SSnippet
 end
 
 ## #############################################################################
+## create repos
+## #############################################################################
+
+function createRepositories
+  pushd $WORKDIR
+  runInContainer \
+      -e ARANGO_SIGN_PASSWD="$ARANGO_SIGN_PASSWD" \
+      -v $HOME/.gnupg:/root/.gnupg \
+      -v /mnt/buildfiles/release/3.4/packages:/packages \
+      -v /mnt/buildfiles/release/3.4/repositories:/repositories \
+      $UBUNTUPACKAGINGIMAGE $SCRIPTSDIR/createAll
+  popd
+end
+
+## #############################################################################
 ## set PARALLELISM in a sensible way
 ## #############################################################################
 
