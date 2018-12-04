@@ -14,7 +14,7 @@
     require root rights for installation.
   </p>
   <hr/>
-  <p>Packages for the <strong>Debian</strong> package manager</p>
+  <p><strong>Debian</strong> packages</p>
   <ul>
     <li>
       <a href="@DOWNLOAD_LINK@/Linux/@DEBIAN_NAME_SERVER@">Server @ARANGODB_VERSION@</a><br>
@@ -31,7 +31,7 @@
   </ul>
   <hr/>
   <p>
-    <strong>Tar</strong> based packages
+    <strong>Tar</strong> packages
   </p>
   <ul>
     <li>
@@ -41,7 +41,7 @@
   </ul>
   <hr/>
   <p>
-    Installation via Package Manager
+    Installation via <strong>Package Manager</strong>
   </p>
   <p>
     First add the repository key to apt like this:

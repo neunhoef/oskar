@@ -5,7 +5,7 @@
     require root rights for installation.
   </p>
   <hr/>
-  <p class="ara_package_line"><strong>Tar</strong> based packages:</p>
+  <p><strong>Tar</strong> packages</p>
   <ul>
     <li>
       <a href="@DOWNLOAD_LINK@/Linux/@TARGZ_NAME_SERVER@">Server @ARANGODB_VERSION@</a><br>

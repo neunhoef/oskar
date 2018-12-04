@@ -9,7 +9,7 @@
     ArangoDB on an operating system not supported by us.
   </p>
   <hr/>
-  <p class="ara_package_line">Source Packages for <strong>C++11 Compiler</b>:</strong>
+  <p>Source Packages for <strong>C++11 Compilers</strong>
     <ul>
       <li>
         <a href="@DOWNLOAD_LINK@/@SOURCE_TAR_GZ@">tar.gz @ARANGODB_VERSION@</a><br>

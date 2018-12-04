@@ -15,7 +15,7 @@
   </p>
   <hr/>
   <p>
-    Packages for the <strong>RPM</strong> package manager
+    <strong>RPM</strong> packages
   </p>
   <ul>
     <li>
@@ -33,7 +33,7 @@
   </ul>
   <hr/>
   <p>
-    <strong>Tar</strong> based packages
+    <strong>Tar</strong> packages
   </p>
   <ul>
     <li>
@@ -43,7 +43,7 @@
   </ul>
   <hr/>
   <p>
-    Installation via Package Manager
+    Installation via <strong>Package Manager</strong>
   </p>
   <p>
     Run the following as root:

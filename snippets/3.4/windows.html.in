@@ -10,7 +10,7 @@
     client tools which can be install in any location.
   </p>
   <hr/>
-  <p class="ara_package_line">Packages for the <strong>NSIS</strong> package:</p>
+  <p><strong>NSIS</strong> packages</p>
   <ul>
     <li>
       <a href="@DOWNLOAD_LINK@/Windows/@WINDOWS_NAME_SERVER_EXE@">Server</a><br>
@@ -21,7 +21,8 @@
       (@WINDOWS_SIZE_CLIENT_EXE@ MByte, SHA256 @WINDOWS_SHA256_CLIENT_EXE@)
     </li>
   </ul>
-  <p class="ara_package_line"><strong>Zip</strong> based packages:</p>
+  <hr/>
+  <p><strong>Zip</strong> packages</p>
   <ul>
     <li>
       <a href="@DOWNLOAD_LINK@/Windows/@WINDOWS_NAME_SERVER_ZIP@">Server</a><br>
