@@ -919,7 +919,7 @@ function createRepositories
   pushd $WORKDIR
   runInContainer \
       -e ARANGO_SIGN_PASSWD="$ARANGO_SIGN_PASSWD" \
-      -v $HOME/.gnupg:/root/.gnupg \
+      -v $HOME/.gnupg2:/root/.gnupg \
       -v /mnt/buildfiles/release/3.4/packages:/packages \
       -v /mnt/buildfiles/release/3.4/repositories:/repositories \
       $UBUNTUPACKAGINGIMAGE $SCRIPTSDIR/createAll
