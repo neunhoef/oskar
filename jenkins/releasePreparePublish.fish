@@ -42,6 +42,7 @@ and cp -v $WS_SNIPPETS/download-arangodb3-rpm.html     $SP_SNIPPETS_CO/download-
 and cp -v $WS_SNIPPETS/download-arangodb3-linux.html   $SP_SNIPPETS_CO/download-linux-general.html
 and cp -v $WS_SNIPPETS/download-arangodb3-macosx.html  $SP_SNIPPETS_CO/download-macosx.html
 and cp -v $WS_SNIPPETS/download-docker-community.html  $SP_SNIPPETS_CO/download-docker.html
+and cp -v $WS_SNIPPETS/download-k8s-community.html     $SP_SNIPPETS_CO/download-k8s.html
 and cp -v $WS_SNIPPETS/download-source.html            $SP_SNIPPETS_CO/download-source.html
 and cp -v $WS_SNIPPETS/download-arangodb3e-debian.html $SP_SNIPPETS_EN/download-debian.html
 and cp -v $WS_SNIPPETS/download-arangodb3e-debian.html $SP_SNIPPETS_EN/download-ubuntu.html
@@ -53,6 +54,7 @@ and cp -v $WS_SNIPPETS/download-arangodb3e-rpm.html    $SP_SNIPPETS_EN/download-
 and cp -v $WS_SNIPPETS/download-arangodb3e-linux.html  $SP_SNIPPETS_EN/download-linux-general.html
 and cp -v $WS_SNIPPETS/download-arangodb3e-macosx.html $SP_SNIPPETS_EN/download-macosx.html
 and cp -v $WS_SNIPPETS/download-docker-enterprise.html $SP_SNIPPETS_EN/download-docker.html
+and cp -v $WS_SNIPPETS/download-k8s-enterprise.html    $SP_SNIPPETS_EN/download-k8s.html
 
 set -l s $status
 cd "$HOME/$NODE_NAME/$OSKAR" ; unlockDirectory

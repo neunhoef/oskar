@@ -1,8 +1,14 @@
 <div>
-  <p>ArangoDB is available for Kubernetes. In order to install ArangoDB in your Kubernetes Cluster first deploy the latest operator.
-  Please find instructions <a href="https://github.com/arangodb/kube-arangodb/blob/master/README.md" target="_blank">here</a>.</p>
   <p>
-  After that create and deploy a <a href="https://github.com/arangodb/kube-arangodb/blob/master/docs/Manual/Deployment/Kubernetes/DeploymentResource.md" target="_blank">ArangoDBDeployment</a> resource according to your needs and additionally specify
+    ArangoDB is available for Kubernetes. In order to install ArangoDB
+    in your Kubernetes Cluster first deploy the latest operator. Please
+    find instructions
+    <a href="https://github.com/arangodb/kube-arangodb/blob/master/README.md" target="_blank">here</a>.
+  </p>
+  <p>
+    After that create and deploy a
+    <a href="https://github.com/arangodb/kube-arangodb/blob/master/docs/Manual/Deployment/Kubernetes/DeploymentResource.md" target="_blank">ArangoDBDeployment</a>
+    resource according to your needs and additionally specify
   </p>
   <pre>
   spec:
