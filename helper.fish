@@ -73,7 +73,7 @@ function showConfig
   printf $fmt3 'Test suite'     $TESTSUITE     '(single/cluster/resilience/catchtest)'
   echo
   echo 'Build Configuration'
-  printf $fmt3 'Stable/preview' $RELEASETYPE   '(stable/preview)'
+  printf $fmt3 'Stable/preview' $RELEASETYPE   '(stable/preview/stablePreview)'
   printf $fmt3 'Test suite'     $TESTSUITE     '(single/cluster/resilience/catchtest)'
   echo
   echo 'Internal Configuration'
@@ -190,6 +190,7 @@ if test -z "$SKIPGREY"; includeGrey
 else ; set -gx SKIPGREY $SKIPGREY ; end
 
 function stable ; set -gx RELEASETYPE stable ; end
+function stablePreview ; set -gx RELEASETYPE stablePreview ; end
 function preview ; set -gx RELEASETYPE preview ; end
 if test -z "$RELEASETYPE"; preview
 else ; set -gx RELEASETYPE $RELEASETYPE ; end
