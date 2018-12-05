@@ -293,10 +293,12 @@ Function community
 {
     $global:ENTERPRISEEDITION = "Off"
 }
+
 Function enterprise
 {
     $global:ENTERPRISEEDITION = "On"
 }
+
 If(-Not($ENTERPRISEEDITION))
 {
     enterprise
@@ -306,10 +308,12 @@ Function mmfiles
 {
     $global:STORAGEENGINE = "mmfiles"
 }
+
 Function rocksdb
 {
     $global:STORAGEENGINE = "rocksdb"
 }
+
 If(-Not($STORAGEENGINE))
 {
     rocksdb
@@ -319,10 +323,12 @@ Function verbose
 {
     $global:VERBOSEOSKAR = "On"
 }
+
 Function silent
 {
     $global:VERBOSEOSKAR = "Off"
 }
+
 If(-Not($VERBOSEOSKAR))
 {
     verbose
@@ -332,6 +338,7 @@ Function parallelism($threads)
 {
     $global:numberSlots = $threads
 }
+
 If(-Not($global:numberSlots))
 {
     $global:numberSlots = ($(Get-WmiObject Win32_processor).NumberOfLogicalProcessors)
@@ -341,19 +348,20 @@ Function keepBuild
 {
     $global:KEEPBUILD = "On"
 }
+
 Function clearBuild
 {
     $global:KEEPBUILD = "Off"
 }
+
 If(-Not($KEEPBUILD))
 {
     $global:KEEPBUILD = "Off"
 }
 
-
-################################################################################
+# ##############################################################################
 # Version detection
-################################################################################
+# ##############################################################################
 
 Function  findArangoDBVersion
 {
@@ -728,7 +736,14 @@ Function generateSnippets
     }
   
     $template = Get-Content "$global:WORKDIR\snippets\$global:ARANGODB_VERSION_MAJOR.$global:ARANGODB_VERSION_MINOR\windows.html.in"
-    $template = $template -replace "@DOWNLOAD_LINK@","$env:DOWNLOAD_LINK"
+    If($ENTERPRISEEDITION -eq "On")
+    {
+        $template = $template -replace "@DOWNLOAD_LINK@","$env:ENTERPRISE_DOWNLOAD_LINK"
+    }
+    Else
+    {
+        $template = $template -replace "@DOWNLOAD_LINK@","$env:COMMUNITY_DOWNLOAD_LINK"
+    }
     $template = $template -replace "@WINDOWS_NAME_SERVER_EXE@","$($package_server.Name)"
     $template = $template -replace "@WINDOWS_SIZE_SERVER_EXE@","$((Get-Item $package_server.FullName).Length)"
     $template = $template -replace "@WINDOWS_SHA256_SERVER_EXE@","$((Get-FileHash -Algorithm SHA256 -Path $package_server.FullName).Hash)"
