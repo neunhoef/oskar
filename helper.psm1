@@ -1386,7 +1386,7 @@ Function oskar8
     comm
 }
 
-Function makeRelease
+Function makeCommunityRelease
 {
     maintainerOff
     staticExecutablesOn
@@ -1396,8 +1396,22 @@ Function makeRelease
     buildArangoDB
     storeSymbols
     moveResultsToWorkspace
+}
+
+Function makeEnterpriseRelease
+{
+    maintainerOff
+    staticExecutablesOn
+    skipPackagingOff
+    signPackageOn
     enterprise
     storeSymbols
     buildArangoDB
     moveResultsToWorkspace
+}
+
+Function makeRelease
+{
+    makeCommunityRelease
+    makeEnterpriseRelease
 }
