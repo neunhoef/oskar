@@ -90,12 +90,12 @@ create_repo(){
   echo "community #################################"
   create_repo_edition "$version" "$major_minor" "$arch" "$package_type" \
                       "$in_path/$in_community/$in_name" \
-                      "$repo_path/$repo_community/arangodb$version_fs/$repo_name" \
+                      "$repo_path/$repo_community/$repo_name" \
                       "$url_community"
   echo "enterprise #################################"
     create_repo_edition "$version" "$major_minor" "$arch" "$package_type"\
                         "$in_path/$in_enterprise/$in_name" \
-                        "$repo_path/$repo_enterprise/arangodb$version_fs/$repo_name" \
+                        "$repo_path/$repo_enterprise/$repo_name" \
                         "$url_enterprise"
 }
 
@@ -141,10 +141,14 @@ create_repo_deb(){
         noext="${fbase##*/}"
         [[ -f "$file" ]] || ferr "create_repo_deb - file: $file - does not exist"
         [[ -d "$repo" ]] || ferr "create_repo_deb - reop: $repo - does not exist"
-        cp "$file" "$repo/amd64/${noext}.deb" \
-            || { echo "could not move $file" to "$repo"; exit 1;  }
-        "$script_dir"/debSign "$repo/amd64/${noext}.deb" || ferr "failed to sign $repo/amd64/${noext}.deb"
-        update=true
+        if -s cmp "$file" "$repo/amd64/${noext}.deb"; then
+	  echo "file already exists '$file'"
+	else
+	  cp "$file" "$repo/amd64/${noext}.deb" \
+	      || { echo "could not move $file" to "$repo"; exit 1;  }
+	  "$script_dir"/debSign "$repo/amd64/${noext}.deb" || ferr "failed to sign $repo/amd64/${noext}.deb"
+	  update=true
+        fi
     done
 
     $update || { echo "nothing to do"; return; }
@@ -196,10 +200,14 @@ create_repo_rpm(){
     for file in "$in"/*"$version"*.rpm; do
         fbase="${file%.rpm}"
         noext="${fbase##*/}"
-        cp "$file" "$repo/x86_64/${noext}.rpm" \
-            || { echo "could not move $file" to "$repo"; exit 1;  }
-        "$script_dir"/rpmSign.exp "$repo/x86_64/${noext}.rpm" || ferr "failed to sign $file"
-        update=true
+        if -s cmp "$file" "$repo/x86_64/${noext}.rpm"; then
+	  echo "file already exists '$file'"
+	else
+	  cp "$file" "$repo/x86_64/${noext}.rpm" \
+	      || { echo "could not move $file" to "$repo"; exit 1;  }
+	  "$script_dir"/rpmSign.exp "$repo/x86_64/${noext}.rpm" || ferr "failed to sign $file"
+	  update=true
+	fi
     done
 
     $update || { echo "nothing to do"; return; }

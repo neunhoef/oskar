@@ -9,13 +9,12 @@ echo "run test"
 version="3.4"
 incoming="/packages"
 repo="/repositories"
-reponame="arangodb34"
 
 #centos
 #fedora
 #suse
-mkdir -p $repo/community/$reponame/RPM/x86_64
-mkdir -p $repo/enterprise/$reponame/RPM/x86_64
+mkdir -p $repo/Community/RPM/x86_64
+mkdir -p $repo/Enterprise/RPM/x86_64
 
 ensure_oskar "$version" "$incoming" "$repo" \
             "Linux" "RPM" \
@@ -23,9 +22,9 @@ ensure_oskar "$version" "$incoming" "$repo" \
 
 #debian
 #ubuntu
-mkdir -p $repo/community/$reponame/DEBIAN/amd64
-mkdir -p $repo/enterprise/$reponame/DEBIAN/amd64
+mkdir -p $repo/Community/Debian/amd64
+mkdir -p $repo/Enterprise/Debian/amd64
 
 ensure_oskar "$version" "$incoming" "$repo" \
-            "Linux" "DEBIAN" \
+            "Linux" "Debian" \
             "amd64" "deb"

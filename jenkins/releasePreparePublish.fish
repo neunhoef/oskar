@@ -7,9 +7,9 @@ switchBranches "$RELEASE_TAG" "$RELEASE_TAG" true
 and findArangoDBVersion
 
 and set -g SP_PACKAGES $STORAGE_PATH/$ARANGODB_PACKAGES
-and set -g SP_SNIPPETS_CO $STORAGE_PATH/$ARANGODB_PACKAGES/Snippets/Community
-and set -g SP_SNIPPETS_EN $STORAGE_PATH/$ARANGODB_PACKAGES/Snippets/Enterprise
-and set -g SP_SOURCE $STORAGE_PATH/Source
+and set -g SP_SNIPPETS_CO $STORAGE_PATH/$ARANGODB_PACKAGES/snippets/Community
+and set -g SP_SNIPPETS_EN $STORAGE_PATH/$ARANGODB_PACKAGES/snippets/Enterprise
+and set -g SP_SOURCE $STORAGE_PATH/$ARANGODB_PACKAGES/source
 and set -g WS_PACKAGES $WORKSPACE/release/packages
 and set -g WS_SNIPPETS $WORKSPACE/release/snippets
 and set -g WS_SOURCE $WORKSPACE/release/source
