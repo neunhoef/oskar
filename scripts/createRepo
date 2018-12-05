@@ -139,13 +139,11 @@ create_repo_deb(){
     for file in "$in"/*"$version"*.deb; do
         fbase="${file%.deb}"
         noext="${fbase##*/}"
-        "$script_dir"/debSign "$file" || ferr "failed to sign $file"
         [[ -f "$file" ]] || ferr "create_repo_deb - file: $file - does not exist"
         [[ -d "$repo" ]] || ferr "create_repo_deb - reop: $repo - does not exist"
         cp "$file" "$repo/amd64/${noext}.deb" \
             || { echo "could not move $file" to "$repo"; exit 1;  }
-        mv "$file.asc" "$repo/amd64/${noext}.deb.asc" \
-            || { echo "could not move $file" to "$repo"; exit 1;  }
+        "$script_dir"/debSign "$repo/amd64/${noext}.deb" || ferr "failed to sign $repo/amd64/${noext}.deb"
         update=true
     done
 
@@ -198,11 +196,9 @@ create_repo_rpm(){
     for file in "$in"/*"$version"*.rpm; do
         fbase="${file%.rpm}"
         noext="${fbase##*/}"
-        "$script_dir"/rpmSign.exp "$file" || ferr "failed to sign $file"
         cp "$file" "$repo/x86_64/${noext}.rpm" \
             || { echo "could not move $file" to "$repo"; exit 1;  }
-        #mv "$file.asc" "$repo/${noext}.rpm" \
-        #    || { echo "could not move $file" to "$repo"; exit 1;  }
+        "$script_dir"/rpmSign.exp "$repo/x86_64/${noext}.rpm" || ferr "failed to sign $file"
         update=true
     done
 
