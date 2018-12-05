@@ -910,6 +910,12 @@ Function moveResultsToWorkspace
         Write-Host "Move $INNERWORKDIR\$file"
         Move-Item -Force -Path "$INNERWORKDIR\$file" -Destination $ENV:WORKSPACE; comm
     }
+    Write-Host "snippets ..."
+    ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter "*.html"))
+    {
+        Write-Host "Move $INNERWORKDIR\$file"
+        Move-Item -Force -Path "$INNERWORKDIR\$file" -Destination $ENV:WORKSPACE; comm
+    }
     Write-Host "cmake* ..."
     ForEach ($file in $(Get-ChildItem $INNERWORKDIR -Filter "cmake*"))
     {
