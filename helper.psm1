@@ -753,13 +753,13 @@ Function generateSnippets
         $template = $template -replace "@DOWNLOAD_LINK@","$env:COMMUNITY_DOWNLOAD_LINK"
     }
     $template = $template -replace "@WINDOWS_NAME_SERVER_EXE@","$($package_server.Name)"
-    $template = $template -replace "@WINDOWS_SIZE_SERVER_EXE@","$((Get-Item $package_server.FullName).Length)"
+    $template = $template -replace "@WINDOWS_SIZE_SERVER_EXE@","$((Get-Item $package_server.FullName).Length / 1MB)"
     $template = $template -replace "@WINDOWS_SHA256_SERVER_EXE@","$((Get-FileHash -Algorithm SHA256 -Path $package_server.FullName).Hash)"
     $template = $template -replace "@WINDOWS_NAME_CLIENT_EXE@","$($package_client.Name)"
-    $template = $template -replace "@WINDOWS_SIZE_CLIENT_EXE@","$((Get-Item $package_client.FullName).Length)"
+    $template = $template -replace "@WINDOWS_SIZE_CLIENT_EXE@","$((Get-Item $package_client.FullName).Length / 1MB)"
     $template = $template -replace "@WINDOWS_SHA256_CLIENT_EXE@","$((Get-FileHash -Algorithm SHA256 -Path $package_client.FullName).Hash)"
     $template = $template -replace "@WINDOWS_NAME_SERVER_ZIP@","$($package_zip.Name)"
-    $template = $template -replace "@WINDOWS_SIZE_SERVER_ZIP@","$((Get-Item $package_zip.FullName).Length)"
+    $template = $template -replace "@WINDOWS_SIZE_SERVER_ZIP@","$((Get-Item $package_zip.FullName).Length / 1MB)"
     $template = $template -replace "@WINDOWS_SHA256_SERVER_ZIP@","$((Get-FileHash -Algorithm SHA256 -Path $package_zip.FullName).Hash)"
     $template | Out-File -FilePath $snippet
     comm
@@ -775,7 +775,6 @@ Function packageWindows
         Write-Host "Build: cmake --build . --config `"$BUILDMODE`" --target `"$TARGET`""
         proc -process "cmake" -argument "--build . --config `"$BUILDMODE`" --target `"$TARGET`"" -logfile "$INNERWORKDIR\$TARGET-package"
     }
-    generateSnippets
     Pop-Location
 }
 
@@ -790,6 +789,7 @@ Function signWindows
         Write-Host "Sign: $SIGNTOOL sign /tr `"http://sha256timestamp.ws.symantec.com/sha256/timestamp`" `"$PACKAGE`""
         proc -process "$SIGNTOOL" -argument "sign /tr `"http://sha256timestamp.ws.symantec.com/sha256/timestamp`" `"$PACKAGE`"" -logfile "$INNERWORKDIR\$PACKAGE-sign"
     }
+    generateSnippets
     Pop-Location
 }
 
