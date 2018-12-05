@@ -522,6 +522,10 @@ Function switchBranches($branch_c,$branch_e)
     }
     If ($global:ok) 
     {
+        proc -process "git" -argument "fetch --tags" -logfile $false
+    }
+    If ($global:ok) 
+    {
         proc -process "git" -argument "checkout $branch_c" -logfile $false
     }
     If ($branch_c.StartsWith("v"))
@@ -553,6 +557,10 @@ Function switchBranches($branch_c,$branch_e)
         If ($global:ok) 
         {
             proc -process "git" -argument "fetch" -logfile $false
+        }
+        If ($global:ok) 
+        {
+            proc -process "git" -argument "fetch --tags" -logfile $false
         }
         If ($global:ok) 
         {
