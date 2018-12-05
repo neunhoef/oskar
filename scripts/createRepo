@@ -141,7 +141,7 @@ create_repo_deb(){
         noext="${fbase##*/}"
         [[ -f "$file" ]] || ferr "create_repo_deb - file: $file - does not exist"
         [[ -d "$repo" ]] || ferr "create_repo_deb - reop: $repo - does not exist"
-        if -s cmp "$file" "$repo/amd64/${noext}.deb"; then
+        if cmp -s "$file" "$repo/amd64/${noext}.deb"; then
 	  echo "file already exists '$file'"
 	else
 	  cp "$file" "$repo/amd64/${noext}.deb" \
@@ -200,7 +200,7 @@ create_repo_rpm(){
     for file in "$in"/*"$version"*.rpm; do
         fbase="${file%.rpm}"
         noext="${fbase##*/}"
-        if -s cmp "$file" "$repo/x86_64/${noext}.rpm"; then
+        if cmp -s "$file" "$repo/x86_64/${noext}.rpm"; then
 	  echo "file already exists '$file'"
 	else
 	  cp "$file" "$repo/x86_64/${noext}.rpm" \
