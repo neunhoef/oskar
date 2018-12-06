@@ -10,6 +10,12 @@ If(-Not(Test-Path -PathType Container -Path "work"))
     New-Item -ItemType Directory -Path "work"
 }
 
+If(Test-Path -PathType Leaf -Path "$HOME\.ssh\known_hosts")
+{
+    Remove-Item -Force "$HOME\.ssh\known_hosts"
+    proc -process "ssh" -argument "-o StrictHostKeyChecking=no git@github.com" -logfile $false
+}
+
 $global:INNERWORKDIR = "$WORKDIR\work"
 $global:ARANGODIR = "$INNERWORKDIR\ArangoDB"
 $global:ENTERPRISEDIR = "$global:ARANGODIR\enterprise"
@@ -471,11 +477,6 @@ Function checkoutEnterprise
         Set-Location $global:ARANGODIR
         If(-Not(Test-Path -PathType Container -Path "enterprise"))
         {
-            If(Test-Path -PathType Leaf -Path "$HOME\.ssh\known_hosts")
-            {
-                Remove-Item -Force "$HOME\.ssh\known_hosts"
-                proc -process "ssh" -argument "-o StrictHostKeyChecking=no git@github.com" -logfile $false
-            }
             proc -process "git" -argument "clone ssh://git@github.com/arangodb/enterprise" -logfile $false
         }
         Pop-Location
