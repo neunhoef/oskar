@@ -12,7 +12,6 @@
         Set-Variable -Name "ok" -Value $false -Scope global
     }
 }
-  
-proc -process "ssh" -argument "-o StrictHostKeyChecking=no root@symbol.arangodb.biz exit"
+
 proc -process "ssh" -argument "root@symbol.arangodb.biz cd /script/ && python program.py /mnt/symsrv_arangodb*"
 proc -process "ssh" -argument "root@symbol.arangodb.biz gsutil rsync -r /mnt/ gs://download.arangodb.com"

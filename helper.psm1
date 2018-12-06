@@ -10,12 +10,6 @@ If(-Not(Test-Path -PathType Container -Path "work"))
     New-Item -ItemType Directory -Path "work"
 }
 
-If(Test-Path -PathType Leaf -Path "$HOME\.ssh\known_hosts")
-{
-    Remove-Item -Force "$HOME\.ssh\known_hosts"
-    proc -process "ssh" -argument "-o StrictHostKeyChecking=no git@github.com" -logfile $false
-}
-
 $global:INNERWORKDIR = "$WORKDIR\work"
 $global:ARANGODIR = "$INNERWORKDIR\ArangoDB"
 $global:ENTERPRISEDIR = "$global:ARANGODIR\enterprise"
@@ -34,11 +28,6 @@ $global:ok = $true
 ################################################################################
 # Utilities
 ################################################################################
-
-#ToDo
-#Function transformBundleSniplet
-#{   
-#}
 
 While (Test-Path Alias:curl) 
 {
@@ -87,6 +76,16 @@ Function 7zip($Path,$DestinationPath)
     7za.exe a -mx9 $DestinationPath $Path 
 }
 
+Function hostKey
+{
+    If(Test-Path -PathType Leaf -Path "$HOME\.ssh\known_hosts")
+    {
+        Remove-Item -Force "$HOME\.ssh\known_hosts"
+    }
+    proc -process "ssh" -argument "-o StrictHostKeyChecking=no git@github.com" -logfile $false
+    proc -process "ssh" -argument "-o StrictHostKeyChecking=no root@symbol.arangodb.biz exit" -logfile $false
+}
+
 ################################################################################
 # Locking
 ################################################################################
@@ -95,6 +94,7 @@ Function lockDirectory
 {
     Push-Location $pwd
     Set-Location $WORKDIR
+    hostKey
     If(-Not(Test-Path -PathType Leaf LOCK.$pid))
     {
         $pid | Add-Content LOCK.$pid
