@@ -504,9 +504,10 @@ end
 function transformDebianSnippet
   pushd $WORKDIR
   
-  set -l DEBIAN_NAME_CLIENT "$argv[1]-client_$argv[2]_amd64.deb"
-  set -l DEBIAN_NAME_SERVER "$argv[1]_$argv[2]_amd64.deb"
-  set -l DEBIAN_NAME_DEBUG_SYMBOLS "$argv[1]-dbg_$argv[2]_amd64.deb"
+  set -l DEBIAN_VERSION "$avg[2]"
+  set -l DEBIAN_NAME_CLIENT "$argv[1]-client_$DEBIAN_VERSION_amd64.deb"
+  set -l DEBIAN_NAME_SERVER "$argv[1]_$DEBIAN_VERSION_amd64.deb"
+  set -l DEBIAN_NAME_DEBUG_SYMBOLS "$argv[1]-dbg_$DEBIAN_VERSION_amd64.deb"
   set -l DOWNLOAD_LINK "$argv[4]"
 
   if test "$ENTERPRISEEDITION" = "On"
@@ -551,6 +552,7 @@ function transformDebianSnippet
       -e "s|@DOWNLOAD_LINK@|$DOWNLOAD_LINK|g" \
       -e "s|@DOWNLOAD_EDITION@|$DOWNLOAD_EDITION|g" \
       -e "s|@ARANGODB_VERSION@|$ARANGODB_VERSION|g" \
+      -e "s|@DEBIAN_VERSION@|$DEBIAN_VERSION|g" \
       < snippets/$ARANGODB_SNIPPETS/debian.html.in > $n
 
   echo "Debian Snippet: $n"

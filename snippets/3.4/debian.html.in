@@ -57,12 +57,12 @@
     echo 'deb https://download.arangodb.com/arangodb34/DEBIAN/ /' | sudo tee /etc/apt/sources.list.d/arangodb.list
     sudo apt-get install apt-transport-https
     sudo apt-get update
-    sudo apt-get install arangodb3=@ARANGODB_VERSION@
+    sudo apt-get install arangodb3=@DEBIAN_VERSION@
   </pre>
   <p>
     To install the debug symbols package (not required by default)
   </p>
   <pre>
-    sudo apt-get install arangodb3-dbg=@ARANGODB_VERSION@
+    sudo apt-get install arangodb3-dbg=@DEBIAN_VERSION@
   </pre>
 </div>
