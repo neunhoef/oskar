@@ -504,10 +504,10 @@ end
 function transformDebianSnippet
   pushd $WORKDIR
   
-  set -l DEBIAN_VERSION "$avg[2]"
-  set -l DEBIAN_NAME_CLIENT "$argv[1]-client_$DEBIAN_VERSION_amd64.deb"
-  set -l DEBIAN_NAME_SERVER "$argv[1]_$DEBIAN_VERSION_amd64.deb"
-  set -l DEBIAN_NAME_DEBUG_SYMBOLS "$argv[1]-dbg_$DEBIAN_VERSION_amd64.deb"
+  set -l DEBIAN_VERSION "$argv[2]"
+  set -l DEBIAN_NAME_CLIENT "$argv[1]-client_$DEBIAN_VERSION""_amd64.deb"
+  set -l DEBIAN_NAME_SERVER "$argv[1]_$DEBIAN_VERSION""_amd64.deb"
+  set -l DEBIAN_NAME_DEBUG_SYMBOLS "$argv[1]-dbg_$DEBIAN_VERSION""_amd64.deb"
   set -l DOWNLOAD_LINK "$argv[4]"
 
   if test "$ENTERPRISEEDITION" = "On"
