@@ -22,6 +22,7 @@ $global:launcheableTests = @()
 $global:maxTestCount = 0
 $global:testCount = 0
 $global:portBase = 10000
+$global:result = "GOOD"
 
 $global:ok = $true
 
@@ -970,10 +971,12 @@ Function launchTest($which) {
     $process = $(Start-Process -FilePath "$arangosh" -ArgumentList $test['commandline'] -RedirectStandardOutput $test['StandardOutput'] -RedirectStandardError $test['StandardError'] -PassThru)
     
     $global:launcheableTests[$which]['pid'] = $process.Id
+    $global:launcheableTests[$which]['running'] = $true
     $global:launcheableTests[$which]['launchDate'] = $((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH.mm.ssZ'))
 
     $str=$($test | where {($_.Name -ne "commandline")} | Out-String)
     Write-Host $str
+    $global:launcheableTests[$which]['process'] = $process
     Pop-Location
 }
 
@@ -1016,6 +1019,7 @@ Function registerTest($testname, $index, $bucket, $filter, $moreParams, $cluster
     	$i = $global:testCount
     	$global:testCount = $global:testCount+1
     	$global:launcheableTests += @{
+    	  running=$false;
     	  weight=$testWeight;
    	  testname=$testname;
    	  identifier=$output;
@@ -1109,16 +1113,16 @@ Function LaunchController($seconds)
         $currentRunning = 0
         $currentRunningNames = @()
         ForEach ($test in $global:launcheableTests) {
-            if ($test['pid'] -gt 0) {
-                if ($(Get-WmiObject win32_process | Where {$_.ProcessId -eq $test['pid']})) {
-                  $currentRunningNames += $test['identifier']
-                  $currentRunning = $currentRunning+1
-                }
-                Else {
+            if ($test['running']) {
+                if ($test['process'].HasExited) {
                     $currentScore = $currentScore - $test['weight']
                     Write-Host "$((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH.mm.ssZ')) Testrun finished: "$test['identifier'] $test['launchdate']
                     $str=$($test | where {($_.Name -ne "commandline")} | Out-String)
-                    $test['pid'] = -1
+                    $test['running'] = $false
+                }
+                Else {
+                    $currentRunningNames += $test['identifier']
+                    $currentRunning = $currentRunning+1
                 }
             }
         }
@@ -1127,41 +1131,46 @@ Function LaunchController($seconds)
         Write-Host "$((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH.mm.ssZ')) - Waiting  - "$seconds" - Running Tests: "$a
         $seconds = $seconds - 5
     }
-    Write-Host "tests done or timeout reached. Current state of worker jobs:"
+    if ($seconds -lt 1) {
+      Write-Host "tests timeout reached. Current state of worker jobs:"
+    }
+    Else {
+      Write-Host "tests done. Current state of worker jobs:"
+    }
     $str=$global:launcheableTests | Out-String
     Write-Host $str
-    if ($currentRunning -gt 0) {
-        Get-WmiObject win32_process | Output-File 
-        Write-Host "$((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH.mm.ssZ')) we have "$currentRunning" tests that timed out! Currently running processes:"
-        ForEach ($test in $global:launcheableTests) {
-            if ($test['pid'] -gt 0) {
-              Write-Host "Testrun timeout:"
-              $str=$($test | where {($_.Name -ne "commandline")} | Out-String)
-              Write-Host $str
-              ForEach ($childProcesses in $(Get-WmiObject win32_process | Where {$_.ParentProcessId -eq $test['pid']})) {
-                ForEach ($childChildProcesses in $(Get-WmiObject win32_process | Where {$_.ParentProcessId -eq $test['pid']})) {
-                  ForEach ($childChildChildProcesses in $(Get-WmiObject win32_process | Where {$_.ParentProcessId -eq $test['pid']})) {
-                    Write-Host "killing child3: "
-                    $str=$childChildChildProcesses | Out-String
-                    Write-Host $str
-                    Stop-Process -Force -Id $childChildChildProcesses.Handle
-                  }
-                  Write-Host "killing child2: "
-                  $str=$childChildProcesses | Out-String
-                  Write-Host $str
-                  Stop-Process -Force -Id $childChildProcesses.Handle
-                }
-                Write-Host "killing child: "
-                $str=$childProcesses | Out-String
+  
+    Get-WmiObject win32_process | Out-File -filepath $env:TMP\processes-before.txt
+    Write-Host "$((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH.mm.ssZ')) we have "$currentRunning" tests that timed out! Currently running processes:"
+    ForEach ($test in $global:launcheableTests) {
+        if ($test['pid'] -gt 0) {
+          Write-Host "Testrun timeout:"
+          $str=$($test | where {($_.Name -ne "commandline")} | Out-String)
+          Write-Host $str
+          ForEach ($childProcesses in $(Get-WmiObject win32_process | Where {$_.ParentProcessId -eq $test['pid']})) {
+            ForEach ($childChildProcesses in $(Get-WmiObject win32_process | Where {$_.ParentProcessId -eq $test['pid']})) {
+              ForEach ($childChildChildProcesses in $(Get-WmiObject win32_process | Where {$_.ParentProcessId -eq $test['pid']})) {
+                Write-Host "killing child3: "
+                $str=$childChildChildProcesses | Out-String
                 Write-Host $str
-
-                Stop-Process -Force -Id $childProcesses.Handle
+                Stop-Process -Force -Id $childChildChildProcesses.Handle
               }
-              Stop-Process -Force -Id $test['pid']
+              Write-Host "killing child2: "
+              $str=$childChildProcesses | Out-String
+              Write-Host $str
+              Stop-Process -Force -Id $childChildProcesses.Handle
             }
+            Write-Host "killing child: "
+            $str=$childProcesses | Out-String
+            Write-Host $str
+
+            Stop-Process -Force -Id $childProcesses.Handle
+            $global:result = "BAD"
+          }
+          Stop-Process -Force -Id $test['pid']
         }
-        Get-WmiObject win32_process | Output-File 
     }
+    Get-WmiObject win32_process | Out-File -filepath $env:TMP\processes-after.txt 
     comm
 }
 
@@ -1188,7 +1197,6 @@ Function createReport
 {
     $date = $(Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH.mm.ssZ")
     $date | Add-Content "$env:TMP\testProtocol.txt"
-    $global:result = "GOOD"
     $global:badtests = $null
     new-item $env:TMP\oskar-junit-report -itemtype directory
     ForEach($dir in (Get-ChildItem -Path $env:TMP  -Directory -Filter "*.out"))
