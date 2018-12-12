@@ -4,7 +4,7 @@ Import-Module "$PSScriptRoot\lib\Utils.psm1"
 # Test control
 ################################################################################
 
-Function registerSingleTests()
+Function global:registerSingleTests()
 {
     noteStartAndRepoState
 
@@ -51,7 +51,7 @@ Function registerSingleTests()
     comm
 }
 
-Function registerClusterTests()
+Function global:registerClusterTests()
 {
     noteStartAndRepoState
     Write-Host "Registering tests..."
