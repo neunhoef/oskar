@@ -618,6 +618,9 @@ function buildTarGzPackageHelper
   and rm -f "bin/*~" "bin/*.bak"
   and mv bin/README .
   and strip usr/sbin/arangod usr/bin/{arangobench,arangodump,arangoexport,arangoimp,arangorestore,arangosh,arangovpack}
+  and if test "$ENTERPRISEEDITION" != "On"
+    rm -f "bin/arangosync" "usr/bin/arangosync" "usr/sbin/arangosync"
+  end
   and cd $WORKDIR/work/ArangoDB/build
   and mv install "$name-$v"
   or begin ; popd ; return 1 ; end
