@@ -187,6 +187,10 @@ function buildDocumentationForRelease
     buildDocumentation --all-formats
 end
 
+function checkoutUpgradeDataTests
+  runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/checkoutUpgradeDataTests.fish
+  or return $status
+end
 
 function checkoutArangoDB
   runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/checkoutArangoDB.fish
