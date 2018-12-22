@@ -188,9 +188,6 @@ Function launchTest($which) {
     Write-Host "-RedirectStandardOutput " $test['StandardOutput']
     Write-Host "-RedirectStandardError " $test['StandardError']
 
-    $test['StandardOutput'].replace("\*", "ALL")
-    $test['StandardError'].replace("\*", "ALL")
-
     $process = $(Start-Process -FilePath "$arangosh" -ArgumentList $test['commandline'] -RedirectStandardOutput $test['StandardOutput'] -RedirectStandardError $test['StandardError'] -PassThru)
     
     $global:launcheableTests[$which]['pid'] = $process.Id
@@ -249,8 +246,8 @@ Function registerTest($testname, $index, $bucket, $filter, $moreParams, $cluster
         testname=$testname;
         identifier=$output;
           commandline=" -c $global:ARANGODIR\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $global:ARANGODIR\UnitTests\unittest.js -- $testname $testparams";
-          StandardOutput="$global:ARANGODIR\$output.stdout.log";
-          StandardError="$global:ARANGODIR\$output.stderr.log";
+          StandardOutput="$global:ARANGODIR\" + $output.replace("\*", "all") + ".stdout.log";
+          StandardError="$global:ARANGODIR\" + $output.replace("\*", "all") + "$output.stderr.log";
           pid=-1;
         }
         $global:maxTestCount = $global:maxTestCount+1
