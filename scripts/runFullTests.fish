@@ -97,9 +97,9 @@ function launchSingleTests
 
   switch $launchCount
     case  0 ; jslint
-    case  1 ; test1         upgrade_data_3.2.* ""
-    case  2 ; test1         upgrade_data_3.3.* ""
-    case  3 ; test1         upgrade_data_3.4.* ""
+    case  1 ; test1         'upgrade_data_3.2.*' ""
+    case  2 ; test1         'upgrade_data_3.3.*' ""
+    case  3 ; test1         'upgrade_data_3.4.*' ""
     case  4 ; test1MoreLogs replication_static ""
     case  5 ; test1         shell_server ""
     case  6 ; test1MoreLogs replication_ongoing "-32"             --test replication-ongoing-32.js
