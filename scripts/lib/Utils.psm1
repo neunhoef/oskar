@@ -188,6 +188,9 @@ Function launchTest($which) {
     Write-Host "-RedirectStandardOutput " $test['StandardOutput']
     Write-Host "-RedirectStandardError " $test['StandardError']
 
+    $test['StandardOutput'].replace("\*", "ALL")
+    $test['StandardError'].replace("\*", "ALL")
+
     $process = $(Start-Process -FilePath "$arangosh" -ArgumentList $test['commandline'] -RedirectStandardOutput $test['StandardOutput'] -RedirectStandardError $test['StandardError'] -PassThru)
     
     $global:launcheableTests[$which]['pid'] = $process.Id
