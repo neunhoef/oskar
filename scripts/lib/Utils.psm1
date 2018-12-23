@@ -333,7 +333,7 @@ Function LaunchController($seconds)
             Stop-Process -Force -Id $childProcesses.Handle
             $global:result = "BAD"
           }
-          If((Get-Process -Id $test['pid'] -ErrorAction SilentlyContinue) -neq $null)
+          If((Get-Process -Id $test['pid'] -ErrorAction SilentlyContinue) -ne $null)
           {
             Stop-Process -Force -Id $test['pid']
           }
