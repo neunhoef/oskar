@@ -208,7 +208,7 @@ Function registerTest($testname, $index, $bucket, $filter, $moreParams, $cluster
         $testWeight = 1
         $testparams = ""
 
-        $output = $testname
+        $output = $testname.replace("*", "all")
         if ($index) {
           $output = $output+"$index"
         }
@@ -246,8 +246,8 @@ Function registerTest($testname, $index, $bucket, $filter, $moreParams, $cluster
         testname=$testname;
         identifier=$output;
           commandline=" -c $global:ARANGODIR\etc\relative\arangosh.conf --log.level warning --server.endpoint tcp://127.0.0.1:$PORT --javascript.execute $global:ARANGODIR\UnitTests\unittest.js -- $testname $testparams";
-          StandardOutput="$global:ARANGODIR\" + $output.replace("*", "all") + ".stdout.log";
-          StandardError="$global:ARANGODIR\" + $output.replace("*", "all") + "$output.stderr.log";
+          StandardOutput="$global:ARANGODIR\$output.stdout.log";
+          StandardError="$global:ARANGODIR\$output.stderr.log";
           pid=-1;
         }
         $global:maxTestCount = $global:maxTestCount+1
@@ -333,7 +333,14 @@ Function LaunchController($seconds)
             Stop-Process -Force -Id $childProcesses.Handle
             $global:result = "BAD"
           }
-          Stop-Process -Force -Id $test['pid']
+          If((Get-Process -Id $test['pid'] -ErrorAction SilentlyContinue) -neq $null)
+          {
+            Stop-Process -Force -Id $test['pid']
+          }
+          Else
+          {
+            Write-Host "Process with $test['pid'] already stopped"
+          }
         }
     }
     Get-WmiObject win32_process | Out-File -filepath $env:TMP\processes-after.txt 
