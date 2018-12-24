@@ -339,7 +339,7 @@ Function LaunchController($seconds)
           }
           Else
           {
-            Write-Host "Process with $test['pid'] already stopped"
+            Write-Host ("Process with ID {0} was already stopped" -f $test['pid'])
           }
         }
     }
