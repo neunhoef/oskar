@@ -138,7 +138,7 @@ function signSourcePackage
   and runInContainer \
         -e ARANGO_SIGN_PASSWD="$ARANGO_SIGN_PASSWD" \
         -v $HOME/.gnupg2:/root/.gnupg \
-	$UBUNTUPACKAGINGIMAGE $SCRIPTSDIR/signFile.fish \
+	$UBUNTUBUILDIMAGE $SCRIPTSDIR/signFile.fish \
 	/work/ArangoDB-$SOURCE_TAG.tar.gz \
 	/work/ArangoDB-$SOURCE_TAG.tar.bz2 \
 	/work/ArangoDB-$SOURCE_TAG.zip
