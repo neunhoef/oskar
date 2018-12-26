@@ -11,6 +11,10 @@ set -gx ALPINEBUILDIMAGE arangodb/alpinebuildarangodb-$ARCH
 set -gx CENTOSPACKAGINGIMAGE arangodb/centospackagearangodb-$ARCH
 set -gx DOCIMAGE arangodb/arangodb-documentation
 
+## #############################################################################
+## config
+## #############################################################################
+
 function compiler
   set -l version $argv[1]
 
@@ -29,163 +33,9 @@ function compiler
   end
 end
 
-function buildUbuntuBuildImage
-  pushd $WORKDIR
-  and cp -a scripts/{makeArangoDB,buildArangoDB,checkoutArangoDB,checkoutEnterprise,clearWorkDir,downloadStarter,downloadSyncer,runTests,runFullTests,switchBranches,recursiveChown}.fish containers/buildUbuntu.docker/scripts
-  and cd $WORKDIR/containers/buildUbuntu.docker
-  and docker build -t $UBUNTUBUILDIMAGE .
-  and rm -f $WORKDIR/containers/buildUbuntu.docker/scripts/*.fish
-  or begin ; popd ; return 1 ; end
-  popd
-end
-
-function pushUbuntuBuildImage ; docker push $UBUNTUBUILDIMAGE ; end
-
-function pullUbuntuBuildImage ; docker pull $UBUNTUBUILDIMAGE ; end
-
-function buildUbuntuPackagingImage
-  pushd $WORKDIR
-  and cp -a scripts/buildDebianPackage.fish containers/buildUbuntuPackaging.docker/scripts
-  and cd $WORKDIR/containers/buildUbuntuPackaging.docker
-  and docker build -t $UBUNTUPACKAGINGIMAGE .
-  and rm -f $WORKDIR/containers/buildUbuntuPackaging.docker/scripts/*.fish
-  or begin ; popd ; return 1 ; end
-  popd
-end
-
-function pushUbuntuPackagingImage ; docker push $UBUNTUPACKAGINGIMAGE ; end
-
-function pullUbuntuPackagingImage ; docker pull $UBUNTUPACKAGINGIMAGE ; end
-
-function buildAlpineBuildImage
-  pushd $WORKDIR
-  and cp -a scripts/makeAlpine.fish scripts/buildAlpine.fish containers/buildAlpine.docker/scripts
-  and cd $WORKDIR/containers/buildAlpine.docker
-  and docker build -t $ALPINEBUILDIMAGE .
-  and rm -f $WORKDIR/containers/buildAlpine.docker/scripts/*.fish
-  or begin ; popd ; return 1 ; end
-  popd
-end
-
-function pushAlpineBuildImage ; docker push $ALPINEBUILDIMAGE ; end
-
-function pullAlpineBuildImage ; docker pull $ALPINEBUILDIMAGE ; end
-
-function buildCentosPackagingImage
-  pushd $WORKDIR
-  and cp -a scripts/buildRPMPackage.fish containers/buildCentos7Packaging.docker/scripts
-  and cd $WORKDIR/containers/buildCentos7Packaging.docker
-  and docker build -t $CENTOSPACKAGINGIMAGE .
-  and rm -f $WORKDIR/containers/buildCentos7Packaging.docker/scripts/*.fish
-  or begin ; popd ; return 1 ; end
-  popd
-end
-
-function pushCentosPackagingImage ; docker push $CENTOSPACKAGINGIMAGE ; end
-
-function pullCentosPackagingImage ; docker pull $CENTOSPACKAGINGIMAGE ; end
-
-function buildDocumentationImage
-    eval "$WORKDIR/scripts/buildContainerDocumentation" "$DOCIMAGE"
-end
-function pushDocumentationImage ; docker push $DOCIMAGE ; end
-function pullDocumentationImage ; docker pull $DOCIMAGE ; end
-
-function remakeImages
-  set -l s 0
-
-  buildUbuntuBuildImage ; or set -l s 1
-  pushUbuntuBuildImage ; or set -l s 1
-  buildAlpineBuildImage ; or set -l s 1
-  pushAlpineBuildImage ; or set -l s 1
-  buildUbuntuPackagingImage ; or set -l s 1
-  pushUbuntuPackagingImage ; or set -l s 1
-  buildCentosPackagingImage ; or set -l s 1
-  pushCentosPackagingImage ; or set -l s 1
-  buildDocumentationImage ; or set -l s 1
-
-  return $s
-end
-
-function runInContainer
-  if test -z "$SSH_AUTH_SOCK"
-    eval (ssh-agent -c) > /dev/null
-    ssh-add ~/.ssh/id_rsa
-    set -l agentstarted 1
-  else
-    set -l agentstarted ""
-  end
-
-  # Run script in container in background, but print output and react to
-  # a TERM signal to the shell or to a foreground subcommand. Note that the
-  # container process itself will run as root and will be immune to SIGTERM
-  # from a regular user. Therefore we have to do some Eiertanz to stop it
-  # if we receive a TERM outside the container. Note that this does not
-  # cover SIGINT, since this will directly abort the whole function.
-  set c (docker run -d \
-             -v $WORKDIR/work:$INNERWORKDIR \
-             -v $SSH_AUTH_SOCK:/ssh-agent \
-	     -v "$WORKDIR/scripts":"/scripts" \
-             -e ASAN="$ASAN" \
-             -e BUILDMODE="$BUILDMODE" \
-             -e COMPILER_VERSION="$COMPILER_VERSION" \
-             -e CCACHEBINPATH="$CCACHEBINPATH" \
-             -e ENTERPRISEEDITION="$ENTERPRISEEDITION" \
-             -e GID=(id -g) \
-             -e GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no" \
-             -e INNERWORKDIR="$INNERWORKDIR" \
-             -e MAINTAINER="$MAINTAINER" \
-             -e NOSTRIP="$NOSTRIP" \
-             -e NO_RM_BUILD="$NO_RM_BUILD" \
-             -e PARALLELISM="$PARALLELISM" \
-             -e PLATFORM="$PLATFORM" \
-             -e SCRIPTSDIR="$SCRIPTSDIR" \
-             -e SSH_AUTH_SOCK=/ssh-agent \
-             -e STORAGEENGINE="$STORAGEENGINE" \
-             -e TESTSUITE="$TESTSUITE" \
-             -e UID=(id -u) \
-             -e VERBOSEBUILD="$VERBOSEBUILD" \
-             -e VERBOSEOSKAR="$VERBOSEOSKAR" \
-             -e JEMALLOC_OSKAR="$JEMALLOC_OSKAR" \
-             -e SKIPGREY="$SKIPGREY" \
-             $argv)
-  function termhandler --on-signal TERM --inherit-variable c
-    if test -n "$c" ; docker stop $c >/dev/null ; end
-  end
-  docker logs -f $c          # print output to stdout
-  docker stop $c >/dev/null  # happens when the previous command gets a SIGTERM
-  set s (docker inspect $c --format "{{.State.ExitCode}}")
-  docker rm $c >/dev/null
-  functions -e termhandler
-  # Cleanup ownership:
-  docker run \
-      -v $WORKDIR/work:$INNERWORKDIR \
-      -e UID=(id -u) \
-      -e GID=(id -g) \
-      -e INNERWORKDIR=$INNERWORKDIR \
-      $UBUNTUBUILDIMAGE $SCRIPTSDIR/recursiveChown.fish
-
-  if test -n "$agentstarted"
-    ssh-agent -k > /dev/null
-    set -e SSH_AUTH_SOCK
-    set -e SSH_AGENT_PID
-  end
-  return $s
-end
-
-function buildDocumentation
-    runInContainer -e "ARANGO_SPIN=$ARANGO_SPIN" \
-                   -e "ARANGO_NO_COLOR=$ARANGO_IN_JENKINS" \
-                   -e "ARANGO_BUILD_DOC=/oskar/work" \
-                   --user "$UID" \
-                   -v "$WORKDIR:/oskar" \
-                   -it "$DOCIMAGE" \
-                   -- "$argv"
-end
-
-function buildDocumentationForRelease
-    buildDocumentation --all-formats
-end
+## #############################################################################
+## checkout and switch functions
+## #############################################################################
 
 function checkoutUpgradeDataTests
   runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/checkoutUpgradeDataTests.fish
@@ -209,9 +59,9 @@ function switchBranches
   runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/switchBranches.fish $argv
 end
 
-function clearWorkDir
-  runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/clearWorkDir.fish
-end
+## #############################################################################
+## build
+## #############################################################################
 
 function buildArangoDB
   #TODO FIXME - do not change the current directory so people
@@ -253,6 +103,134 @@ function makeStaticArangoDB
     return $s
   end
 end
+
+## #############################################################################
+## test
+## #############################################################################
+
+function oskar
+  checkoutIfNeeded
+  runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/runTests.fish
+end
+
+function oskarFull
+  checkoutIfNeeded
+  launchLdapServer
+  and runInContainer --net="$LDAPNETWORK" $UBUNTUBUILDIMAGE $SCRIPTSDIR/runFullTests.fish
+  set -l res $status
+  stopLdapServer
+  return $res
+end
+
+function oskarLimited
+  checkoutIfNeeded
+  runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/runLimitedTests.fish
+end
+
+## #############################################################################
+## source release
+## #############################################################################
+
+function signSourcePackage
+  set -l SOURCE_TAG $argv[1]
+
+  pushd $WORKDIR/work
+  and runInContainer \
+        -e ARANGO_SIGN_PASSWD="$ARANGO_SIGN_PASSWD" \
+        -v $HOME/.gnupg2:/root/.gnupg \
+	$UBUNTUPACKAGINGIMAGE $SCRIPTSDIR/signFile.fish \
+	/work/ArangoDB-$SOURCE_TAG.tar.gz \
+	/work/ArangoDB-$SOURCE_TAG.tar.bz2 \
+	/work/ArangoDB-$SOURCE_TAG.zip
+  and popd
+  or begin ; popd ; return 1 ; end
+end
+
+## #############################################################################
+## release snippets
+## #############################################################################
+
+function makeSnippets
+  if test -z "$ENTERPRISE_DOWNLOAD_LINK"
+    echo "you need to set the variable ENTERPRISE_DOWNLOAD_LINK"
+    return 1
+  end
+
+  if test -z "$COMMUNITY_DOWNLOAD_LINK"
+    echo "you need to set the variable COMMUNITY_DOWNLOAD_LINK"
+    return 1
+  end
+
+  community
+  and buildDebianSnippet
+  and buildRPMSnippet
+  and buildTarGzSnippet
+  and enterprise
+  and buildDebianSnippet
+  and buildRPMSnippet
+  and buildTarGzSnippet
+end
+
+## #############################################################################
+## linux release
+## #############################################################################
+
+function buildPackage
+  # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
+  # ARANGODB_FULL_VERSION, for example by running findArangoDBVersion.
+  buildDebianPackage
+  and buildRPMPackage
+  and buildTarGzPackage
+  and buildDebianSnippet
+  and buildRPMSnippet
+  and buildTarGzSnippet
+end
+
+function buildEnterprisePackage
+  if test "$DOWNLOAD_SYNC_USER" = ""
+    echo "Need to set environment variable DOWNLOAD_SYNC_USER."
+    return 1
+  end
+ 
+  # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
+  # ARANGODB_FULL_VERSION, for example by running findArangoDBVersion.
+  asanOff
+  and maintainerOff
+  and releaseMode
+  and enterprise
+  and set -xg NOSTRIP dont
+  and buildStaticArangoDB -DTARGET_ARCHITECTURE=nehalem
+  and downloadStarter
+  and downloadSyncer
+  and buildPackage
+
+  if test $status -ne 0
+    echo Building enterprise release failed, stopping.
+    return 1
+  end
+end
+
+function buildCommunityPackage
+  # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
+  # ARANGODB_FULL_VERSION, for example by running findArangoDBVersion.
+  asanOff
+  and maintainerOff
+  and releaseMode
+  and community
+  and set -xg NOSTRIP dont
+  and buildStaticArangoDB -DTARGET_ARCHITECTURE=nehalem
+  and downloadStarter
+  and buildPackage
+
+  if test $status -ne 0
+    echo Building community release failed.
+    return 1
+  end
+end
+
+## #############################################################################
+## debian release
+## #############################################################################
 
 function buildDebianPackage
   if test ! -d $WORKDIR/work/ArangoDB/build
@@ -306,202 +284,25 @@ function buildDebianPackage
   end
 end
 
-function transformSpec
-  if test (count $argv) != 2
-    echo transformSpec: wrong number of arguments
-    return 1
-  end
-  and cp "$argv[1]" "$argv[2]"
-  and sed -i -e "s/@PACKAGE_VERSION@/$ARANGODB_RPM_UPSTREAM/" "$argv[2]"
-  and sed -i -e "s/@PACKAGE_REVISION@/$ARANGODB_RPM_REVISION/" "$argv[2]"
-  and sed -i -e "s~@JS_DIR@~~" "$argv[2]"
-
-  # in case of version number inside JS directory
-  # and if test "(" "$ARANGODB_VERSION_MAJOR" -eq "3" ")" -a "(" "$ARANGODB_VERSION_MINOR" -le "3" ")"
-  #  sed -i -e "s~@JS_DIR@~~" "$argv[2]"
-  # else
-  #  sed -i -e "s~@JS_DIR@~/$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_PATCH~" "$argv[2]"
-  # end
-end
-
-function buildRPMPackage
-  if test ! -d $WORKDIR/work/ArangoDB/build
-    echo buildRPMPackage: build directory does not exist
-    return 1
-  end
-
-  set -l pd "default"
-
-  if test -d $WORKDIR/rpm/$ARANGODB_PACKAGES
-    set pd "$ARANGODB_PACKAGES"
-  end
-
-  # This assumes that a static build has already happened
-  # Must have set ARANGODB_RPM_UPSTREAM and ARANGODB_RPM_REVISION,
-  # for example by running findArangoDBVersion.
+function buildDebianSnippet
+  # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
+  # ARANGODB_SNIPPETS, for example by running findArangoDBVersion.
   if test "$ENTERPRISEEDITION" = "On"
-    transformSpec "$WORKDIR/rpm/$pd/arangodb3e.spec.in" "$WORKDIR/work/arangodb3.spec"
+    if test -z "$ENTERPRISE_DOWNLOAD_LINK"
+      echo "you need to set the variable ENTERPRISE_DOWNLOAD_LINK"
+      return 1
+    end
+
+    transformDebianSnippet "arangodb3e" "$ARANGODB_DEBIAN_UPSTREAM-$ARANGODB_DEBIAN_REVISION" "$ARANGODB_TGZ_UPSTREAM" "$ENTERPRISE_DOWNLOAD_LINK"
+    or return 1
   else
-    transformSpec "$WORKDIR/rpm/$pd/arangodb3.spec.in" "$WORKDIR/work/arangodb3.spec"
-  end
-  and cp $WORKDIR/rpm/$pd/arangodb3.initd $WORKDIR/work
-  and cp $WORKDIR/rpm/$pd/arangodb3.service $WORKDIR/work
-  and cp $WORKDIR/rpm/$pd/arangodb3.logrotate $WORKDIR/work
-  and runInContainer $CENTOSPACKAGINGIMAGE $SCRIPTSDIR/buildRPMPackage.fish
-end
+    if test -z "$COMMUNITY_DOWNLOAD_LINK"
+      echo "you need to set the variable COMMUNITY_DOWNLOAD_LINK"
+      return 1
+    end
 
-function buildTarGzPackage
-  if test ! -d $WORKDIR/work/ArangoDB/build
-    echo buildRPMPackage: build directory does not exist
-    return 1
-  end
-
-  buildTarGzPackageHelper "linux"
-end
-
-function interactiveContainer
-  docker run -it -v $WORKDIR/work:$INNERWORKDIR --rm \
-             -v $SSH_AUTH_SOCK:/ssh-agent \
-             -e SSH_AUTH_SOCK=/ssh-agent \
-             -e UID=(id -u) \
-             -e GID=(id -g) \
-             -e NOSTRIP="$NOSTRIP" \
-             -e GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no" \
-             -e INNERWORKDIR=$INNERWORKDIR \
-             -e MAINTAINER=$MAINTAINER \
-             -e BUILDMODE=$BUILDMODE \
-             -e PARALLELISM=$PARALLELISM \
-             -e STORAGEENGINE=$STORAGEENGINE \
-             -e TESTSUITE=$TESTSUITE \
-             -e VERBOSEOSKAR=$VERBOSEOSKAR \
-             -e ENTERPRISEEDITION=$ENTERPRISEEDITION \
-             -e SCRIPTSDIR=$SCRIPTSDIR \
-             -e PLATFORM=$PLATFORM \
-             --privileged \
-             $argv
-end
-
-function shellInUbuntuContainer
-  interactiveContainer $UBUNTUBUILDIMAGE fish
-end
-
-function shellInAlpineContainer
-  interactiveContainer $ALPINEBUILDIMAGE fish
-end
-
-function oskar
-  checkoutIfNeeded
-  runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/runTests.fish
-end
-
-function oskarFull
-  checkoutIfNeeded
-  launchLdapServer
-  and runInContainer --net="$LDAPNETWORK" $UBUNTUBUILDIMAGE $SCRIPTSDIR/runFullTests.fish
-  set -l res $status
-  stopLdapServer
-  return $res
-end
-
-function oskarLimited
-  checkoutIfNeeded
-  runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/runLimitedTests.fish
-end
-
-function pushOskar
-  pushd $WORKDIR
-  and source helper.fish
-  and git push
-  and buildUbuntuBuildImage
-  and pushUbuntuBuildImage
-  and buildAlpineBuildImage
-  and pushAlpineBuildImage
-  and buildUbuntuPackagingImage
-  and pushUbuntuPackagingImage
-  and buildCentosPackagingImage
-  and pushCentosPackagingImage
-  and buildDocumentationImage
-  and pushDocumentationImage
-  or begin ; popd ; return 1 ; end
-  popd
-end
-
-function updateOskar
-  pushd $WORKDIR
-  and git checkout -- .
-  and git pull
-  and source helper.fish
-  and pullUbuntuBuildImage
-  and pullAlpineBuildImage
-  and pullUbuntuPackagingImage
-  and pullCentosPackagingImage
-  and pullDocumentationImage
-  or begin ; popd ; return 1 ; end
-  popd
-end
-
-function downloadStarter
-  mkdir -p $WORKDIR$THIRDPARTY_BIN
-  runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/downloadStarter.fish $THIRDPARTY_BIN $argv
-end
-
-function downloadSyncer
-  mkdir -p $WORKDIR$THIRDPARTY_SBIN
-  rm -f $WORKDIR/work/ArangoDB/build/install/usr/sbin/arangosync $WORKDIR/work/ArangoDB/build/install/usr/bin/arangosync
-  runInContainer -e DOWNLOAD_SYNC_USER=$DOWNLOAD_SYNC_USER $UBUNTUBUILDIMAGE $SCRIPTSDIR/downloadSyncer.fish $THIRDPARTY_SBIN $argv
-  ln -s ../sbin/arangosync $WORKDIR/work/ArangoDB/build/install/usr/bin/arangosync
-end
-
-function buildPackage
-  # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
-  # ARANGODB_FULL_VERSION, for example by running findArangoDBVersion.
-  buildDebianPackage
-  and buildRPMPackage
-  and buildTarGzPackage
-  and buildDebianSnippet
-  and buildRPMSnippet
-  and buildTarGzSnippet
-end
-
-function buildEnterprisePackage
-  if test "$DOWNLOAD_SYNC_USER" = ""
-    echo "Need to set environment variable DOWNLOAD_SYNC_USER."
-    return 1
-  end
- 
-  # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
-  # ARANGODB_FULL_VERSION, for example by running findArangoDBVersion.
-  asanOff
-  and maintainerOff
-  and releaseMode
-  and enterprise
-  and set -xg NOSTRIP dont
-  and buildStaticArangoDB -DTARGET_ARCHITECTURE=nehalem
-  and downloadStarter
-  and downloadSyncer
-  and buildPackage
-
-  if test $status -ne 0
-    echo Building enterprise release failed, stopping.
-    return 1
-  end
-end
-
-function buildCommunityPackage
-  # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
-  # ARANGODB_FULL_VERSION, for example by running findArangoDBVersion.
-  asanOff
-  and maintainerOff
-  and releaseMode
-  and community
-  and set -xg NOSTRIP dont
-  and buildStaticArangoDB -DTARGET_ARCHITECTURE=nehalem
-  and downloadStarter
-  and buildPackage
-
-  if test $status -ne 0
-    echo Building community release failed.
-    return 1
+    transformDebianSnippet "arangodb3" "$ARANGODB_DEBIAN_UPSTREAM-$ARANGODB_DEBIAN_REVISION" "$ARANGODB_TGZ_UPSTREAM" "$COMMUNITY_DOWNLOAD_LINK"
+    or return 1
   end
 end
 
@@ -563,7 +364,37 @@ function transformDebianSnippet
   popd
 end
 
-function buildDebianSnippet
+## #############################################################################
+## redhat release
+## #############################################################################
+
+function buildRPMPackage
+  if test ! -d $WORKDIR/work/ArangoDB/build
+    echo buildRPMPackage: build directory does not exist
+    return 1
+  end
+
+  set -l pd "default"
+
+  if test -d $WORKDIR/rpm/$ARANGODB_PACKAGES
+    set pd "$ARANGODB_PACKAGES"
+  end
+
+  # This assumes that a static build has already happened
+  # Must have set ARANGODB_RPM_UPSTREAM and ARANGODB_RPM_REVISION,
+  # for example by running findArangoDBVersion.
+  if test "$ENTERPRISEEDITION" = "On"
+    transformSpec "$WORKDIR/rpm/$pd/arangodb3e.spec.in" "$WORKDIR/work/arangodb3.spec"
+  else
+    transformSpec "$WORKDIR/rpm/$pd/arangodb3.spec.in" "$WORKDIR/work/arangodb3.spec"
+  end
+  and cp $WORKDIR/rpm/$pd/arangodb3.initd $WORKDIR/work
+  and cp $WORKDIR/rpm/$pd/arangodb3.service $WORKDIR/work
+  and cp $WORKDIR/rpm/$pd/arangodb3.logrotate $WORKDIR/work
+  and runInContainer $CENTOSPACKAGINGIMAGE $SCRIPTSDIR/buildRPMPackage.fish
+end
+
+function buildRPMSnippet
   # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
   # ARANGODB_SNIPPETS, for example by running findArangoDBVersion.
   if test "$ENTERPRISEEDITION" = "On"
@@ -572,7 +403,7 @@ function buildDebianSnippet
       return 1
     end
 
-    transformDebianSnippet "arangodb3e" "$ARANGODB_DEBIAN_UPSTREAM-$ARANGODB_DEBIAN_REVISION" "$ARANGODB_TGZ_UPSTREAM" "$ENTERPRISE_DOWNLOAD_LINK"
+    transformRPMSnippet "arangodb3e" "$ARANGODB_RPM_UPSTREAM-$ARANGODB_RPM_REVISION" "$ARANGODB_TGZ_UPSTREAM" "$ENTERPRISE_DOWNLOAD_LINK"
     or return 1
   else
     if test -z "$COMMUNITY_DOWNLOAD_LINK"
@@ -580,7 +411,7 @@ function buildDebianSnippet
       return 1
     end
 
-    transformDebianSnippet "arangodb3" "$ARANGODB_DEBIAN_UPSTREAM-$ARANGODB_DEBIAN_REVISION" "$ARANGODB_TGZ_UPSTREAM" "$COMMUNITY_DOWNLOAD_LINK"
+    transformRPMSnippet "arangodb3" "$ARANGODB_RPM_UPSTREAM-$ARANGODB_RPM_REVISION" "$ARANGODB_TGZ_UPSTREAM" "$COMMUNITY_DOWNLOAD_LINK"
     or return 1
   end
 end
@@ -660,7 +491,20 @@ function transformRPMSnippet
   popd
 end
 
-function buildRPMSnippet
+## #############################################################################
+## TAR release
+## #############################################################################
+
+function buildTarGzPackage
+  if test ! -d $WORKDIR/work/ArangoDB/build
+    echo buildRPMPackage: build directory does not exist
+    return 1
+  end
+
+  buildTarGzPackageHelper "linux"
+end
+
+function buildTarGzSnippet
   # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
   # ARANGODB_SNIPPETS, for example by running findArangoDBVersion.
   if test "$ENTERPRISEEDITION" = "On"
@@ -669,7 +513,7 @@ function buildRPMSnippet
       return 1
     end
 
-    transformRPMSnippet "arangodb3e" "$ARANGODB_RPM_UPSTREAM-$ARANGODB_RPM_REVISION" "$ARANGODB_TGZ_UPSTREAM" "$ENTERPRISE_DOWNLOAD_LINK"
+    transformTarGzSnippet "arangodb3e" "$ARANGODB_TGZ_UPSTREAM" "$ENTERPRISE_DOWNLOAD_LINK"
     or return 1
   else
     if test -z "$COMMUNITY_DOWNLOAD_LINK"
@@ -677,7 +521,7 @@ function buildRPMSnippet
       return 1
     end
 
-    transformRPMSnippet "arangodb3" "$ARANGODB_RPM_UPSTREAM-$ARANGODB_RPM_REVISION" "$ARANGODB_TGZ_UPSTREAM" "$COMMUNITY_DOWNLOAD_LINK"
+    transformTarGzSnippet "arangodb3" "$ARANGODB_TGZ_UPSTREAM" "$COMMUNITY_DOWNLOAD_LINK"
     or return 1
   end
 end
@@ -711,49 +555,6 @@ function transformTarGzSnippet
 
   echo "TarGZ Snippet: $n"
   popd
-end
-
-function buildTarGzSnippet
-  # Must have set ARANGODB_VERSION and ARANGODB_PACKAGE_REVISION and
-  # ARANGODB_SNIPPETS, for example by running findArangoDBVersion.
-  if test "$ENTERPRISEEDITION" = "On"
-    if test -z "$ENTERPRISE_DOWNLOAD_LINK"
-      echo "you need to set the variable ENTERPRISE_DOWNLOAD_LINK"
-      return 1
-    end
-
-    transformTarGzSnippet "arangodb3e" "$ARANGODB_TGZ_UPSTREAM" "$ENTERPRISE_DOWNLOAD_LINK"
-    or return 1
-  else
-    if test -z "$COMMUNITY_DOWNLOAD_LINK"
-      echo "you need to set the variable COMMUNITY_DOWNLOAD_LINK"
-      return 1
-    end
-
-    transformTarGzSnippet "arangodb3" "$ARANGODB_TGZ_UPSTREAM" "$COMMUNITY_DOWNLOAD_LINK"
-    or return 1
-  end
-end
-
-function makeSnippets
-  if test -z "$ENTERPRISE_DOWNLOAD_LINK"
-    echo "you need to set the variable ENTERPRISE_DOWNLOAD_LINK"
-    return 1
-  end
-
-  if test -z "$COMMUNITY_DOWNLOAD_LINK"
-    echo "you need to set the variable COMMUNITY_DOWNLOAD_LINK"
-    return 1
-  end
-
-  community
-  and buildDebianSnippet
-  and buildRPMSnippet
-  and buildTarGzSnippet
-  and enterprise
-  and buildDebianSnippet
-  and buildRPMSnippet
-  and buildTarGzSnippet
 end
 
 ## #############################################################################
@@ -938,6 +739,24 @@ function transformK8SSnippet
 end
 
 ## #############################################################################
+## documentation release
+## #############################################################################
+
+function buildDocumentation
+    runInContainer -e "ARANGO_SPIN=$ARANGO_SPIN" \
+                   -e "ARANGO_NO_COLOR=$ARANGO_IN_JENKINS" \
+                   -e "ARANGO_BUILD_DOC=/oskar/work" \
+                   --user "$UID" \
+                   -v "$WORKDIR:/oskar" \
+                   -it "$DOCIMAGE" \
+                   -- "$argv"
+end
+
+function buildDocumentationForRelease
+    buildDocumentation --all-formats
+end
+
+## #############################################################################
 ## create repos
 ## #############################################################################
 
@@ -950,6 +769,259 @@ function createRepositories
       -v /mnt/buildfiles/release/3.4/repositories:/repositories \
       $UBUNTUPACKAGINGIMAGE $SCRIPTSDIR/createAll
   popd
+end
+
+## #############################################################################
+## build and packaging images
+## #############################################################################
+
+function buildUbuntuBuildImage
+  pushd $WORKDIR
+  and cp -a scripts/{makeArangoDB,buildArangoDB,checkoutArangoDB,checkoutEnterprise,clearWorkDir,downloadStarter,downloadSyncer,runTests,runFullTests,switchBranches,recursiveChown}.fish containers/buildUbuntu.docker/scripts
+  and cd $WORKDIR/containers/buildUbuntu.docker
+  and docker build -t $UBUNTUBUILDIMAGE .
+  and rm -f $WORKDIR/containers/buildUbuntu.docker/scripts/*.fish
+  or begin ; popd ; return 1 ; end
+  popd
+end
+
+function pushUbuntuBuildImage ; docker push $UBUNTUBUILDIMAGE ; end
+
+function pullUbuntuBuildImage ; docker pull $UBUNTUBUILDIMAGE ; end
+
+function buildUbuntuPackagingImage
+  pushd $WORKDIR
+  and cp -a scripts/buildDebianPackage.fish containers/buildUbuntuPackaging.docker/scripts
+  and cd $WORKDIR/containers/buildUbuntuPackaging.docker
+  and docker build -t $UBUNTUPACKAGINGIMAGE .
+  and rm -f $WORKDIR/containers/buildUbuntuPackaging.docker/scripts/*.fish
+  or begin ; popd ; return 1 ; end
+  popd
+end
+
+function pushUbuntuPackagingImage ; docker push $UBUNTUPACKAGINGIMAGE ; end
+
+function pullUbuntuPackagingImage ; docker pull $UBUNTUPACKAGINGIMAGE ; end
+
+function buildAlpineBuildImage
+  pushd $WORKDIR
+  and cp -a scripts/makeAlpine.fish scripts/buildAlpine.fish containers/buildAlpine.docker/scripts
+  and cd $WORKDIR/containers/buildAlpine.docker
+  and docker build -t $ALPINEBUILDIMAGE .
+  and rm -f $WORKDIR/containers/buildAlpine.docker/scripts/*.fish
+  or begin ; popd ; return 1 ; end
+  popd
+end
+
+function pushAlpineBuildImage ; docker push $ALPINEBUILDIMAGE ; end
+
+function pullAlpineBuildImage ; docker pull $ALPINEBUILDIMAGE ; end
+
+function buildCentosPackagingImage
+  pushd $WORKDIR
+  and cp -a scripts/buildRPMPackage.fish containers/buildCentos7Packaging.docker/scripts
+  and cd $WORKDIR/containers/buildCentos7Packaging.docker
+  and docker build -t $CENTOSPACKAGINGIMAGE .
+  and rm -f $WORKDIR/containers/buildCentos7Packaging.docker/scripts/*.fish
+  or begin ; popd ; return 1 ; end
+  popd
+end
+
+function pushCentosPackagingImage ; docker push $CENTOSPACKAGINGIMAGE ; end
+
+function pullCentosPackagingImage ; docker pull $CENTOSPACKAGINGIMAGE ; end
+
+function buildDocumentationImage
+    eval "$WORKDIR/scripts/buildContainerDocumentation" "$DOCIMAGE"
+end
+function pushDocumentationImage ; docker push $DOCIMAGE ; end
+function pullDocumentationImage ; docker pull $DOCIMAGE ; end
+
+function remakeImages
+  set -l s 0
+
+  buildUbuntuBuildImage ; or set -l s 1
+  pushUbuntuBuildImage ; or set -l s 1
+  buildAlpineBuildImage ; or set -l s 1
+  pushAlpineBuildImage ; or set -l s 1
+  buildUbuntuPackagingImage ; or set -l s 1
+  pushUbuntuPackagingImage ; or set -l s 1
+  buildCentosPackagingImage ; or set -l s 1
+  pushCentosPackagingImage ; or set -l s 1
+  buildDocumentationImage ; or set -l s 1
+
+  return $s
+end
+
+## #############################################################################
+## run commands in container
+## #############################################################################
+
+function runInContainer
+  if test -z "$SSH_AUTH_SOCK"
+    eval (ssh-agent -c) > /dev/null
+    ssh-add ~/.ssh/id_rsa
+    set -l agentstarted 1
+  else
+    set -l agentstarted ""
+  end
+
+  # Run script in container in background, but print output and react to
+  # a TERM signal to the shell or to a foreground subcommand. Note that the
+  # container process itself will run as root and will be immune to SIGTERM
+  # from a regular user. Therefore we have to do some Eiertanz to stop it
+  # if we receive a TERM outside the container. Note that this does not
+  # cover SIGINT, since this will directly abort the whole function.
+  set c (docker run -d \
+             -v $WORKDIR/work:$INNERWORKDIR \
+             -v $SSH_AUTH_SOCK:/ssh-agent \
+	     -v "$WORKDIR/scripts":"/scripts" \
+             -e ASAN="$ASAN" \
+             -e BUILDMODE="$BUILDMODE" \
+             -e COMPILER_VERSION="$COMPILER_VERSION" \
+             -e CCACHEBINPATH="$CCACHEBINPATH" \
+             -e ENTERPRISEEDITION="$ENTERPRISEEDITION" \
+             -e GID=(id -g) \
+             -e GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no" \
+             -e INNERWORKDIR="$INNERWORKDIR" \
+	     -e KEYNAME="$KEYNAME" \
+             -e MAINTAINER="$MAINTAINER" \
+             -e NOSTRIP="$NOSTRIP" \
+             -e NO_RM_BUILD="$NO_RM_BUILD" \
+             -e PARALLELISM="$PARALLELISM" \
+             -e PLATFORM="$PLATFORM" \
+             -e SCRIPTSDIR="$SCRIPTSDIR" \
+             -e SSH_AUTH_SOCK=/ssh-agent \
+             -e STORAGEENGINE="$STORAGEENGINE" \
+             -e TESTSUITE="$TESTSUITE" \
+             -e UID=(id -u) \
+             -e VERBOSEBUILD="$VERBOSEBUILD" \
+             -e VERBOSEOSKAR="$VERBOSEOSKAR" \
+             -e JEMALLOC_OSKAR="$JEMALLOC_OSKAR" \
+             -e SKIPGREY="$SKIPGREY" \
+             $argv)
+  function termhandler --on-signal TERM --inherit-variable c
+    if test -n "$c" ; docker stop $c >/dev/null ; end
+  end
+  docker logs -f $c          # print output to stdout
+  docker stop $c >/dev/null  # happens when the previous command gets a SIGTERM
+  set s (docker inspect $c --format "{{.State.ExitCode}}")
+  docker rm $c >/dev/null
+  functions -e termhandler
+  # Cleanup ownership:
+  docker run \
+      -v $WORKDIR/work:$INNERWORKDIR \
+      -e UID=(id -u) \
+      -e GID=(id -g) \
+      -e INNERWORKDIR=$INNERWORKDIR \
+      $UBUNTUBUILDIMAGE $SCRIPTSDIR/recursiveChown.fish
+
+  if test -n "$agentstarted"
+    ssh-agent -k > /dev/null
+    set -e SSH_AUTH_SOCK
+    set -e SSH_AGENT_PID
+  end
+  return $s
+end
+
+function interactiveContainer
+  docker run -it -v $WORKDIR/work:$INNERWORKDIR --rm \
+             -v $SSH_AUTH_SOCK:/ssh-agent \
+             -e SSH_AUTH_SOCK=/ssh-agent \
+             -e UID=(id -u) \
+             -e GID=(id -g) \
+             -e NOSTRIP="$NOSTRIP" \
+             -e GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no" \
+             -e INNERWORKDIR=$INNERWORKDIR \
+             -e MAINTAINER=$MAINTAINER \
+             -e BUILDMODE=$BUILDMODE \
+             -e PARALLELISM=$PARALLELISM \
+             -e STORAGEENGINE=$STORAGEENGINE \
+             -e TESTSUITE=$TESTSUITE \
+             -e VERBOSEOSKAR=$VERBOSEOSKAR \
+             -e ENTERPRISEEDITION=$ENTERPRISEEDITION \
+             -e SCRIPTSDIR=$SCRIPTSDIR \
+             -e PLATFORM=$PLATFORM \
+             --privileged \
+             $argv
+end
+
+## #############################################################################
+## helper functions
+## #############################################################################
+
+function clearWorkDir
+  runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/clearWorkDir.fish
+end
+
+function transformSpec
+  if test (count $argv) != 2
+    echo transformSpec: wrong number of arguments
+    return 1
+  end
+  and cp "$argv[1]" "$argv[2]"
+  and sed -i -e "s/@PACKAGE_VERSION@/$ARANGODB_RPM_UPSTREAM/" "$argv[2]"
+  and sed -i -e "s/@PACKAGE_REVISION@/$ARANGODB_RPM_REVISION/" "$argv[2]"
+  and sed -i -e "s~@JS_DIR@~~" "$argv[2]"
+
+  # in case of version number inside JS directory
+  # and if test "(" "$ARANGODB_VERSION_MAJOR" -eq "3" ")" -a "(" "$ARANGODB_VERSION_MINOR" -le "3" ")"
+  #  sed -i -e "s~@JS_DIR@~~" "$argv[2]"
+  # else
+  #  sed -i -e "s~@JS_DIR@~/$ARANGODB_VERSION_MAJOR.$ARANGODB_VERSION_MINOR.$ARANGODB_VERSION_PATCH~" "$argv[2]"
+  # end
+end
+
+function shellInUbuntuContainer
+  interactiveContainer $UBUNTUBUILDIMAGE fish
+end
+
+function shellInAlpineContainer
+  interactiveContainer $ALPINEBUILDIMAGE fish
+end
+
+function pushOskar
+  pushd $WORKDIR
+  and source helper.fish
+  and git push
+  and buildUbuntuBuildImage
+  and pushUbuntuBuildImage
+  and buildAlpineBuildImage
+  and pushAlpineBuildImage
+  and buildUbuntuPackagingImage
+  and pushUbuntuPackagingImage
+  and buildCentosPackagingImage
+  and pushCentosPackagingImage
+  and buildDocumentationImage
+  and pushDocumentationImage
+  or begin ; popd ; return 1 ; end
+  popd
+end
+
+function updateOskar
+  pushd $WORKDIR
+  and git checkout -- .
+  and git pull
+  and source helper.fish
+  and pullUbuntuBuildImage
+  and pullAlpineBuildImage
+  and pullUbuntuPackagingImage
+  and pullCentosPackagingImage
+  and pullDocumentationImage
+  or begin ; popd ; return 1 ; end
+  popd
+end
+
+function downloadStarter
+  mkdir -p $WORKDIR$THIRDPARTY_BIN
+  runInContainer $UBUNTUBUILDIMAGE $SCRIPTSDIR/downloadStarter.fish $THIRDPARTY_BIN $argv
+end
+
+function downloadSyncer
+  mkdir -p $WORKDIR$THIRDPARTY_SBIN
+  rm -f $WORKDIR/work/ArangoDB/build/install/usr/sbin/arangosync $WORKDIR/work/ArangoDB/build/install/usr/bin/arangosync
+  runInContainer -e DOWNLOAD_SYNC_USER=$DOWNLOAD_SYNC_USER $UBUNTUBUILDIMAGE $SCRIPTSDIR/downloadSyncer.fish $THIRDPARTY_SBIN $argv
+  ln -s ../sbin/arangosync $WORKDIR/work/ArangoDB/build/install/usr/bin/arangosync
 end
 
 ## #############################################################################

@@ -54,7 +54,7 @@ for pattern in "ArangoDB3e-*.exe" "ArangoDB3e-*.zip"
   end
 end
 
-for pattern in "ArangoDB-*.tar.gz" "ArangoDB-*.tar.bz2" "ArangoDB-*.zip"
+for pattern in "ArangoDB-*.tar.gz" "ArangoDB-*.tar.gz.asc" "ArangoDB-*.tar.bz2" "ArangoDB-*.tar.bz2.asc" "ArangoDB-*.zip" "ArangoDB-*.zip.asc"
   set files (pushd $SRC ; and find . -maxdepth 1 -type f -name "$pattern" ; and popd)
   for file in $files
     cp -a $SRC/$file $DST/release/source ; or set -g s 1

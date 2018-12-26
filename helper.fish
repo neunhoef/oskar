@@ -1,17 +1,6 @@
 set -gx LDAPDOCKERCONTAINERNAME arangodbtestldapserver
 set -gx LDAPNETWORK ldaptestnet
-
-function launchLdapServer
-  stopLdapServer
-  docker network create "$LDAPNETWORK"
-  docker run -d --name "$LDAPDOCKERCONTAINERNAME" --net="$LDAPNETWORK" -p 389:389 -p 636:636 neunhoef/ldap-alpine
-end
-
-function stopLdapServer
-  docker stop "$LDAPDOCKERCONTAINERNAME"
-  docker rm "$LDAPDOCKERCONTAINERNAME"
-  docker network rm "$LDAPNETWORK"
-end
+set -gx KEYNAME 115E1684
 
 function lockDirectory
   # Now grab the lock ourselves:
@@ -47,93 +36,9 @@ if test -f config/environment.fish
   source config/environment.fish
 end
 
-function showConfig
-  set -l fmt2 '%-20s: %-20s\n'
-  set -l fmt3 '%-20s: %-20s %s\n'
-
-  echo '------------------------------------------------------------------------------'
-  echo 'Build Configuration'
-  printf $fmt3 'ASAN'       $ASAN                '(asanOn/Off)'
-  printf $fmt3 'Buildmode'  $BUILDMODE           '(debugMode/releaseMode)'
-  printf $fmt3 'Compiler'   "$COMPILER_VERSION"  '(compiler x.y.z)'
-  printf $fmt3 'Enterprise' $ENTERPRISEEDITION   '(community/enterprise)'
-  printf $fmt3 'Jemalloc'   $JEMALLOC_OSKAR      '(jemallocOn/jemallocOff)'
-  printf $fmt3 'Maintainer' $MAINTAINER          '(maintainerOn/Off)'
-  printf $fmt3 'SkipGrey'   $SKIPGREY            '(skipGrey/includeGrey)'
-
-  if test -z "$NO_RM_BUILD"
-    printf $fmt3 'Clear build' On '(keepBuild/clearBuild)'
-  else
-    printf $fmt3 'Clear build' Off '(keepBuild/clearBuild)'
-  end
-  
-  echo
-  echo 'Test Configuration'
-  printf $fmt3 'Storage engine' $STORAGEENGINE '(mmfiles/rocksdb)'
-  printf $fmt3 'Test suite'     $TESTSUITE     '(single/cluster/resilience/catchtest)'
-  echo
-  echo 'Build Configuration'
-  printf $fmt3 'Stable/preview' $RELEASETYPE   '(stable/preview/stablePreview)'
-  printf $fmt3 'Test suite'     $TESTSUITE     '(single/cluster/resilience/catchtest)'
-  echo
-  echo 'Internal Configuration'
-  printf $fmt3 'Parallelism'   $PARALLELISM  '(parallelism nnn)'
-  if test "$CCACHESIZE" != ""
-  printf $fmt3 'CCACHE size'   $CCACHESIZE   '(CCACHESIZE)'
-  end
-  printf $fmt3 'Verbose Build' $VERBOSEBUILD '(verboseBuild/silentBuild)'
-  printf $fmt3 'Verbose Oskar' $VERBOSEOSKAR '(verbose/slient)'
-  echo
-  echo 'Directories'
-  printf $fmt2 'Inner workdir' $INNERWORKDIR
-  printf $fmt2 'Workdir'       $WORKDIR
-  printf $fmt2 'Workspace'     $WORKSPACE
-  echo '------------------------------------------------------------------------------'
-  echo
-end
-
-function findBranch
-  set -l v (git config --get remote.origin.url)
-  set -l w (git status -s -b | head -1)
-
-  if echo $w | grep -q "no branch"
-    set w (git status | head -1)
-  end
-
-  echo "$v $w"
-end
-
-function showRepository
-  set -l fmt3 '%-20s: %-20s %s\n'
-
-  echo '------------------------------------------------------------------------------'
-
-  if test -d $WORKDIR/work/ArangoDB
-    echo 'Repositories'
-    pushd $WORKDIR
-    printf $fmt3 'Oskar' (findBranch)
-    popd
-    pushd $WORKDIR/work/ArangoDB
-    printf $fmt3 'Community' (findBranch)
-    if test "$ENTERPRISEEDITION" = "On"
-      if test -d $WORKDIR/work/ArangoDB/enterprise
-        pushd enterprise
-        printf $fmt3 'Enterprise' (findBranch)
-        popd
-      else
-        printf $fmt3 'Enterprise' 'missing'
-      end
-    else
-      printf $fmt3 'Enterprise' 'not configured'
-    end
-    popd
-  else
-    printf $fmt3 'Community' 'missing'
-  end
-
-  echo '------------------------------------------------------------------------------'
-  echo
-end
+## #############################################################################
+## config
+## #############################################################################
 
 function single ; set -gx TESTSUITE single ; end
 function cluster ; set -gx TESTSUITE cluster ; end
@@ -205,26 +110,9 @@ set -gx WORKDIR (pwd)
 if test ! -d scripts ; echo "cannot find scripts directory" ; exit 1 ; end
 if test ! -d work ; mkdir work ; end
 
-function checkoutIfNeeded
-  if test ! -d $WORKDIR/ArangoDB
-    if test "$ENTERPRISEEDITION" = "On"
-      checkoutEnterprise
-    else
-      checkoutArangoDB
-    end
-  end
-  if test ! -d $WORKDIR/ArangoDB/upgrade-data-tests
-    checkoutUpgradeDataTests
-  end
-end
-
-function clearResults
-  pushd $WORKDIR/work
-  and for f in testreport* ; rm -f $f ; end
-  and rm -f test.log buildArangoDB.log cmakeArangoDB.log
-  or begin ; popd ; return 1 ; end
-  popd
-end
+## #############################################################################
+## test
+## #############################################################################
 
 function oskar1
   showConfig
@@ -316,9 +204,276 @@ function oskar8
   set -xg TESTSUITE $testsuite ; set -xg STORAGEENGINE $storageengine ; set -l ENTERPRISEEDITION $enterpriseedition
 end
 
+## #############################################################################
+## release
+## #############################################################################
+
+function makeRelease
+  if test "$DOWNLOAD_SYNC_USER" = ""
+    echo "Need to set environment variable DOWNLOAD_SYNC_USER."
+    return 1
+  end
+
+  if test "$ENTERPRISE_DOWNLOAD_LINK" = ""
+    set -xg ENTERPRISE_DOWNLOAD_LINK "https://download.enterprise"
+  end
+
+  if test "$COMMUNITY_DOWNLOAD_LINK" = ""
+    set -xg COMMUNITY_DOWNLOAD_LINK "https://download.enterprise"
+  end
+
+  if test (count $argv) -lt 2
+    findArangoDBVersion ; or return 1
+  else
+    set -xg ARANGODB_VERSION "$argv[1]"
+    set -xg ARANGODB_PACKAGE_REVISION "$argv[2]"
+    set -xg ARANGODB_FULL_VERSION "$argv[1]-$argv[2]"
+  end
+
+  buildEnterprisePackage
+  and buildCommunityPackage
+end
+
+## #############################################################################
+## source release
+## #############################################################################
+
+function makeSourceRelease
+  set -l SOURCE_TAG "unknown"
+
+  if test -z "$SOURCE_DOWNLOAD_LINK"
+    set -xg SOURCE_DOWNLOAD_LINK "https://download.source"
+  end
+
+  if test (count $argv) -lt 1
+    findArangoDBVersion ; or return 1
+
+    set SOURCE_TAG $ARANGODB_VERSION
+  else
+    set SOURCE_TAG $argv[1]
+  end
+
+  buildSourcePackage $SOURCE_TAG
+  and signSourcePackage $SOURCE_TAG
+  and buildSourceSnippet $SOURCE_TAG
+end
+
+function buildSourcePackage
+  if test (count $argv) -lt 1
+    echo "Need source tag as parameter"
+    exit 1
+  end
+
+  set -l SOURCE_TAG $argv[1]
+
+  pushd $WORKDIR/work
+  and rm -rf ArangoDB-$SOURCE_TAG
+  and cp -a ArangoDB ArangoDB-$SOURCE_TAG
+  and pushd ArangoDB-$SOURCE_TAG
+  and find . -maxdepth 1 -name "arangodb-tmp.sock*" -delete
+  and rm -rf enterprise upgrade-data-tests
+  and git clean -f -d -x
+  and rm -rf .git
+  and popd
+  and echo "creating tar.gz"
+  and rm -f ArangoDB-$SOURCE_TAG.tar.gz
+  and tar -c -z -f ArangoDB-$SOURCE_TAG.tar.gz ArangoDB-$SOURCE_TAG
+  and echo "creating tar.bz2"
+  and rm -f ArangoDB-$SOURCE_TAG.tar.bz2
+  and tar -c -j -f ArangoDB-$SOURCE_TAG.tar.bz2 ArangoDB-$SOURCE_TAG
+  and echo "creating zip"
+  and rm -f ArangoDB-$SOURCE_TAG.zip
+  and zip -q -r ArangoDB-$SOURCE_TAG.zip ArangoDB-$SOURCE_TAG
+  and popd
+  or begin ; popd ; return 1 ; end
+end
+
+function buildSourceSnippet
+  if test (count $argv) -lt 1
+    echo "Need source tag as parameter"
+    exit 1
+  end
+
+  if test -z "$SOURCE_DOWNLOAD_LINK"
+    echo "you need to set the variable SOURCE_DOWNLOAD_LINK"
+      return 1
+  end
+
+  transformSourceSnippet $argv[1] "$SOURCE_DOWNLOAD_LINK"
+  or return 1
+end
+
+function transformSourceSnippet
+  pushd $WORKDIR
+  
+  set -l SOURCE_TAR_GZ "ArangoDB-$argv[1].tar.gz"
+  set -l SOURCE_TAR_BZ2 "ArangoDB-$argv[1].tar.bz2"
+  set -l SOURCE_ZIP "ArangoDB-$argv[1].zip"
+  set -l DOWNLOAD_LINK "$argv[2]"
+
+  if test ! -f "work/$SOURCE_TAR_GZ"; echo "Source package '$SOURCE_TAR_GZ' is missing"; return 1; end
+  if test ! -f "work/$SOURCE_TAR_BZ2"; echo "Source package '$SOURCE_TAR_BZ2"' is missing"; return 1; end
+  if test ! -f "work/$SOURCE_ZIP"; echo "Source package '$SOURCE_ZIP"' is missing"; return 1; end
+
+  set -l SOURCE_SIZE_TAR_GZ (expr (wc -c < work/$SOURCE_TAR_GZ) / 1024 / 1024)
+  set -l SOURCE_SIZE_TAR_BZ2 (expr (wc -c < work/$SOURCE_TAR_BZ2) / 1024 / 1024)
+  set -l SOURCE_SIZE_ZIP (expr (wc -c < work/$SOURCE_ZIP) / 1024 / 1024)
+
+  set -l SOURCE_SHA256_TAR_GZ (shasum -a 256 -b < work/$SOURCE_TAR_GZ | awk '{print $1}')
+  set -l SOURCE_SHA256_TAR_BZ2 (shasum -a 256 -b < work/$SOURCE_TAR_BZ2 | awk '{print $1}')
+  set -l SOURCE_SHA256_ZIP (shasum -a 256 -b < work/$SOURCE_ZIP | awk '{print $1}')
+
+  set -l n "work/download-source.html"
+
+  sed -e "s|@SOURCE_TAR_GZ@|$SOURCE_TAR_GZ|g" \
+      -e "s|@SOURCE_SIZE_TAR_GZ@|$SOURCE_SIZE_TAR_GZ|g" \
+      -e "s|@SOURCE_SHA256_TAR_GZ@|$SOURCE_SHA256_TAR_GZ|g" \
+      -e "s|@SOURCE_TAR_BZ2@|$SOURCE_TAR_BZ2|g" \
+      -e "s|@SOURCE_SIZE_TAR_BZ2@|$SOURCE_SIZE_TAR_BZ2|g" \
+      -e "s|@SOURCE_SHA256_TAR_BZ2@|$SOURCE_SHA256_TAR_BZ2|g" \
+      -e "s|@SOURCE_ZIP@|$SOURCE_ZIP|g" \
+      -e "s|@SOURCE_SIZE_ZIP@|$SOURCE_SIZE_ZIP|g" \
+      -e "s|@SOURCE_SHA256_ZIP@|$SOURCE_SHA256_ZIP|g" \
+      -e "s|@DOWNLOAD_LINK@|$DOWNLOAD_LINK|g" \
+      -e "s|@ARANGODB_VERSION@|$ARANGODB_VERSION|g" \
+      < snippets/$ARANGODB_SNIPPETS/source.html.in > $n
+
+  echo "Source Snippet: $n"
+  popd
+end
+
+## #############################################################################
+## TAR release
+## #############################################################################
+
+function buildTarGzPackageHelper
+  set -l os "$argv[1]"
+
+  if test -z "$os"
+    echo "need operating system as first argument"
+    return 1
+  end
+
+  # This assumes that a static build has already happened
+  # Must have set ARANGODB_TGZ_UPSTREAM
+  # for example by running findArangoDBVersion.
+  set -l v "$ARANGODB_TGZ_UPSTREAM"
+  set -l name
+
+  if test "$ENTERPRISEEDITION" = "On"
+    set name arangodb3e
+  else
+    set name arangodb3
+  end
+
+  pushd $WORKDIR/work/ArangoDB/build/install
+  and rm -rf bin
+  and cp -a $WORKDIR/binForTarGz bin
+  and rm -f "bin/*~" "bin/*.bak"
+  and mv bin/README .
+  and strip usr/sbin/arangod usr/bin/{arangobench,arangodump,arangoexport,arangoimp,arangorestore,arangosh,arangovpack}
+  and if test "$ENTERPRISEEDITION" != "On"
+    rm -f "bin/arangosync" "usr/bin/arangosync" "usr/sbin/arangosync"
+  end
+  and cd $WORKDIR/work/ArangoDB/build
+  and mv install "$name-$v"
+  or begin ; popd ; return 1 ; end
+
+  tar -c -z -f "$WORKDIR/work/$name-$os-$v.tar.gz" --exclude "etc" --exclude "var" "$name-$v"
+  and set s $status
+  and mv "$name-$v" install
+  and popd
+  and return $s 
+end
+
+## #############################################################################
+## show functions
+## #############################################################################
+
+function showConfig
+  set -l fmt2 '%-20s: %-20s\n'
+  set -l fmt3 '%-20s: %-20s %s\n'
+
+  echo '------------------------------------------------------------------------------'
+  echo 'Build Configuration'
+  printf $fmt3 'ASAN'       $ASAN                '(asanOn/Off)'
+  printf $fmt3 'Buildmode'  $BUILDMODE           '(debugMode/releaseMode)'
+  printf $fmt3 'Compiler'   "$COMPILER_VERSION"  '(compiler x.y.z)'
+  printf $fmt3 'Enterprise' $ENTERPRISEEDITION   '(community/enterprise)'
+  printf $fmt3 'Jemalloc'   $JEMALLOC_OSKAR      '(jemallocOn/jemallocOff)'
+  printf $fmt3 'Maintainer' $MAINTAINER          '(maintainerOn/Off)'
+  printf $fmt3 'SkipGrey'   $SKIPGREY            '(skipGrey/includeGrey)'
+
+  if test -z "$NO_RM_BUILD"
+    printf $fmt3 'Clear build' On '(keepBuild/clearBuild)'
+  else
+    printf $fmt3 'Clear build' Off '(keepBuild/clearBuild)'
+  end
+  
+  echo
+  echo 'Test Configuration'
+  printf $fmt3 'Storage engine' $STORAGEENGINE '(mmfiles/rocksdb)'
+  printf $fmt3 'Test suite'     $TESTSUITE     '(single/cluster/resilience/catchtest)'
+  echo
+  echo 'Build Configuration'
+  printf $fmt3 'Stable/preview' $RELEASETYPE   '(stable/preview/stablePreview)'
+  printf $fmt3 'Test suite'     $TESTSUITE     '(single/cluster/resilience/catchtest)'
+  echo
+  echo 'Internal Configuration'
+  printf $fmt3 'Parallelism'   $PARALLELISM  '(parallelism nnn)'
+  if test "$CCACHESIZE" != ""
+  printf $fmt3 'CCACHE size'   $CCACHESIZE   '(CCACHESIZE)'
+  end
+  printf $fmt3 'Verbose Build' $VERBOSEBUILD '(verboseBuild/silentBuild)'
+  printf $fmt3 'Verbose Oskar' $VERBOSEOSKAR '(verbose/slient)'
+  echo
+  echo 'Directories'
+  printf $fmt2 'Inner workdir' $INNERWORKDIR
+  printf $fmt2 'Workdir'       $WORKDIR
+  printf $fmt2 'Workspace'     $WORKSPACE
+  echo '------------------------------------------------------------------------------'
+  echo
+end
+
+function showRepository
+  set -l fmt3 '%-20s: %-20s %s\n'
+
+  echo '------------------------------------------------------------------------------'
+
+  if test -d $WORKDIR/work/ArangoDB
+    echo 'Repositories'
+    pushd $WORKDIR
+    printf $fmt3 'Oskar' (findBranch)
+    popd
+    pushd $WORKDIR/work/ArangoDB
+    printf $fmt3 'Community' (findBranch)
+    if test "$ENTERPRISEEDITION" = "On"
+      if test -d $WORKDIR/work/ArangoDB/enterprise
+        pushd enterprise
+        printf $fmt3 'Enterprise' (findBranch)
+        popd
+      else
+        printf $fmt3 'Enterprise' 'missing'
+      end
+    else
+      printf $fmt3 'Enterprise' 'not configured'
+    end
+    popd
+  else
+    printf $fmt3 'Community' 'missing'
+  end
+
+  echo '------------------------------------------------------------------------------'
+  echo
+end
+
 function showLog
   less +G work/test.log
 end
+
+## #############################################################################
+## calculate versions
+## #############################################################################
 
 function findArangoDBVersion
   set -l CMAKELIST "$WORKDIR/work/ArangoDB/CMakeLists.txt"
@@ -459,180 +614,55 @@ function findArangoDBVersion
 end
 
 ## #############################################################################
-## release
+## LDAP
 ## #############################################################################
 
-function makeRelease
-  if test "$DOWNLOAD_SYNC_USER" = ""
-    echo "Need to set environment variable DOWNLOAD_SYNC_USER."
-    return 1
-  end
+function launchLdapServer
+  stopLdapServer
+  docker network create "$LDAPNETWORK"
+  docker run -d --name "$LDAPDOCKERCONTAINERNAME" --net="$LDAPNETWORK" -p 389:389 -p 636:636 neunhoef/ldap-alpine
+end
 
-  if test "$ENTERPRISE_DOWNLOAD_LINK" = ""
-    set -xg ENTERPRISE_DOWNLOAD_LINK "https://download.enterprise"
-  end
-
-  if test "$COMMUNITY_DOWNLOAD_LINK" = ""
-    set -xg COMMUNITY_DOWNLOAD_LINK "https://download.enterprise"
-  end
-
-  if test (count $argv) -lt 2
-    findArangoDBVersion ; or return 1
-  else
-    set -xg ARANGODB_VERSION "$argv[1]"
-    set -xg ARANGODB_PACKAGE_REVISION "$argv[2]"
-    set -xg ARANGODB_FULL_VERSION "$argv[1]-$argv[2]"
-  end
-
-  buildEnterprisePackage
-  and buildCommunityPackage
+function stopLdapServer
+  docker stop "$LDAPDOCKERCONTAINERNAME"
+  docker rm "$LDAPDOCKERCONTAINERNAME"
+  docker network rm "$LDAPNETWORK"
 end
 
 ## #############################################################################
-## source release
+## helper functions
 ## #############################################################################
 
-function makeSourceRelease
-  set -l SOURCE_TAG "unknown"
+function findBranch
+  set -l v (git config --get remote.origin.url)
+  set -l w (git status -s -b | head -1)
 
-  if test -z "$SOURCE_DOWNLOAD_LINK"
-    set -xg SOURCE_DOWNLOAD_LINK "https://download.source"
+  if echo $w | grep -q "no branch"
+    set w (git status | head -1)
   end
 
-  if test (count $argv) -lt 1
-    findArangoDBVersion ; or return 1
-
-    set SOURCE_TAG $ARANGODB_VERSION
-  else
-    set SOURCE_TAG $argv[1]
-  end
-
-  buildSourcePackage $SOURCE_TAG
-  and buildSourceSnippet $SOURCE_TAG
+  echo "$v $w"
 end
 
-function buildSourcePackage
-  if test (count $argv) -lt 1
-    echo "Need source tag as parameter"
-    exit 1
+function checkoutIfNeeded
+  if test ! -d $WORKDIR/ArangoDB
+    if test "$ENTERPRISEEDITION" = "On"
+      checkoutEnterprise
+    else
+      checkoutArangoDB
+    end
   end
+  if test ! -d $WORKDIR/ArangoDB/upgrade-data-tests
+    checkoutUpgradeDataTests
+  end
+end
 
-  set -l SOURCE_TAG $argv[1]
-
+function clearResults
   pushd $WORKDIR/work
-  and rm -rf ArangoDB-$SOURCE_TAG
-  and cp -a ArangoDB ArangoDB-$SOURCE_TAG
-  and pushd ArangoDB-$SOURCE_TAG
-  and find . -maxdepth 1 -name "arangodb-tmp.sock*" -delete
-  and rm -rf enterprise
-  and git clean -f -d -x
-  and rm -rf .git
-  and popd
-  and echo "creating tar.gz"
-  and rm -f ArangoDB-$SOURCE_TAG.tar.gz
-  and tar -c -z -f ArangoDB-$SOURCE_TAG.tar.gz ArangoDB-$SOURCE_TAG
-  and echo "creating tar.bz2"
-  and rm -f ArangoDB-$SOURCE_TAG.tar.bz2
-  and tar -c -j -f ArangoDB-$SOURCE_TAG.tar.bz2 ArangoDB-$SOURCE_TAG
-  and echo "creating zip"
-  and rm -f ArangoDB-$SOURCE_TAG.zip
-  and zip -q -r ArangoDB-$SOURCE_TAG.zip ArangoDB-$SOURCE_TAG
-  and popd
+  and for f in testreport* ; rm -f $f ; end
+  and rm -f test.log buildArangoDB.log cmakeArangoDB.log
   or begin ; popd ; return 1 ; end
-end
-
-function buildSourceSnippet
-  if test (count $argv) -lt 1
-    echo "Need source tag as parameter"
-    exit 1
-  end
-
-  if test -z "$SOURCE_DOWNLOAD_LINK"
-    echo "you need to set the variable SOURCE_DOWNLOAD_LINK"
-      return 1
-  end
-
-  transformSourceSnippet $argv[1] "$SOURCE_DOWNLOAD_LINK"
-  or return 1
-end
-
-function transformSourceSnippet
-  pushd $WORKDIR
-  
-  set -l SOURCE_TAR_GZ "ArangoDB-$argv[1].tar.gz"
-  set -l SOURCE_TAR_BZ2 "ArangoDB-$argv[1].tar.bz2"
-  set -l SOURCE_ZIP "ArangoDB-$argv[1].zip"
-  set -l DOWNLOAD_LINK "$argv[2]"
-
-  if test ! -f "work/$SOURCE_TAR_GZ"; echo "Source package '$SOURCE_TAR_GZ' is missing"; return 1; end
-  if test ! -f "work/$SOURCE_TAR_BZ2"; echo "Source package '$SOURCE_TAR_BZ2"' is missing"; return 1; end
-  if test ! -f "work/$SOURCE_ZIP"; echo "Source package '$SOURCE_ZIP"' is missing"; return 1; end
-
-  set -l SOURCE_SIZE_TAR_GZ (expr (wc -c < work/$SOURCE_TAR_GZ) / 1024 / 1024)
-  set -l SOURCE_SIZE_TAR_BZ2 (expr (wc -c < work/$SOURCE_TAR_BZ2) / 1024 / 1024)
-  set -l SOURCE_SIZE_ZIP (expr (wc -c < work/$SOURCE_ZIP) / 1024 / 1024)
-
-  set -l SOURCE_SHA256_TAR_GZ (shasum -a 256 -b < work/$SOURCE_TAR_GZ | awk '{print $1}')
-  set -l SOURCE_SHA256_TAR_BZ2 (shasum -a 256 -b < work/$SOURCE_TAR_BZ2 | awk '{print $1}')
-  set -l SOURCE_SHA256_ZIP (shasum -a 256 -b < work/$SOURCE_ZIP | awk '{print $1}')
-
-  set -l n "work/download-source.html"
-
-  sed -e "s|@SOURCE_TAR_GZ@|$SOURCE_TAR_GZ|g" \
-      -e "s|@SOURCE_SIZE_TAR_GZ@|$SOURCE_SIZE_TAR_GZ|g" \
-      -e "s|@SOURCE_SHA256_TAR_GZ@|$SOURCE_SHA256_TAR_GZ|g" \
-      -e "s|@SOURCE_TAR_BZ2@|$SOURCE_TAR_BZ2|g" \
-      -e "s|@SOURCE_SIZE_TAR_BZ2@|$SOURCE_SIZE_TAR_BZ2|g" \
-      -e "s|@SOURCE_SHA256_TAR_BZ2@|$SOURCE_SHA256_TAR_BZ2|g" \
-      -e "s|@SOURCE_ZIP@|$SOURCE_ZIP|g" \
-      -e "s|@SOURCE_SIZE_ZIP@|$SOURCE_SIZE_ZIP|g" \
-      -e "s|@SOURCE_SHA256_ZIP@|$SOURCE_SHA256_ZIP|g" \
-      -e "s|@DOWNLOAD_LINK@|$DOWNLOAD_LINK|g" \
-      -e "s|@ARANGODB_VERSION@|$ARANGODB_VERSION|g" \
-      < snippets/$ARANGODB_SNIPPETS/source.html.in > $n
-
-  echo "Source Snippet: $n"
   popd
-end
-
-function buildTarGzPackageHelper
-  set -l os "$argv[1]"
-
-  if test -z "$os"
-    echo "need operating system as first argument"
-    return 1
-  end
-
-  # This assumes that a static build has already happened
-  # Must have set ARANGODB_TGZ_UPSTREAM
-  # for example by running findArangoDBVersion.
-  set -l v "$ARANGODB_TGZ_UPSTREAM"
-  set -l name
-
-  if test "$ENTERPRISEEDITION" = "On"
-    set name arangodb3e
-  else
-    set name arangodb3
-  end
-
-  pushd $WORKDIR/work/ArangoDB/build/install
-  and rm -rf bin
-  and cp -a $WORKDIR/binForTarGz bin
-  and rm -f "bin/*~" "bin/*.bak"
-  and mv bin/README .
-  and strip usr/sbin/arangod usr/bin/{arangobench,arangodump,arangoexport,arangoimp,arangorestore,arangosh,arangovpack}
-  and if test "$ENTERPRISEEDITION" != "On"
-    rm -f "bin/arangosync" "usr/bin/arangosync" "usr/sbin/arangosync"
-  end
-  and cd $WORKDIR/work/ArangoDB/build
-  and mv install "$name-$v"
-  or begin ; popd ; return 1 ; end
-
-  tar -c -z -f "$WORKDIR/work/$name-$os-$v.tar.gz" --exclude "etc" --exclude "var" "$name-$v"
-  and set s $status
-  and mv "$name-$v" install
-  and popd
-  and return $s 
 end
 
 function cleanWorkspace
@@ -680,7 +710,7 @@ function moveResultsToWorkspace
 end
 
 ## #############################################################################
-## Include the specifics for the platform
+## include the specifics for the platform
 ## #############################################################################
 
 switch (uname)
