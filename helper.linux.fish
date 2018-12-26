@@ -606,10 +606,6 @@ function buildDockerRelease
     if test "$RELEASETYPE" = "stable"
       set IMAGE_NAME1 arangodb/enterprise:$DOCKER_TAG
       set IMAGE_NAME2 arangodb/enterprise:$DOCKER_TAG
-      set IMAGE_NAME3 arangodb/enterprise:$DOCKER_TAG
-    else if test "$RELEASETYPE" = "stablePreview"
-      set IMAGE_NAME1 arangodb/enterprise:$DOCKER_TAG
-      set IMAGE_NAME2 arangodb/enterprise:$DOCKER_TAG
       set IMAGE_NAME3 arangodb/enterprise-preview:$DOCKER_TAG
     else
       set IMAGE_NAME1 arangodb/enterprise-preview:$DOCKER_TAG
@@ -618,10 +614,6 @@ function buildDockerRelease
     end
   else
     if test "$RELEASETYPE" = "stable"
-      set IMAGE_NAME1 arangodb/arangodb:$DOCKER_TAG
-      set IMAGE_NAME2 arangodb/arangodb:$DOCKER_TAG
-      set IMAGE_NAME3 arangodb/arangodb:$DOCKER_TAG
-    else if test "$RELEASETYPE" = "stablePreview"
       set IMAGE_NAME1 arangodb/arangodb:$DOCKER_TAG
       set IMAGE_NAME2 arangodb/arangodb:$DOCKER_TAG
       set IMAGE_NAME3 arangodb/arangodb-preview:$DOCKER_TAG
