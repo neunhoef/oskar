@@ -639,10 +639,6 @@ function buildDockerRelease
   # push tag
   set -l IMAGE_NAME2 ""
 
-  if test -z "$ENTERPRISE_DOCKER_KEY"
-    set -xg ENTERPRISE_DOCKER_KEY "enterprise-docker-key"
-  end
-
   if test "$ENTERPRISEEDITION" = "On"
     if test "$RELEASETYPE" = "stable"
       set IMAGE_NAME1 arangodb/enterprise:$DOCKER_TAG
