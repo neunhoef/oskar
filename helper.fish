@@ -693,6 +693,7 @@ function moveResultsToWorkspace
       if test -f "$WORKDIR/work/$x" ; mv $WORKDIR/work/$x $WORKSPACE ; end
     end
 
+    for f in $WORKDIR/work/*.asc ; echo "mv $f" ; mv $f $WORKSPACE ; end
     for f in $WORKDIR/work/*.deb ; echo "mv $f" ; mv $f $WORKSPACE ; end
     for f in $WORKDIR/work/*.dmg ; echo "mv $f" ; mv $f $WORKSPACE ; end
     for f in $WORKDIR/work/*.rpm ; echo "mv $f" ; mv $f $WORKSPACE ; end
