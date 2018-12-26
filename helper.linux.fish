@@ -586,17 +586,58 @@ function makeDockerRelease
   and buildDockerSnippet
 end
 
+function makeDockerCommunityRelease
+  if test "$DOWNLOAD_SYNC_USER" = ""
+    echo "Need to set environment variable DOWNLOAD_SYNC_USER."
+    return 1
+  end
+
+  set -l DOCKER_TAG ""
+
+  if test (count $argv) -lt 1
+    findArangoDBVersion ; or return 1
+
+    set DOCKER_TAG $ARANGODB_VERSION
+  else
+    set DOCKER_TAG $argv[1]
+    findArangoDBVersion
+  end
+
+  community
+  and buildDockerRelease $DOCKER_TAG
+  and buildDockerSnippet
+end
+
+function makeDockerEnterpriseRelease
+  if test "$DOWNLOAD_SYNC_USER" = ""
+    echo "Need to set environment variable DOWNLOAD_SYNC_USER."
+    return 1
+  end
+
+  set -l DOCKER_TAG ""
+
+  if test (count $argv) -lt 1
+    findArangoDBVersion ; or return 1
+
+    set DOCKER_TAG $ARANGODB_VERSION
+  else
+    set DOCKER_TAG $argv[1]
+    findArangoDBVersion
+  end
+
+  enterprise
+  and buildDockerRelease $DOCKER_TAG
+  and buildDockerSnippet
+end
+
 function buildDockerRelease
   set -l DOCKER_TAG $argv[1]
 
   # build tag
   set -l IMAGE_NAME1 ""
 
-  # snippet content
-  set -l IMAGE_NAME2 ""
-
   # push tag
-  set -l IMAGE_NAME3 ""
+  set -l IMAGE_NAME2 ""
 
   if test -z "$ENTERPRISE_DOCKER_KEY"
     set -xg ENTERPRISE_DOCKER_KEY "enterprise-docker-key"
@@ -605,22 +646,18 @@ function buildDockerRelease
   if test "$ENTERPRISEEDITION" = "On"
     if test "$RELEASETYPE" = "stable"
       set IMAGE_NAME1 arangodb/enterprise:$DOCKER_TAG
-      set IMAGE_NAME2 arangodb/enterprise:$DOCKER_TAG
-      set IMAGE_NAME3 arangodb/enterprise-preview:$DOCKER_TAG
+      set IMAGE_NAME2 arangodb/enterprise-preview:$DOCKER_TAG
     else
       set IMAGE_NAME1 arangodb/enterprise-preview:$DOCKER_TAG
       set IMAGE_NAME2 arangodb/enterprise-preview:$DOCKER_TAG
-      set IMAGE_NAME3 arangodb/enterprise-preview:$DOCKER_TAG
     end
   else
     if test "$RELEASETYPE" = "stable"
       set IMAGE_NAME1 arangodb/arangodb:$DOCKER_TAG
-      set IMAGE_NAME2 arangodb/arangodb:$DOCKER_TAG
-      set IMAGE_NAME3 arangodb/arangodb-preview:$DOCKER_TAG
+      set IMAGE_NAME2 arangodb/arangodb-preview:$DOCKER_TAG
     else
       set IMAGE_NAME1 arangodb/arangodb-preview:$DOCKER_TAG
       set IMAGE_NAME2 arangodb/arangodb-preview:$DOCKER_TAG
-      set IMAGE_NAME3 arangodb/arangodb-preview:$DOCKER_TAG
     end
   end
 
@@ -634,14 +671,14 @@ function buildDockerRelease
     downloadSyncer
   end
   and buildDockerImage $IMAGE_NAME1
-  and if test "$IMAGE_NAME1" != "$IMAGE_NAME3"
-    docker tag $IMAGE_NAME1 $IMAGE_NAME3
+  and if test "$IMAGE_NAME1" != "$IMAGE_NAME2"
+    docker tag $IMAGE_NAME1 $IMAGE_NAME2
   end
-  and docker push $IMAGE_NAME3
+  and docker push $IMAGE_NAME2
   and if test "$ENTERPRISEEDITION" = "On"
-    echo $IMAGE_NAME2 > $WORKDIR/work/arangodb3e.docker
+    echo $IMAGE_NAME1 > $WORKDIR/work/arangodb3e.docker
   else
-    echo $IMAGE_NAME2 > $WORKDIR/work/arangodb3.docker
+    echo $IMAGE_NAME1 > $WORKDIR/work/arangodb3.docker
   end
 end
 
