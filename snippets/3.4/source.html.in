@@ -12,15 +12,15 @@
   <p>Source Packages for <strong>C++11 Compilers</strong>
     <ul>
       <li>
-        <a href="@DOWNLOAD_LINK@/@SOURCE_TAR_GZ@">tar.gz @ARANGODB_VERSION@</a><br>
+        <a href="https://download.arangodb.com/Source/@SOURCE_TAR_GZ@">tar.gz @ARANGODB_VERSION@</a><br>
         (@SOURCE_SIZE_TAR_GZ@ MByte, SHA256 @SOURCE_SHA256_TAR_GZ@)
       </li>
       <li>
-        <a href="@DOWNLOAD_LINK@/@SOURCE_TAR_BZ2@">tar.bz2 @ARANGODB_VERSION@</a><br>
+        <a href="https://download.arangodb.com/Source/@SOURCE_TAR_BZ2@">tar.bz2 @ARANGODB_VERSION@</a><br>
         (@SOURCE_SIZE_TAR_BZ2@ MByte, SHA256 @SOURCE_SHA256_TAR_BZ2@)
       </li>
       <li>
-        <a href="@DOWNLOAD_LINK@/@SOURCE_ZIP@">zip @ARANGODB_VERSION@</a><br>
+        <a href="https://download.arangodb.com/Source/@SOURCE_ZIP@">zip @ARANGODB_VERSION@</a><br>
         (@SOURCE_SIZE_ZIP@ MByte, SHA256 @SOURCE_SHA256_ZIP@)
       </li>
     </ul>
