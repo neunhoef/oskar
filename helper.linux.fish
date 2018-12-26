@@ -763,7 +763,7 @@ function transformK8SSnippet
       -e "s|@ARANGODB_VERSION@|$ARANGODB_VERSION|g" \
       < snippets/$ARANGODB_SNIPPETS/k8s.$edition.html.in > $n
 
-  echo "Docker Snippet: $n"
+  echo "Kubernetes Snippet: $n"
   popd
 end
 
