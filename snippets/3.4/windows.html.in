@@ -1,5 +1,9 @@
 <div>
   <p>
+    The following packages are for Windows 7, Windows 10.1, Windows 2008 R2 and higher.
+  </p>
+
+  <p>
     We provide a single package containing the server and the client tools. For a
     standard server setup, download the package <strong>Server</strong> and
     install it using the package manager. The <strong>Client Tools</strong>
@@ -13,11 +17,11 @@
   <p><strong>NSIS</strong> packages</p>
   <ul>
     <li>
-      <a href="@DOWNLOAD_LINK@/Windows/@WINDOWS_NAME_SERVER_EXE@">Server</a><br>
+      <a href="@DOWNLOAD_LINK@/Windows/@WINDOWS_NAME_SERVER_EXE@">Server @ARANGODB_VERSION@</a><br>
       (@WINDOWS_SIZE_SERVER_EXE@ MByte, SHA256 @WINDOWS_SHA256_SERVER_EXE@)
     </li>
     <li>
-      <a href="@DOWNLOAD_LINK@/Windows/@WINDOWS_NAME_CLIENT_EXE@">Client Tools</a></li>
+      <a href="@DOWNLOAD_LINK@/Windows/@WINDOWS_NAME_CLIENT_EXE@">Client Tools @ARANGODB_VERSION@</a></li>
       (@WINDOWS_SIZE_CLIENT_EXE@ MByte, SHA256 @WINDOWS_SHA256_CLIENT_EXE@)
     </li>
   </ul>
@@ -25,7 +29,7 @@
   <p><strong>Zip</strong> packages</p>
   <ul>
     <li>
-      <a href="@DOWNLOAD_LINK@/Windows/@WINDOWS_NAME_SERVER_ZIP@">Server</a><br>
+      <a href="@DOWNLOAD_LINK@/Windows/@WINDOWS_NAME_SERVER_ZIP@">Server @ARANGODB_VERSION@</a><br>
       (@WINDOWS_SIZE_SERVER_ZIP@ MByte, SHA256 @WINDOWS_SHA256_SERVER_ZIP@)
     </li>
   </ul>
